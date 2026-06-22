@@ -283,11 +283,7 @@ class _ConfigCardState extends State<ConfigCard> {
           ),
         ),
         const SizedBox(width: 6),
-        Icon(
-          MdiIcons.thumbDownOutline,
-          size: 12,
-          color: AppColors.red500,
-        ),
+        Icon(MdiIcons.thumbDownOutline, size: 12, color: AppColors.red500),
         const SizedBox(width: 2),
         Text(
           '$downCount',
@@ -337,11 +333,7 @@ class _ConfigCardState extends State<ConfigCard> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.clockOutline,
-              size: 12,
-              color: AppColors.amber500,
-            ),
+            Icon(MdiIcons.clockOutline, size: 12, color: AppColors.amber500),
             const SizedBox(width: 6),
             const Text(
               '变更审核中',
@@ -357,9 +349,7 @@ class _ConfigCardState extends State<ConfigCard> {
     }
 
     final isPending = config.isPending;
-    final statusColor = isPending
-        ? AppColors.amber500
-        : AppColors.red500;
+    final statusColor = isPending ? AppColors.amber500 : AppColors.red500;
     final statusIcon = isPending
         ? MdiIcons.clockOutline
         : MdiIcons.alertCircleOutline;

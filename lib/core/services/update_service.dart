@@ -189,9 +189,7 @@ class UpdateService {
         await _deleteFileQuietly(downloadedFilePath);
         await _reportResult(updateInfo, 'verify_failed');
         throw UpdateException(
-          isValid == false
-              ? '文件完整性校验失败\n下载的文件可能已损坏，请重新下载'
-              : '无法校验文件完整性\n请重新下载',
+          isValid == false ? '文件完整性校验失败\n下载的文件可能已损坏，请重新下载' : '无法校验文件完整性\n请重新下载',
         );
       }
     }
@@ -313,9 +311,7 @@ class UpdateService {
         await _deleteFileQuietly(filePath);
         await _reportResult(updateInfo, 'verify_failed');
         throw UpdateException(
-          isValid == false
-              ? '文件完整性校验失败\n下载的文件可能已损坏，请重新下载'
-              : '无法校验文件完整性\n请重新下载',
+          isValid == false ? '文件完整性校验失败\n下载的文件可能已损坏，请重新下载' : '无法校验文件完整性\n请重新下载',
         );
       }
     }

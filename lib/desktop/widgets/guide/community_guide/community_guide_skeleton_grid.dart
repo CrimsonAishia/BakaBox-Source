@@ -38,9 +38,7 @@ class CommunityGuideSkeletonGrid extends StatelessWidget {
         crossAxisSpacing: 16,
         childCount: count,
         itemBuilder: (innerCtx, index) {
-          return CommunityGuideShimmer(
-            child: skeletonBuilder(innerCtx),
-          );
+          return CommunityGuideShimmer(child: skeletonBuilder(innerCtx));
         },
       ),
     );

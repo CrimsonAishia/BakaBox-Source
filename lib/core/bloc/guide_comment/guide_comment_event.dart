@@ -39,7 +39,13 @@ class PostComment extends GuideCommentEvent {
   });
 
   @override
-  List<Object?> get props => [content, images, parentId, replyToId, replyToName];
+  List<Object?> get props => [
+    content,
+    images,
+    parentId,
+    replyToId,
+    replyToName,
+  ];
 }
 
 /// 删除评论（软删除：标记 isDeleted=true，保留楼层）
@@ -88,7 +94,7 @@ enum CommentSortType {
   hot;
 
   String get value => switch (this) {
-        CommentSortType.latest => 'latest',
-        CommentSortType.hot => 'hot',
-      };
+    CommentSortType.latest => 'latest',
+    CommentSortType.hot => 'hot',
+  };
 }

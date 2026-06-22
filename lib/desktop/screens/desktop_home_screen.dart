@@ -136,13 +136,13 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       5 => CommunityGuideScreen(key: _guideHostKey),
       6 => const UpdateLogsDesktop(),
       7 => ToolsScreen(
-          initialToolId: _pendingTool,
-          initialToolArgs: _pendingArgs,
-          onArgsConsumed: () => setState(() {
-            _pendingTool = null;
-            _pendingArgs = null;
-          }),
-        ),
+        initialToolId: _pendingTool,
+        initialToolArgs: _pendingArgs,
+        onArgsConsumed: () => setState(() {
+          _pendingTool = null;
+          _pendingArgs = null;
+        }),
+      ),
       8 => const SettingsDesktop(),
       9 => const IssuesDesktop(),
       _ => const SizedBox.shrink(),
@@ -411,170 +411,178 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       child: DesktopNavigatorProvider(
         navigator: this,
         child: MultiBlocListener(
-        listeners: [
-          BlocListener<SettingsBloc, SettingsState>(
-            listenWhen: (previous, current) =>
-                !previous.isPathInvalidated && current.isPathInvalidated,
-            listener: (context, state) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const PathInvalidDialog(),
-              );
-            },
-          ),
-          BlocListener<WarmupBloc, WarmupBlocState>(
-            listenWhen: (previous, current) {
-              if (!previous.needManualLaunch && current.needManualLaunch) return true;
-              if (current.needManualLaunch) return false;
-              if (previous.error != current.error && current.error != null) return true;
-
-              // 全屏倒计时弹窗仅在倒计时阶段显示。
-              // 点击"立即加入"(→launching) 或"取消"(→idle) 都应立即关闭全屏弹窗，
-              // 因此 launching 不再视为需要显示全屏弹窗的状态。
-              final wasCountdown = previous.status == WarmupStatus.countdown;
-              final isCountdown = current.status == WarmupStatus.countdown;
-              if (wasCountdown != isCountdown) return true;
-
-              return false;
-            },
-            listener: (context, state) {
-              // 先协调全局倒计时弹窗的显隐。
-              // 必须在 error / needManualLaunch 的 early return 之前执行，
-              // 否则启动失败（error 被设置）或需手动启动 CSGO 时，
-              // 会因提前 return 而无法移除倒计时弹窗，导致全屏遮罩卡死。
-              final isCountdown = state.status == WarmupStatus.countdown;
-              if (isCountdown && _warmupCountdownRoute == null) {
-                final warmupBloc = context.read<WarmupBloc>();
-                _warmupCountdownRoute = DialogRoute(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (dialogContext) {
-                    return BlocProvider.value(
-                      value: warmupBloc,
-                      child: BlocBuilder<WarmupBloc, WarmupBlocState>(
-                        builder: (context, dialogState) {
-                          return Material(
-                            color: Colors.transparent,
-                            child: WarmupCountdownDialog(state: dialogState),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                );
-                Navigator.of(context).push(_warmupCountdownRoute!);
-              } else if (!isCountdown && _warmupCountdownRoute != null) {
-                Navigator.of(context).removeRoute(_warmupCountdownRoute!);
-                _warmupCountdownRoute = null;
-              }
-
-              // 需要手动启动 CSGO
-              if (state.needManualLaunch) {
+          listeners: [
+            BlocListener<SettingsBloc, SettingsState>(
+              listenWhen: (previous, current) =>
+                  !previous.isPathInvalidated && current.isPathInvalidated,
+              listener: (context, state) {
                 showDialog(
                   context: context,
-                  builder: (context) => CsgoManualLaunchDialog(
-                    serverAddress: state.serverAddress ?? '',
-                  ),
+                  barrierDismissible: false,
+                  builder: (context) => const PathInvalidDialog(),
                 );
-                return;
-              }
+              },
+            ),
+            BlocListener<WarmupBloc, WarmupBlocState>(
+              listenWhen: (previous, current) {
+                if (!previous.needManualLaunch && current.needManualLaunch) {
+                  return true;
+                }
+                if (current.needManualLaunch) return false;
+                if (previous.error != current.error && current.error != null) {
+                  return true;
+                }
 
-              // 错误提示
-              if (state.error != null) {
-                ToastUtils.showError(context, state.error!);
-                return;
-              }
-            },
-          ),
-        ],
-        child: PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) async {
-            if (didPop) return;
-            final shouldExit = await _handleExit();
-            if (shouldExit && context.mounted) SystemNavigator.pop();
-          },
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Stack(
-              children: [
-                Row(
-                  children: [
-                    DesktopNavigation(
-                      currentIndex: _currentIndex,
-                      onIndexChanged: _onIndexChanged,
-                      items: _navigationItems,
-                      onFeedbackTap: () => _onIndexChanged(9),
-                      isFeedbackSelected: _currentIndex == 9,
+                // 全屏倒计时弹窗仅在倒计时阶段显示。
+                // 点击"立即加入"(→launching) 或"取消"(→idle) 都应立即关闭全屏弹窗，
+                // 因此 launching 不再视为需要显示全屏弹窗的状态。
+                final wasCountdown = previous.status == WarmupStatus.countdown;
+                final isCountdown = current.status == WarmupStatus.countdown;
+                if (wasCountdown != isCountdown) return true;
+
+                return false;
+              },
+              listener: (context, state) {
+                // 先协调全局倒计时弹窗的显隐。
+                // 必须在 error / needManualLaunch 的 early return 之前执行，
+                // 否则启动失败（error 被设置）或需手动启动 CSGO 时，
+                // 会因提前 return 而无法移除倒计时弹窗，导致全屏遮罩卡死。
+                final isCountdown = state.status == WarmupStatus.countdown;
+                if (isCountdown && _warmupCountdownRoute == null) {
+                  final warmupBloc = context.read<WarmupBloc>();
+                  _warmupCountdownRoute = DialogRoute(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (dialogContext) {
+                      return BlocProvider.value(
+                        value: warmupBloc,
+                        child: BlocBuilder<WarmupBloc, WarmupBlocState>(
+                          builder: (context, dialogState) {
+                            return Material(
+                              color: Colors.transparent,
+                              child: WarmupCountdownDialog(state: dialogState),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                  Navigator.of(context).push(_warmupCountdownRoute!);
+                } else if (!isCountdown && _warmupCountdownRoute != null) {
+                  Navigator.of(context).removeRoute(_warmupCountdownRoute!);
+                  _warmupCountdownRoute = null;
+                }
+
+                // 需要手动启动 CSGO
+                if (state.needManualLaunch) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => CsgoManualLaunchDialog(
+                      serverAddress: state.serverAddress ?? '',
                     ),
-                    Expanded(
-                      child: AnimatedBuilder(
-                        animation: _contentAnimationController,
-                        builder: (context, child) {
-                          return FadeTransition(
-                            opacity: Tween<double>(begin: 0.0, end: 1.0)
-                                .animate(
-                                  CurvedAnimation(
-                                    parent: _contentAnimationController,
-                                    curve: Curves.easeOutCubic,
-                                  ),
-                                ),
-                            child: SlideTransition(
-                              position:
-                                  Tween<Offset>(
-                                    begin: const Offset(0.1, 0.0),
-                                    end: Offset.zero,
-                                  ).animate(
+                  );
+                  return;
+                }
+
+                // 错误提示
+                if (state.error != null) {
+                  ToastUtils.showError(context, state.error!);
+                  return;
+                }
+              },
+            ),
+          ],
+          child: PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
+              final shouldExit = await _handleExit();
+              if (shouldExit && context.mounted) SystemNavigator.pop();
+            },
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Stack(
+                children: [
+                  Row(
+                    children: [
+                      DesktopNavigation(
+                        currentIndex: _currentIndex,
+                        onIndexChanged: _onIndexChanged,
+                        items: _navigationItems,
+                        onFeedbackTap: () => _onIndexChanged(9),
+                        isFeedbackSelected: _currentIndex == 9,
+                      ),
+                      Expanded(
+                        child: AnimatedBuilder(
+                          animation: _contentAnimationController,
+                          builder: (context, child) {
+                            return FadeTransition(
+                              opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                  .animate(
                                     CurvedAnimation(
                                       parent: _contentAnimationController,
                                       curve: Curves.easeOutCubic,
                                     ),
                                   ),
-                              child: _buildPageContent(),
-                            ),
-                          );
-                        },
+                              child: SlideTransition(
+                                position:
+                                    Tween<Offset>(
+                                      begin: const Offset(0.1, 0.0),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: _contentAnimationController,
+                                        curve: Curves.easeOutCubic,
+                                      ),
+                                    ),
+                                child: _buildPageContent(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isDesktop)
+                    Positioned(
+                      top: 8,
+                      right: 12,
+                      child: DesktopWindowControls(),
+                    ),
+                  if (isDesktop)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 120,
+                      height: 56,
+                      child: DragToMoveArea(child: SizedBox.expand()),
+                    ),
+                  // 浮动聊天按钮（非大厅页面显示）
+                  if (isDesktop && _currentIndex != 2)
+                    const Positioned.fill(child: FloatingChatButton()),
+                  // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
+                  if (isDesktop)
+                    Positioned(
+                      key: const ValueKey('bottom_right_overlay'),
+                      bottom: 16,
+                      right: 16,
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          GlobalBroadcastBar(),
+                          SizedBox(height: 8),
+                          WarmupFloatingCard(),
+                          SizedBox(height: 8),
+                          QueueFloatingCard(),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                if (isDesktop)
-                  Positioned(top: 8, right: 12, child: DesktopWindowControls()),
-                if (isDesktop)
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 120,
-                    height: 56,
-                    child: DragToMoveArea(child: SizedBox.expand()),
-                  ),
-                // 浮动聊天按钮（非大厅页面显示）
-                if (isDesktop && _currentIndex != 2)
-                  const Positioned.fill(child: FloatingChatButton()),
-                // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
-                if (isDesktop)
-                  Positioned(
-                    key: const ValueKey('bottom_right_overlay'),
-                    bottom: 16,
-                    right: 16,
-                    child: const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        GlobalBroadcastBar(),
-                        SizedBox(height: 8),
-                        WarmupFloatingCard(),
-                        SizedBox(height: 8),
-                        QueueFloatingCard(),
-                      ],
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

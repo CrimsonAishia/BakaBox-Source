@@ -149,11 +149,7 @@ class _ThemeModeOption extends StatelessWidget {
             ),
             if (isSelected) ...[
               const SizedBox(width: 6),
-              Icon(
-                MdiIcons.checkCircle,
-                size: 16,
-                color: AppColors.primary,
-              ),
+              Icon(MdiIcons.checkCircle, size: 16, color: AppColors.primary),
             ],
           ],
         ),

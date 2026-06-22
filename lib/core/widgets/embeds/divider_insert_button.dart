@@ -28,8 +28,9 @@ class DividerInsertButton extends StatelessWidget {
     final index = selection.baseOffset;
     final length = selection.extentOffset - index;
     final docLength = controller.document.length;
-    final safeIndex =
-        (index < 0 || index > docLength) ? (docLength > 0 ? docLength - 1 : 0) : index;
+    final safeIndex = (index < 0 || index > docLength)
+        ? (docLength > 0 ? docLength - 1 : 0)
+        : index;
 
     const embed = DividerBlockEmbed();
 

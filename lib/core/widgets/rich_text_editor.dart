@@ -516,9 +516,7 @@ class RichTextEditorState extends State<RichTextEditor> {
             defaultDisplayText: '字号',
             style: TextStyle(
               fontSize: 12,
-              color: isDark
-                  ? AppColors.slate200
-                  : AppColors.slate700,
+              color: isDark ? AppColors.slate200 : AppColors.slate700,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 6),
             items: const {
@@ -546,9 +544,7 @@ class RichTextEditorState extends State<RichTextEditor> {
             defaultDisplayText: '字体',
             style: TextStyle(
               fontSize: 12,
-              color: isDark
-                  ? AppColors.slate200
-                  : AppColors.slate700,
+              color: isDark ? AppColors.slate200 : AppColors.slate700,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 6),
             items: const {
@@ -868,9 +864,7 @@ class RichTextEditorState extends State<RichTextEditor> {
       width: 1,
       height: 18,
       margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: isDark
-          ? Colors.white.withValues(alpha: 0.1)
-          : AppColors.gray200,
+      color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.gray200,
     );
   }
 
@@ -914,162 +908,149 @@ class RichTextEditorState extends State<RichTextEditor> {
           height: 1.7,
         ),
         child: QuillEditor.basic(
-        controller: widget.controller,
-        focusNode: _focusNode,
-        scrollController: _scrollController,
-        config: QuillEditorConfig(
-          placeholder: widget.hintText,
-          padding: const EdgeInsets.all(16),
-          autoFocus: false,
-          expands: true,
-          minHeight: widget.compactMode ? null : (widget.minHeight ?? 200),
-          embedBuilders:
-              mergedEmbedBuilders.isNotEmpty ? mergedEmbedBuilders : null,
-          customStyles: DefaultStyles(
-            paragraph: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 15,
-                height: 1.7,
-                color: isDark
-                    ? AppColors.slate200
-                    : AppColors.gray700,
+          controller: widget.controller,
+          focusNode: _focusNode,
+          scrollController: _scrollController,
+          config: QuillEditorConfig(
+            placeholder: widget.hintText,
+            padding: const EdgeInsets.all(16),
+            autoFocus: false,
+            expands: true,
+            minHeight: widget.compactMode ? null : (widget.minHeight ?? 200),
+            embedBuilders: mergedEmbedBuilders.isNotEmpty
+                ? mergedEmbedBuilders
+                : null,
+            customStyles: DefaultStyles(
+              paragraph: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 15,
+                  height: 1.7,
+                  color: isDark ? AppColors.slate200 : AppColors.gray700,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(6, 0),
+                VerticalSpacing.zero,
+                null,
               ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(6, 0),
-              VerticalSpacing.zero,
-              null,
-            ),
-            placeHolder: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 15,
-                height: 1.7,
-                color: isDark
-                    ? AppColors.slate500
-                    : AppColors.gray400,
+              placeHolder: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 15,
+                  height: 1.7,
+                  color: isDark ? AppColors.slate500 : AppColors.gray400,
+                ),
+                HorizontalSpacing.zero,
+                VerticalSpacing.zero,
+                VerticalSpacing.zero,
+                null,
               ),
-              HorizontalSpacing.zero,
-              VerticalSpacing.zero,
-              VerticalSpacing.zero,
-              null,
-            ),
-            h1: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                height: 1.5,
-                color: isDark ? Colors.white : AppColors.gray800,
+              h1: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  height: 1.5,
+                  color: isDark ? Colors.white : AppColors.gray800,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(16, 8),
+                VerticalSpacing.zero,
+                null,
               ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(16, 8),
-              VerticalSpacing.zero,
-              null,
-            ),
-            h2: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
-                color: isDark ? Colors.white : AppColors.gray800,
+              h2: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
+                  color: isDark ? Colors.white : AppColors.gray800,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(12, 6),
+                VerticalSpacing.zero,
+                null,
               ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(12, 6),
-              VerticalSpacing.zero,
-              null,
-            ),
-            h3: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
-                color: isDark ? Colors.white : AppColors.gray800,
+              h3: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
+                  color: isDark ? Colors.white : AppColors.gray800,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(10, 4),
+                VerticalSpacing.zero,
+                null,
               ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(10, 4),
-              VerticalSpacing.zero,
-              null,
-            ),
-            quote: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 15,
-                height: 1.6,
-                fontStyle: FontStyle.italic,
-                color: isDark
-                    ? AppColors.slate400
-                    : AppColors.gray500,
-              ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(8, 8),
-              VerticalSpacing.zero,
-              BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.5),
-                    width: 3,
+              quote: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 15,
+                  height: 1.6,
+                  fontStyle: FontStyle.italic,
+                  color: isDark ? AppColors.slate400 : AppColors.gray500,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(8, 8),
+                VerticalSpacing.zero,
+                BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.5),
+                      width: 3,
+                    ),
                   ),
                 ),
               ),
-            ),
-            code: DefaultTextBlockStyle(
-              TextStyle(
-                fontSize: 13,
-                fontFamily: 'Consolas, Monaco, monospace',
-                color: isDark
-                    ? const Color(0xFFE879F9)
-                    : AppColors.red600,
+              code: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'Consolas, Monaco, monospace',
+                  color: isDark ? const Color(0xFFE879F9) : AppColors.red600,
+                  backgroundColor: isDark
+                      ? AppColors.slate700
+                      : AppColors.gray100,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(8, 8),
+                VerticalSpacing.zero,
+                BoxDecoration(
+                  color: isDark ? AppColors.slate700 : AppColors.gray50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : AppColors.gray200,
+                  ),
+                ),
+              ),
+              lists: DefaultListBlockStyle(
+                TextStyle(
+                  fontSize: 15,
+                  height: 1.7,
+                  color: isDark ? AppColors.slate200 : AppColors.gray700,
+                ),
+                HorizontalSpacing.zero,
+                const VerticalSpacing(4, 4),
+                VerticalSpacing.zero,
+                null,
+                null,
+              ),
+              link: TextStyle(
+                color: AppColors.primary,
+                decoration: TextDecoration.underline,
+                decorationColor: AppColors.primary.withValues(alpha: 0.5),
+              ),
+              inlineCode: InlineCodeStyle(
                 backgroundColor: isDark
                     ? AppColors.slate700
                     : AppColors.gray100,
-              ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(8, 8),
-              VerticalSpacing.zero,
-              BoxDecoration(
-                color: isDark
-                    ? AppColors.slate700
-                    : AppColors.gray50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : AppColors.gray200,
+                radius: const Radius.circular(4),
+                style: TextStyle(
+                  fontFamily: 'Consolas, Monaco, monospace',
+                  fontSize: 14,
+                  color: isDark ? const Color(0xFFE879F9) : AppColors.red600,
                 ),
-              ),
-            ),
-            lists: DefaultListBlockStyle(
-              TextStyle(
-                fontSize: 15,
-                height: 1.7,
-                color: isDark
-                    ? AppColors.slate200
-                    : AppColors.gray700,
-              ),
-              HorizontalSpacing.zero,
-              const VerticalSpacing(4, 4),
-              VerticalSpacing.zero,
-              null,
-              null,
-            ),
-            link: TextStyle(
-              color: AppColors.primary,
-              decoration: TextDecoration.underline,
-              decorationColor: AppColors.primary.withValues(alpha: 0.5),
-            ),
-            inlineCode: InlineCodeStyle(
-              backgroundColor: isDark
-                  ? AppColors.slate700
-                  : AppColors.gray100,
-              radius: const Radius.circular(4),
-              style: TextStyle(
-                fontFamily: 'Consolas, Monaco, monospace',
-                fontSize: 14,
-                color: isDark
-                    ? const Color(0xFFE879F9)
-                    : AppColors.red600,
               ),
             ),
           ),
         ),
-      ),
       ),
     );
 
@@ -1084,12 +1065,7 @@ class RichTextEditorState extends State<RichTextEditor> {
 
       // 2. DropRegion 支持拖入图片
       return DropRegion(
-        formats: const [
-          Formats.png,
-          Formats.jpeg,
-          Formats.gif,
-          Formats.webp,
-        ],
+        formats: const [Formats.png, Formats.jpeg, Formats.gif, Formats.webp],
         onDropOver: (event) {
           // 仅当拖入项包含图片格式时才接受
           final item = event.session.items.isNotEmpty
@@ -1243,16 +1219,20 @@ class RichTextEditorState extends State<RichTextEditor> {
     FileFormat format,
   ) async {
     final completer = Completer<Uint8List?>();
-    reader.getFile(format, (file) async {
-      try {
-        final data = await file.readAll();
-        if (!completer.isCompleted) completer.complete(data);
-      } catch (e) {
+    reader.getFile(
+      format,
+      (file) async {
+        try {
+          final data = await file.readAll();
+          if (!completer.isCompleted) completer.complete(data);
+        } catch (e) {
+          if (!completer.isCompleted) completer.complete(null);
+        }
+      },
+      onError: (e) {
         if (!completer.isCompleted) completer.complete(null);
-      }
-    }, onError: (e) {
-      if (!completer.isCompleted) completer.complete(null);
-    });
+      },
+    );
     return completer.future;
   }
 
@@ -1308,10 +1288,7 @@ class RichTextEditorState extends State<RichTextEditor> {
       if (widget.imageMode == ImageMode.inline) {
         // inline 模式：直接在光标位置插入图片节点
         final index = widget.controller.selection.baseOffset;
-        widget.controller.document.insert(
-          index,
-          BlockEmbed.image(imageRef),
-        );
+        widget.controller.document.insert(index, BlockEmbed.image(imageRef));
         // 将光标移到图片节点之后
         widget.controller.updateSelection(
           TextSelection.collapsed(offset: index + 1),
@@ -1584,9 +1561,7 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
       child: Icon(
         Icons.broken_image_rounded,
         size: 16,
-        color: widget.isDark
-            ? AppColors.slate500
-            : AppColors.gray400,
+        color: widget.isDark ? AppColors.slate500 : AppColors.gray400,
       ),
     );
   }

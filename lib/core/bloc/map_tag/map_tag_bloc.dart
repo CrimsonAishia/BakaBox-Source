@@ -344,9 +344,9 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         voteThresholdSeconds: status.voteThresholdSeconds,
         userMapValidSeconds:
             (status.currentMap != null &&
-                    status.currentMap!.mapName == state.currentMapName)
-                ? status.currentMap!.validSeconds
-                : voting.userMapValidSeconds,
+                status.currentMap!.mapName == state.currentMapName)
+            ? status.currentMap!.validSeconds
+            : voting.userMapValidSeconds,
         canVote: status.canVote,
       );
     }

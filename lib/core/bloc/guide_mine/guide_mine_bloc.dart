@@ -47,11 +47,13 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     Emitter<GuideMineState> emit,
   ) async {
     // 切换 Tab 时重置列表/分页状态，但保留 stats（属于用户全局概览）
-    emit(GuideMineState(
-      tab: event.tab,
-      status: GuideMineStatus.loading,
-      stats: state.stats,
-    ));
+    emit(
+      GuideMineState(
+        tab: event.tab,
+        status: GuideMineStatus.loading,
+        stats: state.stats,
+      ),
+    );
     await _loadPage(emit, page: 1);
   }
 
@@ -62,27 +64,23 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     // 仅 published Tab 使用状态筛选
     if (state.tab != MineTab.published) return;
 
-    emit(state.copyWith(
-      statusFilter: event.status,
-      clearStatusFilter: event.status == null,
-      status: GuideMineStatus.loading,
-      items: const [],
-      currentPage: 1,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        statusFilter: event.status,
+        clearStatusFilter: event.status == null,
+        status: GuideMineStatus.loading,
+        items: const [],
+        currentPage: 1,
+        clearError: true,
+      ),
+    );
     await _loadPage(emit, page: 1);
   }
 
-  Future<void> _onLoadMore(
-    LoadMore event,
-    Emitter<GuideMineState> emit,
-  ) async {
+  Future<void> _onLoadMore(LoadMore event, Emitter<GuideMineState> emit) async {
     if (!state.canLoadMore) return;
 
-    emit(state.copyWith(
-      status: GuideMineStatus.loadingMore,
-      clearError: true,
-    ));
+    emit(state.copyWith(status: GuideMineStatus.loadingMore, clearError: true));
     await _loadPage(emit, page: state.currentPage + 1);
   }
 
@@ -106,24 +104,25 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     try {
       await _guideApi.deleteDraft(event.draftId);
       // 从本地列表移除
-      final updatedDrafts =
-          state.drafts.where((d) => d.draftId != event.draftId).toList();
+      final updatedDrafts = state.drafts
+          .where((d) => d.draftId != event.draftId)
+          .toList();
       final newTotal = state.total - 1;
       final hasMore = updatedDrafts.length < newTotal;
-      emit(state.copyWith(
-        drafts: updatedDrafts,
-        total: newTotal,
-        hasMore: hasMore,
-      ));
+      emit(
+        state.copyWith(
+          drafts: updatedDrafts,
+          total: newTotal,
+          hasMore: hasMore,
+        ),
+      );
       // 删除后如果还有更多数据，自动补加载下一页
       if (hasMore && updatedDrafts.length < _pageSize) {
         await _loadDrafts(emit, page: state.currentPage + 1);
       }
     } catch (e) {
       LogService.e('删除草稿失败', e);
-      emit(state.copyWith(
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(error: _getErrorMessage(e)));
     }
   }
 
@@ -152,13 +151,15 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
         state.status == GuideMineStatus.loadingMore) {
       return;
     }
-    emit(state.copyWith(
-      status: GuideMineStatus.loading,
-      items: const [],
-      drafts: const [],
-      currentPage: 1,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        status: GuideMineStatus.loading,
+        items: const [],
+        drafts: const [],
+        currentPage: 1,
+        clearError: true,
+      ),
+    );
     await _loadPage(emit, page: 1);
   }
 
@@ -169,22 +170,19 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     try {
       await _guideApi.deleteGuide(event.guideId);
       // 从本地列表移除
-      final updatedItems =
-          state.items.where((i) => i.id != event.guideId).toList();
+      final updatedItems = state.items
+          .where((i) => i.id != event.guideId)
+          .toList();
       final newTotal = state.total - 1;
       final hasMore = updatedItems.length < newTotal;
-      emit(state.copyWith(
-        items: updatedItems,
-        total: newTotal,
-        hasMore: hasMore,
-      ));
+      emit(
+        state.copyWith(items: updatedItems, total: newTotal, hasMore: hasMore),
+      );
       // 删除会改变「攻略数 / 回收站」等概览，刷新统计
       add(const LoadMineStats());
     } catch (e) {
       LogService.e('删除攻略失败', e);
-      emit(state.copyWith(
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(error: _getErrorMessage(e)));
     }
   }
 
@@ -195,22 +193,19 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     try {
       await _guideApi.restoreGuide(event.guideId);
       // 从回收站列表移除
-      final updatedItems =
-          state.items.where((i) => i.id != event.guideId).toList();
+      final updatedItems = state.items
+          .where((i) => i.id != event.guideId)
+          .toList();
       final newTotal = state.total - 1;
       final hasMore = updatedItems.length < newTotal;
-      emit(state.copyWith(
-        items: updatedItems,
-        total: newTotal,
-        hasMore: hasMore,
-      ));
+      emit(
+        state.copyWith(items: updatedItems, total: newTotal, hasMore: hasMore),
+      );
       // 还原会改变「攻略数 / 回收站」等概览，刷新统计
       add(const LoadMineStats());
     } catch (e) {
       LogService.e('还原攻略失败', e);
-      emit(state.copyWith(
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(error: _getErrorMessage(e)));
     }
   }
 
@@ -230,9 +225,7 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
       add(const ReloadCurrentList());
     } catch (e) {
       LogService.e('上架攻略失败', e);
-      emit(state.copyWith(
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(error: _getErrorMessage(e)));
     }
   }
 
@@ -256,10 +249,12 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
           await Future.delayed(remaining);
         }
       }
-      emit(state.copyWith(
-        status: GuideMineStatus.failure,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(
+          status: GuideMineStatus.failure,
+          error: _getErrorMessage(e),
+        ),
+      );
       LogService.e('我的中心加载失败 [${state.tab.name}]', e);
     }
   }
@@ -279,23 +274,23 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     required int page,
     Stopwatch? stopwatch,
   }) async {
-    final response = await _guideApi.getDrafts(
-      page: page,
-      pageSize: _pageSize,
-    );
+    final response = await _guideApi.getDrafts(page: page, pageSize: _pageSize);
     await _waitMinDuration(stopwatch);
     final isReset = page == 1;
-    final newDrafts =
-        isReset ? response.items : [...state.drafts, ...response.items];
+    final newDrafts = isReset
+        ? response.items
+        : [...state.drafts, ...response.items];
 
-    emit(state.copyWith(
-      status: GuideMineStatus.success,
-      drafts: newDrafts,
-      items: const [],
-      total: response.total,
-      hasMore: newDrafts.length < response.total,
-      currentPage: page,
-    ));
+    emit(
+      state.copyWith(
+        status: GuideMineStatus.success,
+        drafts: newDrafts,
+        items: const [],
+        total: response.total,
+        hasMore: newDrafts.length < response.total,
+        currentPage: page,
+      ),
+    );
   }
 
   /// 加载分页列表（published / favorites / liked / trash）
@@ -307,17 +302,20 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     final response = await _fetchResponse(page: page);
     await _waitMinDuration(stopwatch);
     final isReset = page == 1;
-    final newItems =
-        isReset ? response.items : [...state.items, ...response.items];
+    final newItems = isReset
+        ? response.items
+        : [...state.items, ...response.items];
 
-    emit(state.copyWith(
-      status: GuideMineStatus.success,
-      items: newItems,
-      drafts: const [],
-      total: response.total,
-      hasMore: newItems.length < response.total,
-      currentPage: page,
-    ));
+    emit(
+      state.copyWith(
+        status: GuideMineStatus.success,
+        items: newItems,
+        drafts: const [],
+        total: response.total,
+        hasMore: newItems.length < response.total,
+        currentPage: page,
+      ),
+    );
   }
 
   /// 根据当前 Tab 分发到对应的 API 调用
@@ -333,16 +331,10 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
         );
 
       case MineTab.favorites:
-        return await _guideApi.getFavorites(
-          page: page,
-          pageSize: _pageSize,
-        );
+        return await _guideApi.getFavorites(page: page, pageSize: _pageSize);
 
       case MineTab.liked:
-        return await _guideApi.getLiked(
-          page: page,
-          pageSize: _pageSize,
-        );
+        return await _guideApi.getLiked(page: page, pageSize: _pageSize);
 
       case MineTab.trash:
         // 回收站：后端新逻辑用 onlyDeleted 过滤（deletedAt 非空），

@@ -101,8 +101,7 @@ class RealtimeServerMapRuntimeChannel {
   Stream<ServerMapRuntimeEvent> get events => _controller.stream;
 
   /// 最近一次 snapshot 数据，按 serverAddress 索引
-  Map<String, ServerMapRuntimeEntry> get latestSnapshot =>
-      _latestSnapshotView;
+  Map<String, ServerMapRuntimeEntry> get latestSnapshot => _latestSnapshotView;
 
   /// 根据地址获取最近一次的换图条目
   ServerMapRuntimeEntry? snapshotFor(String serverAddress) =>
@@ -125,7 +124,10 @@ class RealtimeServerMapRuntimeChannel {
   ///
   /// 用于用户手动刷新：强制纠正本地可能停留的旧换图状态。频率限制由调用方负责。
   void forceResnapshot() {
-    _service.requestResnapshot(RealtimeChannels.serverMapRuntime, emitSyncing: true);
+    _service.requestResnapshot(
+      RealtimeChannels.serverMapRuntime,
+      emitSyncing: true,
+    );
   }
 
   void unsubscribe() {
@@ -161,7 +163,10 @@ class RealtimeServerMapRuntimeChannel {
     _latestSnapshot.clear();
     if (!_controller.isClosed) {
       _controller.add(
-        const ServerMapRuntimeEvent(kind: ServerMapRuntimeEventKind.syncing, entries: []),
+        const ServerMapRuntimeEvent(
+          kind: ServerMapRuntimeEventKind.syncing,
+          entries: [],
+        ),
       );
     }
   }

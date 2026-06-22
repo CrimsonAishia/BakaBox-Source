@@ -46,9 +46,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: widget.active
-                    ? AppColors.primary
-                    : Colors.transparent,
+                color: widget.active ? AppColors.primary : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -301,9 +299,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                       : (isDark ? AppColors.slate700 : Colors.grey[100])),
             borderRadius: BorderRadius.circular(20),
             border: widget.showMyConfigs
-                ? Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  )
+                ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
                 : null,
           ),
           child: Row(

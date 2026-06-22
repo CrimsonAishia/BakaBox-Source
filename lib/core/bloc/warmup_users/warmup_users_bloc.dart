@@ -69,7 +69,9 @@ class WarmupUsersBloc extends Bloc<WarmupUsersEvent, WarmupUsersState> {
         case WarmupUserLeftEvent():
           add(WarmupUserLeft(odId: event.odId, visitorId: event.visitorId));
         case WarmupUserSuccessEvent():
-          add(WarmupUserSucceeded(odId: event.odId, visitorId: event.visitorId));
+          add(
+            WarmupUserSucceeded(odId: event.odId, visitorId: event.visitorId),
+          );
         case WarmupUsersErrorEvent():
           add(WarmupUsersError(error: event.error));
         case WarmupUsersConnectionStateEvent():
@@ -78,9 +80,7 @@ class WarmupUsersBloc extends Bloc<WarmupUsersEvent, WarmupUsersState> {
     });
   }
 
-  // ============================================================================
   // Public Event Handlers (UI triggered)
-  // ============================================================================
 
   /// 处理连接事件
   Future<void> _onConnect(
@@ -154,9 +154,7 @@ class WarmupUsersBloc extends Bloc<WarmupUsersEvent, WarmupUsersState> {
     _pendingJoin = null;
   }
 
-  // ============================================================================
   // Internal Event Handlers (from WarmupUsersService)
-  // ============================================================================
 
   /// 处理全量同步事件
   void _onSynced(WarmupUsersSynced event, Emitter<WarmupUsersState> emit) {
@@ -203,9 +201,7 @@ class WarmupUsersBloc extends Bloc<WarmupUsersEvent, WarmupUsersState> {
   /// 处理用户加入事件
   void _onUserJoined(WarmupUserJoined event, Emitter<WarmupUsersState> emit) {
     final user = event.user;
-    LogService.d(
-      '[WarmupUsersBloc] 收到用户加入事件: ${user.uniqueId}',
-    );
+    LogService.d('[WarmupUsersBloc] 收到用户加入事件: ${user.uniqueId}');
 
     final existingIndex = state.users.indexWhere(
       (u) => u.uniqueId == user.uniqueId,
@@ -218,12 +214,7 @@ class WarmupUsersBloc extends Bloc<WarmupUsersEvent, WarmupUsersState> {
 
     final updatedUsers = [...state.users, user];
 
-    emit(
-      state.copyWith(
-        users: updatedUsers,
-        joinedUserId: user.uniqueId,
-      ),
-    );
+    emit(state.copyWith(users: updatedUsers, joinedUserId: user.uniqueId));
   }
 
   /// 处理用户离开事件

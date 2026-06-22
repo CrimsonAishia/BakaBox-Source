@@ -270,9 +270,7 @@ class SettingsPageMobile extends StatelessWidget {
                 : theme.colorScheme.outline.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
-          color: isSelected
-              ? AppColors.violet500.withValues(alpha: 0.1)
-              : null,
+          color: isSelected ? AppColors.violet500.withValues(alpha: 0.1) : null,
         ),
         child: Row(
           children: [
@@ -306,11 +304,7 @@ class SettingsPageMobile extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Icon(
-                MdiIcons.checkCircle,
-                color: AppColors.violet500,
-                size: 20,
-              ),
+              Icon(MdiIcons.checkCircle, color: AppColors.violet500, size: 20),
           ],
         ),
       ),

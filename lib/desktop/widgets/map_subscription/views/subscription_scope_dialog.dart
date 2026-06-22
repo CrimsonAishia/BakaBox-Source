@@ -452,9 +452,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                       '暂无可用分类',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                   )
@@ -552,9 +550,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                           : '${_globalCategories.length} 个分类',
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -660,9 +656,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                               : FontWeight.normal,
                           color: isSelected
                               ? AppColors.indigo500
-                              : (isDark
-                                    ? Colors.white
-                                    : AppColors.gray800),
+                              : (isDark ? Colors.white : AppColors.gray800),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -819,9 +813,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         icon: Icon(
                           Icons.close_rounded,
                           size: 14,
-                          color: isDark
-                              ? Colors.white38
-                              : AppColors.gray400,
+                          color: isDark ? Colors.white38 : AppColors.gray400,
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -1107,9 +1099,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 width: 16,
                 height: 16,
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.indigo500
-                      : Colors.transparent,
+                  color: isSelected ? AppColors.indigo500 : Colors.transparent,
                   borderRadius: BorderRadius.circular(3),
                   border: Border.all(
                     color: isSelected
@@ -1172,9 +1162,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                       address,
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1229,9 +1217,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               Navigator.of(context).pop();
             },
             style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? Colors.white54
-                  : AppColors.gray500,
+              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text('取消'),

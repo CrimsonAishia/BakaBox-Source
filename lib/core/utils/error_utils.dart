@@ -116,8 +116,7 @@ class ErrorUtils {
       return e.code == 429;
     }
     final errorStr = e.toString();
-    return errorStr.contains('429') ||
-        errorStr.contains('Too Many Requests');
+    return errorStr.contains('429') || errorStr.contains('Too Many Requests');
   }
 
   /// 判断是否为资源不存在（404）
@@ -126,8 +125,7 @@ class ErrorUtils {
       return e.code == 404;
     }
     final errorStr = e.toString();
-    return errorStr.contains('404') ||
-        errorStr.contains('Not Found');
+    return errorStr.contains('404') || errorStr.contains('Not Found');
   }
 
   /// 判断是否为权限不足（403）
@@ -136,8 +134,7 @@ class ErrorUtils {
       return e.code == 403;
     }
     final errorStr = e.toString();
-    return errorStr.contains('403') ||
-        errorStr.contains('Forbidden');
+    return errorStr.contains('403') || errorStr.contains('Forbidden');
   }
 
   /// 判断是否为数据冲突（409）
@@ -146,8 +143,7 @@ class ErrorUtils {
       return e.code == 409;
     }
     final errorStr = e.toString();
-    return errorStr.contains('409') ||
-        errorStr.contains('Conflict');
+    return errorStr.contains('409') || errorStr.contains('Conflict');
   }
 
   /// 判断是否为服务端错误（5xx）

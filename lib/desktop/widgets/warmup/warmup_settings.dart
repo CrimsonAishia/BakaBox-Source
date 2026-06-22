@@ -188,9 +188,7 @@ class _WarmupSettingsState extends State<WarmupSettings> {
         ),
         const SizedBox(height: 8),
         Text(
-          isSingleValue
-              ? '无法获取服务器最大人数，暖服人数限制为 1 人'
-              : '有效人数 = 服务器人数 + 暖服人数',
+          isSingleValue ? '无法获取服务器最大人数，暖服人数限制为 1 人' : '有效人数 = 服务器人数 + 暖服人数',
           style: TextStyle(
             fontSize: 12,
             color: isSingleValue
@@ -235,9 +233,7 @@ class _WarmupSettingsState extends State<WarmupSettings> {
         Switch(
           value: widget.state.config.showFloatingWindow,
           onChanged: (value) {
-            context.read<WarmupBloc>().add(
-              WarmupSetShowFloatingWindow(value),
-            );
+            context.read<WarmupBloc>().add(WarmupSetShowFloatingWindow(value));
           },
         ),
       ],

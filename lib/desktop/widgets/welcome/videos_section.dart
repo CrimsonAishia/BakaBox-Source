@@ -119,9 +119,7 @@ class _VideosSectionState extends State<VideosSection> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.slate800,
+                          color: isDark ? Colors.white : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),

@@ -22,7 +22,12 @@ class QueueUserAvatar extends StatelessWidget {
   /// 是否是暖服
   final bool isWarmup;
 
-  const QueueUserAvatar({super.key, required this.user, this.size = 36, this.isWarmup = false});
+  const QueueUserAvatar({
+    super.key,
+    required this.user,
+    this.size = 36,
+    this.isWarmup = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +109,11 @@ class _QueueUserTooltip extends StatelessWidget {
   final Widget child;
   final bool isWarmup;
 
-  const _QueueUserTooltip({required this.user, required this.child, this.isWarmup = false});
+  const _QueueUserTooltip({
+    required this.user,
+    required this.child,
+    this.isWarmup = false,
+  });
 
   String _formatDuration(Duration d) {
     final h = d.inHours;

@@ -57,9 +57,7 @@ class MapHistoryDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.slate900
-                    : AppColors.slate50,
+                color: isDark ? AppColors.slate900 : AppColors.slate50,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),
@@ -73,11 +71,7 @@ class MapHistoryDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    MdiIcons.history,
-                    color: AppColors.primary,
-                    size: 28,
-                  ),
+                  Icon(MdiIcons.history, color: AppColors.primary, size: 28),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

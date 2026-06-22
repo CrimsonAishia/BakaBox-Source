@@ -303,49 +303,103 @@ class SpellCardMobile extends StatelessWidget {
     }
 
     if (spellCard.speed != null) {
-      statItems.add(_buildStatItem(Icons.speed, '弹幕初速',
+      statItems.add(
+        _buildStatItem(
+          Icons.speed,
+          '弹幕初速',
           _formatNumber(spellCard.speed!),
-          CharacterGalleryTheme.getSpeedColor(context), isDark));
+          CharacterGalleryTheme.getSpeedColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.count != null) {
-      statItems.add(_buildStatItem(Icons.scatter_plot, '弹幕数量',
+      statItems.add(
+        _buildStatItem(
+          Icons.scatter_plot,
+          '弹幕数量',
           spellCard.count!.toString(),
-          CharacterGalleryTheme.getCountColor(context), isDark));
+          CharacterGalleryTheme.getCountColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.angle != null) {
-      statItems.add(_buildStatItem(Icons.architecture, '散射角度',
+      statItems.add(
+        _buildStatItem(
+          Icons.architecture,
+          '散射角度',
           '${_formatNumber(spellCard.angle!)}°',
-          CharacterGalleryTheme.getAngleColor(context), isDark));
+          CharacterGalleryTheme.getAngleColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.puncture != null) {
-      statItems.add(_buildStatItem(Icons.swap_horiz, '穿刺次数',
+      statItems.add(
+        _buildStatItem(
+          Icons.swap_horiz,
+          '穿刺次数',
           spellCard.puncture!.toString(),
-          CharacterGalleryTheme.getPunctureColor(context), isDark));
+          CharacterGalleryTheme.getPunctureColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.bounce != null) {
-      statItems.add(_buildStatItem(Icons.replay, '反弹次数',
+      statItems.add(
+        _buildStatItem(
+          Icons.replay,
+          '反弹次数',
           spellCard.bounce!.toString(),
-          CharacterGalleryTheme.getBounceColor(context), isDark));
+          CharacterGalleryTheme.getBounceColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.explode != null) {
-      statItems.add(_buildStatItem(Icons.brightness_5, '影响范围',
+      statItems.add(
+        _buildStatItem(
+          Icons.brightness_5,
+          '影响范围',
           _formatNumber(spellCard.explode!),
-          CharacterGalleryTheme.getExplodeColor(context), isDark));
+          CharacterGalleryTheme.getExplodeColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.holdTime != null) {
-      statItems.add(_buildStatItem(Icons.hourglass_bottom, '持续时间',
+      statItems.add(
+        _buildStatItem(
+          Icons.hourglass_bottom,
+          '持续时间',
           '${_formatNumber(spellCard.holdTime!)}s',
-          CharacterGalleryTheme.getHoldTimeColor(context), isDark));
+          CharacterGalleryTheme.getHoldTimeColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.trackSpeed != null) {
-      statItems.add(_buildStatItem(Icons.gps_fixed, '追踪转向',
+      statItems.add(
+        _buildStatItem(
+          Icons.gps_fixed,
+          '追踪转向',
           _formatNumber(spellCard.trackSpeed!),
-          CharacterGalleryTheme.getTrackSpeedColor(context), isDark));
+          CharacterGalleryTheme.getTrackSpeedColor(context),
+          isDark,
+        ),
+      );
     }
     if (spellCard.customCd != null) {
-      statItems.add(_buildStatItem(Icons.settings, '内置CD',
+      statItems.add(
+        _buildStatItem(
+          Icons.settings,
+          '内置CD',
           '${_formatNumber(spellCard.customCd!)}s',
-          CharacterGalleryTheme.getCustomCdColor(context), isDark));
+          CharacterGalleryTheme.getCustomCdColor(context),
+          isDark,
+        ),
+      );
     }
 
     return Wrap(spacing: 12, runSpacing: 6, children: statItems);

@@ -374,10 +374,12 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// Tag popover 跟随层（卡片左/右侧弹出，带指向卡片的箭头）
   Widget _buildTagPopoverFollower() {
     final tags = widget.server.mapInfo?.tags ?? const [];
-    final followerAnchor =
-        _showPopoverOnRight ? Alignment.centerLeft : Alignment.centerRight;
-    final targetAnchor =
-        _showPopoverOnRight ? Alignment.centerRight : Alignment.centerLeft;
+    final followerAnchor = _showPopoverOnRight
+        ? Alignment.centerLeft
+        : Alignment.centerRight;
+    final targetAnchor = _showPopoverOnRight
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
     // 箭头紧贴卡片，面板在箭头外侧；offset 用于面板与卡片间总间距
     final offset = _showPopoverOnRight
         ? const Offset(_kPopoverGap, 0)
@@ -523,7 +525,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             fontSize: 12,
             fontWeight: FontWeight.w600,
             shadows: [
-              Shadow(color: Colors.black54, blurRadius: 1, offset: Offset(1, 1)),
+              Shadow(
+                color: Colors.black54,
+                blurRadius: 1,
+                offset: Offset(1, 1),
+              ),
             ],
           ),
         ),
@@ -1160,7 +1166,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     if (isCustomServer)
                       _buildSecondaryBtn(
                         icon: MdiIcons.pencilOutline,
-                        tooltip: widget.server.serverItem.dataSourceMode == 'api' ? '编辑备注' : '编辑服务器',
+                        tooltip:
+                            widget.server.serverItem.dataSourceMode == 'api'
+                            ? '编辑备注'
+                            : '编辑服务器',
                         color: const Color(0xFF0EA5E9),
                         onPressed: () => _showEditIpDialog(context),
                       )
@@ -1224,7 +1233,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     // 离线状态也允许挤服（让用户重试），只在加载中 / 无地址 / 暖服中禁用
     if (isLoading || address == null || isWarming) return null;
     // 正在挤本服：点击打开挤服面板
-    if (isCurrentServerQueueing) return () => _openQueueDialog(context, address);
+    if (isCurrentServerQueueing) {
+      return () => _openQueueDialog(context, address);
+    }
     // 其他服务器正在挤服：提示忙碌
     if (isOtherServerQueueing) return () => _showQueueBusyTip(context);
     // 人已在本服内：不禁用按钮，打开挤服面板后由其内部弹窗确认（不强制拦截）
@@ -1247,7 +1258,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     // 离线状态也允许暖服，只在加载中 / 无地址 / 本服挤服中禁用
     if (isLoading || address == null || isCurrentServerQueueing) return null;
     // 正在暖本服：点击打开暖服面板
-    if (isCurrentServerWarming) return () => _openWarmupDialog(context, address);
+    if (isCurrentServerWarming) {
+      return () => _openWarmupDialog(context, address);
+    }
     // 其他服务器正在暖服 / 挤服：提示忙碌
     if (isOtherServerWarming) return () => _showWarmupBusyTip(context);
     if (isOtherServerQueueing) return () => _showQueueBusyTip(context);

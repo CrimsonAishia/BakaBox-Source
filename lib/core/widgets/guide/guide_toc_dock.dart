@@ -8,7 +8,8 @@ import 'guide_tokens.dart';
 
 /// 详情页右下浮动「目录」按钮 + 弹出式目录面板
 ///
-/// - 不常驻：默认仅显示 44×44 的圆角按钮。
+/// 设计参考：Notion / VS Code Outline / 语雀。
+/// - 不常驻：默认仅显示 44×44 的圆角按钮（与 [GuideInteractionDock] 同款）。
 /// - 点击按钮，从按钮位置向左上方展开半透明玻璃面板（260px 宽）。
 /// - 列表项按 h1/h2/h3 缩进 + 字号区分；当前阅读位置高亮（主色竖条 + 加粗）。
 /// - 点击 item 平滑滚动到对应 heading 并自动收起；按 Esc 收起。
@@ -60,16 +61,14 @@ class _GuideTocDockState extends State<GuideTocDock>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.5, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
-    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(1.5, 0), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
+    _opacityAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     widget.scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
@@ -194,8 +193,8 @@ class _GuideTocDockState extends State<GuideTocDock>
     final borderColor = isDark
         ? Colors.white.withValues(alpha: _hover || _open ? 0.18 : 0.10)
         : (_hover || _open
-            ? GuideTokens.borderLight
-            : GuideTokens.borderLight.withValues(alpha: 0.8));
+              ? GuideTokens.borderLight
+              : GuideTokens.borderLight.withValues(alpha: 0.8));
     final iconColor = (_hover || _open)
         ? theme.colorScheme.primary
         : GuideTokens.textSecondary(context);
@@ -274,7 +273,10 @@ class _GuideTocDockState extends State<GuideTocDock>
           followerAnchor: Alignment.bottomRight,
           // 与按钮顶部留 8px 间距
           offset: const Offset(0, -8),
-          child: _buildPanel(overlayCtx, Theme.of(overlayCtx).brightness == Brightness.dark),
+          child: _buildPanel(
+            overlayCtx,
+            Theme.of(overlayCtx).brightness == Brightness.dark,
+          ),
         ),
       ],
     );
@@ -343,13 +345,8 @@ class _GuideTocDockState extends State<GuideTocDock>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildPanelHeader(context, theme),
-                    Container(
-                      height: 1,
-                      color: GuideTokens.divider(context),
-                    ),
-                    Flexible(
-                      child: _buildPanelList(context, theme),
-                    ),
+                    Container(height: 1, color: GuideTokens.divider(context)),
+                    Flexible(child: _buildPanelList(context, theme)),
                   ],
                 ),
               ),
@@ -464,17 +461,19 @@ class _TocItemState extends State<_TocItem> {
       2 => 13.0,
       _ => 12.5,
     };
-    final activeWeight =
-        widget.heading.level == 1 ? FontWeight.w700 : FontWeight.w600;
-    final normalWeight =
-        widget.heading.level == 1 ? FontWeight.w600 : FontWeight.w500;
+    final activeWeight = widget.heading.level == 1
+        ? FontWeight.w700
+        : FontWeight.w600;
+    final normalWeight = widget.heading.level == 1
+        ? FontWeight.w600
+        : FontWeight.w500;
     final fontWeight = widget.isActive ? activeWeight : normalWeight;
 
     final color = widget.isActive
         ? primary
         : (_hover
-            ? GuideTokens.textPrimary(context)
-            : GuideTokens.textSecondary(context));
+              ? GuideTokens.textPrimary(context)
+              : GuideTokens.textSecondary(context));
 
     final bg = widget.isActive
         ? primary.withValues(alpha: 0.10)

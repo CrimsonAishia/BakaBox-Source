@@ -42,7 +42,6 @@ enum OperationStatus {
 /// 线程状态
 enum ThreadStatus { idle, requesting, success, failed }
 
-// ==================== 消息常量（统一管理所有消息）====================
 
 class _Messages {
   // 启动游戏
@@ -341,7 +340,6 @@ class StatusWindowService {
   /// 当前操作类型
   OperationType get currentType => _state.type;
 
-  // ==================== 公开方法 ====================
 
   /// 初始化服务（应用启动时调用）
   void initialize() {
@@ -434,9 +432,7 @@ class StatusWindowService {
           needManualLaunch: result.needManualLaunch,
         ),
       );
-      if (result.success &&
-          serverAddress != null &&
-          serverAddress.isNotEmpty) {
+      if (result.success && serverAddress != null && serverAddress.isNotEmpty) {
         _audioService.playQueueSuccessSound();
       }
       return result.success;
@@ -1236,11 +1232,7 @@ class StatusWindowService {
       ),
     );
 
-    _updateWindow(
-      state: 'paused',
-      message: '已停止暖服',
-      autoDismissSeconds: 1,
-    );
+    _updateWindow(state: 'paused', message: '已停止暖服', autoDismissSeconds: 1);
     _scheduleClose(seconds: 0);
 
     LogService.d('[StatusWindowService] 暖服已停止');
@@ -1292,8 +1284,7 @@ class StatusWindowService {
   /// - 开启：恢复为 [QueueConfig.threadCount] 个槽位
   void setMultiThreadEnabled(bool enabled) {
     if (_state.type != OperationType.queueing) return;
-    final newConfig =
-        _state.queueConfig.copyWith(multiThreadEnabled: enabled);
+    final newConfig = _state.queueConfig.copyWith(multiThreadEnabled: enabled);
     final newStatuses = List<ThreadStatus>.filled(
       newConfig.effectiveThreadCount,
       ThreadStatus.idle,
@@ -1434,7 +1425,6 @@ class StatusWindowService {
     await _fetchServerInfo(_state.serverAddress!);
   }
 
-  // ==================== 私有方法 ====================
 
   /// 更新状态
   void _updateState(OperationState newState) {
@@ -1517,8 +1507,9 @@ class StatusWindowService {
 
     // 守护回调发现已在游戏中、且本次挤服尚未触发过 connect 命令，
     // 说明用户点"开始挤"时人就已经在服务器里了，文案用"你已在服务器中"。
-    final alreadyInMessage =
-        !_isTriggeredConnection ? _Messages.alreadyInServer : null;
+    final alreadyInMessage = !_isTriggeredConnection
+        ? _Messages.alreadyInServer
+        : null;
 
     switch (event.location) {
       case GuardLocation.inTargetServer:
@@ -2031,7 +2022,9 @@ class StatusWindowService {
           onSignal();
           if (completer.isCompleted) return;
           if (serverFullGraceTimer != null) return; // 宽限已在进行
-          LogService.d('[StatusWindowService] [Observe] 收到 serverFull，进入宽限确认窗口');
+          LogService.d(
+            '[StatusWindowService] [Observe] 收到 serverFull，进入宽限确认窗口',
+          );
           void scheduleServerFullCheck() {
             serverFullGraceTimer = Timer(const Duration(seconds: 3), () {
               if (completer.isCompleted) return;
@@ -2392,21 +2385,23 @@ class StatusWindowService {
     }
 
     final stateObj = this.state;
-    final finalTargetPlayers = targetPlayers ??
+    final finalTargetPlayers =
+        targetPlayers ??
         (stateObj.type == OperationType.queueing
             ? stateObj.queueConfig.targetPlayers
             : stateObj.type == OperationType.warming
-                ? stateObj.warmupTargetPlayers
-                : null);
+            ? stateObj.warmupTargetPlayers
+            : null);
 
     final success = await _windowService.sendStateUpdate(
       _windowId!,
-      state: state ??
+      state:
+          state ??
           (stateObj.type == OperationType.queueing
               ? 'queueing'
               : stateObj.type == OperationType.warming
-                  ? 'warming'
-                  : 'connecting'),
+              ? 'warming'
+              : 'connecting'),
       message: message ?? stateObj.message,
       currentPlayers: currentPlayers ?? stateObj.serverInfo?.players,
       targetPlayers: finalTargetPlayers,
@@ -2420,8 +2415,12 @@ class StatusWindowService {
 
     // 如果发送失败且窗口已不在活跃列表中，清理 _windowId
     // 这样后续的 _showWindow 调用能正确创建新窗口
-    if (!success && _windowId != null && !_windowService.isWindowActive(_windowId!)) {
-      LogService.d('[StatusWindowService] Window $_windowId is no longer active, clearing reference');
+    if (!success &&
+        _windowId != null &&
+        !_windowService.isWindowActive(_windowId!)) {
+      LogService.d(
+        '[StatusWindowService] Window $_windowId is no longer active, clearing reference',
+      );
       _windowId = null;
     }
   }
@@ -2518,7 +2517,9 @@ class StatusWindowService {
     int threadId,
     String serverAddress,
   ) async {
-    if (!_isQueueRunning || _outcomeFinalized || !_activeThreadIds.contains(threadId)) {
+    if (!_isQueueRunning ||
+        _outcomeFinalized ||
+        !_activeThreadIds.contains(threadId)) {
       return;
     }
 
@@ -2621,7 +2622,6 @@ class StatusWindowService {
     return max(min(baseInterval, 1200), 350);
   }
 
-  // ==================== 窗口管理 ====================
 
   /// 显示窗口
   Future<void> _showWindow({

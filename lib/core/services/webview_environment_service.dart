@@ -180,10 +180,11 @@ class WebViewEnvironmentService {
   /// 递归复制目录内容
   static Future<void> _copyDirectory(Directory source, Directory dest) async {
     final sep = Platform.pathSeparator;
-    await for (final entity in source.list(recursive: false, followLinks: false)) {
-      final name = entity.uri.pathSegments
-          .where((s) => s.isNotEmpty)
-          .last;
+    await for (final entity in source.list(
+      recursive: false,
+      followLinks: false,
+    )) {
+      final name = entity.uri.pathSegments.where((s) => s.isNotEmpty).last;
       final newPath = '${dest.path}$sep$name';
       if (entity is Directory) {
         final newDir = Directory(newPath);

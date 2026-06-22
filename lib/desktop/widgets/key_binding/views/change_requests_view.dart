@@ -220,11 +220,8 @@ class _ChangeRequestCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        (isEdit
-                                ? AppColors.violet500
-                                : AppColors.red500)
-                            .withValues(alpha: 0.1),
+                    color: (isEdit ? AppColors.violet500 : AppColors.red500)
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Row(
@@ -235,9 +232,7 @@ class _ChangeRequestCard extends StatelessWidget {
                             ? MdiIcons.pencilOutline
                             : MdiIcons.deleteOutline,
                         size: 12,
-                        color: isEdit
-                            ? AppColors.violet500
-                            : AppColors.red500,
+                        color: isEdit ? AppColors.violet500 : AppColors.red500,
                       ),
                       const SizedBox(width: 4),
                       Text(

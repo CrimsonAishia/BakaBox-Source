@@ -31,10 +31,24 @@ class ColorPickerButton extends StatefulWidget {
 class _ColorPickerButtonState extends State<ColorPickerButton> {
   /// 调色板（17 色 + 默认）。覆盖常见标注色：黑/白/灰系 + 红橙黄绿青蓝紫粉。
   static const List<Color> _palette = [
-    Color(0xFFFFFFFF), AppColors.gray200, AppColors.slate400, AppColors.gray800, Color(0xFF000000),
-    AppColors.red500, Color(0xFFF97316), AppColors.amber500, Color(0xFFEAB308), Color(0xFF84CC16),
-    AppColors.green500, Color(0xFF14B8A6), Color(0xFF06B6D4), AppColors.blue500, AppColors.indigo500,
-    AppColors.violet500, Color(0xFFD946EF), Color(0xFFEC4899),
+    Color(0xFFFFFFFF),
+    AppColors.gray200,
+    AppColors.slate400,
+    AppColors.gray800,
+    Color(0xFF000000),
+    AppColors.red500,
+    Color(0xFFF97316),
+    AppColors.amber500,
+    Color(0xFFEAB308),
+    Color(0xFF84CC16),
+    AppColors.green500,
+    Color(0xFF14B8A6),
+    Color(0xFF06B6D4),
+    AppColors.blue500,
+    AppColors.indigo500,
+    AppColors.violet500,
+    Color(0xFFD946EF),
+    Color(0xFFEC4899),
   ];
 
   String _hex(Color c) {
@@ -74,10 +88,14 @@ class _ColorPickerButtonState extends State<ColorPickerButton> {
 
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
-        button.localToGlobal(button.size.bottomLeft(Offset.zero),
-            ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero),
-            ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomLeft(Offset.zero),
+          ancestor: overlay,
+        ),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
       Offset.zero & overlay.size,
     );
@@ -140,9 +158,7 @@ class _PaletteContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = isDark
-        ? AppColors.slate400
-        : AppColors.slate500;
+    final muted = isDark ? AppColors.slate400 : AppColors.slate500;
 
     return SizedBox(
       width: 210,
@@ -227,8 +243,8 @@ class _SwatchState extends State<_Swatch> {
               color: _hover
                   ? AppColors.primary
                   : (widget.isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : AppColors.gray300),
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : AppColors.gray300),
               width: _hover ? 1.6 : 1,
             ),
             boxShadow: _hover
@@ -263,9 +279,7 @@ class _ClearButtonState extends State<_ClearButton> {
   Widget build(BuildContext context) {
     final color = _hover
         ? AppColors.primary
-        : (widget.isDark
-            ? AppColors.slate400
-            : AppColors.slate500);
+        : (widget.isDark ? AppColors.slate400 : AppColors.slate500);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -283,8 +297,7 @@ class _ClearButtonState extends State<_ClearButton> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.format_color_reset_rounded,
-                    size: 12, color: color),
+                Icon(Icons.format_color_reset_rounded, size: 12, color: color),
                 const SizedBox(width: 4),
                 Text(
                   '清除',

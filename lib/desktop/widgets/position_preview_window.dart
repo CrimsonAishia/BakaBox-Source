@@ -149,9 +149,7 @@ class _PositionPreviewWindowAppState extends State<PositionPreviewWindowApp> {
     }
 
     final isNotification = widget.config.previewType == 'notification';
-    final color = isNotification
-        ? AppColors.primary
-        : AppColors.orange;
+    final color = isNotification ? AppColors.primary : AppColors.orange;
     final icon = isNotification ? MdiIcons.bellOutline : MdiIcons.gamepad;
 
     return MaterialApp(

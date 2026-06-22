@@ -37,10 +37,8 @@ class ReportDialog extends StatefulWidget {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => ReportDialog(
-        targetId: targetId,
-        targetType: targetType,
-      ),
+      builder: (context) =>
+          ReportDialog(targetId: targetId, targetType: targetType),
     );
   }
 
@@ -131,8 +129,7 @@ class _ReportDialogState extends State<ReportDialog> {
   Future<void> _submit() async {
     if (!_canSubmit) return;
 
-    if (_isDescriptionRequired &&
-        _descriptionController.text.trim().isEmpty) {
+    if (_isDescriptionRequired && _descriptionController.text.trim().isEmpty) {
       ToastUtils.showWarning(context, '选择「其他」时请填写具体说明');
       return;
     }
@@ -178,8 +175,8 @@ class _ReportDialogState extends State<ReportDialog> {
     final theme = Theme.of(context);
     final bgColor = GuideTokens.dialogBg(context);
     final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
-    final secondaryTextColor = theme.textTheme.bodySmall?.color ??
-        GuideTokens.textSecondary(context);
+    final secondaryTextColor =
+        theme.textTheme.bodySmall?.color ?? GuideTokens.textSecondary(context);
 
     return Dialog(
       backgroundColor: bgColor,
@@ -205,8 +202,9 @@ class _ReportDialogState extends State<ReportDialog> {
                 ),
                 IconButton(
                   icon: Icon(Icons.close, color: secondaryTextColor),
-                  onPressed:
-                      _isSubmitting ? null : () => Navigator.of(context).pop(),
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => Navigator.of(context).pop(),
                   splashRadius: 20,
                 ),
               ],
@@ -239,11 +237,10 @@ class _ReportDialogState extends State<ReportDialog> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: ReportReason.values
-                            .map((reason) => _buildReasonTile(
-                                  reason,
-                                  textColor,
-                                  theme,
-                                ))
+                            .map(
+                              (reason) =>
+                                  _buildReasonTile(reason, textColor, theme),
+                            )
                             .toList(),
                       ),
                     ),
@@ -312,8 +309,9 @@ class _ReportDialogState extends State<ReportDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.4),
+                  disabledBackgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.4,
+                  ),
                   disabledForegroundColor: Colors.white60,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -362,10 +360,9 @@ class _ReportDialogState extends State<ReportDialog> {
       runSpacing: 8,
       children: [
         // 已上传的图片预览
-        ..._evidenceImages.asMap().entries.map((entry) => _buildImageThumb(
-              entry.key,
-              isDark,
-            )),
+        ..._evidenceImages.asMap().entries.map(
+          (entry) => _buildImageThumb(entry.key, isDark),
+        ),
         // 上传按钮
         if (_evidenceImages.length < _maxImages)
           ImageUploadButton(
@@ -384,10 +381,10 @@ class _ReportDialogState extends State<ReportDialog> {
           height: 64,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: isDark ? GuideTokens.fallbackBgDark : GuideTokens.fallbackBgLight,
-            border: Border.all(
-              color: GuideTokens.border(context),
-            ),
+            color: isDark
+                ? GuideTokens.fallbackBgDark
+                : GuideTokens.fallbackBgLight,
+            border: Border.all(color: GuideTokens.border(context)),
           ),
           child: const Center(
             child: Icon(Icons.image, size: 28, color: GuideTokens.fallbackIcon),

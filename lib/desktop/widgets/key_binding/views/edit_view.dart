@@ -290,17 +290,11 @@ class _EditViewState extends State<EditView> {
       decoration: BoxDecoration(
         color: AppColors.red500.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.red500.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.red500.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Icon(
-            MdiIcons.alertCircleOutline,
-            size: 16,
-            color: AppColors.red500,
-          ),
+          Icon(MdiIcons.alertCircleOutline, size: 16, color: AppColors.red500),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

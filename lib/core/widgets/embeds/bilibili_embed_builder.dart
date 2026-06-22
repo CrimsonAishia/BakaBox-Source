@@ -25,7 +25,7 @@ const String bilibiliEmbedType = 'bilibili';
 /// ```
 class BilibiliBlockEmbed extends CustomBlockEmbed {
   BilibiliBlockEmbed(Map<String, dynamic> data)
-      : super(bilibiliEmbedType, jsonEncode(data));
+    : super(bilibiliEmbedType, jsonEncode(data));
 
   /// 从 [VideoEmbed] 创建
   factory BilibiliBlockEmbed.fromVideoEmbed(VideoEmbed embed) {
@@ -175,11 +175,9 @@ class _BilibiliEmbedCardState extends State<_BilibiliEmbedCard> {
                     // 播放图标
                     _buildPlayIcon(),
                     // 时长徽标
-                    if (widget.durationSec > 0)
-                      _buildDurationBadge(),
+                    if (widget.durationSec > 0) _buildDurationBadge(),
                     // 标题（底部）
-                    if (widget.title.isNotEmpty)
-                      _buildTitle(),
+                    if (widget.title.isNotEmpty) _buildTitle(),
                     // B站标识
                     _buildBilibiliLogo(),
                   ],
@@ -195,7 +193,9 @@ class _BilibiliEmbedCardState extends State<_BilibiliEmbedCard> {
   Widget _buildCover(bool isDark) {
     if (widget.cover.isEmpty) {
       return Container(
-        color: isDark ? GuideTokens.fallbackBgDark : GuideTokens.fallbackBgLight,
+        color: isDark
+            ? GuideTokens.fallbackBgDark
+            : GuideTokens.fallbackBgLight,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -342,9 +342,7 @@ class _BilibiliEmbedCardState extends State<_BilibiliEmbedCard> {
           color: Colors.white,
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          shadows: [
-            Shadow(color: Colors.black, blurRadius: 4),
-          ],
+          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -394,7 +392,9 @@ class _BilibiliEmbedFallback extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? GuideTokens.fallbackBgDark : GuideTokens.bilibiliFallbackLight,
+        color: isDark
+            ? GuideTokens.fallbackBgDark
+            : GuideTokens.bilibiliFallbackLight,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark
@@ -407,15 +407,18 @@ class _BilibiliEmbedFallback extends StatelessWidget {
           Icon(
             Icons.videocam_off_outlined,
             size: 20,
-            color: isDark ? GuideTokens.textTertiaryDark : GuideTokens.textSecondaryLight,
+            color: isDark
+                ? GuideTokens.textTertiaryDark
+                : GuideTokens.textSecondaryLight,
           ),
           const SizedBox(width: 8),
           Text(
             '视频加载失败',
             style: TextStyle(
               fontSize: 13,
-              color:
-                  isDark ? GuideTokens.textTertiaryDark : GuideTokens.textSecondaryLight,
+              color: isDark
+                  ? GuideTokens.textTertiaryDark
+                  : GuideTokens.textSecondaryLight,
             ),
           ),
         ],

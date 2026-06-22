@@ -25,7 +25,14 @@ class CrashReportFetch extends CrashReportEvent {
   });
 
   @override
-  List<Object?> get props => [severity, category, sort, keyword, signature, clearSignature];
+  List<Object?> get props => [
+    severity,
+    category,
+    sort,
+    keyword,
+    signature,
+    clearSignature,
+  ];
 }
 
 /// 拉取我的列表（本地扫描 .mdmp 文件）

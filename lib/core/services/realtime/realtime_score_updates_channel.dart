@@ -39,8 +39,9 @@ class RealtimeScoreUpdatesChannel {
 
   /// 最近一次 snapshot（按地址索引），就地更新，对外只暴露不可变视图。
   final Map<String, ServerScore> _latestSnapshot = {};
-  late final Map<String, ServerScore> _latestSnapshotView =
-      UnmodifiableMapView(_latestSnapshot);
+  late final Map<String, ServerScore> _latestSnapshotView = UnmodifiableMapView(
+    _latestSnapshot,
+  );
 
   /// 同一 event-loop turn 内合并多条 updated，turn 末尾一次性下发。
   final Map<String, ServerScore> _pendingUpdates = {};
@@ -69,7 +70,10 @@ class RealtimeScoreUpdatesChannel {
   ///
   /// 用于用户手动刷新：强制纠正本地可能停留的旧比分。频率限制由调用方负责。
   void forceResnapshot() {
-    _service.requestResnapshot(RealtimeChannels.scoreUpdates, emitSyncing: true);
+    _service.requestResnapshot(
+      RealtimeChannels.scoreUpdates,
+      emitSyncing: true,
+    );
   }
 
   void unsubscribe() {

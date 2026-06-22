@@ -25,11 +25,8 @@ enum CrashReportSeverity {
     CrashReportSeverity.low => 'low',
   };
 
-  static CrashReportSeverity parse(String? raw) =>
-      CrashReportSeverity.values.firstWhere(
-        (e) => e.value == raw,
-        orElse: () => CrashReportSeverity.low,
-      );
+  static CrashReportSeverity parse(String? raw) => CrashReportSeverity.values
+      .firstWhere((e) => e.value == raw, orElse: () => CrashReportSeverity.low);
 }
 
 /// 嫌疑资源（详情接口返回）
@@ -80,7 +77,6 @@ class CrashReportThirdParty extends Equatable {
   List<Object?> get props => [name, label, advice, severity];
 }
 
-
 /// 列表项（精简，不含用户维度）
 @JsonSerializable()
 class CrashReportListItem extends Equatable {
@@ -123,8 +119,7 @@ class CrashReportListItem extends Equatable {
     required this.createdAt,
   });
 
-  CrashReportSeverity get severityEnum =>
-      CrashReportSeverity.parse(severity);
+  CrashReportSeverity get severityEnum => CrashReportSeverity.parse(severity);
 
   factory CrashReportListItem.fromJson(Map<String, dynamic> json) =>
       _$CrashReportListItemFromJson(json);
@@ -168,7 +163,6 @@ class CrashReportListResponse extends Equatable {
   @override
   List<Object?> get props => [total, items];
 }
-
 
 /// 详情（同样不含用户维度）
 @JsonSerializable()
@@ -228,8 +222,7 @@ class CrashReportDetail extends Equatable {
     required this.createdAt,
   });
 
-  CrashReportSeverity get severityEnum =>
-      CrashReportSeverity.parse(severity);
+  CrashReportSeverity get severityEnum => CrashReportSeverity.parse(severity);
 
   factory CrashReportDetail.fromJson(Map<String, dynamic> json) =>
       _$CrashReportDetailFromJson(json);
@@ -262,7 +255,6 @@ class CrashReportDetail extends Equatable {
     createdAt,
   ];
 }
-
 
 /// 社区聚合面板
 @JsonSerializable()
@@ -303,10 +295,7 @@ class CrashReportTopModule extends Equatable {
   @JsonKey(defaultValue: 0)
   final int count;
 
-  const CrashReportTopModule({
-    required this.module,
-    required this.count,
-  });
+  const CrashReportTopModule({required this.module, required this.count});
 
   factory CrashReportTopModule.fromJson(Map<String, dynamic> json) =>
       _$CrashReportTopModuleFromJson(json);
@@ -323,10 +312,7 @@ class CrashReportTopThirdParty extends Equatable {
   @JsonKey(defaultValue: 0)
   final int count;
 
-  const CrashReportTopThirdParty({
-    required this.name,
-    required this.count,
-  });
+  const CrashReportTopThirdParty({required this.name, required this.count});
 
   factory CrashReportTopThirdParty.fromJson(Map<String, dynamic> json) =>
       _$CrashReportTopThirdPartyFromJson(json);

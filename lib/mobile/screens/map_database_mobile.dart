@@ -33,9 +33,7 @@ class _MapDatabaseView extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.slate50,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.slate50,
       appBar: AppBar(
         backgroundColor: isDark ? AppColors.slate800 : Colors.white,
         elevation: 0,

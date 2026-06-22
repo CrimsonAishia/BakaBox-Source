@@ -198,19 +198,19 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                         ),
                       )
                     : isWeakNetwork
-                        ? const Icon(
-                            Icons.refresh,
-                            size: 18,
-                            color: Color(0xFFF0A020),
-                          )
-                        : Text(
-                            '$_remaining',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF18A058),
-                            ),
-                          ),
+                    ? const Icon(
+                        Icons.refresh,
+                        size: 18,
+                        color: Color(0xFFF0A020),
+                      )
+                    : Text(
+                        '$_remaining',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF18A058),
+                        ),
+                      ),
               ],
             ),
           ),

@@ -442,8 +442,9 @@ class ObsServerService {
     MapData? cachedMapData;
     if (_serverBloc != null) {
       final state = _serverBloc!.state;
-      final listServer = _getConnectedServer(state.servers, entry.serverAddress)
-          ?? _getConnectedServer(state.servers, _currentServerAddress!);
+      final listServer =
+          _getConnectedServer(state.servers, entry.serverAddress) ??
+          _getConnectedServer(state.servers, _currentServerAddress!);
       final mapInfo = listServer?.mapInfo;
       if (mapInfo != null &&
           mapInfo.mapLabel.isNotEmpty &&

@@ -24,10 +24,7 @@ class HoverInfoEmbedBuilder extends EmbedBuilder {
 
   @override
   WidgetSpan buildWidgetSpan(Widget widget) {
-    return WidgetSpan(
-      alignment: PlaceholderAlignment.middle,
-      child: widget,
-    );
+    return WidgetSpan(alignment: PlaceholderAlignment.middle, child: widget);
   }
 
   @override
@@ -144,10 +141,12 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
   }
 
   Widget _buildCardFollower() {
-    final followerAnchor =
-        _showAbove ? Alignment.bottomCenter : Alignment.topCenter;
-    final targetAnchor =
-        _showAbove ? Alignment.topCenter : Alignment.bottomCenter;
+    final followerAnchor = _showAbove
+        ? Alignment.bottomCenter
+        : Alignment.topCenter;
+    final targetAnchor = _showAbove
+        ? Alignment.topCenter
+        : Alignment.bottomCenter;
 
     // 用 Stack 顶层放置 follower，follower 通过 LayerLink 跟随徽章定位
     return Stack(

@@ -81,15 +81,15 @@ class GuideCommentState extends Equatable {
 
   @override
   List<Object?> get props => [
-        comments,
-        replyMaps,
-        sort,
-        total,
-        hasMore,
-        posting,
-        error,
-        status,
-        currentPage,
-        blockedUserIds,
-      ];
+    comments,
+    replyMaps,
+    sort,
+    total,
+    hasMore,
+    posting,
+    error,
+    status,
+    currentPage,
+    blockedUserIds,
+  ];
 }

@@ -114,15 +114,9 @@ class _EditServerDialogState extends State<EditServerDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : AppColors.gray800;
-    final secondaryTextColor = isDark
-        ? Colors.white54
-        : AppColors.gray500;
-    final inputBgColor = isDark
-        ? AppColors.slate700
-        : AppColors.gray50;
-    final borderColor = isDark
-        ? AppColors.slate600
-        : AppColors.gray200;
+    final secondaryTextColor = isDark ? Colors.white54 : AppColors.gray500;
+    final inputBgColor = isDark ? AppColors.slate700 : AppColors.gray50;
+    final borderColor = isDark ? AppColors.slate600 : AppColors.gray200;
 
     return AlertDialog(
       title: const Text('编辑服务器'),

@@ -84,7 +84,6 @@ class _WarmupWindowState extends State<WarmupWindow> {
 
   @override
   void dispose() {
-
     // 标记挤服窗口已关闭
     _statusService.setWarmupWindowOpen(false);
 
@@ -228,6 +227,7 @@ class _WarmupWindowContentState extends State<_WarmupWindowContent>
       onClose: () => _handleClose(context, state),
     );
   }
+
   /// 构建内容区域
   Widget _buildContent(BuildContext context, WarmupBlocState state) {
     return Padding(

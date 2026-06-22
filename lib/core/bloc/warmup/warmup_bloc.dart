@@ -71,7 +71,9 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     final savedConfig = await _loadSavedConfig();
 
     // 如果已经初始化过，且是同一个服务器，保留已有状态
-    if (state.isInitialized && state.serverAddress == event.serverAddress && state.status != WarmupStatus.idle) {
+    if (state.isInitialized &&
+        state.serverAddress == event.serverAddress &&
+        state.status != WarmupStatus.idle) {
       LogService.d('[WarmupBloc] 继续已有的暖服任务');
       return;
     }
@@ -153,7 +155,8 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
   }
 
   /// 加载保存的配置
-  Future<WarmupConfig> _loadSavedConfig() async {    try {
+  Future<WarmupConfig> _loadSavedConfig() async {
+    try {
       final targetPlayers = StorageUtils.getInt(_keyWarmupTargetPlayers) ?? 20;
       final showFloatingWindow = StorageUtils.getBool(
         _keyWarmupShowFloatingWindow,
@@ -311,7 +314,10 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
   }
 
   /// 开始暖服
-  Future<void> _onStart(WarmupStart event, Emitter<WarmupBlocState> emit) async {
+  Future<void> _onStart(
+    WarmupStart event,
+    Emitter<WarmupBlocState> emit,
+  ) async {
     LogService.d('[WarmupBloc] 开始暖服');
 
     // 检查互斥：是否有挤服正在进行
@@ -349,11 +355,13 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
       return;
     }
 
-    emit(state.copyWith(
-      status: WarmupStatus.warming,
-      needManualLaunch: false,
-      error: null,
-    ));
+    emit(
+      state.copyWith(
+        status: WarmupStatus.warming,
+        needManualLaunch: false,
+        error: null,
+      ),
+    );
 
     // 开始后立即检查一次是否已达标（例如服务器本身人数已够）
     _checkTargetReached();
@@ -364,10 +372,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     LogService.d('[WarmupBloc] 停止暖服');
     _stopCountdown();
     _statusService.pauseWarmup();
-    emit(state.copyWith(
-      status: WarmupStatus.idle,
-      countdownSeconds: 60,
-    ));
+    emit(state.copyWith(status: WarmupStatus.idle, countdownSeconds: 60));
   }
 
   /// 设置目标人数
@@ -428,10 +433,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     _statusService.pauseWarmup();
 
     // 停止暖服回到空闲状态
-    emit(state.copyWith(
-      status: WarmupStatus.idle,
-      countdownSeconds: 60,
-    ));
+    emit(state.copyWith(status: WarmupStatus.idle, countdownSeconds: 60));
   }
 
   /// 启动游戏加入服务器
@@ -449,10 +451,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     usersBloc.add(const WarmupUsersLeave());
     usersBloc.add(const WarmupUsersDisconnect());
 
-    emit(state.copyWith(
-      status: WarmupStatus.launching,
-      isLaunchingGame: true,
-    ));
+    emit(state.copyWith(status: WarmupStatus.launching, isLaunchingGame: true));
 
     // 关键修复：先结束暖服操作，把 StatusWindowService 的操作类型重置为 none。
     // 否则在游戏未启动时，connectToServer 会回落到 launchGame，
@@ -473,19 +472,20 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     );
 
     if (success) {
-      emit(state.copyWith(
-        status: WarmupStatus.success,
-        isLaunchingGame: false,
-      ));
+      emit(
+        state.copyWith(status: WarmupStatus.success, isLaunchingGame: false),
+      );
     } else {
       final currentState = _statusService.state;
-      emit(state.copyWith(
-        status: WarmupStatus.warming,
-        isLaunchingGame: false,
-        error: currentState.message ?? '连接失败',
-        needManualLaunch: currentState.needManualLaunch,
-        countdownSeconds: 60,
-      ));
+      emit(
+        state.copyWith(
+          status: WarmupStatus.warming,
+          isLaunchingGame: false,
+          error: currentState.message ?? '连接失败',
+          needManualLaunch: currentState.needManualLaunch,
+          countdownSeconds: 60,
+        ),
+      );
     }
   }
 
@@ -568,17 +568,15 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     // （达标检查有 `status == warming` 前置，idle 后不会再触发断开），
     // 表现为服务器人数已超目标、该用户本不应再暖服，连接却一直挂着。
     // 断开事件是幂等的：若来源本身已走 pauseWarmup（如悬浮卡片"停止"）则为无害的重复请求。
-    if (state.status == WarmupStatus.warming &&
-        status == WarmupStatus.idle) {
+    if (state.status == WarmupStatus.warming && status == WarmupStatus.idle) {
       final usersBloc = WarmupUsersBloc.instance;
       usersBloc.add(const WarmupUsersLeave());
       usersBloc.add(const WarmupUsersDisconnect());
     }
 
-    emit(state.copyWith(
-      isGameRunning: serviceState.isGameRunning,
-      status: status,
-    ));
+    emit(
+      state.copyWith(isGameRunning: serviceState.isGameRunning, status: status),
+    );
   }
 
   /// 检查是否达到目标人数 → 启动倒计时
@@ -598,16 +596,18 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
   ) {
     if (state.status != WarmupStatus.warming) return;
 
-    emit(state.copyWith(
-      status: WarmupStatus.countdown,
-      countdownSeconds: 60,
-      // 清除上一轮启动失败遗留的标志，避免 needManualLaunch 粘滞导致
-      // 全局监听器（listenWhen 中 `if (current.needManualLaunch) return false`）
-      // 永久失效，使后续达标无法再弹出倒计时。
-      needManualLaunch: false,
-      error: null,
-    ));
-    
+    emit(
+      state.copyWith(
+        status: WarmupStatus.countdown,
+        countdownSeconds: 60,
+        // 清除上一轮启动失败遗留的标志，避免 needManualLaunch 粘滞导致
+        // 全局监听器（listenWhen 中 `if (current.needManualLaunch) return false`）
+        // 永久失效，使后续达标无法再弹出倒计时。
+        needManualLaunch: false,
+        error: null,
+      ),
+    );
+
     _startCountdown();
     // 播放倒计时音效
     _audioService.playWarmupCountdownSound();
@@ -616,10 +616,10 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
   /// 启动倒计时
   void _startCountdown() {
     _stopCountdown();
-    
+
     // 初始化倒计时为 60 秒
     _statusService.updateWarmupState(message: '倒计时 60 秒');
-    
+
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       add(const WarmupCountdownTick());
     });
@@ -641,7 +641,8 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     WarmupDispose event,
     Emitter<WarmupBlocState> emit,
   ) async {
-    final isActive = state.status == WarmupStatus.warming ||
+    final isActive =
+        state.status == WarmupStatus.warming ||
         state.status == WarmupStatus.countdown ||
         state.status == WarmupStatus.launching;
 

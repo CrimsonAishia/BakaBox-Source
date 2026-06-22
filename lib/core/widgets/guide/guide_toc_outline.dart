@@ -26,9 +26,7 @@ class GuideTocHeading {
 
 /// 攻略正文切片
 class GuideContentChunk {
-  GuideContentChunk.text(this.deltaJson)
-      : isHeading = false,
-        heading = null;
+  GuideContentChunk.text(this.deltaJson) : isHeading = false, heading = null;
 
   GuideContentChunk.heading({
     required this.deltaJson,
@@ -47,10 +45,7 @@ class GuideContentChunk {
 
 /// Delta 切片结果
 class GuideContentSlice {
-  const GuideContentSlice({
-    required this.chunks,
-    required this.outline,
-  });
+  const GuideContentSlice({required this.chunks, required this.outline});
 
   /// 渲染顺序的切片列表
   final List<GuideContentChunk> chunks;
@@ -241,10 +236,12 @@ GuideContentSlice _buildChunks(List<_DeltaLine> lines) {
         index: outline.length,
       );
       outline.add(heading);
-      chunks.add(GuideContentChunk.heading(
-        deltaJson: line.toDeltaJson(),
-        heading: heading,
-      ));
+      chunks.add(
+        GuideContentChunk.heading(
+          deltaJson: line.toDeltaJson(),
+          heading: heading,
+        ),
+      );
     } else {
       buffer.add(line);
     }

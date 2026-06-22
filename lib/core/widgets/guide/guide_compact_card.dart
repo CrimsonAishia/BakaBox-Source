@@ -102,8 +102,8 @@ class _GuideCompactCardState extends State<GuideCompactCard> {
           decoration: BoxDecoration(
             color: _isHovered
                 ? (isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.black.withValues(alpha: 0.02))
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.02))
                 : Colors.transparent,
             borderRadius: GuideTokens.borderRadius12,
           ),

@@ -133,9 +133,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.gray100,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -320,9 +318,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                       style: TextStyle(
                         fontSize: 10,
                         height: 1.1,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -479,9 +475,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   color: isDark ? AppColors.slate800 : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark
-                        ? AppColors.slate700
-                        : AppColors.gray200,
+                    color: isDark ? AppColors.slate700 : AppColors.gray200,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -574,9 +568,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     ),
                     Divider(
                       height: 1,
-                      color: isDark
-                          ? AppColors.slate700
-                          : AppColors.gray200,
+                      color: isDark ? AppColors.slate700 : AppColors.gray200,
                     ),
                     Flexible(
                       child: ListView.builder(
@@ -1042,9 +1034,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             ? null
             : Border(
                 bottom: BorderSide(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.gray200,
+                  color: isDark ? AppColors.slate700 : AppColors.gray200,
                 ),
               ),
       ),
@@ -1252,9 +1242,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
               ? null
               : Border(
                   bottom: BorderSide(
-                    color: isDark
-                        ? AppColors.slate700
-                        : AppColors.gray200,
+                    color: isDark ? AppColors.slate700 : AppColors.gray200,
                   ),
                 ),
         ),
@@ -2347,11 +2335,7 @@ class _RuntimeBadge extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                MdiIcons.clockOutline,
-                size: 12,
-                color: AppColors.gray500,
-              ),
+              Icon(MdiIcons.clockOutline, size: 12, color: AppColors.gray500),
               const SizedBox(width: 4),
               Text(
                 _formatRuntimeMinutes(runtimeMinutes),

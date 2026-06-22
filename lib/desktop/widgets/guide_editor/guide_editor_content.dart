@@ -45,9 +45,7 @@ class _GuideEditorContentState extends State<GuideEditorContent> {
     // 配置 onImagePaste：粘贴图片时上传并插入 resizableImage 节点
     _quillController = QuillController.basic(
       config: QuillControllerConfig(
-        clipboardConfig: QuillClipboardConfig(
-          onImagePaste: _onImagePaste,
-        ),
+        clipboardConfig: QuillClipboardConfig(onImagePaste: _onImagePaste),
       ),
     );
     _quillController.addListener(_onContentChanged);
@@ -87,8 +85,13 @@ class _GuideEditorContentState extends State<GuideEditorContent> {
   void _onContentChanged() {
     // 以 Delta JSON 编码正文，保留图片/视频等嵌入节点
     final content = QuillDeltaCodec.encode(_quillController.document);
-    final plainTextLength = _quillController.document.toPlainText().trim().length;
-    context.read<GuideEditorBloc>().add(UpdateContent(content, plainTextLength: plainTextLength));
+    final plainTextLength = _quillController.document
+        .toPlainText()
+        .trim()
+        .length;
+    context.read<GuideEditorBloc>().add(
+      UpdateContent(content, plainTextLength: plainTextLength),
+    );
   }
 
   /// 将草稿/服务端的正文内容载入编辑器（仅首次）
@@ -184,7 +187,8 @@ class _GuideEditorContentState extends State<GuideEditorContent> {
 /// 标题输入框
 ///
 /// 显式禁用 fill，避免主题级 `inputDecorationTheme.filled=true` 渗透导致背景错乱。
-class _TitleInput extends StatelessWidget {  final TextEditingController controller;
+class _TitleInput extends StatelessWidget {
+  final TextEditingController controller;
 
   const _TitleInput({required this.controller});
 

@@ -14,8 +14,7 @@ class CommunityGuideCategoryRow extends StatefulWidget {
       _CommunityGuideCategoryRowState();
 }
 
-class _CommunityGuideCategoryRowState
-    extends State<CommunityGuideCategoryRow> {
+class _CommunityGuideCategoryRowState extends State<CommunityGuideCategoryRow> {
   final ScrollController _ctrl = ScrollController();
   bool _canScrollLeft = false;
   bool _canScrollRight = false;

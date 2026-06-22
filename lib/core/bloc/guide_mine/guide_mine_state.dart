@@ -54,8 +54,9 @@ class GuideMineState extends Equatable {
   }) {
     return GuideMineState(
       tab: tab ?? this.tab,
-      statusFilter:
-          clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
+      statusFilter: clearStatusFilter
+          ? null
+          : (statusFilter ?? this.statusFilter),
       items: items ?? this.items,
       drafts: drafts ?? this.drafts,
       hasMore: hasMore ?? this.hasMore,
@@ -69,15 +70,15 @@ class GuideMineState extends Equatable {
 
   @override
   List<Object?> get props => [
-        tab,
-        statusFilter,
-        items,
-        drafts,
-        hasMore,
-        error,
-        status,
-        currentPage,
-        total,
-        stats,
-      ];
+    tab,
+    statusFilter,
+    items,
+    drafts,
+    hasMore,
+    error,
+    status,
+    currentPage,
+    total,
+    stats,
+  ];
 }

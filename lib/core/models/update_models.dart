@@ -129,7 +129,7 @@ class AppUpdateInfo {
     while (parts.length < 3) {
       parts.add(0);
     }
-    
+
     final result = parts.take(3).toList();
     result.add(buildNumber);
     return result;

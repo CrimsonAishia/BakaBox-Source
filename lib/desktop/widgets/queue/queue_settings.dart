@@ -696,9 +696,7 @@ class QueueSettings extends StatelessWidget {
                             ],
                           ),
                           decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.slate800
-                                : Colors.white,
+                            color: isDark ? AppColors.slate800 : Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(

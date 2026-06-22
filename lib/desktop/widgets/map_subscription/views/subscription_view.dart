@@ -94,11 +94,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
         children: [
-          Icon(
-            Icons.list_alt_rounded,
-            color: AppColors.indigo500,
-            size: 20,
-          ),
+          Icon(Icons.list_alt_rounded, color: AppColors.indigo500, size: 20),
           const SizedBox(width: 8),
           Text(
             '已订阅地图',
@@ -450,9 +446,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? Colors.white54
-                  : AppColors.gray500,
+              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
             ),
             child: const Text('取消'),
           ),
@@ -551,9 +545,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                       '监控所有服务器分类',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                     activeColor: AppColors.indigo500,
@@ -566,9 +558,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                       '选择特定分类：',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.gray500,
+                        color: isDark ? Colors.white54 : AppColors.gray500,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -608,9 +598,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                           '暂无可用分类',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark
-                                ? Colors.white38
-                                : AppColors.gray400,
+                            color: isDark ? Colors.white38 : AppColors.gray400,
                           ),
                         ),
                       )
@@ -664,9 +652,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
                 style: TextButton.styleFrom(
-                  foregroundColor: isDark
-                      ? Colors.white54
-                      : AppColors.gray500,
+                  foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
                 ),
                 child: const Text('取消'),
               ),

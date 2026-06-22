@@ -11,8 +11,7 @@ const _suggestDebounceDuration = Duration(milliseconds: 300);
 
 /// debounce transformer：对 Suggest 事件做 300ms 防抖 + switchMap
 EventTransformer<E> _debounce<E>(Duration duration) {
-  return (events, mapper) =>
-      events.debounceTime(duration).switchMap(mapper);
+  return (events, mapper) => events.debounceTime(duration).switchMap(mapper);
 }
 
 /// 标签联想 Bloc（短生命周期）
@@ -24,10 +23,7 @@ class GuideTagSuggestBloc
   final GuideApi _guideApi = GuideApi();
 
   GuideTagSuggestBloc() : super(const GuideTagSuggestState()) {
-    on<Suggest>(
-      _onSuggest,
-      transformer: _debounce(_suggestDebounceDuration),
-    );
+    on<Suggest>(_onSuggest, transformer: _debounce(_suggestDebounceDuration));
     on<Reset>(_onReset);
   }
 
@@ -51,10 +47,7 @@ class GuideTagSuggestBloc
     }
   }
 
-  void _onReset(
-    Reset event,
-    Emitter<GuideTagSuggestState> emit,
-  ) {
+  void _onReset(Reset event, Emitter<GuideTagSuggestState> emit) {
     emit(state.copyWith(suggestions: []));
   }
 }

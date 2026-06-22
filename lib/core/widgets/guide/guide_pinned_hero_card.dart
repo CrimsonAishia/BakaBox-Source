@@ -150,20 +150,25 @@ class _GuidePinnedHeroCardState extends State<GuidePinnedHeroCard> {
         child: AnimatedContainer(
           duration: GuideTokens.durationFast,
           curve: Curves.easeOutCubic,
-          transform: Matrix4.diagonal3Values(_isHovered ? 1.02 : 1.0, _isHovered ? 1.02 : 1.0, 1.0),
+          transform: Matrix4.diagonal3Values(
+            _isHovered ? 1.02 : 1.0,
+            _isHovered ? 1.02 : 1.0,
+            1.0,
+          ),
           transformAlignment: Alignment.center,
           height: 240,
           decoration: BoxDecoration(
             color: GuideTokens.cardSurface(context),
             borderRadius: GuideTokens.borderRadius16,
           ),
-          clipBehavior: Clip.antiAlias, // ensure children don't overflow borderRadius
+          clipBehavior:
+              Clip.antiAlias, // ensure children don't overflow borderRadius
           child: Stack(
             fit: StackFit.expand,
             children: [
               // 底部图片铺满
               _buildCoverImage(isDark),
-              
+
               // 悬浮文字渐变层
               Positioned(
                 left: 0,
@@ -228,10 +233,7 @@ class _GuidePinnedHeroCardState extends State<GuidePinnedHeroCard> {
         future: _signedCoverFuture,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return DiskCachedImage(
-              imageUrl: snapshot.data!,
-              fit: BoxFit.cover,
-            );
+            return DiskCachedImage(imageUrl: snapshot.data!, fit: BoxFit.cover);
           }
           return _buildFallbackCover(isDark);
         },
@@ -314,9 +316,11 @@ class _GuidePinnedHeroCardState extends State<GuidePinnedHeroCard> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isFirst 
-                      ? AppColors.primary 
-                      : (theme.brightness == Brightness.dark ? Colors.white24 : Colors.white60),
+                  color: isFirst
+                      ? AppColors.primary
+                      : (theme.brightness == Brightness.dark
+                            ? Colors.white24
+                            : Colors.white60),
                   borderRadius: GuideTokens.borderRadius8,
                 ),
                 child: Text(
@@ -332,6 +336,4 @@ class _GuidePinnedHeroCardState extends State<GuidePinnedHeroCard> {
       ],
     );
   }
-
-
 }

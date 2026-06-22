@@ -40,19 +40,20 @@ class GuideCategoriesBloc
 
     try {
       final categories = await _guideApi.getCategories();
-      emit(state.copyWith(
-        status: CategoriesStatus.success,
-        items: categories,
-        lastFetchedAt: DateTime.now(),
-      ));
+      emit(
+        state.copyWith(
+          status: CategoriesStatus.success,
+          items: categories,
+          lastFetchedAt: DateTime.now(),
+        ),
+      );
     } catch (e) {
       final errorMessage = e is ApiException
           ? e.message
           : ErrorUtils.getErrorMessage(e);
-      emit(state.copyWith(
-        status: CategoriesStatus.failure,
-        error: errorMessage,
-      ));
+      emit(
+        state.copyWith(status: CategoriesStatus.failure, error: errorMessage),
+      );
       LogService.e('获取攻略分类失败', e);
     }
   }

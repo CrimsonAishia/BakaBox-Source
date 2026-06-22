@@ -1031,12 +1031,8 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                     Icons.chevron_right,
                     size: 18,
                     color: widget.isRead
-                        ? (widget.isDark
-                              ? Colors.white24
-                              : AppColors.gray200)
-                        : (widget.isDark
-                              ? Colors.white24
-                              : AppColors.gray300),
+                        ? (widget.isDark ? Colors.white24 : AppColors.gray200)
+                        : (widget.isDark ? Colors.white24 : AppColors.gray300),
                   ),
                 ],
               ),
@@ -1126,9 +1122,7 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
   Widget build(BuildContext context) {
     final notification = widget.notification;
     final typeColor = _getTypeColor(notification.type);
-    final displayColor = notification.isRead
-        ? AppColors.gray400
-        : typeColor;
+    final displayColor = notification.isRead ? AppColors.gray400 : typeColor;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,

@@ -65,6 +65,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     // 使用后端用户 ID（与评论的 authorId 同体系）
     return TokenService.instance.userInfo?.id;
   }
+
   bool _isLoggedIn(BuildContext context) =>
       context.read<AuthBloc>().state.isAuthenticated;
 
@@ -79,8 +80,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     return info?.username ?? '游客';
   }
 
-  void _requireLogin() =>
-      ToastUtils.showInfo(context, '登录后才能参与互动');
+  void _requireLogin() => ToastUtils.showInfo(context, '登录后才能参与互动');
 
   // ─── Reply ──────────────────────────────────────────────────────────────
 
@@ -117,14 +117,17 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     if (text.isEmpty) return;
     final target = _replyTarget!;
     // 服务端 parentId=0 表示顶层，视为无父级
-    final effectiveParentId = (target.parentId != null && target.parentId != 0)        ? target.parentId
+    final effectiveParentId = (target.parentId != null && target.parentId != 0)
+        ? target.parentId
         : target.id;
-    context.read<GuideCommentBloc>().add(PostComment(
-          content: text,
-          parentId: effectiveParentId,
-          replyToId: target.id,
-          replyToName: target.authorName,
-        ));
+    context.read<GuideCommentBloc>().add(
+      PostComment(
+        content: text,
+        parentId: effectiveParentId,
+        replyToId: target.id,
+        replyToName: target.authorName,
+      ),
+    );
     setState(() {
       _replyTarget = null;
       _replyController.clear();
@@ -153,8 +156,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final total =
-        state.total > 0 ? state.total : widget.totalCountFromGuide;
+    final total = state.total > 0 ? state.total : widget.totalCountFromGuide;
 
     return Container(
       decoration: BoxDecoration(
@@ -283,8 +285,9 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     GuideComment comment,
   ) {
     final replies = state.replyMaps[comment.id] ?? const [];
-    final visibleReplies =
-        replies.isNotEmpty ? replies : comment.replies.take(3).toList();
+    final visibleReplies = replies.isNotEmpty
+        ? replies
+        : comment.replies.take(3).toList();
     final hasMoreReplies =
         replies.isEmpty && comment.replyCount > visibleReplies.length;
 
@@ -300,17 +303,16 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
           showReplyToHint: false,
           onReply: () => _handleStartReply(comment),
           onLike: isOwnComment ? null : () => _handleLike(context, comment),
-          onDislike: isOwnComment ? null : () => _handleDislike(context, comment),
+          onDislike: isOwnComment
+              ? null
+              : () => _handleDislike(context, comment),
           onDelete: () =>
               context.read<GuideCommentBloc>().add(DeleteComment(comment.id)),
           onReport: () => _handleReport(context, comment),
         ),
         if (visibleReplies.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(
-              left: 56,
-              top: GuideTokens.space16,
-            ),
+            padding: const EdgeInsets.only(left: 56, top: GuideTokens.space16),
             child: _ReplyThread(
               parent: comment,
               replies: visibleReplies,
@@ -333,10 +335,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
             (_replyTarget!.id == comment.id ||
                 _replyTarget!.parentId == comment.id))
           Padding(
-            padding: const EdgeInsets.only(
-              left: 56,
-              top: GuideTokens.space16,
-            ),
+            padding: const EdgeInsets.only(left: 56, top: GuideTokens.space16),
             child: _buildInlineReplyInput(context),
           ),
       ],
@@ -406,11 +405,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
       _requireLogin();
       return;
     }
-    ReportDialog.show(
-      context,
-      targetId: comment.id,
-      targetType: 'comment',
-    );
+    ReportDialog.show(context, targetId: comment.id, targetType: 'comment');
   }
 
   Widget _buildLoadMore(BuildContext context, GuideCommentState state) {
@@ -446,7 +441,6 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     );
   }
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 评论气泡（含 hover 显示更多按钮）
@@ -490,7 +484,8 @@ class _CommentBubbleState extends State<_CommentBubble> {
     final theme = Theme.of(context);
     final comment = widget.comment;
     final isOwn =
-        widget.currentUserId != null && widget.currentUserId == comment.authorId;
+        widget.currentUserId != null &&
+        widget.currentUserId == comment.authorId;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
@@ -548,9 +543,9 @@ class _CommentBubbleState extends State<_CommentBubble> {
                   textStyle: TextStyle(
                     fontSize: 14,
                     height: 1.55,
-                    color: GuideTokens.textPrimary(context).withValues(
-                      alpha: 0.92,
-                    ),
+                    color: GuideTokens.textPrimary(
+                      context,
+                    ).withValues(alpha: 0.92),
                   ),
                   compact: true,
                 ),
@@ -619,9 +614,7 @@ class _AuthorChip extends StatelessWidget {
     final fill = isDark
         ? const Color(0xFF60A5FA).withValues(alpha: 0.18)
         : theme.colorScheme.primary.withValues(alpha: 0.10);
-    final color = isDark
-        ? const Color(0xFF93C5FD)
-        : theme.colorScheme.primary;
+    final color = isDark ? const Color(0xFF93C5FD) : theme.colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -721,9 +714,7 @@ class _CommentActions extends StatelessWidget {
               ? Icons.thumb_down_rounded
               : Icons.thumb_down_outlined,
           label: comment.dislikeCount > 0 ? '${comment.dislikeCount}' : null,
-          color: comment.isDisliked
-              ? GuideTokens.likeColor(context)
-              : tertiary,
+          color: comment.isDisliked ? GuideTokens.likeColor(context) : tertiary,
           onTap: onDislike,
         ),
         // 回复（常显，自己的评论不显示）
@@ -748,8 +739,7 @@ class _CommentActions extends StatelessWidget {
                   ? _IconAction(
                       icon: Icons.delete_outline,
                       label: '删除',
-                      color:
-                          GuideTokens.statusRejected.withValues(alpha: 0.7),
+                      color: GuideTokens.statusRejected.withValues(alpha: 0.7),
                       onTap: () => _confirmDelete(context),
                     )
                   : _IconAction(
@@ -843,8 +833,10 @@ class _ReplyThread extends StatelessWidget {
   final GuideComment parent;
   final List<GuideComment> replies;
   final int? currentUserId;
+
   /// true 时底部显示「展开 N 条回复」按钮
   final bool hasMoreReplies;
+
   /// 未加载的回复数，用于按钮文案
   final int remainingCount;
   final VoidCallback? onExpandMore;
@@ -889,13 +881,18 @@ class _ReplyThread extends StatelessWidget {
               comment: replies[i],
               currentUserId: currentUserId,
               avatarSize: 36,
-              showReplyToHint: replies[i].replyToId != null &&
+              showReplyToHint:
+                  replies[i].replyToId != null &&
                   replies[i].replyToId != parent.id,
               onReply: () => onReply?.call(replies[i]),
-              onLike: (currentUserId != null && currentUserId == replies[i].authorId)
+              onLike:
+                  (currentUserId != null &&
+                      currentUserId == replies[i].authorId)
                   ? null
                   : () => onLike?.call(replies[i]),
-              onDislike: (currentUserId != null && currentUserId == replies[i].authorId)
+              onDislike:
+                  (currentUserId != null &&
+                      currentUserId == replies[i].authorId)
                   ? null
                   : () => onDislike?.call(replies[i]),
               onDelete: () => onDelete?.call(replies[i]),
@@ -942,8 +939,7 @@ class _SortMenu extends StatelessWidget {
 
   const _SortMenu({required this.currentSort, this.onChanged});
 
-  String _label(CommentSortType s) =>
-      s == CommentSortType.latest ? '最新' : '最热';
+  String _label(CommentSortType s) => s == CommentSortType.latest ? '最新' : '最热';
 
   @override
   Widget build(BuildContext context) {
@@ -952,9 +948,7 @@ class _SortMenu extends StatelessWidget {
     return PopupMenuButton<CommentSortType>(
       tooltip: '排序',
       padding: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: GuideTokens.borderRadius12,
-      ),
+      shape: RoundedRectangleBorder(borderRadius: GuideTokens.borderRadius12),
       onSelected: (s) {
         if (s != currentSort) onChanged?.call(s);
       },
@@ -1052,15 +1046,13 @@ class _PillInputState extends State<_PillInput> {
     final borderColor = _focused
         ? theme.colorScheme.primary.withValues(alpha: 0.65)
         : (isDark
-            ? Colors.white.withValues(alpha: _hover ? 0.12 : 0.08)
-            : GuideTokens.borderLight);
+              ? Colors.white.withValues(alpha: _hover ? 0.12 : 0.08)
+              : GuideTokens.borderLight);
 
     if (!widget.enabled) {
       return Container(
         height: 44,
-        padding: const EdgeInsets.symmetric(
-          horizontal: GuideTokens.space20,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: GuideTokens.space20),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
           color: fillColor,
@@ -1085,10 +1077,7 @@ class _PillInputState extends State<_PillInput> {
         decoration: BoxDecoration(
           color: fillColor,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: borderColor,
-            width: _focused ? 1.5 : 1,
-          ),
+          border: Border.all(color: borderColor, width: _focused ? 1.5 : 1),
         ),
         padding: const EdgeInsets.symmetric(horizontal: GuideTokens.space20),
         child: Center(
@@ -1176,4 +1165,3 @@ class _CommentAvatar extends StatelessWidget {
     );
   }
 }
-

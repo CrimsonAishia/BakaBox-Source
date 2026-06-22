@@ -89,9 +89,7 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
       ),
     );
     _customCdController = TextEditingController(
-      text: _numToText(
-        widget.existingEdit?.customCd ?? widget.card.customCd,
-      ),
+      text: _numToText(widget.existingEdit?.customCd ?? widget.card.customCd),
     );
   }
 
@@ -973,7 +971,6 @@ class _SpellCardAdvancedFields extends StatelessWidget {
   }
 }
 
-
 /// 把数值控制器内容转换为 double?（空字符串视为未设置）
 double? _parseDouble(TextEditingController c) {
   final text = c.text.trim();
@@ -991,5 +988,3 @@ int? _parseInt(TextEditingController c) {
 
 /// 把可空数值转回字符串供输入框显示（null/未设置时显示空）
 String _numToText(num? value) => value?.toString() ?? '';
-
-

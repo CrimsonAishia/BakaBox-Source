@@ -513,12 +513,7 @@ class _SpotlightPainter extends CustomPainter {
   }
 
   /// 绘制从顶部打向角色的梯形光束
-  void _drawLightBeam(
-    Canvas canvas,
-    Size size,
-    Offset center,
-    double radius,
-  ) {
+  void _drawLightBeam(Canvas canvas, Size size, Offset center, double radius) {
     // 光束顶部（屏幕外上方）较窄，底部（角色处）略宽，形成贴合角色的光锥
     final topWidth = radius * 0.4;
     final bottomWidth = radius * 1.25;
@@ -536,17 +531,24 @@ class _SpotlightPainter extends CustomPainter {
     // 光束渐变：顶部更亮，向下逐渐淡出
     final beamPaint = Paint()
       ..blendMode = BlendMode.plus
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          const Color(0xFFFFF8E1).withValues(alpha: 0.18 * intensity),
-          const Color(0xFFFFF3D0).withValues(alpha: 0.10 * intensity),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.55, 1.0],
-      ).createShader(Rect.fromLTRB(apexX - bottomWidth / 2, topY,
-          apexX + bottomWidth / 2, bottomY))
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFFFF8E1).withValues(alpha: 0.18 * intensity),
+              const Color(0xFFFFF3D0).withValues(alpha: 0.10 * intensity),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.55, 1.0],
+          ).createShader(
+            Rect.fromLTRB(
+              apexX - bottomWidth / 2,
+              topY,
+              apexX + bottomWidth / 2,
+              bottomY,
+            ),
+          )
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
 
     canvas.drawPath(beamPath, beamPaint);

@@ -112,9 +112,7 @@ class WarmupCountdownDialog extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     onTap: () {
-                      context.read<WarmupBloc>().add(
-                        const WarmupLaunchGame(),
-                      );
+                      context.read<WarmupBloc>().add(const WarmupLaunchGame());
                     },
                     borderRadius: BorderRadius.circular(12),
                     hoverColor: Colors.orange.withValues(alpha: 0.8),
@@ -126,11 +124,7 @@ class WarmupCountdownDialog extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            MdiIcons.gamepad,
-                            size: 16,
-                            color: Colors.white,
-                          ),
+                          Icon(MdiIcons.gamepad, size: 16, color: Colors.white),
                           const SizedBox(width: 8),
                           const Text(
                             '立即加入',

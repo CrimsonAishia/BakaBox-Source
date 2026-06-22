@@ -130,9 +130,7 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
                       : '发送的消息将广播给房间内所有在线玩家',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isInCooldown
-                        ? AppColors.red500
-                        : secondaryTextColor,
+                    color: isInCooldown ? AppColors.red500 : secondaryTextColor,
                   ),
                 ),
                 const SizedBox(height: 16),

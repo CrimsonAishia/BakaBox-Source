@@ -80,7 +80,8 @@ class _NotificationPositionEditorWrapperState
   Timer? _floatingAutoCloseTimer;
 
   // 通知窗口尺寸（直接引用 NotificationWindowService 常量，保持一致）
-  static const double _notificationWidth = NotificationWindowService.windowWidth;
+  static const double _notificationWidth =
+      NotificationWindowService.windowWidth;
   // 换图、热身、地图订阅通知现在使用两行显示（译名/原名），统一用 mapCardHeight 估算预览区域
   static const double _notificationCardHeight =
       NotificationWindowService.mapCardHeight;
@@ -524,16 +525,12 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                       : null,
                   color: isSelected
                       ? null
-                      : (isDark
-                            ? AppColors.slate700
-                            : AppColors.gray50),
+                      : (isDark ? AppColors.slate700 : AppColors.gray50),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primary
-                        : (isDark
-                              ? AppColors.slate600
-                              : AppColors.gray200),
+                        : (isDark ? AppColors.slate600 : AppColors.gray200),
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected

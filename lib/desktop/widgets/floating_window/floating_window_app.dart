@@ -148,7 +148,9 @@ class FloatingWindowStateNotifier extends ChangeNotifier {
   void forceTimeout(String message) {
     if (_state.isTerminal) return;
     _state = _state.copyWith(state: 'timeout', message: message);
-    debugPrint('[FloatingWindowStateNotifier] Forced timeout (watchdog): $message');
+    debugPrint(
+      '[FloatingWindowStateNotifier] Forced timeout (watchdog): $message',
+    );
     notifyListeners();
   }
 }

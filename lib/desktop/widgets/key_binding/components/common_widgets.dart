@@ -234,9 +234,7 @@ class _SegmentedButtonState extends State<SegmentedButton> {
                   color: widget.selected == i
                       ? (isDark ? AppColors.slate800 : Colors.white)
                       : (_hoveredIndex == i
-                            ? (isDark
-                                  ? AppColors.slate600
-                                  : Colors.grey[300])
+                            ? (isDark ? AppColors.slate600 : Colors.grey[300])
                             : Colors.transparent),
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: widget.selected == i
@@ -455,9 +453,7 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                   ? AppColors.primary
                   : (_hovered
                         ? (isDark ? AppColors.slate600 : Colors.grey[300]!)
-                        : (isDark
-                              ? AppColors.slate700
-                              : Colors.grey[200]!)),
+                        : (isDark ? AppColors.slate700 : Colors.grey[200]!)),
               width: widget.selected ? 1.5 : 1,
             ),
           ),
@@ -545,18 +541,12 @@ class _PlaceholderTagState extends State<PlaceholderTag> {
               ? AppColors.amber500.withValues(alpha: 0.2)
               : AppColors.amber500.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: AppColors.amber500.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.amber500.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.keyboardOutline,
-              size: 10,
-              color: AppColors.amber500,
-            ),
+            Icon(MdiIcons.keyboardOutline, size: 10, color: AppColors.amber500),
             const SizedBox(width: 4),
             Text(
               widget.label,

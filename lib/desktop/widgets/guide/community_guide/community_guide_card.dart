@@ -88,8 +88,7 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
                                   const CommunityGuidePinnedBadge(),
                                 if (item.isRecommended)
                                   const CommunityGuideRecommendedBadge(),
-                                if (item.isHot)
-                                  const CommunityGuideHotBadge(),
+                                if (item.isHot) const CommunityGuideHotBadge(),
                               ],
                             ),
                           ),
@@ -295,18 +294,12 @@ class _CardTagRow extends StatelessWidget {
     for (final t in tags) {
       if (chips.length >= maxItems) break;
       if (t.trim().isEmpty) continue;
-      chips.add(
-        _chip(label: '#$t', primary: chips.isEmpty, colors: colors),
-      );
+      chips.add(_chip(label: '#$t', primary: chips.isEmpty, colors: colors));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
 
-    return Wrap(
-      spacing: 6,
-      runSpacing: 4,
-      children: chips,
-    );
+    return Wrap(spacing: 6, runSpacing: 4, children: chips);
   }
 
   Widget _chip({
@@ -346,17 +339,33 @@ class _CardStatsMetaRow extends StatelessWidget {
     final textColor = colors.textTertiary;
     return Row(
       children: [
-        _stat(Icons.remove_red_eye_outlined, item.viewCount,
-            iconColor: textColor, textColor: textColor),
+        _stat(
+          Icons.remove_red_eye_outlined,
+          item.viewCount,
+          iconColor: textColor,
+          textColor: textColor,
+        ),
         const Spacer(),
-        _stat(Icons.thumb_up_outlined, item.likeCount,
-            iconColor: colors.likeRed, textColor: textColor),
+        _stat(
+          Icons.thumb_up_outlined,
+          item.likeCount,
+          iconColor: colors.likeRed,
+          textColor: textColor,
+        ),
         const SizedBox(width: 14),
-        _stat(Icons.star_rounded, item.favoriteCount,
-            iconColor: const Color(0xFFFFB300), textColor: textColor),
+        _stat(
+          Icons.star_rounded,
+          item.favoriteCount,
+          iconColor: const Color(0xFFFFB300),
+          textColor: textColor,
+        ),
         const SizedBox(width: 14),
-        _stat(Icons.chat_bubble_outline, item.commentCount,
-            iconColor: colors.accentBlue, textColor: textColor),
+        _stat(
+          Icons.chat_bubble_outline,
+          item.commentCount,
+          iconColor: colors.accentBlue,
+          textColor: textColor,
+        ),
       ],
     );
   }
@@ -403,21 +412,14 @@ class _CardAuthorRow extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.schedule,
-                size: 14,
-                color: colors.textTertiary,
-              ),
+              Icon(Icons.schedule, size: 14, color: colors.textTertiary),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   TimeUtils.formatDateTimeRelative(item.updatedAt),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colors.textTertiary,
-                  ),
+                  style: TextStyle(fontSize: 13, color: colors.textTertiary),
                 ),
               ),
             ],
@@ -555,9 +557,7 @@ class CommunityGuideCardSkeleton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(12),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: AspectRatio(
               aspectRatio: 16 / 9,
               child: Container(color: colors.skeletonBg),

@@ -77,9 +77,7 @@ class _HoverInfoPickerPanelState extends State<HoverInfoPickerPanel>
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, size: 20),
-                    color: isDark
-                        ? AppColors.slate400
-                        : AppColors.gray500,
+                    color: isDark ? AppColors.slate400 : AppColors.gray500,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -91,8 +89,9 @@ class _HoverInfoPickerPanelState extends State<HoverInfoPickerPanel>
               isScrollable: true,
               tabAlignment: TabAlignment.start,
               labelColor: AppColors.primary,
-              unselectedLabelColor:
-                  isDark ? AppColors.slate400 : AppColors.gray500,
+              unselectedLabelColor: isDark
+                  ? AppColors.slate400
+                  : AppColors.gray500,
               indicatorColor: AppColors.primary,
               tabs: const [
                 Tab(text: '地图'),
@@ -211,12 +210,14 @@ class _MapTabState extends State<_MapTab> {
                 final map = _maps[index];
                 return _MapPickerCard(
                   map: map,
-                  onTap: () => widget.onPicked(HoverInfoData(
-                    type: HoverInfoType.map,
-                    id: map.mapName,
-                    label: map.mapLabel,
-                    iconUrl: map.mapBackground ?? '',
-                  )),
+                  onTap: () => widget.onPicked(
+                    HoverInfoData(
+                      type: HoverInfoType.map,
+                      id: map.mapName,
+                      label: map.mapLabel,
+                      iconUrl: map.mapBackground ?? '',
+                    ),
+                  ),
                 );
               },
             ),
@@ -244,7 +245,8 @@ class _MapPickerCardState extends State<_MapPickerCard> {
   @override
   Widget build(BuildContext context) {
     final hasBackground =
-        widget.map.mapBackground != null && widget.map.mapBackground!.isNotEmpty;
+        widget.map.mapBackground != null &&
+        widget.map.mapBackground!.isNotEmpty;
     final hasDifferentLabel = widget.map.mapLabel != widget.map.mapName;
 
     return Padding(
@@ -317,7 +319,9 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                         onTap: widget.onTap,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -332,8 +336,9 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                     shadows: hasBackground
                                         ? [
                                             Shadow(
-                                              color: Colors.black
-                                                  .withValues(alpha: 0.6),
+                                              color: Colors.black.withValues(
+                                                alpha: 0.6,
+                                              ),
                                               blurRadius: 4,
                                             ),
                                           ]
@@ -371,13 +376,15 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                     Icon(
                                       Icons.map_outlined,
                                       size: 12,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.7),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       shadows: hasBackground
                                           ? [
                                               Shadow(
-                                                color: Colors.black
-                                                    .withValues(alpha: 0.6),
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.6,
+                                                ),
                                                 blurRadius: 4,
                                               ),
                                             ]
@@ -389,14 +396,14 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                         widget.map.mapName,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.78),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.78,
+                                          ),
                                           shadows: hasBackground
                                               ? [
                                                   Shadow(
                                                     color: Colors.black
-                                                        .withValues(
-                                                            alpha: 0.6),
+                                                        .withValues(alpha: 0.6),
                                                     blurRadius: 4,
                                                   ),
                                                 ]
@@ -521,12 +528,14 @@ class _CharacterTabState extends State<_CharacterTab>
                   color: HoverInfoColors.color(HoverInfoType.character),
                   title: c.name,
                   subtitle: c.nameEn,
-                  onTap: () => widget.onPicked(HoverInfoData(
-                    type: HoverInfoType.character,
-                    id: c.id.toString(),
-                    label: c.name,
-                    iconUrl: c.thumbnailUrl,
-                  )),
+                  onTap: () => widget.onPicked(
+                    HoverInfoData(
+                      type: HoverInfoType.character,
+                      id: c.id.toString(),
+                      label: c.name,
+                      iconUrl: c.thumbnailUrl,
+                    ),
+                  ),
                 );
               },
             ),
@@ -630,12 +639,14 @@ class _GunModelTabState extends State<_GunModelTab>
                   color: HoverInfoColors.color(HoverInfoType.weapon),
                   title: g.name,
                   subtitle: g.characterName,
-                  onTap: () => widget.onPicked(HoverInfoData(
-                    type: HoverInfoType.weapon,
-                    id: g.id.toString(),
-                    label: g.name,
-                    iconUrl: g.thumbnailUrl ?? '',
-                  )),
+                  onTap: () => widget.onPicked(
+                    HoverInfoData(
+                      type: HoverInfoType.weapon,
+                      id: g.id.toString(),
+                      label: g.name,
+                      iconUrl: g.thumbnailUrl ?? '',
+                    ),
+                  ),
                 );
               },
             ),
@@ -739,12 +750,14 @@ class _KnifeModelTabState extends State<_KnifeModelTab>
                   color: HoverInfoColors.color(HoverInfoType.knife),
                   title: k.name,
                   subtitle: k.characterName,
-                  onTap: () => widget.onPicked(HoverInfoData(
-                    type: HoverInfoType.knife,
-                    id: k.id.toString(),
-                    label: k.name,
-                    iconUrl: k.thumbnailUrl ?? '',
-                  )),
+                  onTap: () => widget.onPicked(
+                    HoverInfoData(
+                      type: HoverInfoType.knife,
+                      id: k.id.toString(),
+                      label: k.name,
+                      iconUrl: k.thumbnailUrl ?? '',
+                    ),
+                  ),
                 );
               },
             ),
@@ -854,13 +867,16 @@ class _SpellCardTabState extends State<_SpellCardTab>
                   fallbackIcon: HoverInfoColors.icon(HoverInfoType.spellCard),
                   color: HoverInfoColors.color(HoverInfoType.spellCard),
                   title: s.name,
-                  subtitle: '${s.characterName} · ${_spellCardTypeLabel(s.type)}',
-                  onTap: () => widget.onPicked(HoverInfoData(
-                    type: HoverInfoType.spellCard,
-                    id: s.id.toString(),
-                    label: s.name,
-                    iconUrl: s.iconUrl ?? '',
-                  )),
+                  subtitle:
+                      '${s.characterName} · ${_spellCardTypeLabel(s.type)}',
+                  onTap: () => widget.onPicked(
+                    HoverInfoData(
+                      type: HoverInfoType.spellCard,
+                      id: s.id.toString(),
+                      label: s.name,
+                      iconUrl: s.iconUrl ?? '',
+                    ),
+                  ),
                 );
               },
             ),
@@ -925,8 +941,10 @@ class _SearchField extends StatelessWidget {
               size: 20,
               color: isDark ? AppColors.slate500 : AppColors.gray400,
             ),
-            prefixIconConstraints:
-                const BoxConstraints(minWidth: 36, minHeight: 36),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 36,
+              minHeight: 36,
+            ),
             isCollapsed: true,
             filled: true,
             fillColor: isDark
@@ -936,8 +954,10 @@ class _SearchField extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 0,
+            ),
           ),
         ),
       ),
@@ -1058,8 +1078,7 @@ class _PickerTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color:
-                          isDark ? Colors.white : AppColors.gray800,
+                      color: isDark ? Colors.white : AppColors.gray800,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1070,9 +1089,7 @@ class _PickerTile extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? AppColors.slate400
-                            : AppColors.gray500,
+                        color: isDark ? AppColors.slate400 : AppColors.gray500,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

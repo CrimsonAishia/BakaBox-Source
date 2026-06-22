@@ -27,6 +27,7 @@ class CommunityGuideToolbar extends StatelessWidget {
 
   /// Banner 高度
   static const double _bannerHeight = 240.0;
+
   /// 工具栏自身高度
   static const double _toolbarHeight = 56.0;
 
@@ -70,9 +71,7 @@ class CommunityGuideToolbar extends StatelessWidget {
   }
 }
 
-// ===========================================================================
 // Hero Banner
-// ===========================================================================
 
 class _HeroBanner extends StatelessWidget {
   const _HeroBanner();
@@ -123,9 +122,7 @@ class _HeroBanner extends StatelessWidget {
   }
 }
 
-// ===========================================================================
 // 工具栏内容（毛玻璃容器内的搜索 + 分类 + 我的）
-// ===========================================================================
 
 class _ToolbarContent extends StatelessWidget {
   final TextEditingController searchController;
@@ -247,10 +244,7 @@ class _MineButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          textStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         icon: const Icon(Icons.person_outline, size: 16),
         label: const Text('个人中心'),
@@ -259,9 +253,7 @@ class _MineButton extends StatelessWidget {
   }
 }
 
-// ===========================================================================
 // 分类按钮组（含失败/加载/成功 三态）
-// ===========================================================================
 
 class _CategoryRow extends StatelessWidget {
   final GuideCategoriesState catState;
@@ -298,9 +290,9 @@ class _CategoryRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           TextButton(
-            onPressed: () => context
-                .read<GuideCategoriesBloc>()
-                .add(const LoadCategories(force: true)),
+            onPressed: () => context.read<GuideCategoriesBloc>().add(
+              const LoadCategories(force: true),
+            ),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, 28),
               padding: const EdgeInsets.symmetric(horizontal: 8),

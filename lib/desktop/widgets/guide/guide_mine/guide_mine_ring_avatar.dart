@@ -55,9 +55,7 @@ class GuideMineRingAvatar extends StatelessWidget {
       color: ringColor.withValues(alpha: 0.18),
       child: Center(
         child: Text(
-          fallback.isNotEmpty
-              ? fallback.characters.first.toUpperCase()
-              : '?',
+          fallback.isNotEmpty ? fallback.characters.first.toUpperCase() : '?',
           style: TextStyle(
             color: ringColor,
             fontSize: size * 0.36,

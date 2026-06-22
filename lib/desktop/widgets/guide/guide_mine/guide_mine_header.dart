@@ -96,8 +96,7 @@ class _ProfileCard extends StatelessWidget {
         final username = userInfo?.username ?? '未登录';
         final avatar = userInfo?.avatar;
         final userGroup = userInfo?.userGroup;
-        final isPrivileged =
-            userGroup == 'admin' || userGroup == 'moderator';
+        final isPrivileged = userGroup == 'admin' || userGroup == 'moderator';
 
         return BlocBuilder<GuideMineBloc, GuideMineState>(
           buildWhen: (a, b) =>
@@ -283,10 +282,7 @@ class _ProfileStat extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.textTertiary,
-              ),
+              style: TextStyle(fontSize: 12, color: colors.textTertiary),
             ),
             const SizedBox(height: 2),
             Text(

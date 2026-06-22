@@ -56,9 +56,7 @@ class GuideMineDraftCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      (draft.title ?? '').isNotEmpty
-                          ? draft.title!
-                          : '无标题草稿',
+                      (draft.title ?? '').isNotEmpty ? draft.title! : '无标题草稿',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -91,11 +89,7 @@ class GuideMineDraftCard extends StatelessWidget {
                   tooltip: '删除草稿',
                   splashRadius: 18,
                 ),
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: colors.textTertiary,
-              ),
+              Icon(Icons.chevron_right, size: 20, color: colors.textTertiary),
             ],
           ),
         ),

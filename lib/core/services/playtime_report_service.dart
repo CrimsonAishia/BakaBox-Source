@@ -169,10 +169,7 @@ class PlaytimeReportService {
     // 离开服务器，或还在服务器但换了图 → 结算上一段（按旧图上报）
     final leftServer = wasInServer && !nowInServer;
     final changedMap =
-        wasInServer &&
-        nowInServer &&
-        newMap.isNotEmpty &&
-        newMap != oldMap;
+        wasInServer && nowInServer && newMap.isNotEmpty && newMap != oldMap;
     if (leftServer || changedMap) {
       _flush(reason: leftServer ? 'leave-server' : 'map-change').ignore();
     }

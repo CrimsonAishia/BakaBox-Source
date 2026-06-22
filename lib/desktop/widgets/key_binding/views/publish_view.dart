@@ -430,9 +430,7 @@ class _PublishViewState extends State<PublishView> {
       hint = '请在脚本中插入按键绑定';
     }
 
-    final hintColor = !hasEnoughCredits
-        ? AppColors.red500
-        : AppColors.amber500;
+    final hintColor = !hasEnoughCredits ? AppColors.red500 : AppColors.amber500;
 
     return Container(
       padding: const EdgeInsets.all(12),

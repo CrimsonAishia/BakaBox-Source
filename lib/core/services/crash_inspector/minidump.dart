@@ -64,8 +64,14 @@ class MinidumpThread {
   final int stackRva; // 栈数据在文件中的偏移
   final int contextRva;
   final int contextSize;
-  MinidumpThread(this.threadId, this.stackStart, this.stackSize, this.stackRva,
-      this.contextRva, this.contextSize);
+  MinidumpThread(
+    this.threadId,
+    this.stackStart,
+    this.stackSize,
+    this.stackRva,
+    this.contextRva,
+    this.contextSize,
+  );
 }
 
 class ExceptionRecord {
@@ -73,8 +79,12 @@ class ExceptionRecord {
   final int exceptionCode;
   final int exceptionAddress;
   final List<int> exceptionInformation;
-  ExceptionRecord(this.threadId, this.exceptionCode, this.exceptionAddress,
-      this.exceptionInformation);
+  ExceptionRecord(
+    this.threadId,
+    this.exceptionCode,
+    this.exceptionAddress,
+    this.exceptionInformation,
+  );
 }
 
 /// 虚拟地址 -> 文件数据 的一段映射.
@@ -122,8 +132,14 @@ class MinidumpFile {
   final Uint8List _bytes;
   final List<_MemRegion> _regions;
 
-  MinidumpFile._(this.modules, this.threads, this.exception, this._contexts,
-      this._bytes, this._regions);
+  MinidumpFile._(
+    this.modules,
+    this.threads,
+    this.exception,
+    this._contexts,
+    this._bytes,
+    this._regions,
+  );
 
   MinidumpReader getReader() => MinidumpReader(_bytes, _regions);
 
@@ -143,7 +159,8 @@ class MinidumpFile {
     final sig = bd.getUint32(0, Endian.little);
     if (sig != _kSignatureMDMP) {
       throw FormatException(
-          '签名不匹配, 不是 minidump (期望 MDMP, 实际 0x${sig.toRadixString(16)})');
+        '签名不匹配, 不是 minidump (期望 MDMP, 实际 0x${sig.toRadixString(16)})',
+      );
     }
     final numStreams = bd.getUint32(8, Endian.little);
     final dirRva = bd.getUint32(12, Endian.little);
@@ -190,11 +207,21 @@ class MinidumpFile {
     }
 
     return MinidumpFile._(
-        modules, threads, exception, contexts, bytes, regions);
+      modules,
+      threads,
+      exception,
+      contexts,
+      bytes,
+      regions,
+    );
   }
 
-  static void _parseModuleList(Uint8List bytes, ByteData bd, int rva,
-      List<MinidumpModule> out) {
+  static void _parseModuleList(
+    Uint8List bytes,
+    ByteData bd,
+    int rva,
+    List<MinidumpModule> out,
+  ) {
     final count = bd.getUint32(rva, Endian.little);
     var p = rva + 4;
     for (var i = 0; i < count; i++) {
@@ -218,8 +245,16 @@ class MinidumpFile {
       final stackRva = bd.getUint32(p + 36, Endian.little);
       final ctxSize = bd.getUint32(p + 40, Endian.little);
       final ctxRva = bd.getUint32(p + 44, Endian.little);
-      out.add(MinidumpThread(
-          threadId, stackStart, stackDataSize, stackRva, ctxRva, ctxSize));
+      out.add(
+        MinidumpThread(
+          threadId,
+          stackStart,
+          stackDataSize,
+          stackRva,
+          ctxRva,
+          ctxSize,
+        ),
+      );
       p += 48; // sizeof(MINIDUMP_THREAD)
     }
   }
@@ -267,7 +302,11 @@ class MinidumpFile {
   }
 
   static ThreadContext? _parseContext(
-      ByteData bd, int rva, int size, int total) {
+    ByteData bd,
+    int rva,
+    int size,
+    int total,
+  ) {
     if (rva <= 0 || rva + 0x100 > total) return null;
     final regs = <String, int>{};
     _ctxOffsets.forEach((name, off) {

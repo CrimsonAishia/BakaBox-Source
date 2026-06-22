@@ -151,18 +151,18 @@ class _GuideArticleCardState extends State<GuideArticleCard> {
           duration: GuideTokens.durationFast,
           curve: Curves.easeOutCubic,
           transform: Matrix4.identity()
-            ..scaleByDouble(_isHovered ? 1.02 : 1.0, _isHovered ? 1.02 : 1.0, 1.0, 1.0),
+            ..scaleByDouble(
+              _isHovered ? 1.02 : 1.0,
+              _isHovered ? 1.02 : 1.0,
+              1.0,
+              1.0,
+            ),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             color: GuideTokens.cardSurface(context),
             borderRadius: GuideTokens.borderRadius16,
-            border: Border.all(
-              color: GuideTokens.border(context),
-              width: 1.0,
-            ),
-            boxShadow: _isHovered
-                ? GuideTokens.shadowLg
-                : GuideTokens.shadowSm,
+            border: Border.all(color: GuideTokens.border(context), width: 1.0),
+            boxShadow: _isHovered ? GuideTokens.shadowLg : GuideTokens.shadowSm,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +347,9 @@ class _GuideArticleCardState extends State<GuideArticleCard> {
             vertical: 4,
           ),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
             borderRadius: GuideTokens.borderRadius8,
           ),
           child: Text(
@@ -409,8 +411,6 @@ class _GuideArticleCardState extends State<GuideArticleCard> {
       ],
     );
   }
-
-
 
   String _formatCount(int count) {
     if (count >= 10000) {

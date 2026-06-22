@@ -65,14 +65,11 @@ class RealtimeWorkshopChangelogChannel {
 
   void _onEvent(RealtimeChannelEvent event) {
     if (event.eventType != RealtimeEventTypes.workshopChangelogNew) {
-      LogService.d(
-        '[Realtime/WorkshopChangelog] 忽略未知事件类型: ${event.eventType}',
-      );
+      LogService.d('[Realtime/WorkshopChangelog] 忽略未知事件类型: ${event.eventType}');
       return;
     }
 
-    final workshopItemId =
-        (event.data['workshopItemId'] as num?)?.toInt() ?? 0;
+    final workshopItemId = (event.data['workshopItemId'] as num?)?.toInt() ?? 0;
     final updateTime = (event.data['updateTime'] as num?)?.toInt() ?? 0;
     final content = (event.data['content'] as String?) ?? '';
 

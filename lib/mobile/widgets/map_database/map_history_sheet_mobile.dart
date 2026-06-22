@@ -68,11 +68,7 @@ class MapHistorySheetMobile extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 8, 16, 12),
             child: Row(
               children: [
-                Icon(
-                  MdiIcons.history,
-                  color: AppColors.primary,
-                  size: 22,
-                ),
+                Icon(MdiIcons.history, color: AppColors.primary, size: 22),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -389,9 +385,7 @@ class _MapHistoryContentMobileState extends State<MapHistoryContentMobile> {
                 onPressed: () => _fetchHistory(isLoadMore: true),
                 icon: Icon(MdiIcons.chevronDown, size: 18),
                 label: const Text('加载更多'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                ),
+                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
               ),
             ),
           );
@@ -735,9 +729,7 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
           Text(
             '$ctScore',
             style: TextStyle(
-              color: isZombieMap
-                  ? AppColors.green500
-                  : AppColors.blue500,
+              color: isZombieMap ? AppColors.green500 : AppColors.blue500,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -756,9 +748,7 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
           Text(
             '$tScore',
             style: TextStyle(
-              color: isZombieMap
-                  ? AppColors.red500
-                  : AppColors.amber500,
+              color: isZombieMap ? AppColors.red500 : AppColors.amber500,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),

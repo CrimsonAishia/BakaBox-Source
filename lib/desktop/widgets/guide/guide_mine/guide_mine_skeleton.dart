@@ -19,13 +19,8 @@ class GuideMineCardSkeleton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(12),
-            ),
-            child: Container(
-              height: 140,
-              color: colors.skeletonBg,
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Container(height: 140, color: colors.skeletonBg),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),

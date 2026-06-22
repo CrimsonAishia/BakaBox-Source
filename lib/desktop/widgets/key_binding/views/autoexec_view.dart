@@ -104,11 +104,7 @@ class _AutoexecViewState extends State<AutoexecView> {
       ),
       child: Row(
         children: [
-          Icon(
-            MdiIcons.fileCodeOutline,
-            size: 20,
-            color: AppColors.primary,
-          ),
+          Icon(MdiIcons.fileCodeOutline, size: 20, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
             'autoexec.cfg',
@@ -272,9 +268,7 @@ class _AutoexecViewState extends State<AutoexecView> {
                 KeyBindingRemoveAppliedConfig(cfg.configId),
               );
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.red500,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.red500),
             child: const Text('删除'),
           ),
         ],

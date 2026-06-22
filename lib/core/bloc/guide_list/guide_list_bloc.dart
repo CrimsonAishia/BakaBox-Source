@@ -22,8 +22,7 @@ const _minLoadingDuration = Duration(milliseconds: 600);
 
 /// debounce transformer：仅对 ChangeKeyword 事件做 400ms 防抖
 EventTransformer<E> _debounce<E>(Duration duration) {
-  return (events, mapper) =>
-      events.debounceTime(duration).switchMap(mapper);
+  return (events, mapper) => events.debounceTime(duration).switchMap(mapper);
 }
 
 /// 攻略列表 Bloc
@@ -37,7 +36,10 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
     on<LoadGuides>(_onLoadGuides);
     on<ChangeFilter>(_onChangeFilter);
     on<ChangeSort>(_onChangeSort);
-    on<ChangeKeyword>(_onChangeKeyword, transformer: _debounce(_keywordDebounceDuration));
+    on<ChangeKeyword>(
+      _onChangeKeyword,
+      transformer: _debounce(_keywordDebounceDuration),
+    );
     on<RefreshGuide>(_onRefreshGuide);
     on<ToggleLikeOptimistic>(_onToggleLike);
     on<ToggleFavoriteOptimistic>(_onToggleFavorite);
@@ -74,19 +76,20 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
       // 重置加载（首屏 / 切换分类 / 搜索 / 排序 / 重试）时清空旧列表，
       // 立即切到骨架屏，避免在加载新分类期间仍停留显示上一分类的卡片，
       // 造成「先显示旧内容、再跳到新内容」的突兀闪烁。
-      emit(state.copyWith(
-        status: GuideListStatus.loading,
-        items: const [],
-        pinned: const [],
-        clearError: true,
-        currentPage: 1,
-      ));
+      emit(
+        state.copyWith(
+          status: GuideListStatus.loading,
+          items: const [],
+          pinned: const [],
+          clearError: true,
+          currentPage: 1,
+        ),
+      );
     } else {
       if (!state.canLoadMore) return;
-      emit(state.copyWith(
-        status: GuideListStatus.loadingMore,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(status: GuideListStatus.loadingMore, clearError: true),
+      );
     }
 
     final stopwatch = event.reset ? (Stopwatch()..start()) : null;
@@ -108,14 +111,16 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
           ? response.items
           : [...state.items, ...response.items];
 
-      emit(state.copyWith(
-        status: GuideListStatus.success,
-        items: newItems,
-        pinned: event.reset ? response.pinned : state.pinned,
-        total: response.total,
-        hasMore: newItems.length < response.total,
-        currentPage: page,
-      ));
+      emit(
+        state.copyWith(
+          status: GuideListStatus.success,
+          items: newItems,
+          pinned: event.reset ? response.pinned : state.pinned,
+          total: response.total,
+          hasMore: newItems.length < response.total,
+          currentPage: page,
+        ),
+      );
     } catch (e) {
       // 失败也补足最小时长，保持 UI 节奏一致
       if (stopwatch != null) {
@@ -124,10 +129,12 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
           await Future.delayed(remaining);
         }
       }
-      emit(state.copyWith(
-        status: GuideListStatus.failure,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(
+          status: GuideListStatus.failure,
+          error: _getErrorMessage(e),
+        ),
+      );
       LogService.e('获取攻略列表失败', e);
     }
   }
@@ -254,8 +261,7 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
 
     final original = state.items[index];
     final nowLiked = !original.isLiked;
-    final newLikeCount =
-        original.likeCount + (nowLiked ? 1 : -1);
+    final newLikeCount = original.likeCount + (nowLiked ? 1 : -1);
 
     // 乐观更新
     final optimisticItem = GuideListItem(
@@ -301,14 +307,12 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
     } catch (e) {
       // 失败回滚
       final rollbackItems = List<GuideListItem>.from(state.items);
-      final currentIndex =
-          rollbackItems.indexWhere((item) => item.id == event.id);
+      final currentIndex = rollbackItems.indexWhere(
+        (item) => item.id == event.id,
+      );
       if (currentIndex != -1) {
         rollbackItems[currentIndex] = original;
-        emit(state.copyWith(
-          items: rollbackItems,
-          error: _getErrorMessage(e),
-        ));
+        emit(state.copyWith(items: rollbackItems, error: _getErrorMessage(e)));
       }
       LogService.e('点赞操作失败', e);
     }
@@ -323,8 +327,7 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
 
     final original = state.items[index];
     final nowFavorited = !original.isFavorited;
-    final newFavoriteCount =
-        original.favoriteCount + (nowFavorited ? 1 : -1);
+    final newFavoriteCount = original.favoriteCount + (nowFavorited ? 1 : -1);
 
     // 乐观更新
     final optimisticItem = GuideListItem(
@@ -370,14 +373,12 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
     } catch (e) {
       // 失败回滚
       final rollbackItems = List<GuideListItem>.from(state.items);
-      final currentIndex =
-          rollbackItems.indexWhere((item) => item.id == event.id);
+      final currentIndex = rollbackItems.indexWhere(
+        (item) => item.id == event.id,
+      );
       if (currentIndex != -1) {
         rollbackItems[currentIndex] = original;
-        emit(state.copyWith(
-          items: rollbackItems,
-          error: _getErrorMessage(e),
-        ));
+        emit(state.copyWith(items: rollbackItems, error: _getErrorMessage(e)));
       }
       LogService.e('收藏操作失败', e);
     }

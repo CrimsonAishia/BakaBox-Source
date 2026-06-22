@@ -99,18 +99,13 @@ class _GuideMapHeaderState extends State<GuideMapHeader> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [
-                  GuideTokens.gradientDarkStart,
-                  GuideTokens.gradientDarkEnd,
-                ]
+              ? [GuideTokens.gradientDarkStart, GuideTokens.gradientDarkEnd]
               : [
                   theme.colorScheme.primary.withValues(alpha: 0.06),
                   theme.colorScheme.primary.withValues(alpha: 0.02),
                 ],
         ),
-        border: Border.all(
-          color: GuideTokens.divider(context),
-        ),
+        border: Border.all(color: GuideTokens.divider(context)),
       ),
       padding: const EdgeInsets.all(GuideTokens.space24),
       child: Row(
@@ -161,7 +156,11 @@ class _GuideMapHeaderState extends State<GuideMapHeader> {
     return Container(
       color: isDark ? GuideTokens.fallbackBgDark : GuideTokens.fallbackBgLight,
       child: Center(
-        child: Icon(Icons.map_outlined, size: 40, color: GuideTokens.fallbackIcon),
+        child: Icon(
+          Icons.map_outlined,
+          size: 40,
+          color: GuideTokens.fallbackIcon,
+        ),
       ),
     );
   }
@@ -267,9 +266,7 @@ class _GuideMapHeaderState extends State<GuideMapHeader> {
           vertical: GuideTokens.space8,
         ),
         textStyle: theme.textTheme.labelMedium,
-        shape: RoundedRectangleBorder(
-          borderRadius: GuideTokens.borderRadius8,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: GuideTokens.borderRadius8),
       ),
     );
   }
@@ -293,9 +290,7 @@ class _GuideMapHeaderState extends State<GuideMapHeader> {
           vertical: GuideTokens.space8,
         ),
         textStyle: theme.textTheme.labelMedium,
-        shape: RoundedRectangleBorder(
-          borderRadius: GuideTokens.borderRadius8,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: GuideTokens.borderRadius8),
       ),
     );
   }

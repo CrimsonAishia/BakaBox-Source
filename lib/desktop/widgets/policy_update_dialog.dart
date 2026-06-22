@@ -51,9 +51,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.slate800;
-    final secondaryTextColor = isDark
-        ? Colors.white70
-        : AppColors.slate500;
+    final secondaryTextColor = isDark ? Colors.white70 : AppColors.slate500;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -415,9 +413,7 @@ class _PolicyDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.slate800;
-    final secondaryTextColor = isDark
-        ? Colors.white70
-        : AppColors.slate500;
+    final secondaryTextColor = isDark ? Colors.white70 : AppColors.slate500;
 
     return Dialog(
       backgroundColor: Colors.transparent,

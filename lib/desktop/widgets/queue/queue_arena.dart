@@ -557,7 +557,11 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         opacity: state.opacity.clamp(0.0, 1.0),
         child: Transform.scale(
           scale: scale,
-          child: QueueUserAvatar(user: state.user, size: state.size, isWarmup: widget.isWarmup),
+          child: QueueUserAvatar(
+            user: state.user,
+            size: state.size,
+            isWarmup: widget.isWarmup,
+          ),
         ),
       ),
     );

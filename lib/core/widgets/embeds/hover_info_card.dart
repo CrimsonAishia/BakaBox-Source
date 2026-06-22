@@ -188,7 +188,11 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
           color: color.withValues(alpha: 0.12),
           child: Row(
             children: [
-              Icon(HoverInfoColors.icon(widget.data.type), size: 14, color: color),
+              Icon(
+                HoverInfoColors.icon(widget.data.type),
+                size: 14,
+                color: color,
+              ),
               const SizedBox(width: 6),
               Text(
                 _typeLabel(widget.data.type),
@@ -301,7 +305,11 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                 Flexible(
                   child: Text(
                     description,
-                    style: TextStyle(fontSize: 12, height: 1.4, color: subColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: subColor,
+                    ),
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -320,7 +328,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
     final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
     final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
-    final imageUrl = _gunModel?.preview?.front ??
+    final imageUrl =
+        _gunModel?.preview?.front ??
         _gunModel?.thumbnailUrl ??
         widget.data.iconUrl;
     final name = _gunModel?.name ?? widget.data.label;
@@ -387,7 +396,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
     final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
     final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
-    final imageUrl = _knifeModel?.preview?.front ??
+    final imageUrl =
+        _knifeModel?.preview?.front ??
         _knifeModel?.thumbnailUrl ??
         widget.data.iconUrl;
     final name = _knifeModel?.name ?? widget.data.label;
@@ -447,7 +457,6 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
       ],
     );
   }
-
 
   Widget _buildSpellCardBody(bool isDark, Color color) {
     final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
@@ -543,11 +552,19 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
             runSpacing: 4,
             children: [
               if (card.cooldown != null)
-                _buildStat(Icons.timer_outlined, '冷却',
-                    '${_formatNum(card.cooldown!)}s', const Color(0xFF2196F3)),
+                _buildStat(
+                  Icons.timer_outlined,
+                  '冷却',
+                  '${_formatNum(card.cooldown!)}s',
+                  const Color(0xFF2196F3),
+                ),
               if (card.damage != null && card.damage!.isNotEmpty)
-                _buildStat(Icons.flash_on, '伤害', card.damage!,
-                    const Color(0xFFFF5722)),
+                _buildStat(
+                  Icons.flash_on,
+                  '伤害',
+                  card.damage!,
+                  const Color(0xFFFF5722),
+                ),
               if (card.cost != null)
                 _buildStat(
                   Icons.local_fire_department,
@@ -557,41 +574,70 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                       ? AppColors.amber500
                       : AppColors.violet500,
                 ),
-                
+
               if (card.speed != null)
-                _buildStat(Icons.speed, '弹幕初速',
-                    _formatNum(card.speed!), const Color(0xFF0097A7)), // 青
+                _buildStat(
+                  Icons.speed,
+                  '弹幕初速',
+                  _formatNum(card.speed!),
+                  const Color(0xFF0097A7),
+                ), // 青
               if (card.count != null)
-                _buildStat(Icons.scatter_plot, '弹幕数量',
-                    card.count!.toString(), const Color(0xFF5E35B1)), // 蓝紫
+                _buildStat(
+                  Icons.scatter_plot,
+                  '弹幕数量',
+                  card.count!.toString(),
+                  const Color(0xFF5E35B1),
+                ), // 蓝紫
               if (card.angle != null)
-                _buildStat(Icons.architecture, '散射角度',
-                    '${_formatNum(card.angle!)}°',
-                    const Color(0xFF827717)), // 橄榄黄绿
+                _buildStat(
+                  Icons.architecture,
+                  '散射角度',
+                  '${_formatNum(card.angle!)}°',
+                  const Color(0xFF827717),
+                ), // 橄榄黄绿
               if (card.puncture != null)
-                _buildStat(Icons.swap_horiz, '穿刺次数',
-                    card.puncture!.toString(),
-                    const Color(0xFFAD1457)), // 玫红
+                _buildStat(
+                  Icons.swap_horiz,
+                  '穿刺次数',
+                  card.puncture!.toString(),
+                  const Color(0xFFAD1457),
+                ), // 玫红
               if (card.bounce != null)
-                _buildStat(Icons.replay, '反弹次数',
-                    card.bounce!.toString(),
-                    const Color(0xFFFBC02D)), // 金黄
+                _buildStat(
+                  Icons.replay,
+                  '反弹次数',
+                  card.bounce!.toString(),
+                  const Color(0xFFFBC02D),
+                ), // 金黄
               if (card.explode != null)
-                _buildStat(Icons.brightness_5, '影响范围',
-                    _formatNum(card.explode!),
-                    const Color(0xFFD84315)), // 火橙红
+                _buildStat(
+                  Icons.brightness_5,
+                  '影响范围',
+                  _formatNum(card.explode!),
+                  const Color(0xFFD84315),
+                ), // 火橙红
               if (card.holdTime != null)
-                _buildStat(Icons.hourglass_bottom, '持续时间',
-                    '${_formatNum(card.holdTime!)}s',
-                    const Color(0xFF6D4C41)), // 茶褐
+                _buildStat(
+                  Icons.hourglass_bottom,
+                  '持续时间',
+                  '${_formatNum(card.holdTime!)}s',
+                  const Color(0xFF6D4C41),
+                ), // 茶褐
               if (card.trackSpeed != null)
-                _buildStat(Icons.gps_fixed, '追踪转向',
-                    _formatNum(card.trackSpeed!),
-                    const Color(0xFF2E7D32)), // 翠绿
+                _buildStat(
+                  Icons.gps_fixed,
+                  '追踪转向',
+                  _formatNum(card.trackSpeed!),
+                  const Color(0xFF2E7D32),
+                ), // 翠绿
               if (card.customCd != null)
-                _buildStat(Icons.settings, '内置CD',
-                    '${_formatNum(card.customCd!)}s',
-                    const Color(0xFF546E7A)), // 蓝灰
+                _buildStat(
+                  Icons.settings,
+                  '内置CD',
+                  '${_formatNum(card.customCd!)}s',
+                  const Color(0xFF546E7A),
+                ), // 蓝灰
             ],
           ),
         ],
@@ -613,7 +659,12 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
       card.trackSpeed != null ||
       card.customCd != null;
 
-  Widget _buildStat(IconData icon, String label, String value, Color iconColor) {
+  Widget _buildStat(
+    IconData icon,
+    String label,
+    String value,
+    Color iconColor,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.slate300 : const Color(0xFF4B5563);
     return Row(
@@ -623,14 +674,20 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
         const SizedBox(width: 3),
         Text(
           '$label $value',
-          style: TextStyle(fontSize: 11, color: textColor, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 11,
+            color: textColor,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 
   String _formatNum(double v) {
-    return v == v.toInt().toDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+    return v == v.toInt().toDouble()
+        ? v.toInt().toString()
+        : v.toStringAsFixed(1);
   }
 
   Color _tierColor(SpellCardTier tier) {
@@ -657,7 +714,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
 
   Widget _buildMapCard(bool isDark, Color color) {
     final hasMapInfo = _mapInfo != null;
-    final hasBackground = hasMapInfo &&
+    final hasBackground =
+        hasMapInfo &&
         _mapInfo!.mapBackground != null &&
         _mapInfo!.mapBackground!.isNotEmpty;
     final mapLabel = _mapInfo?.mapLabel ?? widget.data.label;
@@ -690,13 +748,18 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
               children: [
                 // 头部：类型条
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   color: color.withValues(alpha: 0.12),
                   child: Row(
                     children: [
-                      Icon(HoverInfoColors.icon(HoverInfoType.map),
-                          size: 14, color: color),
+                      Icon(
+                        HoverInfoColors.icon(HoverInfoType.map),
+                        size: 14,
+                        color: color,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '地图',
@@ -764,12 +827,12 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                                   Icon(
                                     Icons.translate,
                                     size: 14,
-                                    color:
-                                        Colors.white.withValues(alpha: 0.95),
+                                    color: Colors.white.withValues(alpha: 0.95),
                                     shadows: const [
                                       Shadow(
-                                          color: Colors.black54,
-                                          blurRadius: 4),
+                                        color: Colors.black54,
+                                        blurRadius: 4,
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 6),
@@ -782,8 +845,9 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                                         color: Colors.white,
                                         shadows: [
                                           Shadow(
-                                              color: Colors.black54,
-                                              blurRadius: 4),
+                                            color: Colors.black54,
+                                            blurRadius: 4,
+                                          ),
                                         ],
                                       ),
                                       maxLines: 1,
@@ -799,12 +863,14 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                                     Icon(
                                       Icons.map_outlined,
                                       size: 12,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.7),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       shadows: const [
                                         Shadow(
-                                            color: Colors.black54,
-                                            blurRadius: 4),
+                                          color: Colors.black54,
+                                          blurRadius: 4,
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(width: 4),
@@ -813,12 +879,14 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                                         mapName,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.78),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.78,
+                                          ),
                                           shadows: const [
                                             Shadow(
-                                                color: Colors.black54,
-                                                blurRadius: 4),
+                                              color: Colors.black54,
+                                              blurRadius: 4,
+                                            ),
                                           ],
                                         ),
                                         maxLines: 1,
@@ -887,10 +955,7 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
         ),
         if (_loadFailed) ...[
           const SizedBox(height: 6),
-          Text(
-            '详情加载失败',
-            style: TextStyle(fontSize: 12, color: subColor),
-          ),
+          Text('详情加载失败', style: TextStyle(fontSize: 12, color: subColor)),
         ],
       ],
     );

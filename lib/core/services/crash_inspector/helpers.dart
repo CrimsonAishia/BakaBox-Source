@@ -4,8 +4,12 @@
 import 'rules.dart';
 
 /// 返回 [path] 是否落在某模块地址区间内, 是则返回该模块.
-T? addrIn<T>(List<T> modules, int addr, int Function(T) base,
-    int Function(T) size) {
+T? addrIn<T>(
+  List<T> modules,
+  int addr,
+  int Function(T) base,
+  int Function(T) size,
+) {
   for (final m in modules) {
     final b = base(m);
     if (b <= addr && addr < b + size(m)) return m;
@@ -24,11 +28,12 @@ String classify(String path) {
 
 /// 取末两段路径作为归并键.
 String canonical(String path) {
-  final p = path.replaceAll('\\', '/').toLowerCase().replaceAll(RegExp(r'^/+'), '');
+  final p = path
+      .replaceAll('\\', '/')
+      .toLowerCase()
+      .replaceAll(RegExp(r'^/+'), '');
   final parts = p.split('/').where((s) => s.isNotEmpty).toList();
-  return parts.length >= 2
-      ? parts.sublist(parts.length - 2).join('/')
-      : p;
+  return parts.length >= 2 ? parts.sublist(parts.length - 2).join('/') : p;
 }
 
 final RegExp _shortPrefixRe = RegExp(r'^[a-z]{1,3}_[a-z]');
@@ -115,10 +120,10 @@ List<Map<String, dynamic>> dedupeMessages(Map<String, int> msgDict) {
     if (!redundant) kept.add(e);
   }
 
-  final result = kept
-      .map((e) => {'text': e.key, 'stack_offset': e.value})
-      .toList()
-    ..sort((a, b) =>
-        (a['stack_offset'] as int).compareTo(b['stack_offset'] as int));
+  final result =
+      kept.map((e) => {'text': e.key, 'stack_offset': e.value}).toList()..sort(
+        (a, b) =>
+            (a['stack_offset'] as int).compareTo(b['stack_offset'] as int),
+      );
   return result.take(20).toList();
 }

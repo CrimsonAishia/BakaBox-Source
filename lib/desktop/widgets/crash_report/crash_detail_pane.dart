@@ -40,7 +40,6 @@ class CrashDetailPane extends StatefulWidget {
   State<CrashDetailPane> createState() => _CrashDetailPaneState();
 }
 
-
 class _CrashDetailPaneState extends State<CrashDetailPane> {
   bool _showFullReport = false;
 
@@ -135,7 +134,6 @@ class _CrashDetailPaneState extends State<CrashDetailPane> {
   }
 }
 
-
 // Header (极简：图标 + 严重度徽标 + 标题 + 关闭按钮)
 class _DetailHeader extends StatelessWidget {
   final CrashDetailViewModel detail;
@@ -226,7 +224,6 @@ class _DetailHeader extends StatelessWidget {
   }
 }
 
-
 // Footer (操作按钮全部下沉到底部)
 class _DetailFooter extends StatelessWidget {
   final CrashDetailViewModel detail;
@@ -303,8 +300,7 @@ class _DetailFooter extends StatelessWidget {
             label: const Text('复制完整报告'),
             onPressed: onCopy,
             style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
           ),
         ],
@@ -312,7 +308,6 @@ class _DetailFooter extends StatelessWidget {
     );
   }
 }
-
 
 class _Badge extends StatelessWidget {
   final Color color;
@@ -358,7 +353,6 @@ class _Badge extends StatelessWidget {
     );
   }
 }
-
 
 // Summary view
 class _SummaryView extends StatelessWidget {
@@ -448,7 +442,6 @@ class _SummaryView extends StatelessWidget {
   }
 }
 
-
 class _MetaCard extends StatelessWidget {
   final CrashDetailViewModel detail;
   final CrashReportPalette palette;
@@ -504,8 +497,7 @@ class _MetaCard extends StatelessWidget {
                       width: 80,
                       child: Text(
                         p.$1,
-                        style:
-                            TextStyle(fontSize: 12.5, color: secondary),
+                        style: TextStyle(fontSize: 12.5, color: secondary),
                       ),
                     ),
                     Expanded(
@@ -559,7 +551,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-
 class _ResourceTile extends StatelessWidget {
   final CrashReportResource entry;
   final bool isDark;
@@ -568,8 +559,7 @@ class _ResourceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent =
-        isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8);
+    final accent = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8);
     final textColor = isDark ? Colors.white : AppColors.slate800;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -663,7 +653,6 @@ class _WorkshopChip extends StatelessWidget {
   }
 }
 
-
 class _ThirdPartyTile extends StatelessWidget {
   final CrashReportThirdParty entry;
   final bool isDark;
@@ -689,8 +678,7 @@ class _ThirdPartyTile extends StatelessWidget {
         children: [
           Container(
             margin: const EdgeInsets.only(top: 2),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: palette.color.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(999),
@@ -723,10 +711,7 @@ class _ThirdPartyTile extends StatelessWidget {
                       if (entry.label.isNotEmpty)
                         TextSpan(
                           text: '  ·  ${entry.label}',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: secondary,
-                          ),
+                          style: TextStyle(fontSize: 12.5, color: secondary),
                         ),
                     ],
                   ),
@@ -750,7 +735,6 @@ class _ThirdPartyTile extends StatelessWidget {
     );
   }
 }
-
 
 class _MonoBlock extends StatelessWidget {
   final String text;

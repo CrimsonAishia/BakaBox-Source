@@ -131,11 +131,7 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.shield_outlined,
-              size: 48,
-              color: AppColors.indigo500,
-            ),
+            Icon(Icons.shield_outlined, size: 48, color: AppColors.indigo500),
             const SizedBox(height: 12),
             Text(
               '应用权限设置',

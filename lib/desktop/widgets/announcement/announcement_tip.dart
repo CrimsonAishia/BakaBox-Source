@@ -205,9 +205,7 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
                           icon: Icon(
                             Icons.close,
                             size: 18,
-                            color: isDark
-                                ? Colors.white38
-                                : AppColors.gray400,
+                            color: isDark ? Colors.white38 : AppColors.gray400,
                           ),
                           splashRadius: 16,
                           tooltip: '关闭',

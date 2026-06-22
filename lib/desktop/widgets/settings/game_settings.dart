@@ -131,16 +131,12 @@ class _GameSettingsState extends State<GameSettings> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate800
-                      : AppColors.slate50,
+                  color: isDark ? AppColors.slate800 : AppColors.slate50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasError
                         ? Colors.red.withValues(alpha: 0.5)
-                        : (isDark
-                              ? AppColors.slate600
-                              : AppColors.slate200),
+                        : (isDark ? AppColors.slate600 : AppColors.slate200),
                   ),
                 ),
                 child: Text(
@@ -165,9 +161,7 @@ class _GameSettingsState extends State<GameSettings> {
                 ),
                 foregroundColor: isDark ? Colors.white70 : null,
                 side: BorderSide(
-                  color: isDark
-                      ? AppColors.slate600
-                      : AppColors.gray300,
+                  color: isDark ? AppColors.slate600 : AppColors.gray300,
                 ),
               ),
               child: isDetecting
@@ -188,9 +182,7 @@ class _GameSettingsState extends State<GameSettings> {
                 ),
                 foregroundColor: isDark ? Colors.white70 : null,
                 side: BorderSide(
-                  color: isDark
-                      ? AppColors.slate600
-                      : AppColors.gray300,
+                  color: isDark ? AppColors.slate600 : AppColors.gray300,
                 ),
               ),
               child: const Text('选择路径'),
@@ -341,9 +333,7 @@ class _GameSettingsState extends State<GameSettings> {
               checkmarkColor: Colors.white,
               backgroundColor: isDark ? AppColors.slate700 : null,
               side: BorderSide(
-                color: isDark
-                    ? AppColors.slate600
-                    : AppColors.gray200,
+                color: isDark ? AppColors.slate600 : AppColors.gray200,
               ),
             );
           }).toList(),
@@ -369,17 +359,13 @@ class _GameSettingsState extends State<GameSettings> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.slate600
-                          : AppColors.gray200,
+                      color: isDark ? AppColors.slate600 : AppColors.gray200,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.slate600
-                          : AppColors.gray200,
+                      color: isDark ? AppColors.slate600 : AppColors.gray200,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -538,9 +524,7 @@ class _PlatformOption extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.15)
-                    : (isDark
-                              ? AppColors.slate600
-                              : AppColors.gray200)
+                    : (isDark ? AppColors.slate600 : AppColors.gray200)
                           .withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -565,11 +549,7 @@ class _PlatformOption extends StatelessWidget {
             ),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              Icon(
-                MdiIcons.checkCircle,
-                size: 18,
-                color: AppColors.primary,
-              ),
+              Icon(MdiIcons.checkCircle, size: 18, color: AppColors.primary),
             ],
           ],
         ),

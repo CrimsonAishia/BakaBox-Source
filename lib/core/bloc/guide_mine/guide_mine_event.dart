@@ -11,12 +11,12 @@ enum MineTab {
   trash;
 
   String get label => switch (this) {
-        MineTab.published => '已发布',
-        MineTab.drafts => '草稿箱',
-        MineTab.favorites => '我的收藏',
-        MineTab.liked => '我赞过的',
-        MineTab.trash => '回收站',
-      };
+    MineTab.published => '已发布',
+    MineTab.drafts => '草稿箱',
+    MineTab.favorites => '我的收藏',
+    MineTab.liked => '我赞过的',
+    MineTab.trash => '回收站',
+  };
 }
 
 abstract class GuideMineEvent extends Equatable {

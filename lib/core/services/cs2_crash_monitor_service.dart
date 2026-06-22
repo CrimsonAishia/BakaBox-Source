@@ -212,8 +212,7 @@ class Cs2CrashMonitorService {
     final results = <String>[];
     try {
       await for (final entity in dir.list(followLinks: false)) {
-        if (entity is File &&
-            entity.path.toLowerCase().endsWith('.mdmp')) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.mdmp')) {
           results.add(entity.path);
         }
       }

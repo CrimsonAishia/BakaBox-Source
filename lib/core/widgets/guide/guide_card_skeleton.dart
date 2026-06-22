@@ -57,10 +57,7 @@ class _GuideCardSkeletonState extends State<GuideCardSkeleton>
             ? Colors.white.withValues(alpha: 0.05)
             : Colors.white.withValues(alpha: 0.95),
         borderRadius: GuideTokens.borderRadius16,
-        border: Border.all(
-          color: GuideTokens.divider(context),
-          width: 1.5,
-        ),
+        border: Border.all(color: GuideTokens.divider(context), width: 1.5),
         boxShadow: GuideTokens.shadowSm,
       ),
       child: Column(
@@ -108,13 +105,21 @@ class _GuideCardSkeletonState extends State<GuideCardSkeleton>
                     // 作者名占位
                     Expanded(
                       flex: 25,
-                      child: _buildShimmerLine(isDark, widthFactor: 1.0, height: 12),
+                      child: _buildShimmerLine(
+                        isDark,
+                        widthFactor: 1.0,
+                        height: 12,
+                      ),
                     ),
                     const Spacer(flex: 45),
                     // 互动数据占位
                     Expanded(
                       flex: 30,
-                      child: _buildShimmerLine(isDark, widthFactor: 1.0, height: 12),
+                      child: _buildShimmerLine(
+                        isDark,
+                        widthFactor: 1.0,
+                        height: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -158,7 +163,8 @@ class _GuideCardSkeletonState extends State<GuideCardSkeleton>
     );
   }
 
-  Widget _buildShimmerLine(bool isDark, {
+  Widget _buildShimmerLine(
+    bool isDark, {
     required double widthFactor,
     required double height,
   }) {

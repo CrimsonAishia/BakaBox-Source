@@ -358,8 +358,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         (c) => c.modelName == event.categoryName,
       );
 
-      final updatedCategories = List<ServerCategory>.from(state.serverCategories);
-      
+      final updatedCategories = List<ServerCategory>.from(
+        state.serverCategories,
+      );
+
       if (categoryIndex != -1) {
         updatedCategories[categoryIndex] = updatedCategory;
       } else {
@@ -367,10 +369,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         updatedCategories.add(updatedCategory);
       }
 
-      emit(state.copyWith(
-        serverCategories: updatedCategories,
-        successMessage: '已添加 ${event.serverItem.nickname ?? event.serverItem.serverAddress}',
-      ));
+      emit(
+        state.copyWith(
+          serverCategories: updatedCategories,
+          successMessage:
+              '已添加 ${event.serverItem.nickname ?? event.serverItem.serverAddress}',
+        ),
+      );
 
       // 如果当前选中的是这个分类，顺便刷新一下
       if (state.selectedCategory?.modelName == event.categoryName) {
@@ -510,7 +515,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 收集所有需要查询的服务器地址（使用 Set 去重，防止同一服务器被添加多次导致查询冲突）
     final a2sServerAddresses = <String>{};
     final apiServerAddresses = <String>{};
-    
+
     for (final server in state.servers) {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
@@ -526,7 +531,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (a2sServerAddresses.isEmpty && apiServerAddresses.isEmpty) return;
 
     if (requestId != _currentRequestId || emit.isDone) return;
-    
+
     // 异步拉取第三方 API 数据
     Future<void> fetchApiServers() async {
       if (apiServerAddresses.isEmpty) return;
@@ -536,21 +541,22 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
         for (final address in apiServerAddresses) {
           final apiServerData = apiMap[address];
-          
+
           final currentIndex = state.servers.indexWhere(
-            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
+            (s) =>
+                (s.serverItem.address ?? s.serverItem.serverAddress) == address,
           );
           if (currentIndex == -1) continue;
-          
+
           final currentServer = state.servers[currentIndex];
-          
+
           if (apiServerData != null) {
             // 解析出 API 数据
             final hasDataChanged =
                 currentServer.serverData == null ||
                 currentServer.serverData!.players != apiServerData.players ||
                 currentServer.serverData!.map != apiServerData.map;
-            
+
             // 我们重用 server_models 里面的机制，把 API 数据转为 ServerInfo
             final info = apiServerData.toServerInfo();
 
@@ -578,7 +584,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             final updatedServer = currentServer.copyWith(
               serverData: info,
               updatedAt: DateTime.now(),
-              recentlyUpdated: hasDataChanged && currentServer.serverData != null,
+              recentlyUpdated:
+                  hasDataChanged && currentServer.serverData != null,
               isLoading: false,
               hasError: false,
               consecutiveFailures: 0,
@@ -594,22 +601,28 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
             // 获取背景图信息 (如果第三方API提供了图片，我们可以封装一个 MapData)
             if (apiServerData.imageUrl != null) {
-               final fakeMapData = MapData(
-                 id: 0,
-                 mapName: info.map ?? '',
-                 mapLabel: apiServerData.mapCn ?? info.map ?? '',
-                 mapUrl: apiServerData.imageUrl!,
-               );
-               add(ServerUpdateSingleServer(address: address, mapInfo: fakeMapData));
-            } else if (info.map != null && (mapChanged || currentServer.mapInfo == null)) {
-               _fetchMapInfoAsync(address, info.map!, requestId, serverApi);
+              final fakeMapData = MapData(
+                id: 0,
+                mapName: info.map ?? '',
+                mapLabel: apiServerData.mapCn ?? info.map ?? '',
+                mapUrl: apiServerData.imageUrl!,
+              );
+              add(
+                ServerUpdateSingleServer(
+                  address: address,
+                  mapInfo: fakeMapData,
+                ),
+              );
+            } else if (info.map != null &&
+                (mapChanged || currentServer.mapInfo == null)) {
+              _fetchMapInfoAsync(address, info.map!, requestId, serverApi);
             }
           } else {
             // 未找到数据，视为离线或错误
             final newFailureCount = currentServer.consecutiveFailures + 1;
             final isNowOffline = newFailureCount >= _offlineThreshold;
             _failureCountCache[address] = newFailureCount;
-            
+
             if (isNowOffline) {
               _updateServerByAddress(
                 address,
@@ -640,8 +653,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         LogService.e('批量加载 API 服务器失败: $e', e);
         // 标记所有 API 服务器为错误
         for (final address in apiServerAddresses) {
-           final currentIndex = state.servers.indexWhere(
-            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
+          final currentIndex = state.servers.indexWhere(
+            (s) =>
+                (s.serverItem.address ?? s.serverItem.serverAddress) == address,
           );
           if (currentIndex != -1 && !emit.isDone) {
             final currentServer = state.servers[currentIndex];
@@ -808,7 +822,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
         return server;
       }
-      
+
       final updated = _applyScoreToServer(server, score);
       if (!identical(updated, server)) changed = true;
       return updated;
@@ -843,10 +857,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         return server;
       }
       changed = true;
-      return server.copyWith(
-        queueCount: queueCount,
-        warmupCount: warmupCount,
-      );
+      return server.copyWith(queueCount: queueCount, warmupCount: warmupCount);
     }).toList();
 
     if (!changed) return;
@@ -861,13 +872,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (state.servers.isEmpty) return;
     if (event.isSyncing) {
       for (final server in state.servers) {
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address != null) {
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
         }
       }
-      final updatedServers = state.servers.map((s) => s.copyWith(clearMapRuntime: true)).toList();
+      final updatedServers = state.servers
+          .map((s) => s.copyWith(clearMapRuntime: true))
+          .toList();
       emit(state.copyWith(servers: updatedServers));
       return;
     }
@@ -1052,7 +1066,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
                   return;
                 }
                 _fetchMapRuntimeAsync(
-                    address, mapNameAtThatTime, reqIdAtThatTime, serverApi);
+                  address,
+                  mapNameAtThatTime,
+                  reqIdAtThatTime,
+                  serverApi,
+                );
               });
             } else {
               // 弱网模式下没有长连接，直接发 HTTP
@@ -1241,10 +1259,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     servers[index] = current.copyWith(
       pingInfo: event.pingInfo ?? current.pingInfo,
-      mapInfo: event.mapInfoFetched == true ? event.mapInfo : (event.mapInfo ?? current.mapInfo),
+      mapInfo: event.mapInfoFetched == true
+          ? event.mapInfo
+          : (event.mapInfo ?? current.mapInfo),
       mapInfoFetched: event.mapInfoFetched ?? current.mapInfoFetched,
-      mapRuntime: event.mapRuntimeFetched == true ? event.mapRuntime : (event.mapRuntime ?? current.mapRuntime),
-      clearMapRuntime: event.mapRuntimeFetched == true && event.mapRuntime == null,
+      mapRuntime: event.mapRuntimeFetched == true
+          ? event.mapRuntime
+          : (event.mapRuntime ?? current.mapRuntime),
+      clearMapRuntime:
+          event.mapRuntimeFetched == true && event.mapRuntime == null,
       mapRuntimeLastFetched: event.mapRuntimeFetched == true
           ? DateTime.now().millisecondsSinceEpoch
           : current.mapRuntimeLastFetched,
@@ -2225,7 +2248,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   /// 清理过大的缓存，保留最近使用的数据
-  void _trimCacheIfNeeded() {    if (_mapRuntimeCache.length <= _maxCacheSize) return;
+  void _trimCacheIfNeeded() {
+    if (_mapRuntimeCache.length <= _maxCacheSize) return;
 
     // 按最后获取时间排序，移除最旧的条目
     final sortedEntries = _mapRuntimeLastFetchedCache.entries.toList()
@@ -2648,7 +2672,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     // 2. 递增 requestId，取消所有进行中的请求
     final requestId = ++_currentRequestId;
-    
+
     // 强制触发一次 WebSocket 快照对账（如果不在冷却期）
     _maybeForceRealtimeResnapshot(DateTime.now());
 
@@ -2764,7 +2788,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (state.servers.isEmpty) return;
 
     if (event.isSyncing) {
-      final updatedServers = state.servers.map((s) => s.copyWith(clearTeamScores: true)).toList();
+      final updatedServers = state.servers
+          .map((s) => s.copyWith(clearTeamScores: true))
+          .toList();
       emit(state.copyWith(servers: updatedServers));
       return;
     }
@@ -2800,7 +2826,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (state.servers.isEmpty) return;
 
     if (event.isSyncing) {
-      final updatedServers = state.servers.map((s) => s.copyWith(queueCount: 0, warmupCount: 0)).toList();
+      final updatedServers = state.servers
+          .map((s) => s.copyWith(queueCount: 0, warmupCount: 0))
+          .toList();
       emit(state.copyWith(servers: updatedServers));
       return;
     }

@@ -519,7 +519,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 游戏设置事件处理 ====================
 
   Future<void> _onSetGamePath(
     SettingsSetGamePath event,
@@ -537,12 +536,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
 
       await StorageUtils.setString(_keyGamePath, event.path);
-      emit(
-        state.copyWith(
-          gamePath: event.path,
-          gamePathError: null,
-        ),
-      );
+      emit(state.copyWith(gamePath: event.path, gamePathError: null));
 
       // 同步到 GameLauncherService
       await GameLauncherService().setGamePath(event.path);
@@ -579,12 +573,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
 
       await StorageUtils.setString(_keySteamPath, event.path);
-      emit(
-        state.copyWith(
-          steamPath: event.path,
-          steamPathError: null,
-        ),
-      );
+      emit(state.copyWith(steamPath: event.path, steamPathError: null));
 
       // 同步到 GameLauncherService
       await GameLauncherService().setSteamPath(event.path);
@@ -813,16 +802,19 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 音效设置事件处理 ====================
 
   Future<void> _loadAudioSettings(Emitter<SettingsState> emit) async {
     try {
       await _audioService.initialize();
-      emit(state.copyWith(
-        audioVolume: _audioService.volume,
-        warmupAudioVolume: _audioService.warmupVolume,
-      ));
-      LogService.d('音效设置已加载: volume=${_audioService.volume}, warmupVolume=${_audioService.warmupVolume}');
+      emit(
+        state.copyWith(
+          audioVolume: _audioService.volume,
+          warmupAudioVolume: _audioService.warmupVolume,
+        ),
+      );
+      LogService.d(
+        '音效设置已加载: volume=${_audioService.volume}, warmupVolume=${_audioService.warmupVolume}',
+      );
     } catch (e) {
       LogService.e('加载音效设置失败', e);
     }
@@ -878,7 +870,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 详细缓存管理事件处理 ====================
 
   Future<void> _onLoadCacheDetails(
     SettingsLoadCacheDetails event,
@@ -1199,7 +1190,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 通知位置设置事件处理 ====================
 
   Future<void> _onSetNotificationPosition(
     SettingsSetNotificationPosition event,
@@ -1218,7 +1208,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 浮窗位置设置事件处理 ====================
 
   Future<void> _onSetFloatingWindowPosition(
     SettingsSetFloatingWindowPosition event,
@@ -1237,7 +1226,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 热身通知开关事件处理 ====================
 
   Future<void> _onSetWarmupNotificationEnabled(
     SettingsSetWarmupNotificationEnabled event,
@@ -1256,7 +1244,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 更新日志通知开关事件处理 ====================
 
   Future<void> _onSetUpdateLogNotificationEnabled(
     SettingsSetUpdateLogNotificationEnabled event,
@@ -1304,7 +1291,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 广播通知方式设置事件处理 ====================
 
   Future<void> _onSetBroadcastNotificationType(
     SettingsSetBroadcastNotificationType event,
@@ -1322,7 +1308,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 移动端缓存管理事件处理 ====================
 
   Future<void> _onLoadMobileCacheDetails(
     SettingsLoadMobileCacheDetails event,
@@ -1463,7 +1448,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  // ==================== 黑名单管理事件处理 ====================
 
   final GuideApi _guideApi = GuideApi();
 
@@ -1479,11 +1463,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       for (final item in blockedJson) {
         final parts = item.split('|');
         if (parts.length >= 3) {
-          users.add(BlockedUserInfo(
-            userId: int.tryParse(parts[0]) ?? 0,
-            userName: parts[1],
-            blockedAt: DateTime.tryParse(parts[2]) ?? DateTime.now(),
-          ));
+          users.add(
+            BlockedUserInfo(
+              userId: int.tryParse(parts[0]) ?? 0,
+              userName: parts[1],
+              blockedAt: DateTime.tryParse(parts[2]) ?? DateTime.now(),
+            ),
+          );
         }
       }
       emit(state.copyWith(blockedUsers: users, isLoadingBlocklist: false));
@@ -1551,7 +1537,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     await StorageUtils.setStringList('blocked_users', serialized);
   }
 
-  // ==================== 弱网模式 ====================
 
   Future<void> _onSetWeakNetworkMode(
     SettingsSetWeakNetworkMode event,

@@ -882,4 +882,3 @@ class _MapTagRowState extends State<_MapTagRow> {
     return widgets;
   }
 }
-

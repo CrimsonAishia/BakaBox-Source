@@ -55,9 +55,7 @@ class AnnouncementsPanel extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.slate800,
+                          color: isDark ? Colors.white : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -391,9 +389,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.slate800,
+                            color: isDark ? Colors.white : AppColors.slate800,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -508,9 +504,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
         color: isDark ? AppColors.gray200 : AppColors.gray700,
       ),
       code: TextStyle(
-        backgroundColor: isDark
-            ? AppColors.gray700
-            : AppColors.gray100,
+        backgroundColor: isDark ? AppColors.gray700 : AppColors.gray100,
         color: isDark ? const Color(0xFFFCA5A5) : AppColors.red600,
         fontSize: 13,
       ),

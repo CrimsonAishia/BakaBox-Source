@@ -187,9 +187,7 @@ class DesktopNavigation extends StatelessWidget {
                               : FontWeight.w500,
                           color: isFeedbackSelected
                               ? AppColors.primary
-                              : (isDark
-                                    ? Colors.white60
-                                    : AppColors.gray500),
+                              : (isDark ? Colors.white60 : AppColors.gray500),
                         ),
                       ),
                     ),
@@ -250,9 +248,7 @@ class _NavigationItemWidget extends StatelessWidget {
                   vertical: 13,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Colors.transparent,
+                  color: isSelected ? AppColors.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   gradient: isSelected
                       ? const LinearGradient(

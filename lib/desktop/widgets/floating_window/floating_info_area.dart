@@ -89,9 +89,7 @@ class FloatingInfoArea extends StatelessWidget {
   Widget _buildWarmupContent() {
     final current = state.currentPlayers ?? 0;
     final target = state.targetPlayers ?? 0;
-    final progress = target > 0
-        ? (current / target).clamp(0.0, 1.0)
-        : 0.0;
+    final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
     final reached = target > 0 && current >= target;
 
     return Column(

@@ -66,7 +66,8 @@ class GuideBottomCommentComposerState
   void didUpdateWidget(GuideBottomCommentComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 切换回复目标时自动展开
-    if (widget.replyTarget != null && widget.replyTarget != oldWidget.replyTarget) {
+    if (widget.replyTarget != null &&
+        widget.replyTarget != oldWidget.replyTarget) {
       _expand();
     }
   }
@@ -138,16 +139,19 @@ class GuideBottomCommentComposerState
     final content = QuillDeltaCodec.encode(_editorController.document);
     final target = widget.replyTarget;
     // 服务端 parentId=0 表示顶层，视为无父级
-    final effectiveParentId = (target?.parentId != null && target!.parentId != 0)
+    final effectiveParentId =
+        (target?.parentId != null && target!.parentId != 0)
         ? target.parentId
         : target?.id;
-    context.read<GuideCommentBloc>().add(PostComment(
-          content: content,
-          images: _imageUrls,
-          parentId: effectiveParentId,
-          replyToId: target?.id,
-          replyToName: target?.authorName,
-        ));
+    context.read<GuideCommentBloc>().add(
+      PostComment(
+        content: content,
+        images: _imageUrls,
+        parentId: effectiveParentId,
+        replyToId: target?.id,
+        replyToName: target?.authorName,
+      ),
+    );
   }
 
   void _onPostingDone() {
@@ -508,11 +512,7 @@ class _Avatar extends StatelessWidget {
   final String displayName;
   final double size;
 
-  const _Avatar({
-    this.avatarUrl,
-    required this.displayName,
-    this.size = 36,
-  });
+  const _Avatar({this.avatarUrl, required this.displayName, this.size = 36});
 
   @override
   Widget build(BuildContext context) {
@@ -597,11 +597,7 @@ class _GlowPostButtonState extends State<_GlowPostButton> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF7DD3FC),
-                AppColors.blue500,
-                Color(0xFF1D4ED8),
-              ],
+              colors: [Color(0xFF7DD3FC), AppColors.blue500, Color(0xFF1D4ED8)],
               stops: [0.0, 0.55, 1.0],
             ),
             borderRadius: BorderRadius.circular(999),

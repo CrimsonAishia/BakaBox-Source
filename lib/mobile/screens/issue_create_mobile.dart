@@ -830,9 +830,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               width: 4,
               height: 16,
               decoration: BoxDecoration(
-                color: hasError
-                    ? AppColors.red600
-                    : AppColors.primary,
+                color: hasError ? AppColors.red600 : AppColors.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -842,9 +840,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: hasError
-                    ? AppColors.red600
-                    : colorScheme.onSurface,
+                color: hasError ? AppColors.red600 : colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 4),

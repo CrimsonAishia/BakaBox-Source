@@ -256,9 +256,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                   size: 16,
                   color: hasUnread
                       ? AppColors.primary
-                      : (widget.isDark
-                            ? Colors.white70
-                            : AppColors.gray500),
+                      : (widget.isDark ? Colors.white70 : AppColors.gray500),
                 ),
                 if (hasUnread)
                   Positioned(

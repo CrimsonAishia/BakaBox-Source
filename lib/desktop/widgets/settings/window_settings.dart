@@ -79,16 +79,12 @@ class _ExitBehaviorSelector extends StatelessWidget {
                       : null,
                   color: isSelected
                       ? null
-                      : (isDark
-                            ? AppColors.slate700
-                            : AppColors.gray50),
+                      : (isDark ? AppColors.slate700 : AppColors.gray50),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primary
-                        : (isDark
-                              ? AppColors.slate600
-                              : AppColors.gray200),
+                        : (isDark ? AppColors.slate600 : AppColors.gray200),
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected

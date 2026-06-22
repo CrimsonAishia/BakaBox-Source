@@ -121,9 +121,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.gray100,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: PageLayout(
         title: _getTitle(),
         subtitle: _getSubtitle(),
@@ -305,9 +303,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               Container(
                 width: 1,
                 height: 24,
-                color: isDark
-                    ? AppColors.slate700
-                    : AppColors.gray200,
+                color: isDark ? AppColors.slate700 : AppColors.gray200,
               ),
               const SizedBox(width: 12),
               // 类型筛选
@@ -349,9 +345,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.gray100,
+                  color: isDark ? AppColors.slate700 : AppColors.gray100,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -392,9 +386,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primary
-                      : (isDark
-                            ? AppColors.slate700
-                            : AppColors.gray100),
+                      : (isDark ? AppColors.slate700 : AppColors.gray100),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -406,9 +398,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                         size: 12,
                         color: isSelected
                             ? Colors.white
-                            : (isDark
-                                  ? Colors.white54
-                                  : AppColors.gray500),
+                            : (isDark ? Colors.white54 : AppColors.gray500),
                       ),
                       const SizedBox(width: 4),
                     ],
@@ -417,9 +407,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                       style: TextStyle(
                         color: isSelected
                             ? Colors.white
-                            : (isDark
-                                  ? Colors.white70
-                                  : AppColors.gray700),
+                            : (isDark ? Colors.white70 : AppColors.gray700),
                         fontSize: 12,
                         fontWeight: isSelected
                             ? FontWeight.w600
@@ -679,9 +667,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 width: 60,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : Colors.grey.shade200,
+                  color: isDark ? AppColors.slate700 : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -690,9 +676,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 width: 50,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : Colors.grey.shade200,
+                  color: isDark ? AppColors.slate700 : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -701,9 +685,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 child: Container(
                   height: 20,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.slate700
-                        : Colors.grey.shade200,
+                    color: isDark ? AppColors.slate700 : Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -717,9 +699,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 width: 100,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : Colors.grey.shade200,
+                  color: isDark ? AppColors.slate700 : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -728,9 +708,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 width: 80,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : Colors.grey.shade200,
+                  color: isDark ? AppColors.slate700 : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -897,9 +875,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               icon: Icon(MdiIcons.close, size: 18),
               label: const Text('清除搜索'),
               style: TextButton.styleFrom(
-                foregroundColor: isDark
-                    ? Colors.white54
-                    : AppColors.gray500,
+                foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
               ),
             ),
         ],
@@ -1112,9 +1088,7 @@ class _IssueCardState extends State<_IssueCard> {
             border: Border.all(
               color: _isHovered
                   ? AppColors.primary.withValues(alpha: 0.3)
-                  : (isDark
-                        ? AppColors.slate700
-                        : AppColors.gray200),
+                  : (isDark ? AppColors.slate700 : AppColors.gray200),
             ),
             boxShadow: [
               BoxShadow(
@@ -1155,17 +1129,13 @@ class _IssueCardState extends State<_IssueCard> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.slate700
-                          : AppColors.gray100,
+                      color: isDark ? AppColors.slate700 : AppColors.gray100,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       '#${widget.issue.id}',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.gray500,
+                        color: isDark ? Colors.white54 : AppColors.gray500,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1306,10 +1276,7 @@ class _IssueCardState extends State<_IssueCard> {
         const Color(0xFF7C3AED),
         const Color(0xFFEDE9FE),
       ), // 紫色 - 重复问题
-      IssueStatus.closed => (
-        AppColors.gray500,
-        AppColors.gray100,
-      ), // 灰色 - 已关闭
+      IssueStatus.closed => (AppColors.gray500, AppColors.gray100), // 灰色 - 已关闭
     };
   }
 
@@ -1344,9 +1311,7 @@ class _IssueCardState extends State<_IssueCard> {
       children: [
         CircleAvatar(
           radius: 10,
-          backgroundColor: isDark
-              ? AppColors.slate700
-              : AppColors.gray200,
+          backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
           backgroundImage: authorAvatar != null
               ? NetworkImage(authorAvatar)
               : null,
@@ -1802,9 +1767,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.slate900
-                    : AppColors.gray50,
+                color: isDark ? AppColors.slate900 : AppColors.gray50,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1988,9 +1951,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         backgroundColor: isOpen
             ? const Color(0xFFFEE2E2)
             : const Color(0xFFD1FAE5),
-        foregroundColor: isOpen
-            ? AppColors.red600
-            : const Color(0xFF059669),
+        foregroundColor: isOpen ? AppColors.red600 : const Color(0xFF059669),
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2096,9 +2057,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: isDark
-                  ? AppColors.slate700
-                  : AppColors.gray200,
+              backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
               backgroundImage: comment.authorAvatar != null
                   ? NetworkImage(comment.authorAvatar!)
                   : null,
@@ -2120,9 +2079,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                         comment.authorName,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? Colors.white70
-                              : AppColors.gray700,
+                          color: isDark ? Colors.white70 : AppColors.gray700,
                         ),
                       ),
                       if (comment.isAdmin) ...[
@@ -2147,9 +2104,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                         Icon(
                           MdiIcons.arrowRightThin,
                           size: 14,
-                          color: isDark
-                              ? Colors.white38
-                              : AppColors.gray400,
+                          color: isDark ? Colors.white38 : AppColors.gray400,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -2165,9 +2120,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                       Text(
                         Formatters.formatRelativeTime(comment.createdAt),
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white38
-                              : AppColors.gray400,
+                          color: isDark ? Colors.white38 : AppColors.gray400,
                           fontSize: 12,
                         ),
                       ),
@@ -2320,9 +2273,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -2492,9 +2443,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -2524,9 +2473,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           TextButton(
             onPressed: _ignoreCommentDraft,
             style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? Colors.white54
-                  : AppColors.gray500,
+              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
             child: const Text('忽略', style: TextStyle(fontSize: 13)),
@@ -2865,9 +2812,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
             ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -2911,9 +2856,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           TextButton(
             onPressed: _ignoreDraft,
             style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? Colors.white54
-                  : AppColors.gray500,
+              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
             ),
             child: const Text('忽略'),
           ),
@@ -2990,9 +2933,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                     border: Border.all(
                       color: isSelected
                           ? color
-                          : (isDark
-                                ? AppColors.slate600
-                                : AppColors.gray200),
+                          : (isDark ? AppColors.slate600 : AppColors.gray200),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -3003,9 +2944,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                         size: 20,
                         color: isSelected
                             ? color
-                            : (isDark
-                                  ? Colors.white38
-                                  : AppColors.gray400),
+                            : (isDark ? Colors.white38 : AppColors.gray400),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -3013,9 +2952,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                         style: TextStyle(
                           color: isSelected
                               ? color
-                              : (isDark
-                                    ? Colors.white54
-                                    : AppColors.gray500),
+                              : (isDark ? Colors.white54 : AppColors.gray500),
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -3080,9 +3017,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                       ? AppColors.red600
                       : isNearLimit
                       ? AppColors.amber500
-                      : (isDark
-                            ? AppColors.slate400
-                            : AppColors.gray500),
+                      : (isDark ? AppColors.slate400 : AppColors.gray500),
                 ),
               ),
             ),
@@ -3113,9 +3048,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
               borderSide: BorderSide(
                 color: hasError
                     ? AppColors.red600
-                    : (isDark
-                          ? AppColors.slate600
-                          : AppColors.gray200),
+                    : (isDark ? AppColors.slate600 : AppColors.gray200),
               ),
             ),
             enabledBorder: OutlineInputBorder(
@@ -3123,17 +3056,13 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
               borderSide: BorderSide(
                 color: hasError
                     ? AppColors.red600
-                    : (isDark
-                          ? AppColors.slate600
-                          : AppColors.gray200),
+                    : (isDark ? AppColors.slate600 : AppColors.gray200),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: hasError
-                    ? AppColors.red600
-                    : AppColors.primary,
+                color: hasError ? AppColors.red600 : AppColors.primary,
                 width: 2,
               ),
             ),

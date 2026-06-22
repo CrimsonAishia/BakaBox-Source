@@ -61,21 +61,14 @@ class _GuideStatusBannerState extends State<GuideStatusBanner> {
       decoration: BoxDecoration(
         color: _backgroundColor(context),
         borderRadius: GuideTokens.borderRadius12,
-        border: Border.all(
-          color: _borderColor(context),
-          width: 1,
-        ),
+        border: Border.all(color: _borderColor(context), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                _statusIcon(),
-                size: 18,
-                color: _iconColor(),
-              ),
+              Icon(_statusIcon(), size: 18, color: _iconColor()),
               const SizedBox(width: GuideTokens.space8),
               Expanded(
                 child: Text(
@@ -91,8 +84,7 @@ class _GuideStatusBannerState extends State<GuideStatusBanner> {
                 if (widget.rejectReason != null &&
                     widget.rejectReason!.isNotEmpty)
                   _buildExpandButton(theme),
-                if (widget.onEditTap != null)
-                  _buildEditButton(theme),
+                if (widget.onEditTap != null) _buildEditButton(theme),
               ],
             ],
           ),
@@ -125,24 +117,22 @@ class _GuideStatusBannerState extends State<GuideStatusBanner> {
 
   Color _backgroundColor(BuildContext context) {
     return switch (widget.status) {
-      GuideStatus.pending =>
-        GuideTokens.statusPending.withValues(alpha: 0.08),
-      GuideStatus.rejected =>
-        GuideTokens.statusRejected.withValues(alpha: 0.08),
-      GuideStatus.offShelf =>
-        GuideTokens.statusOffShelf.withValues(alpha: 0.08),
+      GuideStatus.pending => GuideTokens.statusPending.withValues(alpha: 0.08),
+      GuideStatus.rejected => GuideTokens.statusRejected.withValues(
+        alpha: 0.08,
+      ),
+      GuideStatus.offShelf => GuideTokens.statusOffShelf.withValues(
+        alpha: 0.08,
+      ),
       _ => Colors.transparent,
     };
   }
 
   Color _borderColor(BuildContext context) {
     return switch (widget.status) {
-      GuideStatus.pending =>
-        GuideTokens.statusPending.withValues(alpha: 0.2),
-      GuideStatus.rejected =>
-        GuideTokens.statusRejected.withValues(alpha: 0.2),
-      GuideStatus.offShelf =>
-        GuideTokens.statusOffShelf.withValues(alpha: 0.2),
+      GuideStatus.pending => GuideTokens.statusPending.withValues(alpha: 0.2),
+      GuideStatus.rejected => GuideTokens.statusRejected.withValues(alpha: 0.2),
+      GuideStatus.offShelf => GuideTokens.statusOffShelf.withValues(alpha: 0.2),
       _ => Colors.transparent,
     };
   }
@@ -204,9 +194,7 @@ class _GuideStatusBannerState extends State<GuideStatusBanner> {
             ),
             const SizedBox(width: 2),
             Icon(
-              _isExpanded
-                  ? Icons.keyboard_arrow_up
-                  : Icons.keyboard_arrow_down,
+              _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               size: 14,
               color: GuideTokens.statusRejected,
             ),

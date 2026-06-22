@@ -240,9 +240,7 @@ class _BlockedUserTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : AppColors.gray50,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : AppColors.gray50,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
@@ -258,15 +256,11 @@ class _BlockedUserTile extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDark
-                  ? AppColors.slate600
-                  : AppColors.gray200,
+              color: isDark ? AppColors.slate600 : AppColors.gray200,
             ),
             child: Center(
               child: Text(
-                user.userName.isNotEmpty
-                    ? user.userName[0].toUpperCase()
-                    : '?',
+                user.userName.isNotEmpty ? user.userName[0].toUpperCase() : '?',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

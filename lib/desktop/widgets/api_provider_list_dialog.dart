@@ -9,9 +9,7 @@ class ApiProviderListDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.gray800;
-    final secondaryTextColor = isDark
-        ? Colors.white54
-        : AppColors.gray500;
+    final secondaryTextColor = isDark ? Colors.white54 : AppColors.gray500;
 
     return AlertDialog(
       backgroundColor: bgColor,
@@ -37,14 +35,10 @@ class ApiProviderListDialog extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.gray200,
+                  color: isDark ? AppColors.slate700 : AppColors.gray200,
                 ),
               ),
-              tileColor: isDark
-                  ? AppColors.slate900
-                  : AppColors.gray50,
+              tileColor: isDark ? AppColors.slate900 : AppColors.gray50,
               onTap: () {
                 Navigator.of(context).pop('cs2ze');
               },

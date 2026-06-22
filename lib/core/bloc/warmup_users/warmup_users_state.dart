@@ -64,11 +64,17 @@ class WarmupUsersState extends Equatable {
       isConnected: isConnected ?? this.isConnected,
       isConnecting: isConnecting ?? this.isConnecting,
       error: clearError ? null : (error ?? this.error),
-      joinedUserId: clearJoinedUserId ? null : (joinedUserId ?? this.joinedUserId),
+      joinedUserId: clearJoinedUserId
+          ? null
+          : (joinedUserId ?? this.joinedUserId),
       leftUserId: clearLeftUserId ? null : (leftUserId ?? this.leftUserId),
       leftUser: clearLeftUserId ? null : (leftUser ?? this.leftUser),
-      successUserId: clearSuccessUserId ? null : (successUserId ?? this.successUserId),
-      successUser: clearSuccessUserId ? null : (successUser ?? this.successUser),
+      successUserId: clearSuccessUserId
+          ? null
+          : (successUserId ?? this.successUserId),
+      successUser: clearSuccessUserId
+          ? null
+          : (successUser ?? this.successUser),
     );
   }
 

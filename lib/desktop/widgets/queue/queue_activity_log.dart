@@ -228,7 +228,7 @@ class _ActivityItemWidget extends StatelessWidget {
   final bool isWarmup;
 
   const _ActivityItemWidget({
-    required this.activity, 
+    required this.activity,
     required this.isDark,
     this.isWarmup = false,
   });

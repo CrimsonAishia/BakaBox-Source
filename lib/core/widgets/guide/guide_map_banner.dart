@@ -102,9 +102,7 @@ class _GuideMapBannerState extends State<GuideMapBanner> {
             ? Colors.white.withValues(alpha: 0.04)
             : Colors.black.withValues(alpha: 0.02),
         borderRadius: GuideTokens.borderRadius12,
-        border: Border.all(
-          color: GuideTokens.divider(context),
-        ),
+        border: Border.all(color: GuideTokens.divider(context)),
       ),
       child: Row(
         children: [
@@ -154,7 +152,11 @@ class _GuideMapBannerState extends State<GuideMapBanner> {
     return Container(
       color: isDark ? GuideTokens.fallbackBgDark : GuideTokens.fallbackBgLight,
       child: const Center(
-        child: Icon(Icons.map_outlined, size: 28, color: GuideTokens.fallbackIcon),
+        child: Icon(
+          Icons.map_outlined,
+          size: 28,
+          color: GuideTokens.fallbackIcon,
+        ),
       ),
     );
   }
@@ -205,15 +207,9 @@ class _GuideMapBannerState extends State<GuideMapBanner> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _ActionTextButton(
-          label: '查看地图详情',
-          onTap: widget.onViewMapDetail,
-        ),
+        _ActionTextButton(label: '查看地图详情', onTap: widget.onViewMapDetail),
         const SizedBox(height: GuideTokens.space4),
-        _ActionTextButton(
-          label: '更多该地图攻略',
-          onTap: widget.onMoreGuides,
-        ),
+        _ActionTextButton(label: '更多该地图攻略', onTap: widget.onMoreGuides),
       ],
     );
   }
@@ -224,10 +220,7 @@ class _ActionTextButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _ActionTextButton({
-    required this.label,
-    this.onTap,
-  });
+  const _ActionTextButton({required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {

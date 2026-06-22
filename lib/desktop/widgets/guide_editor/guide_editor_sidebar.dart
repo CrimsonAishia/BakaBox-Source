@@ -221,20 +221,14 @@ class _GuideEditorSidebarState extends State<GuideEditorSidebar> {
             top: 0,
             left: 0,
             right: 0,
-            child: CommonScrollIndicator(
-              isTop: true,
-              bgColor: colors.cardBg,
-            ),
+            child: CommonScrollIndicator(isTop: true, bgColor: colors.cardBg),
           ),
         if (_showBottomIndicator)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: CommonScrollIndicator(
-              isTop: false,
-              bgColor: colors.cardBg,
-            ),
+            child: CommonScrollIndicator(isTop: false, bgColor: colors.cardBg),
           ),
       ],
     );
@@ -301,10 +295,7 @@ class _CoverUploadSlotState extends State<_CoverUploadSlot> {
       final validation = FileValidationUtils.validateFile(file);
       if (!validation.isValid) {
         if (mounted) {
-          ToastUtils.showError(
-            context,
-            validation.errorMessage ?? '文件验证失败',
-          );
+          ToastUtils.showError(context, validation.errorMessage ?? '文件验证失败');
         }
         return;
       }
@@ -344,8 +335,7 @@ class _CoverUploadSlotState extends State<_CoverUploadSlot> {
   @override
   Widget build(BuildContext context) {
     final colors = _T.of(context);
-    final hasCover =
-        widget.coverUrl != null && widget.coverUrl!.isNotEmpty;
+    final hasCover = widget.coverUrl != null && widget.coverUrl!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,8 +385,11 @@ class _CoverUploadSlotState extends State<_CoverUploadSlot> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.file_upload_outlined,
-                                      size: 16, color: Colors.white),
+                                  Icon(
+                                    Icons.file_upload_outlined,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                   SizedBox(width: 6),
                                   Text(
                                     '点击替换封面',
@@ -465,10 +458,7 @@ class _CoverUploadSlotState extends State<_CoverUploadSlot> {
           const SizedBox(height: 6),
           Text(
             '点击上传封面',
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: colors.textSecondary),
           ),
         ],
       ),
@@ -547,8 +537,7 @@ class _CategoryDropdownState extends State<_CategoryDropdown> {
             if (catState.status == CategoriesStatus.loading) {
               return _buildLoadingDropdown();
             }
-            final isAdmin =
-                _checkIsAdmin(context.read<AuthBloc>().state);
+            final isAdmin = _checkIsAdmin(context.read<AuthBloc>().state);
             final categories = catState.items.where((cat) {
               if (!cat.isActive) return false;
               if (cat.isAdminOnly && !isAdmin) return false;
@@ -610,7 +599,9 @@ class _CategoryDropdownState extends State<_CategoryDropdown> {
       decoration: _fieldDecoration(context, hovering: _hovering),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: (widget.selectedCode?.isEmpty ?? true) ? null : widget.selectedCode,
+          value: (widget.selectedCode?.isEmpty ?? true)
+              ? null
+              : widget.selectedCode,
           hint: Text(
             '选择分类',
             style: TextStyle(fontSize: 13, color: colors.textMuted),
@@ -640,10 +631,7 @@ class _CategoryDropdownState extends State<_CategoryDropdown> {
                   const SizedBox(width: 8),
                   Text(
                     cat.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textPrimary,
-                    ),
+                    style: TextStyle(fontSize: 13, color: colors.textPrimary),
                   ),
                 ],
               ),
@@ -679,14 +667,16 @@ class _CategoryFailedState extends StatelessWidget {
           Icon(Icons.error_outline, size: 16, color: colors.danger),
           const SizedBox(width: 8),
           Expanded(
-            child: Text('分类加载失败',
-                style: TextStyle(fontSize: 12, color: colors.danger)),
+            child: Text(
+              '分类加载失败',
+              style: TextStyle(fontSize: 12, color: colors.danger),
+            ),
           ),
           TextButton(
             onPressed: () {
-              context
-                  .read<GuideCategoriesBloc>()
-                  .add(const LoadCategories(force: true));
+              context.read<GuideCategoriesBloc>().add(
+                const LoadCategories(force: true),
+              );
             },
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1030,8 +1020,9 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
                                         Icons.translate,
                                         size: 13,
                                         color: hasBackground
-                                            ? Colors.white
-                                                .withValues(alpha: 0.95)
+                                            ? Colors.white.withValues(
+                                                alpha: 0.95,
+                                              )
                                             : colors.textPrimary,
                                         shadows: hasBackground
                                             ? [
@@ -1058,7 +1049,8 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
                                                     Shadow(
                                                       color: Colors.black
                                                           .withValues(
-                                                              alpha: 0.6),
+                                                            alpha: 0.6,
+                                                          ),
                                                       blurRadius: 4,
                                                     ),
                                                   ]
@@ -1079,15 +1071,15 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
                                           Icons.map_outlined,
                                           size: 12,
                                           color: hasBackground
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.7)
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.7,
+                                                )
                                               : colors.textMuted,
                                           shadows: hasBackground
                                               ? [
                                                   Shadow(
                                                     color: Colors.black
-                                                        .withValues(
-                                                            alpha: 0.6),
+                                                        .withValues(alpha: 0.6),
                                                     blurRadius: 4,
                                                   ),
                                                 ]
@@ -1100,15 +1092,17 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: hasBackground
-                                                  ? Colors.white
-                                                      .withValues(alpha: 0.78)
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.78,
+                                                    )
                                                   : colors.textMuted,
                                               shadows: hasBackground
                                                   ? [
                                                       Shadow(
                                                         color: Colors.black
                                                             .withValues(
-                                                                alpha: 0.6),
+                                                              alpha: 0.6,
+                                                            ),
                                                         blurRadius: 4,
                                                       ),
                                                     ]
@@ -1148,10 +1142,7 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
 
   Future<void> _openMapPicker(BuildContext context) async {
     final editorBloc = context.read<GuideEditorBloc>();
-    final selected = await GuideMapPickerSheet.show(
-      context,
-      current: _mapInfo,
-    );
+    final selected = await GuideMapPickerSheet.show(context, current: _mapInfo);
     if (!mounted) return;
     if (selected == null && _mapInfo != null) {
       // 移除关联
@@ -1203,22 +1194,23 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
             ),
           ),
           const SizedBox(height: 6),
-          ...(_mapGuides!.map((guide) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: GuideCompactCard(
-                  title: guide.title,
-                  coverUrl: guide.coverUrl,
-                  authorName: guide.authorName,
-                  viewCount: guide.viewCount,
-                  likeCount: guide.likeCount,
-                  commentCount: guide.commentCount,
-                  onTap: () {
-                    final navigator =
-                        DesktopNavigatorProvider.of(context);
-                    navigator?.openGuideDetail(guide.id);
-                  },
-                ),
-              ))),
+          ...(_mapGuides!.map(
+            (guide) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: GuideCompactCard(
+                title: guide.title,
+                coverUrl: guide.coverUrl,
+                authorName: guide.authorName,
+                viewCount: guide.viewCount,
+                likeCount: guide.likeCount,
+                commentCount: guide.commentCount,
+                onTap: () {
+                  final navigator = DesktopNavigatorProvider.of(context);
+                  navigator?.openGuideDetail(guide.id);
+                },
+              ),
+            ),
+          )),
           SizedBox(
             width: double.infinity,
             child: TextButton(
@@ -1227,8 +1219,7 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 foregroundColor: colors.accent,
               ),
-              child: const Text('查看更多 →',
-                  style: TextStyle(fontSize: 12)),
+              child: const Text('查看更多 →', style: TextStyle(fontSize: 12)),
             ),
           ),
         ],
@@ -1275,7 +1266,7 @@ class _TagsInputState extends State<_TagsInput> {
     final trimmed = tag.trim();
     if (trimmed.isEmpty) return;
     if (widget.tags.contains(trimmed)) return; // 去重
-    if (widget.tags.length >= 5) return;        // 最多 5 个
+    if (widget.tags.length >= 5) return; // 最多 5 个
     final newTags = [...widget.tags, trimmed];
     context.read<GuideEditorBloc>().add(UpdateTags(newTags));
     _controller.clear();
@@ -1337,8 +1328,10 @@ class _TagsInputState extends State<_TagsInput> {
               isDense: true,
               filled: false,
               fillColor: Colors.transparent,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
@@ -1409,8 +1402,7 @@ class _TagChipState extends State<_TagChip> {
           borderRadius: BorderRadius.circular(20),
           onTap: widget.onRemove,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1426,8 +1418,7 @@ class _TagChipState extends State<_TagChip> {
                 AnimatedOpacity(
                   duration: const Duration(milliseconds: 150),
                   opacity: _hovering ? 1 : 0.7,
-                  child: const Icon(Icons.close,
-                      size: 11, color: Colors.white),
+                  child: const Icon(Icons.close, size: 11, color: Colors.white),
                 ),
               ],
             ),
@@ -1522,9 +1513,9 @@ class _SummaryInputState extends State<_SummaryInput> {
           child: TextField(
             controller: _controller,
             onChanged: (value) {
-              context
-                  .read<GuideEditorBloc>()
-                  .add(UpdateSummary(value.isEmpty ? null : value));
+              context.read<GuideEditorBloc>().add(
+                UpdateSummary(value.isEmpty ? null : value),
+              );
             },
             maxLines: 4,
             maxLength: 200,
@@ -1571,7 +1562,8 @@ class _ValidationChecklist extends StatelessWidget {
         ),
         _CheckItem(
           label: '分类已选择',
-          passed: !errors.contains(EditorValidateError.categoryRequired) &&
+          passed:
+              !errors.contains(EditorValidateError.categoryRequired) &&
               !errors.contains(EditorValidateError.categoryInvalid),
         ),
         _CheckItem(
@@ -1608,9 +1600,7 @@ class _CheckItem extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            passed
-                ? Icons.check_circle_outline
-                : Icons.radio_button_unchecked,
+            passed ? Icons.check_circle_outline : Icons.radio_button_unchecked,
             size: 14,
             color: passed ? colors.success : colors.textMuted,
           ),
@@ -1641,7 +1631,8 @@ class _FooterActions extends StatelessWidget {
     final isSaving =
         phase == EditorPhase.saving || phase == EditorPhase.savingRemote;
     final isPublishing = phase == EditorPhase.publishing;
-    final isEditingExisting = state.draft?.guideId != null && state.draft!.guideId! > 0;
+    final isEditingExisting =
+        state.draft?.guideId != null && state.draft!.guideId! > 0;
     final canPublish =
         state.canPublish && !isPublishing && phase != EditorPhase.submitted;
 
@@ -1660,8 +1651,8 @@ class _FooterActions extends StatelessWidget {
               onPressed: isSaving
                   ? null
                   : () => context.read<GuideEditorBloc>().add(
-                        const SaveDraftRequested(manual: true),
-                      ),
+                      const SaveDraftRequested(manual: true),
+                    ),
               icon: isSaving
                   ? SizedBox(
                       width: 14,
@@ -1671,8 +1662,11 @@ class _FooterActions extends StatelessWidget {
                         color: colors.textMuted,
                       ),
                     )
-                  : Icon(Icons.save_outlined,
-                      size: 16, color: colors.textSecondary),
+                  : Icon(
+                      Icons.save_outlined,
+                      size: 16,
+                      color: colors.textSecondary,
+                    ),
               label: Text(
                 '保存草稿',
                 style: TextStyle(
@@ -1691,17 +1685,17 @@ class _FooterActions extends StatelessWidget {
           Tooltip(
             message: !canPublish
                 ? (isCategoriesFailed
-                    ? (isEditingExisting ? '分类加载失败，无法提交' : '分类加载失败，无法发布')
-                    : '请完成左侧"提交检查"中的所有项')
+                      ? (isEditingExisting ? '分类加载失败，无法提交' : '分类加载失败，无法发布')
+                      : '请完成左侧"提交检查"中的所有项')
                 : '',
             child: SizedBox(
               width: double.infinity,
               height: 40,
               child: _HoverButton(
                 onPressed: canPublish
-                    ? () => context
-                        .read<GuideEditorBloc>()
-                        .add(const PublishRequested())
+                    ? () => context.read<GuideEditorBloc>().add(
+                        const PublishRequested(),
+                      )
                     : null,
                 icon: isPublishing
                     ? const SizedBox(
@@ -1712,8 +1706,11 @@ class _FooterActions extends StatelessWidget {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.send_rounded,
-                        size: 16, color: Colors.white),
+                    : const Icon(
+                        Icons.send_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                 label: Text(
                   isEditingExisting ? '提交修改' : '发布',
                   style: const TextStyle(
@@ -1724,8 +1721,7 @@ class _FooterActions extends StatelessWidget {
                 ),
                 backgroundColor: colors.accent,
                 hoverBackgroundColor: colors.accentHover,
-                disabledBackgroundColor:
-                    colors.accent.withValues(alpha: 0.35),
+                disabledBackgroundColor: colors.accent.withValues(alpha: 0.35),
               ),
             ),
           ),
@@ -1743,6 +1739,7 @@ class _HoverButton extends StatefulWidget {
   final Widget label;
   final Color backgroundColor;
   final Color hoverBackgroundColor;
+
   /// 禁用态背景色；null 时使用 [backgroundColor]
   final Color? disabledBackgroundColor;
   final Color? borderColor;
@@ -1771,9 +1768,7 @@ class _HoverButtonState extends State<_HoverButton> {
     final disabled = widget.onPressed == null;
     final bg = disabled
         ? (widget.disabledBackgroundColor ?? widget.backgroundColor)
-        : (_hovering
-            ? widget.hoverBackgroundColor
-            : widget.backgroundColor);
+        : (_hovering ? widget.hoverBackgroundColor : widget.backgroundColor);
     final border = widget.borderColor == null
         ? null
         : Border.all(
@@ -1801,11 +1796,7 @@ class _HoverButtonState extends State<_HoverButton> {
             child: Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  widget.icon,
-                  const SizedBox(width: 8),
-                  widget.label,
-                ],
+                children: [widget.icon, const SizedBox(width: 8), widget.label],
               ),
             ),
           ),
@@ -1821,11 +1812,7 @@ class _SectionLabel extends StatelessWidget {
   final String label;
   final String? hint;
   final bool required;
-  const _SectionLabel({
-    required this.label,
-    this.hint,
-    this.required = false,
-  });
+  const _SectionLabel({required this.label, this.hint, this.required = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1842,14 +1829,10 @@ class _SectionLabel extends StatelessWidget {
           ),
         ),
         if (required)
-          Text(' *',
-              style: TextStyle(color: colors.danger, fontSize: 13)),
+          Text(' *', style: TextStyle(color: colors.danger, fontSize: 13)),
         if (hint != null) ...[
           const SizedBox(width: 6),
-          Text(
-            hint!,
-            style: TextStyle(fontSize: 11, color: colors.textMuted),
-          ),
+          Text(hint!, style: TextStyle(fontSize: 11, color: colors.textMuted)),
         ],
       ],
     );
@@ -1878,10 +1861,7 @@ class _MapGuidesDialog extends StatefulWidget {
   final String mapName;
   final String? mapLabel;
 
-  const _MapGuidesDialog({
-    required this.mapName,
-    this.mapLabel,
-  });
+  const _MapGuidesDialog({required this.mapName, this.mapLabel});
 
   @override
   State<_MapGuidesDialog> createState() => _MapGuidesDialogState();
@@ -1990,10 +1970,9 @@ class _MapGuidesDialogState extends State<_MapGuidesDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = _T.of(context);
-    final displayName =
-        (widget.mapLabel != null && widget.mapLabel!.isNotEmpty)
-            ? '${widget.mapLabel}（${widget.mapName}）'
-            : widget.mapName;
+    final displayName = (widget.mapLabel != null && widget.mapLabel!.isNotEmpty)
+        ? '${widget.mapLabel}（${widget.mapName}）'
+        : widget.mapName;
 
     return Dialog(
       backgroundColor: colors.cardBg,
@@ -2001,10 +1980,7 @@ class _MapGuidesDialogState extends State<_MapGuidesDialog> {
         borderRadius: BorderRadius.circular(_T.radiusCard),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 560,
-          maxHeight: 640,
-        ),
+        constraints: const BoxConstraints(maxWidth: 560, maxHeight: 640),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -2039,10 +2015,7 @@ class _MapGuidesDialogState extends State<_MapGuidesDialog> {
                 const SizedBox(height: 2),
                 Text(
                   '$displayName · 共 $_total 篇',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 12, color: colors.textMuted),
                 ),
               ],
             ),
@@ -2089,10 +2062,7 @@ class _MapGuidesDialogState extends State<_MapGuidesDialog> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: _loadFirstPage,
-              child: const Text('重试'),
-            ),
+            TextButton(onPressed: _loadFirstPage, child: const Text('重试')),
           ],
         ),
       );
@@ -2102,10 +2072,7 @@ class _MapGuidesDialogState extends State<_MapGuidesDialog> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
-          child: Text(
-            '暂无攻略',
-            style: TextStyle(color: colors.textMuted),
-          ),
+          child: Text('暂无攻略', style: TextStyle(color: colors.textMuted)),
         ),
       );
     }

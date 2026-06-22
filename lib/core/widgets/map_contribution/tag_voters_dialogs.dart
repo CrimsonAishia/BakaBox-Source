@@ -338,9 +338,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
     Color secondaryColor,
   ) {
     final isUpvote = item.isUpvote;
-    final voteColor = isUpvote
-        ? AppColors.emerald500
-        : AppColors.red500;
+    final voteColor = isUpvote ? AppColors.emerald500 : AppColors.red500;
     final voteIcon = isUpvote ? MdiIcons.thumbUp : MdiIcons.thumbDown;
     final voteLabel = isUpvote ? '赞成' : '反对';
 
@@ -350,9 +348,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
         tagColor ??
         (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!);
     final tagTextColor = tagColor != null
-        ? (tagColor.computeLuminance() > 0.5
-              ? AppColors.gray800
-              : Colors.white)
+        ? (tagColor.computeLuminance() > 0.5 ? AppColors.gray800 : Colors.white)
         : (isDark ? Colors.white70 : AppColors.gray700);
 
     return Container(
@@ -847,9 +843,7 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
     Color secondaryColor,
   ) {
     final isUpvote = item.isUpvote;
-    final voteColor = isUpvote
-        ? AppColors.emerald500
-        : AppColors.red500;
+    final voteColor = isUpvote ? AppColors.emerald500 : AppColors.red500;
     final voteIcon = isUpvote ? MdiIcons.thumbUp : MdiIcons.thumbDown;
     final voteLabel = isUpvote ? '赞成' : '反对';
 

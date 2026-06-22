@@ -472,9 +472,7 @@ class RealtimeService {
       if (last == null) return;
       final silence = DateTime.now().difference(last);
       if (silence > _livenessTimeout) {
-        LogService.w(
-          '[Realtime] 连接假死检测：${silence.inSeconds}s 未收到数据，主动重连',
-        );
+        LogService.w('[Realtime] 连接假死检测：${silence.inSeconds}s 未收到数据，主动重连');
         // 假死时连接状态仍是 connected，必须先切到 reconnecting，
         // 否则 _connect() 会因「已连接」而直接 return
         _cleanupCurrentConnection();
@@ -639,19 +637,21 @@ class RealtimeService {
   void _handlePong(RealtimeIncomingMessage msg) {
     final data = msg.data;
     if (data == null) return;
-    
+
     final versions = data['versions'];
     if (versions is Map) {
       for (final entry in versions.entries) {
         final channel = entry.key.toString();
         final remoteVersion = (entry.value as num?)?.toInt();
         if (remoteVersion == null) continue;
-        
+
         final localVersion = _channelVersions[channel];
         // 如果当前频道已订阅，且本地有版本记录但落后于服务端，说明丢包了
         if (_subscribedChannels.contains(channel) && localVersion != null) {
           if (localVersion < remoteVersion) {
-            LogService.w('[Realtime] 心跳对账：频道 $channel 发生丢包 (本地 $localVersion < 服务端 $remoteVersion)，强制重拉取');
+            LogService.w(
+              '[Realtime] 心跳对账：频道 $channel 发生丢包 (本地 $localVersion < 服务端 $remoteVersion)，强制重拉取',
+            );
             requestResnapshot(channel);
             // 立即更新为远程版本，防止在 snapshot 回来之前多次触发 resnapshot
             _channelVersions[channel] = remoteVersion;

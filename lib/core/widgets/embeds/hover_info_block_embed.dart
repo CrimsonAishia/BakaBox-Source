@@ -42,7 +42,7 @@ enum HoverInfoType {
 /// 以便与文字同行排列。
 class HoverInfoBlockEmbed extends CustomBlockEmbed {
   HoverInfoBlockEmbed(Map<String, dynamic> data)
-      : super(hoverInfoEmbedType, jsonEncode(data));
+    : super(hoverInfoEmbedType, jsonEncode(data));
 
   factory HoverInfoBlockEmbed.create({
     required HoverInfoType type,
@@ -93,11 +93,11 @@ class HoverInfoData {
   }
 
   Map<String, dynamic> toJson() => {
-        'type': type.name,
-        'id': id,
-        'label': label,
-        'iconUrl': iconUrl,
-      };
+    'type': type.name,
+    'id': id,
+    'label': label,
+    'iconUrl': iconUrl,
+  };
 }
 
 /// 各引用类型的主题色与图标

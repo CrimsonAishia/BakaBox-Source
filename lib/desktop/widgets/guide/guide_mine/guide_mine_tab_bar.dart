@@ -47,8 +47,7 @@ class GuideMineToolbar extends StatelessWidget {
                 children: List.generate(_tabs.length, (i) {
                   final tab = _tabs[i];
                   final selected = selectedTabIndex == i;
-                  final count =
-                      selected ? state.total : (tabCounts[tab] ?? 0);
+                  final count = selected ? state.total : (tabCounts[tab] ?? 0);
                   final isLast = i == _tabs.length - 1;
 
                   if (tab == MineTab.published) {
@@ -251,11 +250,9 @@ class _PillBadge extends StatelessWidget {
     final bgColor = active
         ? Colors.white.withValues(alpha: 0.22)
         : (colors.isDark
-            ? Colors.white.withValues(alpha: 0.10)
-            : Colors.black.withValues(alpha: 0.08));
-    final textColor = active
-        ? Colors.white
-        : colors.textSecondary;
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.08));
+    final textColor = active ? Colors.white : colors.textSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(

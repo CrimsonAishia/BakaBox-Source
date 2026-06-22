@@ -98,14 +98,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: '跳过游戏路径设置？',
       description: '未设置游戏路径将导致以下功能无法使用：',
       items: [
-        SkipWarningItem(
-          icon: MdiIcons.rocketLaunchOutline,
-          text: '一键加入服务器',
-        ),
-        SkipWarningItem(
-          icon: MdiIcons.accountGroupOutline,
-          text: '自动挤服',
-        ),
+        SkipWarningItem(icon: MdiIcons.rocketLaunchOutline, text: '一键加入服务器'),
+        SkipWarningItem(icon: MdiIcons.accountGroupOutline, text: '自动挤服'),
         SkipWarningItem(icon: MdiIcons.cogOutline, text: '自动配置游戏参数'),
       ],
       hint: '你可以稍后在「设置」中配置游戏路径。',
@@ -165,9 +159,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.slate50,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.slate50,
       body: Stack(
         children: [
           // 背景装饰
@@ -286,9 +278,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.slate800,
+                            color: isDark ? Colors.white : AppColors.slate800,
                           ),
                         ),
                       ),
@@ -426,9 +416,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: 400,
                   height: 280,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.slate800
-                        : AppColors.slate100,
+                    color: isDark ? AppColors.slate800 : AppColors.slate100,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
@@ -534,9 +522,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.slate50,
+                  color: isDark ? AppColors.slate700 : AppColors.slate50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isDark
@@ -560,9 +546,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: isDark
-                                ? Colors.white70
-                                : AppColors.slate500,
+                            color: isDark ? Colors.white70 : AppColors.slate500,
                           ),
                         ),
                       ],
@@ -573,9 +557,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.slate500,
+                        color: isDark ? Colors.white54 : AppColors.slate500,
                       ),
                     ),
                   ],
@@ -591,9 +573,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.slate100,
+                  color: isDark ? AppColors.slate700 : AppColors.slate100,
                   borderRadius: BorderRadius.circular(12),
                   border: hasError
                       ? Border.all(
@@ -623,9 +603,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             color: _gamePath != null
-                                ? (isDark
-                                      ? Colors.white
-                                      : AppColors.slate800)
+                                ? (isDark ? Colors.white : AppColors.slate800)
                                 : (isDark
                                       ? Colors.white38
                                       : AppColors.slate400),
@@ -644,9 +622,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           icon: Icon(
                             MdiIcons.close,
                             size: 16,
-                            color: isDark
-                                ? Colors.white38
-                                : AppColors.slate400,
+                            color: isDark ? Colors.white38 : AppColors.slate400,
                           ),
                           onPressed: () => setState(() {
                             _gamePath = null;
@@ -731,9 +707,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: isDark
-                              ? Colors.white70
-                              : AppColors.slate500,
+                          color: isDark ? Colors.white70 : AppColors.slate500,
                         ),
                       ),
                     ),
@@ -797,13 +771,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildLoginPage(bool isDark) {
     final bgColor = isDark ? AppColors.slate800 : Colors.white;
-    final inputBgColor = isDark
-        ? AppColors.slate700
-        : AppColors.slate100;
+    final inputBgColor = isDark ? AppColors.slate700 : AppColors.slate100;
     final textColor = isDark ? Colors.white : AppColors.slate800;
-    final secondaryTextColor = isDark
-        ? Colors.white54
-        : AppColors.slate500;
+    final secondaryTextColor = isDark ? Colors.white54 : AppColors.slate500;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.08);
@@ -1812,9 +1782,7 @@ class _PolicyDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.slate800;
-    final secondaryTextColor = isDark
-        ? Colors.white70
-        : AppColors.slate500;
+    final secondaryTextColor = isDark ? Colors.white70 : AppColors.slate500;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -1926,9 +1894,7 @@ class _PolicyDialog extends StatelessWidget {
                     color: AppColors.red500,
                   ),
                   codeblockDecoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.slate700
-                        : AppColors.slate100,
+                    color: isDark ? AppColors.slate700 : AppColors.slate100,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   // 引用样式
@@ -1943,10 +1909,7 @@ class _PolicyDialog extends StatelessWidget {
                         : AppColors.slate50,
                     borderRadius: BorderRadius.circular(4),
                     border: Border(
-                      left: BorderSide(
-                        color: AppColors.blue500,
-                        width: 4,
-                      ),
+                      left: BorderSide(color: AppColors.blue500, width: 4),
                     ),
                   ),
                   // 水平线样式

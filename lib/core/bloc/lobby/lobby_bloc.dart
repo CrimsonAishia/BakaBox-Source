@@ -60,8 +60,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (_isDisposed) return;
       final newIsQueueing = event.isQueueing;
       final newIsWarming = event.isWarming;
-      if (newIsQueueing != _lastIsQueueing ||
-          newIsWarming != _lastIsWarming) {
+      if (newIsQueueing != _lastIsQueueing || newIsWarming != _lastIsWarming) {
         _lastIsQueueing = newIsQueueing;
         _lastIsWarming = newIsWarming;
         add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
@@ -83,9 +82,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 订阅 server.map.runtime 实时频道：服务端推送的权威换图事件
     // 用于在本地 ConsoleLog/GSI 滞后或失效时仍能正确刷新 statusText 中的地图名
     _serverMapRuntimeChannel.subscribe();
-    _serverMapRuntimeSubscription = _serverMapRuntimeChannel.events.listen((
-      _,
-    ) {
+    _serverMapRuntimeSubscription = _serverMapRuntimeChannel.events.listen((_) {
       if (_isDisposed) return;
       // 收到 snapshot / changed 事件时，重新计算 statusText（_resolveMapNameForServer
       // 会从频道缓存读取最新地图名，因此无需关心事件具体内容）
@@ -4108,8 +4105,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     //   重连 lobby_join 若再次遇到繁忙会重新排队。此时用更贴合语境的文案，
     //   并把 pageStatus 切回 loading 以显示排队界面。
     // - 首次排队（启动/进入页面）pageStatus 为 idle/loading，使用默认文案。
-    final isRequeueAfterReconnect =
-        state.pageStatus == LobbyPageStatus.ready;
+    final isRequeueAfterReconnect = state.pageStatus == LobbyPageStatus.ready;
     final notice = isRequeueAfterReconnect
         ? '连接已恢复，正在重新排队...'
         : '服务器繁忙，正在排队中...';
@@ -4368,9 +4364,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (leftUserId.isEmpty) continue;
       if (_selfServerUserId == leftUserId) continue;
       updatedUsers = updatedUsers
-          .where(
-            (u) => u.serverUserId != leftUserId && u.userId != leftUserId,
-          )
+          .where((u) => u.serverUserId != leftUserId && u.userId != leftUserId)
           .toList(growable: false);
     }
 

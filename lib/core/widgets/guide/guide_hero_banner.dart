@@ -44,24 +44,25 @@ class GuideHeroBanner extends StatelessWidget {
     return Container(
       height: 280,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.slate900 : theme.colorScheme.primary.withValues(alpha: 0.1),
-        border: Border.all(
-          color: GuideTokens.divider(context),
-        ),
+        color: isDark
+            ? AppColors.slate900
+            : theme.colorScheme.primary.withValues(alpha: 0.1),
+        border: Border.all(color: GuideTokens.divider(context)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
-      child: Center(
-        child: _buildTextSection(context, theme),
-      ),
+      child: Center(child: _buildTextSection(context, theme)),
     );
   }
 
   Widget _buildTextSection(BuildContext context, ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0), // Give space for the overlapping filter bar
+      padding: const EdgeInsets.only(
+        bottom: 24.0,
+      ), // Give space for the overlapping filter bar
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center, // Center text horizontally
+        crossAxisAlignment:
+            CrossAxisAlignment.center, // Center text horizontally
         children: [
           Text(
             title.toUpperCase(),
@@ -90,5 +91,4 @@ class GuideHeroBanner extends StatelessWidget {
       ),
     );
   }
-
 }

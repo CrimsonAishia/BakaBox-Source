@@ -60,9 +60,7 @@ class _LocalCrashCardState extends State<LocalCrashCard> {
             boxShadow: _hover
                 ? [
                     BoxShadow(
-                      color: accent.withValues(
-                        alpha: isDark ? 0.18 : 0.12,
-                      ),
+                      color: accent.withValues(alpha: isDark ? 0.18 : 0.12),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -103,18 +101,13 @@ class _LocalCrashCardState extends State<LocalCrashCard> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
-                          MdiIcons.clockOutline,
-                          size: 12,
-                          color: secondary,
-                        ),
+                        Icon(MdiIcons.clockOutline, size: 12, color: secondary),
                         const SizedBox(width: 4),
                         Text(
                           TimeUtils.formatDateTimeRelative(
                             widget.file.modified,
                           ),
-                          style:
-                              TextStyle(fontSize: 12, color: secondary),
+                          style: TextStyle(fontSize: 12, color: secondary),
                         ),
                         const SizedBox(width: 12),
                         Icon(
@@ -125,19 +118,14 @@ class _LocalCrashCardState extends State<LocalCrashCard> {
                         const SizedBox(width: 4),
                         Text(
                           Formatters.formatFileSize(widget.file.size),
-                          style:
-                              TextStyle(fontSize: 12, color: secondary),
+                          style: TextStyle(fontSize: 12, color: secondary),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: secondary,
-              ),
+              Icon(Icons.chevron_right, size: 18, color: secondary),
             ],
           ),
         ),

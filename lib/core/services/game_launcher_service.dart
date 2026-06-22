@@ -105,10 +105,7 @@ class GameLauncherService {
   // 注意：不包含 CS:Source 的 hl2.exe。hl2.exe 是 Source 引擎通用可执行文件，
   // 许多 Source 游戏都用它，且 CS:Source 不在本项目监控/管理范围内。
   // 把它纳入检测会导致"连接 CS:Source 服务器时被误判为游戏已启动"。
-  static const List<String> _gameProcessNames = [
-    'cs2.exe',
-    'csgo.exe',
-  ];
+  static const List<String> _gameProcessNames = ['cs2.exe', 'csgo.exe'];
 
   /// 单例模式
   static final GameLauncherService _instance = GameLauncherService._internal();
@@ -630,9 +627,7 @@ class GameLauncherService {
       final runningName = ServerItemUtils.displayNameForShortType(
         runningGameType,
       );
-      LogService.w(
-        '尝试连接 ${client.displayName} 服务器，但当前运行的是 $runningName',
-      );
+      LogService.w('尝试连接 ${client.displayName} 服务器，但当前运行的是 $runningName');
       return ServerConnectResult.failure(
         '此服务器需要 ${client.displayName} 客户端，请关闭 $runningName 后重试',
       );
@@ -976,11 +971,7 @@ class GameLauncherService {
     }
 
     // 直接使用Steam URL启动并连接
-    return await _connectUsingSteamUrl(
-      serverAddress,
-      password,
-      client: client,
-    );
+    return await _connectUsingSteamUrl(serverAddress, password, client: client);
   }
 
   /// 仅启动游戏（不连接服务器），用于独立版 CSGO / CS:Source 的纯启动场景
@@ -1016,7 +1007,6 @@ class GameLauncherService {
     }
   }
 
-  // ==================== 配置管理 ====================
 
   /// 获取游戏路径
   Future<String?> getGamePath() async {
@@ -1272,7 +1262,6 @@ class GameLauncherService {
     LogService.d('路径检测缓存已重置');
   }
 
-  // ==================== Steam 启动选项自动配置 ====================
 
   /// CS2 的 AppID（用于解析 Steam 启动选项，单一来源见 ServerItemUtils.cs2AppId）
   static final String _cs2AppIdForLaunchOptions = '${ServerItemUtils.cs2AppId}';

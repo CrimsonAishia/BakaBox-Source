@@ -44,20 +44,14 @@ class UpdateLogsPanel extends StatelessWidget {
                   // 标题行
                   Row(
                     children: [
-                      Icon(
-                        MdiIcons.update,
-                        size: 16,
-                        color: AppColors.blue500,
-                      ),
+                      Icon(MdiIcons.update, size: 16, color: AppColors.blue500),
                       const SizedBox(width: 8),
                       Text(
                         '更新日志',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.slate800,
+                          color: isDark ? Colors.white : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -317,9 +311,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.slate800,
+                            color: isDark ? Colors.white : AppColors.slate800,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -359,9 +351,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                       child: Text(
                         '暂无详细内容',
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white54
-                              : AppColors.gray400,
+                          color: isDark ? Colors.white54 : AppColors.gray400,
                           fontSize: 14,
                         ),
                       ),
@@ -390,25 +380,19 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           'h1': Style(
                             fontSize: FontSize(18),
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.gray800,
+                            color: isDark ? Colors.white : AppColors.gray800,
                             margin: Margins.only(top: 16, bottom: 12),
                           ),
                           'h2': Style(
                             fontSize: FontSize(16),
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.gray800,
+                            color: isDark ? Colors.white : AppColors.gray800,
                             margin: Margins.only(top: 14, bottom: 10),
                           ),
                           'h3': Style(
                             fontSize: FontSize(15),
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.gray800,
+                            color: isDark ? Colors.white : AppColors.gray800,
                             margin: Margins.only(top: 12, bottom: 8),
                           ),
                           'ul': Style(
@@ -425,9 +409,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           ),
                           'strong': Style(
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.gray800,
+                            color: isDark ? Colors.white : AppColors.gray800,
                           ),
                           'em': Style(
                             fontStyle: FontStyle.italic,

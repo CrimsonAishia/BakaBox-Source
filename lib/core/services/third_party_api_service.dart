@@ -47,7 +47,11 @@ class CS2ZeServerData {
       online: json['online'] as bool? ?? false,
       players: json['players'] as int? ?? 0,
       serverKey: json['server_key'] as String? ?? '',
-      serverTags: (json['server_tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      serverTags:
+          (json['server_tags'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       appId: (json['app_id'] as num?)?.toInt(),
       mapChangedAt: (json['map_changed_at'] as num?)?.toInt(),
     );
@@ -90,18 +94,24 @@ class ThirdPartyApiService {
           .get(Uri.parse(cs2zeApiUrl), headers: _headers)
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> data = jsonDecode(
+          utf8.decode(response.bodyBytes),
+        );
         final Map<String, List<CS2ZeServerData>> result = {};
-        
+
         data.forEach((key, value) {
           if (value is List) {
-            result[key] = value.map((e) => CS2ZeServerData.fromJson(e as Map<String, dynamic>)).toList();
+            result[key] = value
+                .map((e) => CS2ZeServerData.fromJson(e as Map<String, dynamic>))
+                .toList();
           }
         });
-        
+
         return result;
       } else {
-        throw Exception('Failed to load data, status code: ${response.statusCode}');
+        throw Exception(
+          'Failed to load data, status code: ${response.statusCode}',
+        );
       }
     } catch (e) {
       LogService.e('Fetch CS2ZE servers failed: $e', e);

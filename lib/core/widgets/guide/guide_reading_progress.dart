@@ -80,8 +80,10 @@ class _GuideReadingProgressState extends State<GuideReadingProgress>
     final maxExtent = controller.position.maxScrollExtent;
     if (maxExtent <= 0) return;
 
-    final newProgress =
-        (controller.position.pixels / maxExtent).clamp(0.0, 1.0);
+    final newProgress = (controller.position.pixels / maxExtent).clamp(
+      0.0,
+      1.0,
+    );
 
     setState(() {
       _progress = newProgress;

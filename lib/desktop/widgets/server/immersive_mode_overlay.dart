@@ -918,9 +918,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             BlocProvider.value(
               value: serverBloc,
               child: Material(
-                color: isDark
-                    ? AppColors.slate900
-                    : AppColors.gray100,
+                color: isDark ? AppColors.slate900 : AppColors.gray100,
                 child: _buildFullContentForScreenshot(isDark, categoryServers),
               ),
             ),
@@ -1091,9 +1089,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   Widget _buildStaticServerCard(bool isDark, ExtendedServerItem server) {
     final data = server.serverData;
     final address =
-        server.serverItem.address ??
-        server.serverItem.serverAddress ??
-        '未知地址';
+        server.serverItem.address ?? server.serverItem.serverAddress ?? '未知地址';
     final hostName = server.serverItem.getDisplayName(data?.hostName);
     final mapName = data?.map ?? '未知地图';
     final mapLabel = server.mapInfo?.mapLabel;
@@ -1639,9 +1635,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       child: Stack(
         children: [
           Scaffold(
-            backgroundColor: isDark
-                ? AppColors.slate900
-                : AppColors.gray100,
+            backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
             body: Column(
               children: [
                 _buildHeader(isDark),
@@ -1768,9 +1762,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             color: isDark ? AppColors.slate800 : Colors.white,
             border: Border(
               bottom: BorderSide(
-                color: isDark
-                    ? AppColors.slate700
-                    : AppColors.gray200,
+                color: isDark ? AppColors.slate700 : AppColors.gray200,
               ),
             ),
             boxShadow: [
@@ -1914,9 +1906,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                       style: TextStyle(
                         fontSize: 10,
                         height: 1.1,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -1974,9 +1964,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   color: isDark ? AppColors.slate800 : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark
-                        ? AppColors.slate700
-                        : AppColors.gray200,
+                    color: isDark ? AppColors.slate700 : AppColors.gray200,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -2054,9 +2042,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     ),
                     Divider(
                       height: 1,
-                      color: isDark
-                          ? AppColors.slate700
-                          : AppColors.gray200,
+                      color: isDark ? AppColors.slate700 : AppColors.gray200,
                     ),
                     // 分类列表
                     Flexible(
@@ -2344,21 +2330,19 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                         ),
                       )
                     : isWeakNetwork
-                        ? const Icon(
-                            Icons.refresh,
-                            size: 18,
-                            color: Color(0xFFF0A020),
-                          )
-                        : Text(
-                            '$_countdown',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? Colors.white70
-                                  : AppColors.gray700,
-                            ),
-                          ),
+                    ? const Icon(
+                        Icons.refresh,
+                        size: 18,
+                        color: Color(0xFFF0A020),
+                      )
+                    : Text(
+                        '$_countdown',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : AppColors.gray700,
+                        ),
+                      ),
               ],
             ),
           ),
@@ -2712,9 +2696,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             ? null
             : Border(
                 bottom: BorderSide(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.gray200,
+                  color: isDark ? AppColors.slate700 : AppColors.gray200,
                 ),
               ),
       ),
@@ -2974,9 +2956,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 ? null
                 : Border(
                     bottom: BorderSide(
-                      color: isDark
-                          ? AppColors.slate700
-                          : AppColors.gray200,
+                      color: isDark ? AppColors.slate700 : AppColors.gray200,
                     ),
                   ),
           ),

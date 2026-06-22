@@ -23,22 +23,22 @@ enum GuideStatus {
   deleted;
 
   String get value => switch (this) {
-        GuideStatus.draft => 'draft',
-        GuideStatus.pending => 'pending',
-        GuideStatus.published => 'published',
-        GuideStatus.rejected => 'rejected',
-        GuideStatus.offShelf => 'off_shelf',
-        GuideStatus.deleted => 'deleted',
-      };
+    GuideStatus.draft => 'draft',
+    GuideStatus.pending => 'pending',
+    GuideStatus.published => 'published',
+    GuideStatus.rejected => 'rejected',
+    GuideStatus.offShelf => 'off_shelf',
+    GuideStatus.deleted => 'deleted',
+  };
 
   String get label => switch (this) {
-        GuideStatus.draft => '草稿',
-        GuideStatus.pending => '待审核',
-        GuideStatus.published => '已发布',
-        GuideStatus.rejected => '已驳回',
-        GuideStatus.offShelf => '已下架',
-        GuideStatus.deleted => '已删除',
-      };
+    GuideStatus.draft => '草稿',
+    GuideStatus.pending => '待审核',
+    GuideStatus.published => '已发布',
+    GuideStatus.rejected => '已驳回',
+    GuideStatus.offShelf => '已下架',
+    GuideStatus.deleted => '已删除',
+  };
 }
 
 /// 攻略排序方式
@@ -57,22 +57,22 @@ enum GuideSortBy {
   recommended;
 
   String get value => switch (this) {
-        GuideSortBy.latest => 'latest',
-        GuideSortBy.hot => 'hot',
-        GuideSortBy.mostLiked => 'mostLiked',
-        GuideSortBy.mostFavored => 'mostFavored',
-        GuideSortBy.mostViewed => 'mostViewed',
-        GuideSortBy.recommended => 'recommended',
-      };
+    GuideSortBy.latest => 'latest',
+    GuideSortBy.hot => 'hot',
+    GuideSortBy.mostLiked => 'mostLiked',
+    GuideSortBy.mostFavored => 'mostFavored',
+    GuideSortBy.mostViewed => 'mostViewed',
+    GuideSortBy.recommended => 'recommended',
+  };
 
   String get label => switch (this) {
-        GuideSortBy.latest => '最新',
-        GuideSortBy.hot => '最热',
-        GuideSortBy.mostLiked => '最多点赞',
-        GuideSortBy.mostFavored => '最多收藏',
-        GuideSortBy.mostViewed => '最多浏览',
-        GuideSortBy.recommended => '推荐',
-      };
+    GuideSortBy.latest => '最新',
+    GuideSortBy.hot => '最热',
+    GuideSortBy.mostLiked => '最多点赞',
+    GuideSortBy.mostFavored => '最多收藏',
+    GuideSortBy.mostViewed => '最多浏览',
+    GuideSortBy.recommended => '推荐',
+  };
 }
 
 /// 互动类型
@@ -87,11 +87,11 @@ enum GuideReactionType {
   share;
 
   String get value => switch (this) {
-        GuideReactionType.like => 'like',
-        GuideReactionType.favorite => 'favorite',
-        GuideReactionType.view => 'view',
-        GuideReactionType.share => 'share',
-      };
+    GuideReactionType.like => 'like',
+    GuideReactionType.favorite => 'favorite',
+    GuideReactionType.view => 'view',
+    GuideReactionType.share => 'share',
+  };
 }
 
 /// 举报原因
@@ -112,24 +112,24 @@ enum ReportReason {
   other;
 
   String get value => switch (this) {
-        ReportReason.spam => 'spam',
-        ReportReason.abuse => 'abuse',
-        ReportReason.porn => 'porn',
-        ReportReason.politics => 'politics',
-        ReportReason.plagiarism => 'plagiarism',
-        ReportReason.misleading => 'misleading',
-        ReportReason.other => 'other',
-      };
+    ReportReason.spam => 'spam',
+    ReportReason.abuse => 'abuse',
+    ReportReason.porn => 'porn',
+    ReportReason.politics => 'politics',
+    ReportReason.plagiarism => 'plagiarism',
+    ReportReason.misleading => 'misleading',
+    ReportReason.other => 'other',
+  };
 
   String get label => switch (this) {
-        ReportReason.spam => '垃圾广告',
-        ReportReason.abuse => '辱骂攻击',
-        ReportReason.porn => '色情低俗',
-        ReportReason.politics => '政治敏感',
-        ReportReason.plagiarism => '抄袭搬运',
-        ReportReason.misleading => '误导信息',
-        ReportReason.other => '其他',
-      };
+    ReportReason.spam => '垃圾广告',
+    ReportReason.abuse => '辱骂攻击',
+    ReportReason.porn => '色情低俗',
+    ReportReason.politics => '政治敏感',
+    ReportReason.plagiarism => '抄袭搬运',
+    ReportReason.misleading => '误导信息',
+    ReportReason.other => '其他',
+  };
 }
 
 // ─── 数据类 ─────────────────────────────────────────────────────────────────
@@ -169,16 +169,16 @@ class GuideCategoryDef extends Equatable {
 
   @override
   List<Object?> get props => [
-        code,
-        name,
-        description,
-        icon,
-        colorHex,
-        sortOrder,
-        isActive,
-        isAdminOnly,
-        count,
-      ];
+    code,
+    name,
+    description,
+    icon,
+    colorHex,
+    sortOrder,
+    isActive,
+    isAdminOnly,
+    count,
+  ];
 }
 
 /// 攻略列表项
@@ -289,38 +289,38 @@ class GuideListItem extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        summary,
-        coverUrl,
-        category,
-        categoryName,
-        categoryColorHex,
-        tags,
-        mapName,
-        mapLabel,
-        mapBackground,
-        hasVideo,
-        authorId,
-        authorName,
-        authorAvatar,
-        viewCount,
-        likeCount,
-        favoriteCount,
-        commentCount,
-        isLiked,
-        isFavorited,
-        isRecommended,
-        isPinned,
-        isHot,
-        status,
-        rejectReason,
-        createdAt,
-        publishedAt,
-        updatedAt,
-        deletedAt,
-        expireDays,
-      ];
+    id,
+    title,
+    summary,
+    coverUrl,
+    category,
+    categoryName,
+    categoryColorHex,
+    tags,
+    mapName,
+    mapLabel,
+    mapBackground,
+    hasVideo,
+    authorId,
+    authorName,
+    authorAvatar,
+    viewCount,
+    likeCount,
+    favoriteCount,
+    commentCount,
+    isLiked,
+    isFavorited,
+    isRecommended,
+    isPinned,
+    isHot,
+    status,
+    rejectReason,
+    createdAt,
+    publishedAt,
+    updatedAt,
+    deletedAt,
+    expireDays,
+  ];
 }
 
 /// 攻略详情（继承 [GuideListItem]，增加正文、附件、目录等字段）
@@ -392,16 +392,16 @@ class Guide extends GuideListItem {
 
   @override
   List<Object?> get props => [
-        ...super.props,
-        content,
-        attachments,
-        videoEmbeds,
-        tocItems,
-        mapInfo,
-        readingTimeMin,
-        version,
-        relatedGuideIds,
-      ];
+    ...super.props,
+    content,
+    attachments,
+    videoEmbeds,
+    tocItems,
+    mapInfo,
+    readingTimeMin,
+    version,
+    relatedGuideIds,
+  ];
 }
 
 /// 附件
@@ -431,14 +431,14 @@ class Attachment extends Equatable {
 
   @override
   List<Object?> get props => [
-        fileId,
-        url,
-        thumbUrl,
-        width,
-        height,
-        sizeBytes,
-        mimeType,
-      ];
+    fileId,
+    url,
+    thumbUrl,
+    width,
+    height,
+    sizeBytes,
+    mimeType,
+  ];
 }
 
 /// B 站视频嵌入
@@ -473,11 +473,7 @@ class TocItem extends Equatable {
   final int level;
   final String title;
 
-  const TocItem({
-    required this.id,
-    required this.level,
-    required this.title,
-  });
+  const TocItem({required this.id, required this.level, required this.title});
 
   factory TocItem.fromJson(Map<String, dynamic> json) =>
       _$TocItemFromJson(json);
@@ -592,26 +588,26 @@ class GuideComment extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        guideId,
-        parentId,
-        replyToId,
-        replyToName,
-        content,
-        images,
-        authorId,
-        authorName,
-        authorAvatar,
-        likeCount,
-        isLiked,
-        isDisliked,
-        dislikeCount,
-        replyCount,
-        replies,
-        isAuthor,
-        isDeleted,
-        createdAt,
-      ];
+    id,
+    guideId,
+    parentId,
+    replyToId,
+    replyToName,
+    content,
+    images,
+    authorId,
+    authorName,
+    authorAvatar,
+    likeCount,
+    isLiked,
+    isDisliked,
+    dislikeCount,
+    replyCount,
+    replies,
+    isAuthor,
+    isDeleted,
+    createdAt,
+  ];
 }
 
 /// 攻略举报
@@ -638,12 +634,12 @@ class GuideReport extends Equatable {
 
   @override
   List<Object?> get props => [
-        targetId,
-        targetType,
-        reason,
-        description,
-        evidenceImages,
-      ];
+    targetId,
+    targetType,
+    reason,
+    description,
+    evidenceImages,
+  ];
 }
 
 /// 攻略草稿
@@ -694,19 +690,19 @@ class GuideDraft extends Equatable {
 
   @override
   List<Object?> get props => [
-        draftId,
-        guideId,
-        title,
-        coverUrl,
-        category,
-        tags,
-        mapName,
-        summary,
-        content,
-        videoEmbeds,
-        version,
-        updatedAt,
-      ];
+    draftId,
+    guideId,
+    title,
+    coverUrl,
+    category,
+    tags,
+    mapName,
+    summary,
+    content,
+    videoEmbeds,
+    version,
+    updatedAt,
+  ];
 }
 
 /// 我的中心 — 用户统计概览
@@ -745,9 +741,9 @@ class GuideUserStats extends Equatable {
 
   @override
   List<Object?> get props => [
-        guideCount,
-        totalViews,
-        totalLikes,
-        totalFavorites,
-      ];
+    guideCount,
+    totalViews,
+    totalLikes,
+    totalFavorites,
+  ];
 }

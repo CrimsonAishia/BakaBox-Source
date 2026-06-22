@@ -42,11 +42,7 @@ class _CommunityGuideCloseButtonState extends State<CommunityGuideCloseButton> {
             ),
             child: const Align(
               alignment: Alignment(0.55, -0.55),
-              child: Icon(
-                Icons.close_rounded,
-                size: 18,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.close_rounded, size: 18, color: Colors.white),
             ),
           ),
         ),

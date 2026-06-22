@@ -167,17 +167,19 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
     if ((listState.status == GuideListStatus.initial ||
             listState.status == GuideListStatus.loading) &&
         listState.items.isEmpty) {
-      return [_buildSkeletonGrid(crossCount, padding: const EdgeInsets.fromLTRB(24, 24, 24, 0))];
+      return [
+        _buildSkeletonGrid(
+          crossCount,
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        ),
+      ];
     }
 
     if (listState.status == GuideListStatus.success &&
         listState.items.isEmpty &&
         listState.pinned.isEmpty) {
       return const [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: _EmptyState(),
-        ),
+        SliverFillRemaining(hasScrollBody: false, child: _EmptyState()),
       ];
     }
 
@@ -226,11 +228,13 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
     }
 
     if (loadingMore) {
-      result.add(_buildSkeletonGrid(
-        crossCount,
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-        count: 4,
-      ));
+      result.add(
+        _buildSkeletonGrid(
+          crossCount,
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+          count: 4,
+        ),
+      );
     }
 
     if (showEnd) {
@@ -284,11 +288,7 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: colors.textTertiary,
-          ),
+          Icon(Icons.error_outline, size: 64, color: colors.textTertiary),
           const SizedBox(height: 16),
           Text(
             error ?? '加载失败',
@@ -296,9 +296,9 @@ class _ErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: () => context
-                .read<GuideListBloc>()
-                .add(const LoadGuides(reset: true)),
+            onPressed: () => context.read<GuideListBloc>().add(
+              const LoadGuides(reset: true),
+            ),
             style: FilledButton.styleFrom(
               backgroundColor: colors.accentBlue,
               foregroundColor: Colors.white,
@@ -322,11 +322,7 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.article_outlined,
-            size: 72,
-            color: colors.textTertiary,
-          ),
+          Icon(Icons.article_outlined, size: 72, color: colors.textTertiary),
           const SizedBox(height: 16),
           Text(
             '还没有攻略',
@@ -360,11 +356,7 @@ class _CardEntrance extends StatefulWidget {
   final int index;
   final Widget child;
 
-  const _CardEntrance({
-    super.key,
-    required this.index,
-    required this.child,
-  });
+  const _CardEntrance({super.key, required this.index, required this.child});
 
   @override
   State<_CardEntrance> createState() => _CardEntranceState();
@@ -382,7 +374,10 @@ class _CardEntranceState extends State<_CardEntrance>
       vsync: this,
       duration: const Duration(milliseconds: 360),
     );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
 
     // 按卡片序号错开起播，最多累计 300ms，避免列表很长时延迟过久。
     final delayMs = (widget.index * 45).clamp(0, 300);

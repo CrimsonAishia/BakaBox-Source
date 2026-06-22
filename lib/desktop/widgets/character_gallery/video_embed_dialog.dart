@@ -310,7 +310,9 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
           child: Container(
             color: Colors.black,
             child: AppWebView(
-              initialUrlRequest: URLRequest(url: WebUri(_buildBilibiliEmbedUrl(widget.videoUrl))),
+              initialUrlRequest: URLRequest(
+                url: WebUri(_buildBilibiliEmbedUrl(widget.videoUrl)),
+              ),
               initialSettings: InAppWebViewSettings(
                 transparentBackground: true,
                 supportMultipleWindows: false,

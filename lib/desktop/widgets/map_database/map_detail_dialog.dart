@@ -81,9 +81,7 @@ class _MapDetailDialogState extends State<MapDetailDialog>
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.slate900
-                    : AppColors.slate50,
+                color: isDark ? AppColors.slate900 : AppColors.slate50,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),

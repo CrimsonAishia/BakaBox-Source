@@ -16,8 +16,9 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   final mf = MinidumpFile.parse(path);
   final reader = mf.getReader();
   final modules = mf.modules;
-  final moduleNames =
-      modules.map((m) => basename(m.name).toLowerCase()).toSet();
+  final moduleNames = modules
+      .map((m) => basename(m.name).toLowerCase())
+      .toSet();
 
   final out = <String, dynamic>{
     'file': basename(path),
@@ -69,7 +70,11 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   out['exception'] = exc;
 
   final cm = addrIn<MinidumpModule>(
-      modules, exr.exceptionAddress, (m) => m.baseaddress, (m) => m.size);
+    modules,
+    exr.exceptionAddress,
+    (m) => m.baseaddress,
+    (m) => m.size,
+  );
   if (cm != null) {
     out['crash_module'] = {
       'name': basename(cm.name),
@@ -87,8 +92,9 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   } else if (toolModules.contains(crashModLower) ||
       toolModules.any((t) => moduleNames.contains(t))) {
     out['is_tool_dump'] = toolModules.any((t) => moduleNames.contains(t));
-    out['crash_category'] =
-        toolModules.contains(crashModLower) ? 'tools' : 'resource';
+    out['crash_category'] = toolModules.contains(crashModLower)
+        ? 'tools'
+        : 'resource';
   } else if (crashModuleProfile.containsKey(crashModLower)) {
     out['crash_category'] = 'resource';
   } else if (crashModLower == 'kernelbase.dll') {
@@ -138,8 +144,23 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
 
   final ctx = mf.contextForThread(crashTid);
   final regNames = [
-    'Rip', 'Rsp', 'Rbp', 'Rax', 'Rbx', 'Rcx', 'Rdx',
-    'Rsi', 'Rdi', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15'
+    'Rip',
+    'Rsp',
+    'Rbp',
+    'Rax',
+    'Rbx',
+    'Rcx',
+    'Rdx',
+    'Rsi',
+    'Rdi',
+    'R8',
+    'R9',
+    'R10',
+    'R11',
+    'R12',
+    'R13',
+    'R14',
+    'R15',
   ];
   final registers = out['registers'] as Map<String, int>;
   if (ctx != null) {
@@ -189,7 +210,11 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
     final v = _u64(data, off);
     if (v < 0x10000 || v > 0x00007FFFFFFFFFFF) continue;
     final m = addrIn<MinidumpModule>(
-        modules, v, (mm) => mm.baseaddress, (mm) => mm.size);
+      modules,
+      v,
+      (mm) => mm.baseaddress,
+      (mm) => mm.size,
+    );
     if (m == null) continue;
     final nm = basename(m.name);
     moduleHits[nm] = (moduleHits[nm] ?? 0) + 1;
@@ -267,14 +292,16 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
     final wmFull = workshopVpkRe.firstMatch(s.replaceAll('\\', '/'));
     if (wmFull != null) {
       final wid = wmFull.group(1)!;
-      final innerPath =
-          inner != null ? inner.group(1)!.replaceAll('\\', '/') : '';
+      final innerPath = inner != null
+          ? inner.group(1)!.replaceAll('\\', '/')
+          : '';
       var cur = workshopVpks[wid];
       if (cur == null) {
         cur = {'offset': off, 'inner': <String>{}};
         workshopVpks[wid] = cur;
       }
-      if (off >= 0 && ((cur['offset'] as int) < 0 || off < (cur['offset'] as int))) {
+      if (off >= 0 &&
+          ((cur['offset'] as int) < 0 || off < (cur['offset'] as int))) {
         cur['offset'] = off;
       }
       if (innerPath.isNotEmpty) {
@@ -383,9 +410,10 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
       if ((r['path'] as String).length > (cur['path'] as String).length) {
         cur['path'] = r['path'];
       }
-      final offs = [cur['stack_offset'] as int, r['stack_offset'] as int]
-          .where((o) => o >= 0)
-          .toList();
+      final offs = [
+        cur['stack_offset'] as int,
+        r['stack_offset'] as int,
+      ].where((o) => o >= 0).toList();
       if (offs.isNotEmpty) {
         cur['stack_offset'] = offs.reduce((a, b) => a < b ? a : b);
       }
@@ -397,8 +425,12 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   }
   final resList = byCanon.values.toList()
     ..sort((a, b) {
-      final oa = (a['stack_offset'] as int) >= 0 ? a['stack_offset'] as int : -1;
-      final ob = (b['stack_offset'] as int) >= 0 ? b['stack_offset'] as int : -1;
+      final oa = (a['stack_offset'] as int) >= 0
+          ? a['stack_offset'] as int
+          : -1;
+      final ob = (b['stack_offset'] as int) >= 0
+          ? b['stack_offset'] as int
+          : -1;
       if (oa != ob) return oa.compareTo(ob);
       return (a['canonical'] as String).compareTo(b['canonical'] as String);
     });
@@ -424,8 +456,9 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   out['assert_strings'] = dedupeMessages(asserts);
 
   final wsEntries = workshopVpks.entries.toList()
-    ..sort((a, b) =>
-        (a.value['offset'] as int).compareTo(b.value['offset'] as int));
+    ..sort(
+      (a, b) => (a.value['offset'] as int).compareTo(b.value['offset'] as int),
+    );
   out['workshop_vpks'] = wsEntries.map((e) {
     final inner = (e.value['inner'] as Set<String>).toList()..sort();
     return {'id': e.key, 'stack_offset': e.value['offset'], 'inner': inner};
@@ -436,12 +469,12 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   // 会保留控制台日志快照: "Addons: 1234567890, 2345678901".
   // 这条是崩溃当下还挂着的订阅项, 把里面的 ID 补到 workshop_vpks.
   // (历史日志里的 "Unmounting addon" 是已卸载的, 跟崩溃无关, 不收录.)
-  final knownIds =
-      (out['workshop_vpks'] as List).map((e) => e['id'] as String).toSet();
+  final knownIds = (out['workshop_vpks'] as List)
+      .map((e) => e['id'] as String)
+      .toSet();
   final subscribedIds = <String>{};
   final fileText = latin1Decode(mf.bytes);
-  final addonsLineRe =
-      RegExp(r'Addons:\s*(\d{6,12}(?:\s*,\s*\d{6,12})*)');
+  final addonsLineRe = RegExp(r'Addons:\s*(\d{6,12}(?:\s*,\s*\d{6,12})*)');
   for (final m in addonsLineRe.allMatches(fileText)) {
     for (final idM in RegExp(r'\d{6,12}').allMatches(m.group(1)!)) {
       subscribedIds.add(idM.group(0)!);
@@ -463,10 +496,18 @@ Map<String, dynamic> analyze(String path, {bool deep = false}) {
   return out;
 }
 
-Map<String, dynamic> deepAnalyze(MinidumpReader reader,
-    List<MinidumpModule> modules, Uint8List data, ThreadContext? ctx) {
+Map<String, dynamic> deepAnalyze(
+  MinidumpReader reader,
+  List<MinidumpModule> modules,
+  Uint8List data,
+  ThreadContext? ctx,
+) {
   MinidumpModule? modOf(int addr) => addrIn<MinidumpModule>(
-      modules, addr, (m) => m.baseaddress, (m) => m.size);
+    modules,
+    addr,
+    (m) => m.baseaddress,
+    (m) => m.size,
+  );
 
   final result = <String, dynamic>{
     'vtables': <Map<String, dynamic>>[],
@@ -507,11 +548,13 @@ Map<String, dynamic> deepAnalyze(MinidumpReader reader,
   }
   final vtabKeys = vtab.keys.toList();
   final vtabSorted =
-      List.generate(vtabKeys.length, (i) => (vtabKeys[i], vtab[vtabKeys[i]]!, i))
-        ..sort((a, b) {
-          final c = b.$2.compareTo(a.$2);
-          return c != 0 ? c : a.$3.compareTo(b.$3);
-        });
+      List.generate(
+        vtabKeys.length,
+        (i) => (vtabKeys[i], vtab[vtabKeys[i]]!, i),
+      )..sort((a, b) {
+        final c = b.$2.compareTo(a.$2);
+        return c != 0 ? c : a.$3.compareTo(b.$3);
+      });
   for (final e in vtabSorted.take(15)) {
     if (e.$2 >= 3) {
       final parts = e.$1.split('|');

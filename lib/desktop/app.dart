@@ -87,11 +87,13 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
         ),
         BlocProvider(create: (_) => LobbyBloc()),
         BlocProvider(create: (_) => MapCdBloc()),
-        BlocProvider(create: (context) {
-          final bloc = GuideCategoriesBloc();
-          AppInitializer.preheatGuideCategories(bloc);
-          return bloc;
-        }),
+        BlocProvider(
+          create: (context) {
+            final bloc = GuideCategoriesBloc();
+            AppInitializer.preheatGuideCategories(bloc);
+            return bloc;
+          },
+        ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {

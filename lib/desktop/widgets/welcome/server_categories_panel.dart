@@ -58,9 +58,7 @@ class ServerCategoriesPanel extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.slate800,
+                          color: isDark ? Colors.white : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -100,10 +98,8 @@ class ServerCategoriesPanel extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final category = officialCategories[index];
                           final categoryKey = category.modelName ?? '';
-                          final hasOnlineCountData =
-                              state.categoryOnlineCounts.containsKey(
-                            categoryKey,
-                          );
+                          final hasOnlineCountData = state.categoryOnlineCounts
+                              .containsKey(categoryKey);
                           final onlineCount =
                               state.categoryOnlineCounts[categoryKey] ?? 0;
                           final serverCount = category.serverList.length;

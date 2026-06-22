@@ -42,37 +42,41 @@ class AppWebView extends StatelessWidget {
 
   /// 页面开始加载回调。
   final void Function(InAppWebViewController controller, WebUri? url)?
-      onLoadStart;
+  onLoadStart;
 
   /// 页面加载结束回调。
   final void Function(InAppWebViewController controller, WebUri? url)?
-      onLoadStop;
+  onLoadStop;
 
   /// 历史记录更新回调（用于检测 URL 跳转）。
   final void Function(
     InAppWebViewController controller,
     WebUri? url,
     bool? isReload,
-  )? onUpdateVisitedHistory;
+  )?
+  onUpdateVisitedHistory;
 
   /// 加载错误回调。
   final void Function(
     InAppWebViewController controller,
     WebResourceRequest request,
     WebResourceError error,
-  )? onReceivedError;
+  )?
+  onReceivedError;
 
   /// 新窗口请求回调。
   final Future<bool?> Function(
     InAppWebViewController controller,
     CreateWindowAction createWindowAction,
-  )? onCreateWindow;
+  )?
+  onCreateWindow;
 
   /// 权限请求回调。不传时默认拒绝所有权限请求。
   final Future<PermissionResponse?> Function(
     InAppWebViewController controller,
     PermissionRequest request,
-  )? onPermissionRequest;
+  )?
+  onPermissionRequest;
 
   @override
   Widget build(BuildContext context) {

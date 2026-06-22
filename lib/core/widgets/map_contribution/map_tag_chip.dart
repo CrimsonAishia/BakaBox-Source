@@ -341,9 +341,7 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
         boxShadow: isHovered
             ? [
                 BoxShadow(
-                  color: (tagColor ?? AppColors.primary).withValues(
-                    alpha: 0.4,
-                  ),
+                  color: (tagColor ?? AppColors.primary).withValues(alpha: 0.4),
                   blurRadius: 12,
                   spreadRadius: 2,
                   offset: const Offset(0, 4),
@@ -480,9 +478,7 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
   /// 构建标签 Hover 遮罩层
   Widget _buildTagHoverOverlay(MapTag tag) {
     final tagColor = tag.colorValue;
-    final shadowColor = (tagColor ?? AppColors.primary).withValues(
-      alpha: 0.4,
-    );
+    final shadowColor = (tagColor ?? AppColors.primary).withValues(alpha: 0.4);
     final bgColor = AppColors.slate800;
 
     return IntrinsicWidth(
@@ -648,9 +644,7 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
     String? label,
     String? tooltip,
   }) {
-    final activeColor = isUpvote
-        ? AppColors.emerald500
-        : AppColors.red500;
+    final activeColor = isUpvote ? AppColors.emerald500 : AppColors.red500;
     final bgColor = Colors.white.withValues(alpha: 0.15);
     final iconColor = Colors.white;
 

@@ -120,9 +120,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                 color: isDark ? AppColors.slate800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.gray200,
+                  color: isDark ? AppColors.slate700 : AppColors.gray200,
                 ),
               ),
               child: Column(
@@ -197,9 +195,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         padding: const EdgeInsets.all(20),
         child: Text(
           '暂无评论',
-          style: TextStyle(
-            color: isDark ? Colors.white38 : AppColors.gray400,
-          ),
+          style: TextStyle(color: isDark ? Colors.white38 : AppColors.gray400),
         ),
       ),
     );
@@ -251,9 +247,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: isDark
-                  ? AppColors.slate700
-                  : AppColors.gray200,
+              backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
               backgroundImage: comment.authorAvatar != null
                   ? NetworkImage(comment.authorAvatar!)
                   : null,
@@ -277,9 +271,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                         comment.authorName,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? Colors.white70
-                              : AppColors.gray700,
+                          color: isDark ? Colors.white70 : AppColors.gray700,
                         ),
                       ),
                       if (comment.isAdmin) ...[
@@ -304,9 +296,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                         Icon(
                           MdiIcons.arrowRightThin,
                           size: 14,
-                          color: isDark
-                              ? Colors.white38
-                              : AppColors.gray400,
+                          color: isDark ? Colors.white38 : AppColors.gray400,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -322,9 +312,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                       Text(
                         Formatters.formatRelativeTime(comment.createdAt),
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white38
-                              : AppColors.gray400,
+                          color: isDark ? Colors.white38 : AppColors.gray400,
                           fontSize: 12,
                         ),
                       ),
@@ -482,9 +470,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

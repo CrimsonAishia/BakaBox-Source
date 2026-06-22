@@ -35,10 +35,10 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
 
   // 记录已有服务器的备注名
   final Map<String, String> _existingNicknames = {};
-  
+
   // 当前选中的 Tab 分类
   String? _currentTab;
-  
+
   // 是否展开所有 Tab
   bool _isTabsExpanded = false;
 
@@ -353,9 +353,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             height: 48,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppColors.blue500,
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.blue500),
               backgroundColor: AppColors.blue500.withValues(alpha: 0.1),
             ),
           ),
@@ -415,18 +413,18 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
       return Center(
         child: Text(
           '没有找到任何服务器',
-          style: TextStyle(
-            color: isDark ? Colors.white54 : AppColors.slate500,
-          ),
+          style: TextStyle(color: isDark ? Colors.white54 : AppColors.slate500),
         ),
       );
     }
 
     final originalCategories = _data.keys.toList();
     if (_currentTab == null || !originalCategories.contains(_currentTab)) {
-      if (widget.targetApiCategoryKey != null && originalCategories.contains(widget.targetApiCategoryKey)) {
+      if (widget.targetApiCategoryKey != null &&
+          originalCategories.contains(widget.targetApiCategoryKey)) {
         _currentTab = widget.targetApiCategoryKey;
-      } else if (widget.targetCategoryName != null && originalCategories.contains(widget.targetCategoryName)) {
+      } else if (widget.targetCategoryName != null &&
+          originalCategories.contains(widget.targetCategoryName)) {
         _currentTab = widget.targetCategoryName;
       } else {
         _currentTab = originalCategories.first;
@@ -436,7 +434,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
     final servers = _data[_currentTab]!;
     final fullySelected = _isCategoryFullySelected(_currentTab!);
     final partiallySelected = _isCategoryPartiallySelected(_currentTab!);
-    
+
     // 控制显示多少个 Tab
     List<String> displayCategories = List.from(originalCategories);
     bool showExpandBtn = false;
@@ -460,7 +458,9 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withValues(alpha: 0.15) : AppColors.slate100,
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.15)
+                  : AppColors.slate100,
               border: Border(
                 bottom: BorderSide(
                   color: isDark ? Colors.white10 : AppColors.slate200,
@@ -491,31 +491,40 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                           borderRadius: BorderRadius.circular(20),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: isSelected 
-                                  ? AppColors.blue500 
+                              color: isSelected
+                                  ? AppColors.blue500
                                   : (isDark ? Colors.white10 : Colors.white),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected 
-                                    ? AppColors.blue500 
-                                    : (isDark ? Colors.white10 : AppColors.slate200),
+                                color: isSelected
+                                    ? AppColors.blue500
+                                    : (isDark
+                                          ? Colors.white10
+                                          : AppColors.slate200),
                               ),
                             ),
                             child: Text(
                               cat,
                               style: TextStyle(
-                                color: isSelected 
-                                    ? Colors.white 
-                                    : (isDark ? Colors.white70 : AppColors.slate600),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark
+                                          ? Colors.white70
+                                          : AppColors.slate600),
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
                               ),
                             ),
                           ),
                         );
                       }),
-                      
+
                       // 展开/收起按钮
                       if (showExpandBtn)
                         InkWell(
@@ -526,9 +535,14 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                           },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.03),
+                              color: isDark
+                                  ? Colors.black26
+                                  : Colors.black.withValues(alpha: 0.03),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -537,15 +551,21 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                                 Text(
                                   _isTabsExpanded ? '收起' : '展开',
                                   style: TextStyle(
-                                    color: isDark ? Colors.white70 : AppColors.slate500,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : AppColors.slate500,
                                     fontSize: 13,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 Icon(
-                                  _isTabsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                  _isTabsExpanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
                                   size: 16,
-                                  color: isDark ? Colors.white70 : AppColors.slate500,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : AppColors.slate500,
                                 ),
                               ],
                             ),
@@ -554,15 +574,21 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // 右侧全选按钮
                 InkWell(
-                  onTap: () => _toggleCategory(_currentTab!, !(fullySelected || partiallySelected)),
+                  onTap: () => _toggleCategory(
+                    _currentTab!,
+                    !(fullySelected || partiallySelected),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: (fullySelected || partiallySelected)
                           ? AppColors.blue500.withValues(alpha: 0.15)
@@ -577,10 +603,12 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                     child: Row(
                       children: [
                         Icon(
-                          (fullySelected || partiallySelected) ? Icons.check_box : Icons.check_box_outline_blank,
+                          (fullySelected || partiallySelected)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
                           size: 16,
-                          color: (fullySelected || partiallySelected) 
-                              ? const Color(0xFF60A5FA) 
+                          color: (fullySelected || partiallySelected)
+                              ? const Color(0xFF60A5FA)
                               : (isDark ? Colors.white54 : AppColors.slate500),
                         ),
                         const SizedBox(width: 6),
@@ -588,11 +616,13 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                           '全选该分类',
                           style: TextStyle(
                             fontSize: 13,
-                            color: (fullySelected || partiallySelected) 
-                                ? const Color(0xFF60A5FA) 
-                                : (isDark ? Colors.white54 : AppColors.slate500),
-                            fontWeight: (fullySelected || partiallySelected) 
-                                ? FontWeight.bold 
+                            color: (fullySelected || partiallySelected)
+                                ? const Color(0xFF60A5FA)
+                                : (isDark
+                                      ? Colors.white54
+                                      : AppColors.slate500),
+                            fontWeight: (fullySelected || partiallySelected)
+                                ? FontWeight.bold
                                 : FontWeight.normal,
                           ),
                         ),
@@ -612,13 +642,17 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
               builder: (context, constraints) {
                 int crossAxisCount = constraints.maxWidth > 500 ? 2 : 1;
                 double spacing = 12;
-                double itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * spacing) / crossAxisCount;
+                double itemWidth =
+                    (constraints.maxWidth - (crossAxisCount - 1) * spacing) /
+                    crossAxisCount;
 
                 return Wrap(
                   spacing: spacing,
                   runSpacing: spacing,
                   children: servers.map((server) {
-                    final isSelected = _selectedServers.contains(server.serverKey);
+                    final isSelected = _selectedServers.contains(
+                      server.serverKey,
+                    );
                     return SizedBox(
                       width: itemWidth,
                       child: _buildServerItem(server, isSelected, isDark),
@@ -676,11 +710,12 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                   Image.network(
                     server.imageUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildFallbackBg(isDark),
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildFallbackBg(isDark),
                   )
                 else
                   _buildFallbackBg(isDark),
-                
+
                 // 深色渐变遮罩层（底部黑，顶部透明）
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -717,7 +752,10 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                         children: [
                           // 游戏标牌
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(4),
@@ -741,7 +779,11 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                                 color: AppColors.blue500,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.check, size: 14, color: Colors.white),
+                              child: const Icon(
+                                Icons.check,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                             )
                           else
                             Container(
@@ -749,14 +791,17 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                               height: 18,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white54, width: 1.5),
+                                border: Border.all(
+                                  color: Colors.white54,
+                                  width: 1.5,
+                                ),
                               ),
                             ),
                         ],
                       ),
-                      
+
                       const Spacer(),
-                      
+
                       // 服务器名称与备注
                       RichText(
                         maxLines: 1,
@@ -769,52 +814,75 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                                 color: Colors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
+                                shadows: [
+                                  Shadow(color: Colors.black54, blurRadius: 2),
+                                ],
                               ),
                             ),
-                            if (_existingNicknames.containsKey(server.serverKey) &&
-                                _existingNicknames[server.serverKey] != server.name)
+                            if (_existingNicknames.containsKey(
+                                  server.serverKey,
+                                ) &&
+                                _existingNicknames[server.serverKey] !=
+                                    server.name)
                               TextSpan(
-                                text: ' (${_existingNicknames[server.serverKey]})',
+                                text:
+                                    ' (${_existingNicknames[server.serverKey]})',
                                 style: const TextStyle(
                                   color: Color(0xFF60A5FA),
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black54,
+                                      blurRadius: 2,
+                                    ),
+                                  ],
                                 ),
                               ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 6),
-                      
+
                       // 地图与人数标签
                       Row(
                         children: [
-                          Icon(MdiIcons.mapOutline, size: 14, color: Colors.white70),
+                          Icon(
+                            MdiIcons.mapOutline,
+                            size: 14,
+                            color: Colors.white70,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               server.mapCn ?? server.map ?? '未知地图',
                               style: const TextStyle(
-                                color: Colors.white70, 
+                                color: Colors.white70,
                                 fontSize: 12,
-                                shadows: [Shadow(color: Colors.black, blurRadius: 1)],
+                                shadows: [
+                                  Shadow(color: Colors.black, blurRadius: 1),
+                                ],
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Icon(Icons.people_outline, size: 14, color: Colors.white70),
+                          Icon(
+                            Icons.people_outline,
+                            size: 14,
+                            color: Colors.white70,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${server.players}/${server.maxPlayers}',
                             style: const TextStyle(
-                              color: Colors.white70, 
+                              color: Colors.white70,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              shadows: [Shadow(color: Colors.black, blurRadius: 1)],
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 1),
+                              ],
                             ),
                           ),
                         ],
@@ -843,9 +911,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withValues(alpha: 0.2)
-            : AppColors.slate50,
+        color: isDark ? Colors.black.withValues(alpha: 0.2) : AppColors.slate50,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -900,9 +966,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                     horizontal: 24,
                     vertical: 16,
                   ),
-                  foregroundColor: isDark
-                      ? Colors.white70
-                      : AppColors.slate600,
+                  foregroundColor: isDark ? Colors.white70 : AppColors.slate600,
                 ),
                 child: const Text(
                   '取消',
@@ -1004,7 +1068,9 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                           ? (isDark ? Colors.white : AppColors.slate800)
                           : (isDark ? Colors.white54 : AppColors.slate500),
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 2),

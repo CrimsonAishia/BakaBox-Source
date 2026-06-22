@@ -74,7 +74,8 @@ class ServerCategory extends Equatable {
       sortOrder: sortOrder ?? this.sortOrder,
       isFromApi: isFromApi ?? this.isFromApi,
       sourceApiUrl: sourceApiUrl ?? this.sourceApiUrl,
-      sourceApiCategoryName: sourceApiCategoryName ?? this.sourceApiCategoryName,
+      sourceApiCategoryName:
+          sourceApiCategoryName ?? this.sourceApiCategoryName,
     );
   }
 
@@ -364,12 +365,7 @@ class TeamScores extends Equatable {
   @JsonKey(name: 'map_name')
   final String? mapName;
 
-  const TeamScores({
-    this.ctScore,
-    this.tScore,
-    this.dataQuality,
-    this.mapName,
-  });
+  const TeamScores({this.ctScore, this.tScore, this.dataQuality, this.mapName});
 
   factory TeamScores.fromJson(Map<String, dynamic> json) =>
       _$TeamScoresFromJson(json);
@@ -443,10 +439,7 @@ class MapRuntimeData extends Equatable {
   /// 一周内出现次数。第三方接口（如 CS2ZE）不提供该数据，此时为 null。
   final int? weeklyOccurrences;
 
-  const MapRuntimeData({
-    required this.currentRuntime,
-    this.weeklyOccurrences,
-  });
+  const MapRuntimeData({required this.currentRuntime, this.weeklyOccurrences});
 
   factory MapRuntimeData.fromJson(Map<String, dynamic> json) =>
       _$MapRuntimeDataFromJson(json);
@@ -537,7 +530,8 @@ class ExtendedServerItem extends Equatable {
   final MapRuntimeData? mapRuntime;
   final int? mapRuntimeLastFetched;
   final bool mapRuntimeError;
-  bool get mapRuntimeFetching => mapRuntimeLastFetched == null && !mapRuntimeError;
+  bool get mapRuntimeFetching =>
+      mapRuntimeLastFetched == null && !mapRuntimeError;
   final int consecutiveFailures; // 连续失败次数
   final bool isOffline; // 是否离线（连续失败3次）
   final TeamScores? teamScores; // 新增：比分数据
@@ -591,14 +585,17 @@ class ExtendedServerItem extends Equatable {
       serverItem: serverItem ?? this.serverItem,
       serverData: clearServerData ? null : (serverData ?? this.serverData),
       mapInfo: clearMapInfo ? null : (mapInfo ?? this.mapInfo),
-      mapInfoFetched: clearMapInfo ? false : (mapInfoFetched ?? this.mapInfoFetched),
+      mapInfoFetched: clearMapInfo
+          ? false
+          : (mapInfoFetched ?? this.mapInfoFetched),
       updatedAt: updatedAt ?? this.updatedAt,
       recentlyUpdated: recentlyUpdated ?? this.recentlyUpdated,
       isLoading: isLoading ?? this.isLoading,
       hasError: hasError ?? this.hasError,
       pingInfo: pingInfo ?? this.pingInfo,
       mapRuntime: clearMapRuntime ? null : (mapRuntime ?? this.mapRuntime),
-      mapRuntimeLastFetched: mapRuntimeLastFetched ??
+      mapRuntimeLastFetched:
+          mapRuntimeLastFetched ??
           (clearMapRuntime ? null : this.mapRuntimeLastFetched),
       mapRuntimeError: mapRuntimeError ?? this.mapRuntimeError,
       consecutiveFailures: consecutiveFailures ?? this.consecutiveFailures,

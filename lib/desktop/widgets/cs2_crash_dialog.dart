@@ -69,7 +69,11 @@ class _Cs2CrashDialogState extends State<Cs2CrashDialog> {
                 padding: const EdgeInsets.fromLTRB(28, 22, 28, 24),
                 child: _showFullReport
                     ? _FullReportView(report: s.fullReport, isDark: isDark)
-                    : _SummaryView(summary: s, palette: palette, isDark: isDark),
+                    : _SummaryView(
+                        summary: s,
+                        palette: palette,
+                        isDark: isDark,
+                      ),
               ),
             ),
             Container(height: 1, color: divider),
@@ -116,11 +120,7 @@ class _Header extends StatelessWidget {
               color: palette.accent.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              palette.icon,
-              color: palette.accent,
-              size: 26,
-            ),
+            child: Icon(palette.icon, color: palette.accent, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -217,7 +217,11 @@ class _SummaryView extends StatelessWidget {
           ...summary.fatalStrings.map(
             (s) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _MonoBlock(text: s, isDark: isDark, accent: palette.accent),
+              child: _MonoBlock(
+                text: s,
+                isDark: isDark,
+                accent: palette.accent,
+              ),
             ),
           ),
         ],
@@ -291,8 +295,7 @@ class _MetaCard extends StatelessWidget {
     final pairs = <(String, String)>[
       ('类别', summary.categoryLabel),
       if (summary.crashModule != null) ('崩溃模块', summary.crashModule!),
-      if (summary.exceptionCodeName != null)
-        ('异常', summary.exceptionCodeName!),
+      if (summary.exceptionCodeName != null) ('异常', summary.exceptionCodeName!),
       ('时间', _formatTime(summary.createdAt)),
     ];
 
@@ -301,9 +304,7 @@ class _MetaCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: palette.accent.withValues(alpha: 0.18),
-        ),
+        border: Border.all(color: palette.accent.withValues(alpha: 0.18)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,10 +319,7 @@ class _MetaCard extends StatelessWidget {
                       width: 64,
                       child: Text(
                         p.$1,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: secondary,
-                        ),
+                        style: TextStyle(fontSize: 12.5, color: secondary),
                       ),
                     ),
                     Expanded(
@@ -440,10 +438,7 @@ class _ThirdPartyTile extends StatelessWidget {
                       Flexible(
                         child: Text(
                           '· ${entry.label}',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: secondary,
-                          ),
+                          style: TextStyle(fontSize: 12.5, color: secondary),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -593,9 +588,7 @@ class _MonoBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(10),
-        border: Border(
-          left: BorderSide(color: accent, width: 3),
-        ),
+        border: Border(left: BorderSide(color: accent, width: 3)),
       ),
       child: SelectableText(
         text,

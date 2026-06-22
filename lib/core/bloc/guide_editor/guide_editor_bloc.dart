@@ -80,8 +80,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
 
   /// 计算 canPublish：分类接口成功 且 validateErrors 为空
   bool _computeCanPublish(List<EditorValidateError> errors) {
-    return getCategoriesStatus() == CategoriesStatus.success &&
-        errors.isEmpty;
+    return getCategoriesStatus() == CategoriesStatus.success && errors.isEmpty;
   }
 
   /// 启动 30s 周期云端保存定时器
@@ -102,17 +101,22 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
       _startRemoteSaveTimer();
     }
     final errors = _validateDraft(newDraft);
-    emit(state.copyWith(
-      draft: newDraft,
-      validateErrors: errors,
-      canPublish: _computeCanPublish(errors),
-      dirty: true,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        draft: newDraft,
+        validateErrors: errors,
+        canPublish: _computeCanPublish(errors),
+        dirty: true,
+        clearError: true,
+      ),
+    );
   }
 
   /// 执行发布前校验
-  List<EditorValidateError> _validateDraft(GuideDraft? draft, {int? contentPlainTextLength}) {
+  List<EditorValidateError> _validateDraft(
+    GuideDraft? draft, {
+    int? contentPlainTextLength,
+  }) {
     if (draft == null) return [EditorValidateError.titleRequired];
 
     final errors = <EditorValidateError>[];
@@ -128,8 +132,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
       errors.add(EditorValidateError.categoryRequired);
     } else {
       // 校验分类 code 是否在可用列表中
-      final availableCodes =
-          getCategoriesItems().map((c) => c.code).toSet();
+      final availableCodes = getCategoriesItems().map((c) => c.code).toSet();
       if (availableCodes.isNotEmpty &&
           !availableCodes.contains(draft.category)) {
         errors.add(EditorValidateError.categoryInvalid);
@@ -168,7 +171,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
   int _countImages(String content) {
     if (content.isEmpty) return 0;
 
-      // 解析 Delta JSON，精确统计 resizableImage 节点；失败则 fallback 到正则
+    // 解析 Delta JSON，精确统计 resizableImage 节点；失败则 fallback 到正则
     try {
       final decoded = jsonDecode(content);
       if (decoded is List) {
@@ -246,18 +249,23 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
         final remoteDraft = await _guideApi.getDraftDetail(draftId);
         if (remoteDraft != null) {
           final plainTextLen = _calcContentPlainTextLength(remoteDraft.content);
-          final errors = _validateDraft(remoteDraft, contentPlainTextLength: plainTextLen);
-          _lastSavedDraft = remoteDraft;
-          emit(state.copyWith(
-            phase: EditorPhase.idle,
-            draft: remoteDraft,
-            lastSavedAt: remoteDraft.updatedAt ?? DateTime.now(),
-            validateErrors: errors,
-            canPublish: _computeCanPublish(errors),
+          final errors = _validateDraft(
+            remoteDraft,
             contentPlainTextLength: plainTextLen,
-            clearRemoteDraft: true,
-            clearError: true,
-          ));
+          );
+          _lastSavedDraft = remoteDraft;
+          emit(
+            state.copyWith(
+              phase: EditorPhase.idle,
+              draft: remoteDraft,
+              lastSavedAt: remoteDraft.updatedAt ?? DateTime.now(),
+              validateErrors: errors,
+              canPublish: _computeCanPublish(errors),
+              contentPlainTextLength: plainTextLen,
+              clearRemoteDraft: true,
+              clearError: true,
+            ),
+          );
           _startRemoteSaveTimer();
           return;
         }
@@ -269,19 +277,18 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
 
     // 无 draftId 或获取失败 → 创建新草稿
     final newDraftId = draftId ?? const Uuid().v4();
-    final draft = GuideDraft(
-      draftId: newDraftId,
-      version: 1,
-    );
+    final draft = GuideDraft(draftId: newDraftId, version: 1);
 
-    emit(state.copyWith(
-      phase: EditorPhase.idle,
-      draft: draft,
-      validateErrors: _validateDraft(draft),
-      canPublish: false,
-      clearError: true,
-      clearRemoteDraft: true,
-    ));
+    emit(
+      state.copyWith(
+        phase: EditorPhase.idle,
+        draft: draft,
+        validateErrors: _validateDraft(draft),
+        canPublish: false,
+        clearError: true,
+        clearRemoteDraft: true,
+      ),
+    );
 
     // 新建空草稿时不启动定时器，等首次内容变更再启动
   }
@@ -301,10 +308,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
     try {
       final guide = await _guideApi.getGuideDetail(event.guideId!);
       if (guide == null) {
-        emit(state.copyWith(
-          phase: EditorPhase.error,
-          error: '攻略不存在',
-        ));
+        emit(state.copyWith(phase: EditorPhase.error, error: '攻略不存在'));
         return;
       }
 
@@ -325,26 +329,30 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
       );
 
       final plainTextLen = _calcContentPlainTextLength(draft.content);
-      final errorsWithContent = _validateDraft(draft, contentPlainTextLength: plainTextLen);
-      _lastSavedDraft = draft;
-      emit(state.copyWith(
-        phase: EditorPhase.idle,
-        draft: draft,
-        lastSavedAt: guide.updatedAt,
-        validateErrors: errorsWithContent,
-        canPublish: _computeCanPublish(errorsWithContent),
+      final errorsWithContent = _validateDraft(
+        draft,
         contentPlainTextLength: plainTextLen,
-        clearRemoteDraft: true,
-        originalGuideStatus: guide.status,
-        originalRejectReason: guide.rejectReason,
-      ));
+      );
+      _lastSavedDraft = draft;
+      emit(
+        state.copyWith(
+          phase: EditorPhase.idle,
+          draft: draft,
+          lastSavedAt: guide.updatedAt,
+          validateErrors: errorsWithContent,
+          canPublish: _computeCanPublish(errorsWithContent),
+          contentPlainTextLength: plainTextLen,
+          clearRemoteDraft: true,
+          originalGuideStatus: guide.status,
+          originalRejectReason: guide.rejectReason,
+        ),
+      );
 
       _startRemoteSaveTimer();
     } catch (e) {
-      emit(state.copyWith(
-        phase: EditorPhase.error,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(phase: EditorPhase.error, error: _getErrorMessage(e)),
+      );
       LogService.e('从服务端初始化编辑器失败', e);
     }
   }
@@ -447,15 +455,20 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
     if (_remoteSaveTimer == null || !_remoteSaveTimer!.isActive) {
       _startRemoteSaveTimer();
     }
-    final errors = _validateDraft(newDraft, contentPlainTextLength: event.plainTextLength);
-    emit(state.copyWith(
-      draft: newDraft,
-      validateErrors: errors,
-      canPublish: _computeCanPublish(errors),
-      dirty: true,
+    final errors = _validateDraft(
+      newDraft,
       contentPlainTextLength: event.plainTextLength,
-      clearError: true,
-    ));
+    );
+    emit(
+      state.copyWith(
+        draft: newDraft,
+        validateErrors: errors,
+        canPublish: _computeCanPublish(errors),
+        dirty: true,
+        contentPlainTextLength: event.plainTextLength,
+        clearError: true,
+      ),
+    );
 
     // 防抖 3s 后自动触发本地保存
     _contentDebounceTimer?.cancel();
@@ -578,7 +591,8 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
     }
 
     // 判断内容是否真正有变更（与上一次成功保存的相比）
-    final isContentUnchanged = _lastSavedDraft != null &&
+    final isContentUnchanged =
+        _lastSavedDraft != null &&
         _lastSavedDraft!.title == draft.title &&
         _lastSavedDraft!.content == draft.content &&
         _lastSavedDraft!.summary == draft.summary &&
@@ -594,7 +608,8 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
     }
 
     // 草稿没有实质内容时不触发云端保存（避免生成大量空草稿）
-    final hasContent = (draft.title?.isNotEmpty ?? false) ||
+    final hasContent =
+        (draft.title?.isNotEmpty ?? false) ||
         (draft.content?.isNotEmpty ?? false) ||
         (draft.coverUrl?.isNotEmpty ?? false) ||
         (draft.summary?.isNotEmpty ?? false);
@@ -627,24 +642,27 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
 
         _lastSavedDraft = updatedDraft;
         _hasPendingRemoteChanges = false;
-        emit(state.copyWith(
-          phase: EditorPhase.idle,
-          draft: updatedDraft,
-          lastSavedAt: DateTime.now(),
-          dirty: false,
-        ));
+        emit(
+          state.copyWith(
+            phase: EditorPhase.idle,
+            draft: updatedDraft,
+            lastSavedAt: DateTime.now(),
+            dirty: false,
+          ),
+        );
       } else if (response is DraftSaveConflict) {
         // 409 冲突 → 进入 conflict 状态
-        emit(state.copyWith(
-          phase: EditorPhase.conflict,
-          remoteDraft: response.remote,
-        ));
+        emit(
+          state.copyWith(
+            phase: EditorPhase.conflict,
+            remoteDraft: response.remote,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        phase: EditorPhase.error,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(phase: EditorPhase.error, error: _getErrorMessage(e)),
+      );
       LogService.e('保存草稿失败', e);
     }
   }
@@ -661,30 +679,31 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
 
     // 额外校验：分类接口是否成功
     if (getCategoriesStatus() != CategoriesStatus.success) {
-      emit(state.copyWith(
-        validateErrors: [...errors, EditorValidateError.categoryRequired],
-        canPublish: false,
-        error: (draft.guideId != null && draft.guideId! > 0)
-            ? '分类加载失败，无法提交'
-            : '分类加载失败，无法发布',
-      ));
+      emit(
+        state.copyWith(
+          validateErrors: [...errors, EditorValidateError.categoryRequired],
+          canPublish: false,
+          error: (draft.guideId != null && draft.guideId! > 0)
+              ? '分类加载失败，无法提交'
+              : '分类加载失败，无法发布',
+        ),
+      );
       return;
     }
 
     if (errors.isNotEmpty) {
-      emit(state.copyWith(
-        validateErrors: errors,
-        canPublish: false,
-      ));
+      emit(state.copyWith(validateErrors: errors, canPublish: false));
       return;
     }
 
     // 校验通过，开始发布
-    emit(state.copyWith(
-      phase: EditorPhase.publishing,
-      validateErrors: const [],
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        phase: EditorPhase.publishing,
+        validateErrors: const [],
+        clearError: true,
+      ),
+    );
 
     // 如果 summary 为空，自动从正文提取前 100 字
     final effectiveSummary = (draft.summary?.trim().isNotEmpty ?? false)
@@ -705,8 +724,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
             tags: draft.tags,
             mapName: draft.mapName,
             content: draft.content,
-            videoEmbeds:
-                draft.videoEmbeds.map((e) => e.toJson()).toList(),
+            videoEmbeds: draft.videoEmbeds.map((e) => e.toJson()).toList(),
           ),
         );
         await _guideApi.publishGuide(draft.guideId!);
@@ -721,15 +739,11 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
             tags: draft.tags,
             mapName: draft.mapName,
             content: draft.content,
-            videoEmbeds:
-                draft.videoEmbeds.map((e) => e.toJson()).toList(),
+            videoEmbeds: draft.videoEmbeds.map((e) => e.toJson()).toList(),
           ),
         );
         if (guide == null) {
-          emit(state.copyWith(
-            phase: EditorPhase.error,
-            error: '创建攻略失败，请重试',
-          ));
+          emit(state.copyWith(phase: EditorPhase.error, error: '创建攻略失败，请重试'));
           return;
         }
         await _guideApi.publishGuide(guide.id);
@@ -746,16 +760,17 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
         // 草稿删除失败不影响发布结果
       }
 
-      emit(state.copyWith(
-        phase: EditorPhase.submitted,
-        dirty: false,
-        lastSavedAt: DateTime.now(),
-      ));
+      emit(
+        state.copyWith(
+          phase: EditorPhase.submitted,
+          dirty: false,
+          lastSavedAt: DateTime.now(),
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        phase: EditorPhase.error,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(phase: EditorPhase.error, error: _getErrorMessage(e)),
+      );
       LogService.e('发布攻略失败', e);
     }
   }
@@ -778,16 +793,18 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
       if (remoteDraft == null) return;
 
       final errors = _validateDraft(remoteDraft);
-      emit(state.copyWith(
-        phase: EditorPhase.idle,
-        draft: remoteDraft,
-        lastSavedAt: DateTime.now(),
-        validateErrors: errors,
-        canPublish: _computeCanPublish(errors),
-        clearRemoteDraft: true,
-        clearError: true,
-        dirty: false,
-      ));
+      emit(
+        state.copyWith(
+          phase: EditorPhase.idle,
+          draft: remoteDraft,
+          lastSavedAt: DateTime.now(),
+          validateErrors: errors,
+          canPublish: _computeCanPublish(errors),
+          clearRemoteDraft: true,
+          clearError: true,
+          dirty: false,
+        ),
+      );
       _hasPendingRemoteChanges = false;
     } else {
       // 保留本地版本，以远端 version 强制覆盖云端
@@ -811,12 +828,14 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
         updatedAt: draft.updatedAt,
       );
 
-      emit(state.copyWith(
-        phase: EditorPhase.idle,
-        draft: forceDraft,
-        clearRemoteDraft: true,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          phase: EditorPhase.idle,
+          draft: forceDraft,
+          clearRemoteDraft: true,
+          clearError: true,
+        ),
+      );
 
       _hasPendingRemoteChanges = true;
       // 立即触发一次云端保存

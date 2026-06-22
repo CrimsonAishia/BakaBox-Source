@@ -46,9 +46,7 @@ class CategoryCard extends StatelessWidget {
         border: isSelected
             ? Border.all(color: categoryColor, width: 2)
             : Border.all(
-                color: isDark
-                    ? AppColors.slate600
-                    : AppColors.gray200,
+                color: isDark ? AppColors.slate600 : AppColors.gray200,
                 width: 1,
               ),
         boxShadow: isSelected
@@ -72,9 +70,7 @@ class CategoryCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
-          hoverColor: isDark
-              ? AppColors.slate600
-              : AppColors.gray100,
+          hoverColor: isDark ? AppColors.slate600 : AppColors.gray100,
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(
@@ -189,7 +185,8 @@ class CategoryCard extends StatelessWidget {
       ),
       child: Icon(
         category.isFromApi
-            ? Icons.api_rounded // 或者使用 Icons.language_rounded 🌐
+            ? Icons
+                  .api_rounded // 或者使用 Icons.language_rounded 🌐
             : CategoryUtils.getCategoryIcon(category.modelName),
         color: Colors.white,
         size: 22,
@@ -300,9 +297,7 @@ class CategoryCard extends StatelessWidget {
         '$onlineCount在线',
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: isZeroOnline
-              ? AppColors.gray400
-              : AppColors.emerald500,
+          color: isZeroOnline ? AppColors.gray400 : AppColors.emerald500,
           fontSize: 13,
         ),
       ),

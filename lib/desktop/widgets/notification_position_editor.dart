@@ -339,9 +339,7 @@ class _NotificationPositionEditorState
     bool isSelected,
   ) {
     final isNotification = type == DraggableWindowType.notification;
-    final color = isNotification
-        ? AppColors.primary
-        : AppColors.orange;
+    final color = isNotification ? AppColors.primary : AppColors.orange;
     final icon = isNotification ? MdiIcons.bellOutline : MdiIcons.gamepad;
     final label = isNotification ? '通知' : '浮窗';
 

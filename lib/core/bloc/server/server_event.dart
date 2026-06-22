@@ -129,7 +129,7 @@ class ServerAddServerToCategory extends ServerEvent {
   final bool isFromApi;
   final String? sourceApiUrl;
   final String? sourceApiCategoryName;
-  
+
   const ServerAddServerToCategory(
     this.categoryName,
     this.serverItem, {
@@ -138,7 +138,13 @@ class ServerAddServerToCategory extends ServerEvent {
     this.sourceApiCategoryName,
   });
   @override
-  List<Object?> get props => [categoryName, serverItem, isFromApi, sourceApiUrl, sourceApiCategoryName];
+  List<Object?> get props => [
+    categoryName,
+    serverItem,
+    isFromApi,
+    sourceApiUrl,
+    sourceApiCategoryName,
+  ];
 }
 
 /// 删除自定义分类
@@ -306,7 +312,13 @@ class ServerApplyMapRuntimeChange extends ServerEvent {
   });
 
   @override
-  List<Object?> get props => [serverAddress, newMapName, oldMapName, weeklyOccurrences, changedAt];
+  List<Object?> get props => [
+    serverAddress,
+    newMapName,
+    oldMapName,
+    weeklyOccurrences,
+    changedAt,
+  ];
 }
 
 /// 内部事件：处理来自 `server.map.runtime` WS 频道的初始快照

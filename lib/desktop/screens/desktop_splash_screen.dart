@@ -134,9 +134,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : const Color(0xFFE9EEF8),
+      backgroundColor: isDark ? AppColors.slate900 : const Color(0xFFE9EEF8),
       body: Stack(
         children: [
           // 简化的背景光效
@@ -255,9 +253,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        (isDark
-                                ? AppColors.slate500
-                                : AppColors.slate400)
+                        (isDark ? AppColors.slate500 : AppColors.slate400)
                             .withValues(alpha: 0.5),
                       ],
                     ),
@@ -270,9 +266,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 3.0,
-                    color: isDark
-                        ? AppColors.slate400
-                        : AppColors.slate500,
+                    color: isDark ? AppColors.slate400 : AppColors.slate500,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(
@@ -291,9 +285,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        (isDark
-                                ? AppColors.slate500
-                                : AppColors.slate400)
+                        (isDark ? AppColors.slate500 : AppColors.slate400)
                             .withValues(alpha: 0.5),
                         Colors.transparent,
                       ],
@@ -329,9 +321,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                   Container(
                     height: 3,
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.slate700
-                          : AppColors.slate200,
+                      color: isDark ? AppColors.slate700 : AppColors.slate200,
                       borderRadius: BorderRadius.circular(1.5),
                     ),
                   ),
@@ -370,9 +360,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                 _loadingText,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark
-                      ? AppColors.slate500
-                      : AppColors.slate400,
+                  color: isDark ? AppColors.slate500 : AppColors.slate400,
                   letterSpacing: 2.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -399,9 +387,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     height: 3,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark
-                          ? AppColors.slate500
-                          : AppColors.slate400,
+                      color: isDark ? AppColors.slate500 : AppColors.slate400,
                     ),
                   )
                   .animate(onPlay: (c) => c.repeat())

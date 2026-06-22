@@ -965,9 +965,7 @@ class _LobbyWeakNetworkScreen extends StatelessWidget {
                 ? Colors.white.withValues(alpha: 0.04)
                 : Colors.white.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.orange.withValues(alpha: 0.4),
-            ),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

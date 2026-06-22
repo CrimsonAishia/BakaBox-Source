@@ -65,9 +65,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
       listener: (context, state) =>
           context.read<ServerBloc>().add(ServerUpdateCategoryOnlineCounts()),
       child: Scaffold(
-        backgroundColor: isDark
-            ? AppColors.slate900
-            : AppColors.slate100,
+        backgroundColor: isDark ? AppColors.slate900 : AppColors.slate100,
         body: RefreshIndicator(
           onRefresh: () async {
             HapticFeedback.mediumImpact();
@@ -274,9 +272,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                       Icon(
                         MdiIcons.chartLine,
                         size: 18,
-                        color: isDark
-                            ? Colors.white70
-                            : AppColors.slate500,
+                        color: isDark ? Colors.white70 : AppColors.slate500,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -284,9 +280,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.slate800,
+                          color: isDark ? Colors.white : AppColors.slate800,
                         ),
                       ),
                     ],
@@ -645,9 +639,7 @@ class _DailyTrendChart extends StatelessWidget {
                           '${parts[1]}/${parts[2]}',
                           style: TextStyle(
                             fontSize: 9,
-                            color: isDark
-                                ? Colors.white38
-                                : AppColors.slate400,
+                            color: isDark ? Colors.white38 : AppColors.slate400,
                           ),
                         );
                       },
@@ -807,9 +799,7 @@ class _HourlyChart extends StatelessWidget {
                         BarTooltipItem(
                           '${hourlyStats[groupIndex].hour}:00\n${rod.toY.toInt()} 人',
                           TextStyle(
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.slate800,
+                            color: isDark ? Colors.white : AppColors.slate800,
                             fontWeight: FontWeight.w600,
                             fontSize: 11,
                           ),
@@ -837,9 +827,7 @@ class _HourlyChart extends StatelessWidget {
                           '$hour',
                           style: TextStyle(
                             fontSize: 9,
-                            color: isDark
-                                ? Colors.white38
-                                : AppColors.slate400,
+                            color: isDark ? Colors.white38 : AppColors.slate400,
                           ),
                         );
                       },

@@ -234,7 +234,8 @@ class _NakamaSocketManager {
           ..v = 1
           ..type = 'online.stats'
           // include_users=false：轻量查询，仅维持链路活性，不拉全量用户列表
-          ..onlineStatsRequest = (pb.OnlineStatsRequest()..includeUsers = false);
+          ..onlineStatsRequest = (pb.OnlineStatsRequest()
+            ..includeUsers = false);
         sendEnvelope(envelope);
       } catch (_) {
         // 心跳失败不应影响主流程；真正断连由 onDone 处理
@@ -1130,10 +1131,12 @@ class LobbyNakamaService {
         ? _reconnectDelaySeconds.clamp(2, _circuitBreakerMaxDelaySeconds)
         : _reconnectDelaySeconds;
     // ±30% 抖动，打散大批客户端的同步重连节拍
-    final double jitterFactor = 1.0 + (_reconnectRandom.nextDouble() * 0.6 - 0.3);
-    final int effectiveDelay = (baseDelay * jitterFactor)
-        .round()
-        .clamp(1, _circuitBreakerMaxDelaySeconds);
+    final double jitterFactor =
+        1.0 + (_reconnectRandom.nextDouble() * 0.6 - 0.3);
+    final int effectiveDelay = (baseDelay * jitterFactor).round().clamp(
+      1,
+      _circuitBreakerMaxDelaySeconds,
+    );
 
     if (_consecutiveFailures >= _circuitBreakerThreshold) {
       LogService.w(
@@ -1145,50 +1148,46 @@ class LobbyNakamaService {
     }
 
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(
-      Duration(seconds: effectiveDelay),
-      () async {
-        _isReconnecting = false;
-        _consecutiveFailures++; // C3：记一次重连尝试（成功后会清零）
-        // 退避翻倍：熔断态用更高上限，否则用常规上限
-        final int cap = _consecutiveFailures >= _circuitBreakerThreshold
-            ? _circuitBreakerMaxDelaySeconds
-            : _maxReconnectDelaySeconds;
-        _reconnectDelaySeconds = (_reconnectDelaySeconds * 2).clamp(2, cap);
+    _reconnectTimer = Timer(Duration(seconds: effectiveDelay), () async {
+      _isReconnecting = false;
+      _consecutiveFailures++; // C3：记一次重连尝试（成功后会清零）
+      // 退避翻倍：熔断态用更高上限，否则用常规上限
+      final int cap = _consecutiveFailures >= _circuitBreakerThreshold
+          ? _circuitBreakerMaxDelaySeconds
+          : _maxReconnectDelaySeconds;
+      _reconnectDelaySeconds = (_reconnectDelaySeconds * 2).clamp(2, cap);
 
-        // 重连时检查 Session 是否过期，过期则先刷新
-        if (_clientManager.session != null &&
-            _clientManager.session!.isExpired) {
-          LogService.d('[LobbyNakamaService] Session 已过期，先刷新再重连');
-          try {
-            final jwtToken =
-                (AuthService.instance.isLoggedIn &&
-                    TokenService.instance.isTokenValid)
-                ? TokenService.instance.token
-                : null;
-            await _clientManager.refreshSession(
-              jwtToken: jwtToken,
-              deviceId: _deviceId!,
-            );
-          } catch (e) {
-            LogService.e('[LobbyNakamaService] Session 刷新失败: $e');
-          }
+      // 重连时检查 Session 是否过期，过期则先刷新
+      if (_clientManager.session != null && _clientManager.session!.isExpired) {
+        LogService.d('[LobbyNakamaService] Session 已过期，先刷新再重连');
+        try {
+          final jwtToken =
+              (AuthService.instance.isLoggedIn &&
+                  TokenService.instance.isTokenValid)
+              ? TokenService.instance.token
+              : null;
+          await _clientManager.refreshSession(
+            jwtToken: jwtToken,
+            deviceId: _deviceId!,
+          );
+        } catch (e) {
+          LogService.e('[LobbyNakamaService] Session 刷新失败: $e');
         }
+      }
 
-        // 清理旧的流订阅
-        await _matchEventSubscription?.cancel();
-        _matchEventSubscription = null;
-        await _disconnectSubscription?.cancel();
-        _disconnectSubscription = null;
+      // 清理旧的流订阅
+      await _matchEventSubscription?.cancel();
+      _matchEventSubscription = null;
+      await _disconnectSubscription?.cancel();
+      _disconnectSubscription = null;
 
-        // 关键修复：重连前先断开旧的 WebSocket 连接，避免在服务端累积大量僵尸连接。
-        // _doConnect() 会重新调用 _socketManager.connect() 建立新连接，
-        // 若不先 disconnect，旧的 socket 仍保持打开状态，重试机制会持续创建新连接。
-        await _socketManager.disconnect();
+      // 关键修复：重连前先断开旧的 WebSocket 连接，避免在服务端累积大量僵尸连接。
+      // _doConnect() 会重新调用 _socketManager.connect() 建立新连接，
+      // 若不先 disconnect，旧的 socket 仍保持打开状态，重试机制会持续创建新连接。
+      await _socketManager.disconnect();
 
-        await _doConnect();
-      },
-    );
+      await _doConnect();
+    });
   }
 
   /// 计算重连延迟（纯函数，用于属性测试）
@@ -1458,7 +1457,9 @@ class LobbyNakamaService {
     final last = _lastModeChangeSentAt;
     if (last != null && now.difference(last) < _modeChangeMinInterval) {
       final wait = _modeChangeMinInterval - now.difference(last);
-      LogService.d('[LobbyNakamaService] mode.change 限流，${wait.inMilliseconds}ms 后重发');
+      LogService.d(
+        '[LobbyNakamaService] mode.change 限流，${wait.inMilliseconds}ms 后重发',
+      );
       await Future.delayed(wait);
       if (_isDisposed || !_isConnected || !_hasEnteredLobby) return;
     }
@@ -1468,9 +1469,12 @@ class LobbyNakamaService {
       ..v = 1
       ..type = 'mode.change'
       ..traceId = _generateTraceId()
-      ..modeChangeRequest = (pb.ModeChangeRequest()..lowBandwidth = lowBandwidth);
+      ..modeChangeRequest = (pb.ModeChangeRequest()
+        ..lowBandwidth = lowBandwidth);
     _sendEnvelope(envelope);
-    LogService.i('[LobbyNakamaService] 已发送 mode.change lowBandwidth=$lowBandwidth');
+    LogService.i(
+      '[LobbyNakamaService] 已发送 mode.change lowBandwidth=$lowBandwidth',
+    );
   }
 
   /// 发送移动请求

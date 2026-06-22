@@ -41,9 +41,7 @@ class CacheSettings extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border(
               left: BorderSide(
-                color: isDark
-                    ? const Color(0xFF60A5FA)
-                    : AppColors.blue500,
+                color: isDark ? const Color(0xFF60A5FA) : AppColors.blue500,
                 width: 4,
               ),
             ),
@@ -209,9 +207,7 @@ class _CacheInfoItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (iconColor ?? AppColors.primary).withValues(
-                  alpha: 0.1,
-                ),
+                color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(

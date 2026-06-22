@@ -300,11 +300,7 @@ class PlaceholderTagList extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              MdiIcons.keyboardOutline,
-              size: 12,
-              color: AppColors.amber500,
-            ),
+            Icon(MdiIcons.keyboardOutline, size: 12, color: AppColors.amber500),
             const SizedBox(width: 6),
             Text(
               '已添加的按键占位符',

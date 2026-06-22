@@ -257,12 +257,7 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
       if (state.updateInfo != null) {
         await _updateService.reportCancelled(state.updateInfo!);
       }
-      emit(
-        state.copyWith(
-          status: UpdateStatus.cancelled,
-          clearProgress: true,
-        ),
-      );
+      emit(state.copyWith(status: UpdateStatus.cancelled, clearProgress: true));
     }
   }
 

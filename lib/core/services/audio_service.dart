@@ -54,7 +54,9 @@ class AudioService {
       _warmupVolume = StorageUtils.getDouble(_keyWarmupAudioVolume) ?? 0.8;
       _warmupInterval = StorageUtils.getDouble(_keyWarmupAudioInterval) ?? 2.0;
       _isVolumeLoaded = true;
-      LogService.d('音量配置已加载: 挤服=${(_volume * 100).toInt()}%, 暖服=${(_warmupVolume * 100).toInt()}%, 间隔=${_warmupInterval}s');
+      LogService.d(
+        '音量配置已加载: 挤服=${(_volume * 100).toInt()}%, 暖服=${(_warmupVolume * 100).toInt()}%, 间隔=${_warmupInterval}s',
+      );
     } catch (e) {
       LogService.e('加载音量配置失败', e);
     }
@@ -190,8 +192,7 @@ class AudioService {
 
     // 监听播放完成事件，完成后等待间隔再次播放
     _warmupCompleteSubscription?.cancel();
-    _warmupCompleteSubscription =
-        _warmupPlayer!.onPlayerComplete.listen((_) {
+    _warmupCompleteSubscription = _warmupPlayer!.onPlayerComplete.listen((_) {
       if (!_isWarmupLooping) return;
 
       // 播放完毕，等待间隔后再次播放

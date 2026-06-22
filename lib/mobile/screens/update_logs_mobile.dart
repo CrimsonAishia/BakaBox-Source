@@ -502,9 +502,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.red500,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.red500),
                   ),
                 ),
               ],

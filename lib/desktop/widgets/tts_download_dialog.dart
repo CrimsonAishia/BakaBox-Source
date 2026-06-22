@@ -435,7 +435,9 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
             backgroundColor: isDark
                 ? Colors.white.withValues(alpha: 0.1)
                 : AppColors.gray200,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.indigo500),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.indigo500,
+            ),
             minHeight: 4,
           ),
         ),
@@ -459,9 +461,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
         backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
         title: Text(
           '删除模型',
-          style: TextStyle(
-            color: isDark ? Colors.white : AppColors.gray800,
-          ),
+          style: TextStyle(color: isDark ? Colors.white : AppColors.gray800),
         ),
         content: Text(
           '确定要删除 ${model.name} 吗？',
@@ -638,7 +638,8 @@ class _HoverButtonState extends State<_HoverButton> {
     final baseColor = widget.isDestructive
         ? Colors.redAccent
         : widget.isAccent
-        ? AppColors.emerald500 // 绿色强调色
+        ? AppColors
+              .emerald500 // 绿色强调色
         : AppColors.indigo500;
 
     return MouseRegion(
@@ -682,9 +683,7 @@ class _HoverButtonState extends State<_HoverButton> {
                                   ? Colors.white70
                                   : const Color(0xFF4B5563))
                             : baseColor)
-                      : (widget.isDark
-                            ? Colors.white24
-                            : AppColors.gray300),
+                      : (widget.isDark ? Colors.white24 : AppColors.gray300),
                 ),
                 const SizedBox(width: 4),
               ],
@@ -699,9 +698,7 @@ class _HoverButtonState extends State<_HoverButton> {
                                   ? Colors.white70
                                   : const Color(0xFF4B5563))
                             : baseColor)
-                      : (widget.isDark
-                            ? Colors.white24
-                            : AppColors.gray300),
+                      : (widget.isDark ? Colors.white24 : AppColors.gray300),
                 ),
               ),
             ],

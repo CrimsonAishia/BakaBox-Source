@@ -252,7 +252,10 @@ class GuideCommentBubble extends StatelessWidget {
   }
 
   Widget _buildContentBubble(
-      BuildContext context, ThemeData theme, bool isDark) {
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(GuideTokens.space12),
@@ -325,13 +328,9 @@ class GuideCommentBubble extends StatelessWidget {
         const SizedBox(width: GuideTokens.space12),
         // 赞
         _ActionButton(
-          icon: comment.isLiked
-              ? Icons.thumb_up
-              : Icons.thumb_up_outlined,
+          icon: comment.isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
           label: comment.likeCount > 0 ? '${comment.likeCount}' : '赞',
-          color: comment.isLiked
-              ? GuideTokens.likeColor(context)
-              : actionColor,
+          color: comment.isLiked ? GuideTokens.likeColor(context) : actionColor,
           onTap: () => onLike?.call(comment.id),
         ),
         const SizedBox(width: GuideTokens.space12),
@@ -443,10 +442,7 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 2),
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: color),
-            ),
+            Text(label, style: TextStyle(fontSize: 12, color: color)),
           ],
         ),
       ),
@@ -482,8 +478,8 @@ class _MoreMenuButton extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       itemBuilder: (context) {
-        final isOwnComment = currentUserId != null &&
-            currentUserId == comment.authorId;
+        final isOwnComment =
+            currentUserId != null && currentUserId == comment.authorId;
         return [
           if (isOwnComment)
             const PopupMenuItem(

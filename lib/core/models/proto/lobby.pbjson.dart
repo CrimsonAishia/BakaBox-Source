@@ -21,54 +21,438 @@ const LobbyEnvelope$json = {
     {'1': 'type', '3': 2, '4': 1, '5': 9, '10': 'type'},
     {'1': 'ts', '3': 3, '4': 1, '5': 3, '10': 'ts'},
     {'1': 'trace_id', '3': 4, '4': 1, '5': 9, '10': 'traceId'},
-    {'1': 'login_request', '3': 10, '4': 1, '5': 11, '6': '.lobby.LoginRequest', '9': 0, '10': 'loginRequest'},
-    {'1': 'logout_request', '3': 11, '4': 1, '5': 11, '6': '.lobby.LogoutRequest', '9': 0, '10': 'logoutRequest'},
-    {'1': 'move_request', '3': 12, '4': 1, '5': 11, '6': '.lobby.MoveRequest', '9': 0, '10': 'moveRequest'},
-    {'1': 'chat_send_request', '3': 13, '4': 1, '5': 11, '6': '.lobby.ChatSendRequest', '9': 0, '10': 'chatSendRequest'},
-    {'1': 'profile_anonymous_change_request', '3': 14, '4': 1, '5': 11, '6': '.lobby.ProfileAnonymousChangeRequest', '9': 0, '10': 'profileAnonymousChangeRequest'},
-    {'1': 'profile_sprite_change_request', '3': 15, '4': 1, '5': 11, '6': '.lobby.ProfileSpriteChangeRequest', '9': 0, '10': 'profileSpriteChangeRequest'},
-    {'1': 'profile_status_text_update_request', '3': 16, '4': 1, '5': 11, '6': '.lobby.ProfileStatusTextUpdateRequest', '9': 0, '10': 'profileStatusTextUpdateRequest'},
-    {'1': 'profile_display_name_update_request', '3': 17, '4': 1, '5': 11, '6': '.lobby.ProfileDisplayNameUpdateRequest', '9': 0, '10': 'profileDisplayNameUpdateRequest'},
-    {'1': 'snapshot_request', '3': 18, '4': 1, '5': 11, '6': '.lobby.SnapshotRequest', '9': 0, '10': 'snapshotRequest'},
-    {'1': 'assets_request', '3': 19, '4': 1, '5': 11, '6': '.lobby.AssetsRequest', '9': 0, '10': 'assetsRequest'},
-    {'1': 'broadcast_send_request', '3': 20, '4': 1, '5': 11, '6': '.lobby.BroadcastSendRequest', '9': 0, '10': 'broadcastSendRequest'},
-    {'1': 'broadcast_cd_request', '3': 21, '4': 1, '5': 11, '6': '.lobby.BroadcastCDRequest', '9': 0, '10': 'broadcastCdRequest'},
-    {'1': 'portal_use_request', '3': 22, '4': 1, '5': 11, '6': '.lobby.PortalUseRequest', '9': 0, '10': 'portalUseRequest'},
-    {'1': 'online_stats_request', '3': 23, '4': 1, '5': 11, '6': '.lobby.OnlineStatsRequest', '9': 0, '10': 'onlineStatsRequest'},
-    {'1': 'profile_steam_bind_request', '3': 24, '4': 1, '5': 11, '6': '.lobby.ProfileSteamBindRequest', '9': 0, '10': 'profileSteamBindRequest'},
-    {'1': 'enter_request', '3': 25, '4': 1, '5': 11, '6': '.lobby.EnterRequest', '9': 0, '10': 'enterRequest'},
-    {'1': 'mode_change_request', '3': 26, '4': 1, '5': 11, '6': '.lobby.ModeChangeRequest', '9': 0, '10': 'modeChangeRequest'},
-    {'1': 'login_success_response', '3': 50, '4': 1, '5': 11, '6': '.lobby.LoginSuccessResponse', '9': 0, '10': 'loginSuccessResponse'},
-    {'1': 'login_failed_response', '3': 51, '4': 1, '5': 11, '6': '.lobby.LoginFailedResponse', '9': 0, '10': 'loginFailedResponse'},
-    {'1': 'logout_success_response', '3': 52, '4': 1, '5': 11, '6': '.lobby.LogoutSuccessResponse', '9': 0, '10': 'logoutSuccessResponse'},
-    {'1': 'join_success_response', '3': 53, '4': 1, '5': 11, '6': '.lobby.JoinSuccessResponse', '9': 0, '10': 'joinSuccessResponse'},
-    {'1': 'snapshot_response', '3': 54, '4': 1, '5': 11, '6': '.lobby.SnapshotResponse', '9': 0, '10': 'snapshotResponse'},
-    {'1': 'presence_join_response', '3': 55, '4': 1, '5': 11, '6': '.lobby.PresenceJoinResponse', '9': 0, '10': 'presenceJoinResponse'},
-    {'1': 'presence_leave_response', '3': 56, '4': 1, '5': 11, '6': '.lobby.PresenceLeaveResponse', '9': 0, '10': 'presenceLeaveResponse'},
-    {'1': 'identity_changed_response', '3': 57, '4': 1, '5': 11, '6': '.lobby.IdentityChangedResponse', '9': 0, '10': 'identityChangedResponse'},
-    {'1': 'move_broadcast_response', '3': 58, '4': 1, '5': 11, '6': '.lobby.MoveBroadcastResponse', '9': 0, '10': 'moveBroadcastResponse'},
-    {'1': 'move_reject_response', '3': 59, '4': 1, '5': 11, '6': '.lobby.MoveRejectResponse', '9': 0, '10': 'moveRejectResponse'},
-    {'1': 'chat_message_response', '3': 60, '4': 1, '5': 11, '6': '.lobby.ChatMessageResponse', '9': 0, '10': 'chatMessageResponse'},
-    {'1': 'chat_reject_response', '3': 61, '4': 1, '5': 11, '6': '.lobby.ChatRejectResponse', '9': 0, '10': 'chatRejectResponse'},
-    {'1': 'anonymous_changed_response', '3': 62, '4': 1, '5': 11, '6': '.lobby.AnonymousChangedResponse', '9': 0, '10': 'anonymousChangedResponse'},
-    {'1': 'sprite_changed_response', '3': 63, '4': 1, '5': 11, '6': '.lobby.SpriteChangedResponse', '9': 0, '10': 'spriteChangedResponse'},
-    {'1': 'sprite_change_reject_response', '3': 64, '4': 1, '5': 11, '6': '.lobby.SpriteChangeRejectResponse', '9': 0, '10': 'spriteChangeRejectResponse'},
-    {'1': 'status_text_broadcast_response', '3': 65, '4': 1, '5': 11, '6': '.lobby.StatusTextBroadcastResponse', '9': 0, '10': 'statusTextBroadcastResponse'},
-    {'1': 'display_name_changed_response', '3': 66, '4': 1, '5': 11, '6': '.lobby.DisplayNameChangedResponse', '9': 0, '10': 'displayNameChangedResponse'},
-    {'1': 'assets_response', '3': 67, '4': 1, '5': 11, '6': '.lobby.AssetsResponse', '9': 0, '10': 'assetsResponse'},
-    {'1': 'assets_updated_response', '3': 68, '4': 1, '5': 11, '6': '.lobby.AssetsUpdatedResponse', '9': 0, '10': 'assetsUpdatedResponse'},
-    {'1': 'portal_teleport_response', '3': 69, '4': 1, '5': 11, '6': '.lobby.PortalTeleportResponse', '9': 0, '10': 'portalTeleportResponse'},
-    {'1': 'portal_use_reject_response', '3': 70, '4': 1, '5': 11, '6': '.lobby.PortalUseRejectResponse', '9': 0, '10': 'portalUseRejectResponse'},
-    {'1': 'broadcast_message_response', '3': 71, '4': 1, '5': 11, '6': '.lobby.BroadcastMessageResponse', '9': 0, '10': 'broadcastMessageResponse'},
-    {'1': 'broadcast_reject_response', '3': 72, '4': 1, '5': 11, '6': '.lobby.BroadcastRejectResponse', '9': 0, '10': 'broadcastRejectResponse'},
-    {'1': 'broadcast_cd_response', '3': 73, '4': 1, '5': 11, '6': '.lobby.BroadcastCDResponse', '9': 0, '10': 'broadcastCdResponse'},
-    {'1': 'online_stats_response', '3': 74, '4': 1, '5': 11, '6': '.lobby.OnlineStatsResponse', '9': 0, '10': 'onlineStatsResponse'},
-    {'1': 'system_error_response', '3': 75, '4': 1, '5': 11, '6': '.lobby.SystemErrorResponse', '9': 0, '10': 'systemErrorResponse'},
-    {'1': 'system_notice_response', '3': 76, '4': 1, '5': 11, '6': '.lobby.SystemNoticeResponse', '9': 0, '10': 'systemNoticeResponse'},
-    {'1': 'system_kicked_response', '3': 77, '4': 1, '5': 11, '6': '.lobby.SystemKickedResponse', '9': 0, '10': 'systemKickedResponse'},
-    {'1': 'steam_bind_success_response', '3': 78, '4': 1, '5': 11, '6': '.lobby.SteamBindSuccessResponse', '9': 0, '10': 'steamBindSuccessResponse'},
-    {'1': 'sprite_change_success_response', '3': 79, '4': 1, '5': 11, '6': '.lobby.SpriteChangeSuccessResponse', '9': 0, '10': 'spriteChangeSuccessResponse'},
-    {'1': 'presence_delta_response', '3': 80, '4': 1, '5': 11, '6': '.lobby.PresenceDeltaResponse', '9': 0, '10': 'presenceDeltaResponse'},
+    {
+      '1': 'login_request',
+      '3': 10,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LoginRequest',
+      '9': 0,
+      '10': 'loginRequest'
+    },
+    {
+      '1': 'logout_request',
+      '3': 11,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LogoutRequest',
+      '9': 0,
+      '10': 'logoutRequest'
+    },
+    {
+      '1': 'move_request',
+      '3': 12,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.MoveRequest',
+      '9': 0,
+      '10': 'moveRequest'
+    },
+    {
+      '1': 'chat_send_request',
+      '3': 13,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ChatSendRequest',
+      '9': 0,
+      '10': 'chatSendRequest'
+    },
+    {
+      '1': 'profile_anonymous_change_request',
+      '3': 14,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ProfileAnonymousChangeRequest',
+      '9': 0,
+      '10': 'profileAnonymousChangeRequest'
+    },
+    {
+      '1': 'profile_sprite_change_request',
+      '3': 15,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ProfileSpriteChangeRequest',
+      '9': 0,
+      '10': 'profileSpriteChangeRequest'
+    },
+    {
+      '1': 'profile_status_text_update_request',
+      '3': 16,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ProfileStatusTextUpdateRequest',
+      '9': 0,
+      '10': 'profileStatusTextUpdateRequest'
+    },
+    {
+      '1': 'profile_display_name_update_request',
+      '3': 17,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ProfileDisplayNameUpdateRequest',
+      '9': 0,
+      '10': 'profileDisplayNameUpdateRequest'
+    },
+    {
+      '1': 'snapshot_request',
+      '3': 18,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SnapshotRequest',
+      '9': 0,
+      '10': 'snapshotRequest'
+    },
+    {
+      '1': 'assets_request',
+      '3': 19,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.AssetsRequest',
+      '9': 0,
+      '10': 'assetsRequest'
+    },
+    {
+      '1': 'broadcast_send_request',
+      '3': 20,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BroadcastSendRequest',
+      '9': 0,
+      '10': 'broadcastSendRequest'
+    },
+    {
+      '1': 'broadcast_cd_request',
+      '3': 21,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BroadcastCDRequest',
+      '9': 0,
+      '10': 'broadcastCdRequest'
+    },
+    {
+      '1': 'portal_use_request',
+      '3': 22,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PortalUseRequest',
+      '9': 0,
+      '10': 'portalUseRequest'
+    },
+    {
+      '1': 'online_stats_request',
+      '3': 23,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.OnlineStatsRequest',
+      '9': 0,
+      '10': 'onlineStatsRequest'
+    },
+    {
+      '1': 'profile_steam_bind_request',
+      '3': 24,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ProfileSteamBindRequest',
+      '9': 0,
+      '10': 'profileSteamBindRequest'
+    },
+    {
+      '1': 'enter_request',
+      '3': 25,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.EnterRequest',
+      '9': 0,
+      '10': 'enterRequest'
+    },
+    {
+      '1': 'mode_change_request',
+      '3': 26,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ModeChangeRequest',
+      '9': 0,
+      '10': 'modeChangeRequest'
+    },
+    {
+      '1': 'login_success_response',
+      '3': 50,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LoginSuccessResponse',
+      '9': 0,
+      '10': 'loginSuccessResponse'
+    },
+    {
+      '1': 'login_failed_response',
+      '3': 51,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LoginFailedResponse',
+      '9': 0,
+      '10': 'loginFailedResponse'
+    },
+    {
+      '1': 'logout_success_response',
+      '3': 52,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LogoutSuccessResponse',
+      '9': 0,
+      '10': 'logoutSuccessResponse'
+    },
+    {
+      '1': 'join_success_response',
+      '3': 53,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.JoinSuccessResponse',
+      '9': 0,
+      '10': 'joinSuccessResponse'
+    },
+    {
+      '1': 'snapshot_response',
+      '3': 54,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SnapshotResponse',
+      '9': 0,
+      '10': 'snapshotResponse'
+    },
+    {
+      '1': 'presence_join_response',
+      '3': 55,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PresenceJoinResponse',
+      '9': 0,
+      '10': 'presenceJoinResponse'
+    },
+    {
+      '1': 'presence_leave_response',
+      '3': 56,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PresenceLeaveResponse',
+      '9': 0,
+      '10': 'presenceLeaveResponse'
+    },
+    {
+      '1': 'identity_changed_response',
+      '3': 57,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.IdentityChangedResponse',
+      '9': 0,
+      '10': 'identityChangedResponse'
+    },
+    {
+      '1': 'move_broadcast_response',
+      '3': 58,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.MoveBroadcastResponse',
+      '9': 0,
+      '10': 'moveBroadcastResponse'
+    },
+    {
+      '1': 'move_reject_response',
+      '3': 59,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.MoveRejectResponse',
+      '9': 0,
+      '10': 'moveRejectResponse'
+    },
+    {
+      '1': 'chat_message_response',
+      '3': 60,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ChatMessageResponse',
+      '9': 0,
+      '10': 'chatMessageResponse'
+    },
+    {
+      '1': 'chat_reject_response',
+      '3': 61,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ChatRejectResponse',
+      '9': 0,
+      '10': 'chatRejectResponse'
+    },
+    {
+      '1': 'anonymous_changed_response',
+      '3': 62,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.AnonymousChangedResponse',
+      '9': 0,
+      '10': 'anonymousChangedResponse'
+    },
+    {
+      '1': 'sprite_changed_response',
+      '3': 63,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SpriteChangedResponse',
+      '9': 0,
+      '10': 'spriteChangedResponse'
+    },
+    {
+      '1': 'sprite_change_reject_response',
+      '3': 64,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SpriteChangeRejectResponse',
+      '9': 0,
+      '10': 'spriteChangeRejectResponse'
+    },
+    {
+      '1': 'status_text_broadcast_response',
+      '3': 65,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.StatusTextBroadcastResponse',
+      '9': 0,
+      '10': 'statusTextBroadcastResponse'
+    },
+    {
+      '1': 'display_name_changed_response',
+      '3': 66,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.DisplayNameChangedResponse',
+      '9': 0,
+      '10': 'displayNameChangedResponse'
+    },
+    {
+      '1': 'assets_response',
+      '3': 67,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.AssetsResponse',
+      '9': 0,
+      '10': 'assetsResponse'
+    },
+    {
+      '1': 'assets_updated_response',
+      '3': 68,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.AssetsUpdatedResponse',
+      '9': 0,
+      '10': 'assetsUpdatedResponse'
+    },
+    {
+      '1': 'portal_teleport_response',
+      '3': 69,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PortalTeleportResponse',
+      '9': 0,
+      '10': 'portalTeleportResponse'
+    },
+    {
+      '1': 'portal_use_reject_response',
+      '3': 70,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PortalUseRejectResponse',
+      '9': 0,
+      '10': 'portalUseRejectResponse'
+    },
+    {
+      '1': 'broadcast_message_response',
+      '3': 71,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BroadcastMessageResponse',
+      '9': 0,
+      '10': 'broadcastMessageResponse'
+    },
+    {
+      '1': 'broadcast_reject_response',
+      '3': 72,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BroadcastRejectResponse',
+      '9': 0,
+      '10': 'broadcastRejectResponse'
+    },
+    {
+      '1': 'broadcast_cd_response',
+      '3': 73,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BroadcastCDResponse',
+      '9': 0,
+      '10': 'broadcastCdResponse'
+    },
+    {
+      '1': 'online_stats_response',
+      '3': 74,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.OnlineStatsResponse',
+      '9': 0,
+      '10': 'onlineStatsResponse'
+    },
+    {
+      '1': 'system_error_response',
+      '3': 75,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SystemErrorResponse',
+      '9': 0,
+      '10': 'systemErrorResponse'
+    },
+    {
+      '1': 'system_notice_response',
+      '3': 76,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SystemNoticeResponse',
+      '9': 0,
+      '10': 'systemNoticeResponse'
+    },
+    {
+      '1': 'system_kicked_response',
+      '3': 77,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SystemKickedResponse',
+      '9': 0,
+      '10': 'systemKickedResponse'
+    },
+    {
+      '1': 'steam_bind_success_response',
+      '3': 78,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SteamBindSuccessResponse',
+      '9': 0,
+      '10': 'steamBindSuccessResponse'
+    },
+    {
+      '1': 'sprite_change_success_response',
+      '3': 79,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.SpriteChangeSuccessResponse',
+      '9': 0,
+      '10': 'spriteChangeSuccessResponse'
+    },
+    {
+      '1': 'presence_delta_response',
+      '3': 80,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PresenceDeltaResponse',
+      '9': 0,
+      '10': 'presenceDeltaResponse'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -238,8 +622,22 @@ const LobbyMapConfig$json = {
     {'1': 'background_url', '3': 3, '4': 1, '5': 9, '10': 'backgroundUrl'},
     {'1': 'width', '3': 4, '4': 1, '5': 1, '10': 'width'},
     {'1': 'height', '3': 5, '4': 1, '5': 1, '10': 'height'},
-    {'1': 'walkable_areas', '3': 6, '4': 3, '5': 11, '6': '.lobby.LobbyWalkableArea', '10': 'walkableAreas'},
-    {'1': 'portals', '3': 7, '4': 3, '5': 11, '6': '.lobby.LobbyPortal', '10': 'portals'},
+    {
+      '1': 'walkable_areas',
+      '3': 6,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyWalkableArea',
+      '10': 'walkableAreas'
+    },
+    {
+      '1': 'portals',
+      '3': 7,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyPortal',
+      '10': 'portals'
+    },
     {'1': 'is_default', '3': 8, '4': 1, '5': 8, '10': 'isDefault'},
   ],
 };
@@ -346,7 +744,13 @@ final $typed_data.Uint8List loginRequestDescriptor = $convert.base64Decode(
 const EnterRequest$json = {
   '1': 'EnterRequest',
   '2': [
-    {'1': 'protocol_features', '3': 1, '4': 1, '5': 5, '10': 'protocolFeatures'},
+    {
+      '1': 'protocol_features',
+      '3': 1,
+      '4': 1,
+      '5': 5,
+      '10': 'protocolFeatures'
+    },
     {'1': 'low_bandwidth', '3': 2, '4': 1, '5': 8, '10': 'lowBandwidth'},
   ],
 };
@@ -378,8 +782,8 @@ const LogoutRequest$json = {
 };
 
 /// Descriptor for `LogoutRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List logoutRequestDescriptor = $convert.base64Decode(
-    'Cg1Mb2dvdXRSZXF1ZXN0EhQKBWZvcmNlGAEgASgIUgVmb3JjZQ==');
+final $typed_data.Uint8List logoutRequestDescriptor = $convert
+    .base64Decode('Cg1Mb2dvdXRSZXF1ZXN0EhQKBWZvcmNlGAEgASgIUgVmb3JjZQ==');
 
 @$core.Deprecated('Use moveRequestDescriptor instead')
 const MoveRequest$json = {
@@ -416,9 +820,10 @@ const ProfileAnonymousChangeRequest$json = {
 };
 
 /// Descriptor for `ProfileAnonymousChangeRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List profileAnonymousChangeRequestDescriptor = $convert.base64Decode(
-    'Ch1Qcm9maWxlQW5vbnltb3VzQ2hhbmdlUmVxdWVzdBIhCgxpc19hbm9ueW1vdXMYASABKAhSC2'
-    'lzQW5vbnltb3Vz');
+final $typed_data.Uint8List profileAnonymousChangeRequestDescriptor =
+    $convert.base64Decode(
+        'Ch1Qcm9maWxlQW5vbnltb3VzQ2hhbmdlUmVxdWVzdBIhCgxpc19hbm9ueW1vdXMYASABKAhSC2'
+        'lzQW5vbnltb3Vz');
 
 @$core.Deprecated('Use profileSpriteChangeRequestDescriptor instead')
 const ProfileSpriteChangeRequest$json = {
@@ -429,9 +834,10 @@ const ProfileSpriteChangeRequest$json = {
 };
 
 /// Descriptor for `ProfileSpriteChangeRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List profileSpriteChangeRequestDescriptor = $convert.base64Decode(
-    'ChpQcm9maWxlU3ByaXRlQ2hhbmdlUmVxdWVzdBIbCglzcHJpdGVfaWQYASABKAlSCHNwcml0ZU'
-    'lk');
+final $typed_data.Uint8List profileSpriteChangeRequestDescriptor =
+    $convert.base64Decode(
+        'ChpQcm9maWxlU3ByaXRlQ2hhbmdlUmVxdWVzdBIbCglzcHJpdGVfaWQYASABKAlSCHNwcml0ZU'
+        'lk');
 
 @$core.Deprecated('Use profileStatusTextUpdateRequestDescriptor instead')
 const ProfileStatusTextUpdateRequest$json = {
@@ -442,9 +848,10 @@ const ProfileStatusTextUpdateRequest$json = {
 };
 
 /// Descriptor for `ProfileStatusTextUpdateRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List profileStatusTextUpdateRequestDescriptor = $convert.base64Decode(
-    'Ch5Qcm9maWxlU3RhdHVzVGV4dFVwZGF0ZVJlcXVlc3QSHwoLc3RhdHVzX3RleHQYASABKAlSCn'
-    'N0YXR1c1RleHQ=');
+final $typed_data.Uint8List profileStatusTextUpdateRequestDescriptor =
+    $convert.base64Decode(
+        'Ch5Qcm9maWxlU3RhdHVzVGV4dFVwZGF0ZVJlcXVlc3QSHwoLc3RhdHVzX3RleHQYASABKAlSCn'
+        'N0YXR1c1RleHQ=');
 
 @$core.Deprecated('Use profileDisplayNameUpdateRequestDescriptor instead')
 const ProfileDisplayNameUpdateRequest$json = {
@@ -456,9 +863,10 @@ const ProfileDisplayNameUpdateRequest$json = {
 };
 
 /// Descriptor for `ProfileDisplayNameUpdateRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List profileDisplayNameUpdateRequestDescriptor = $convert.base64Decode(
-    'Ch9Qcm9maWxlRGlzcGxheU5hbWVVcGRhdGVSZXF1ZXN0Eh8KC2N1c3RvbV9uYW1lGAEgASgJUg'
-    'pjdXN0b21OYW1lEh0KCnN0ZWFtX25hbWUYAiABKAlSCXN0ZWFtTmFtZQ==');
+final $typed_data.Uint8List profileDisplayNameUpdateRequestDescriptor =
+    $convert.base64Decode(
+        'Ch9Qcm9maWxlRGlzcGxheU5hbWVVcGRhdGVSZXF1ZXN0Eh8KC2N1c3RvbV9uYW1lGAEgASgJUg'
+        'pjdXN0b21OYW1lEh0KCnN0ZWFtX25hbWUYAiABKAlSCXN0ZWFtTmFtZQ==');
 
 @$core.Deprecated('Use profileSteamBindRequestDescriptor instead')
 const ProfileSteamBindRequest$json = {
@@ -470,9 +878,10 @@ const ProfileSteamBindRequest$json = {
 };
 
 /// Descriptor for `ProfileSteamBindRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List profileSteamBindRequestDescriptor = $convert.base64Decode(
-    'ChdQcm9maWxlU3RlYW1CaW5kUmVxdWVzdBIZCghzdGVhbV9pZBgBIAEoCVIHc3RlYW1JZBIdCg'
-    'pzdGVhbV9uYW1lGAIgASgJUglzdGVhbU5hbWU=');
+final $typed_data.Uint8List profileSteamBindRequestDescriptor =
+    $convert.base64Decode(
+        'ChdQcm9maWxlU3RlYW1CaW5kUmVxdWVzdBIZCghzdGVhbV9pZBgBIAEoCVIHc3RlYW1JZBIdCg'
+        'pzdGVhbV9uYW1lGAIgASgJUglzdGVhbU5hbWU=');
 
 @$core.Deprecated('Use snapshotRequestDescriptor instead')
 const SnapshotRequest$json = {
@@ -493,8 +902,8 @@ const AssetsRequest$json = {
 };
 
 /// Descriptor for `AssetsRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List assetsRequestDescriptor = $convert.base64Decode(
-    'Cg1Bc3NldHNSZXF1ZXN0');
+final $typed_data.Uint8List assetsRequestDescriptor =
+    $convert.base64Decode('Cg1Bc3NldHNSZXF1ZXN0');
 
 @$core.Deprecated('Use broadcastSendRequestDescriptor instead')
 const BroadcastSendRequest$json = {
@@ -505,8 +914,9 @@ const BroadcastSendRequest$json = {
 };
 
 /// Descriptor for `BroadcastSendRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List broadcastSendRequestDescriptor = $convert.base64Decode(
-    'ChRCcm9hZGNhc3RTZW5kUmVxdWVzdBIYCgdjb250ZW50GAEgASgJUgdjb250ZW50');
+final $typed_data.Uint8List broadcastSendRequestDescriptor =
+    $convert.base64Decode(
+        'ChRCcm9hZGNhc3RTZW5kUmVxdWVzdBIYCgdjb250ZW50GAEgASgJUgdjb250ZW50');
 
 @$core.Deprecated('Use broadcastCDRequestDescriptor instead')
 const BroadcastCDRequest$json = {
@@ -514,8 +924,8 @@ const BroadcastCDRequest$json = {
 };
 
 /// Descriptor for `BroadcastCDRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List broadcastCDRequestDescriptor = $convert.base64Decode(
-    'ChJCcm9hZGNhc3RDRFJlcXVlc3Q=');
+final $typed_data.Uint8List broadcastCDRequestDescriptor =
+    $convert.base64Decode('ChJCcm9hZGNhc3RDRFJlcXVlc3Q=');
 
 @$core.Deprecated('Use portalUseRequestDescriptor instead')
 const PortalUseRequest$json = {
@@ -579,15 +989,23 @@ const LogoutSuccessResponse$json = {
 };
 
 /// Descriptor for `LogoutSuccessResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List logoutSuccessResponseDescriptor = $convert.base64Decode(
-    'ChVMb2dvdXRTdWNjZXNzUmVzcG9uc2USEgoEa2ljaxgBIAEoCFIEa2ljaw==');
+final $typed_data.Uint8List logoutSuccessResponseDescriptor =
+    $convert.base64Decode(
+        'ChVMb2dvdXRTdWNjZXNzUmVzcG9uc2USEgoEa2ljaxgBIAEoCFIEa2ljaw==');
 
 @$core.Deprecated('Use joinSuccessResponseDescriptor instead')
 const JoinSuccessResponse$json = {
   '1': 'JoinSuccessResponse',
   '2': [
     {'1': 'map_id', '3': 1, '4': 1, '5': 9, '10': 'mapId'},
-    {'1': 'user', '3': 2, '4': 1, '5': 11, '6': '.lobby.LobbyUser', '10': 'user'},
+    {
+      '1': 'user',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LobbyUser',
+      '10': 'user'
+    },
     {'1': 'online_count', '3': 3, '4': 1, '5': 5, '10': 'onlineCount'},
   ],
 };
@@ -602,11 +1020,46 @@ final $typed_data.Uint8List joinSuccessResponseDescriptor = $convert.base64Decod
 const SnapshotResponse$json = {
   '1': 'SnapshotResponse',
   '2': [
-    {'1': 'map_config', '3': 1, '4': 1, '5': 11, '6': '.lobby.LobbyMapConfig', '10': 'mapConfig'},
-    {'1': 'self', '3': 2, '4': 1, '5': 11, '6': '.lobby.LobbyUser', '10': 'self'},
-    {'1': 'users', '3': 3, '4': 3, '5': 11, '6': '.lobby.LobbyUser', '10': 'users'},
-    {'1': 'recent_messages', '3': 4, '4': 3, '5': 11, '6': '.lobby.LobbyMessage', '10': 'recentMessages'},
-    {'1': 'page_info', '3': 5, '4': 1, '5': 11, '6': '.lobby.PageInfo', '10': 'pageInfo'},
+    {
+      '1': 'map_config',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LobbyMapConfig',
+      '10': 'mapConfig'
+    },
+    {
+      '1': 'self',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LobbyUser',
+      '10': 'self'
+    },
+    {
+      '1': 'users',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyUser',
+      '10': 'users'
+    },
+    {
+      '1': 'recent_messages',
+      '3': 4,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyMessage',
+      '10': 'recentMessages'
+    },
+    {
+      '1': 'page_info',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PageInfo',
+      '10': 'pageInfo'
+    },
     {'1': 'is_resume', '3': 6, '4': 1, '5': 8, '10': 'isResume'},
     {'1': 'left_user_ids', '3': 7, '4': 3, '5': 9, '10': 'leftUserIds'},
     {'1': 'delta_seq', '3': 8, '4': 1, '5': 3, '10': 'deltaSeq'},
@@ -627,9 +1080,22 @@ final $typed_data.Uint8List snapshotResponseDescriptor = $convert.base64Decode(
 const PresenceJoinResponse$json = {
   '1': 'PresenceJoinResponse',
   '2': [
-    {'1': 'user', '3': 1, '4': 1, '5': 11, '6': '.lobby.LobbyUser', '10': 'user'},
+    {
+      '1': 'user',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LobbyUser',
+      '10': 'user'
+    },
     {'1': 'source_map_id', '3': 2, '4': 1, '5': 9, '10': 'sourceMapId'},
-    {'1': 'is_cross_map_notification', '3': 3, '4': 1, '5': 8, '10': 'isCrossMapNotification'},
+    {
+      '1': 'is_cross_map_notification',
+      '3': 3,
+      '4': 1,
+      '5': 8,
+      '10': 'isCrossMapNotification'
+    },
   ],
 };
 
@@ -714,7 +1180,14 @@ final $typed_data.Uint8List moveRejectResponseDescriptor = $convert.base64Decode
 const ChatMessageResponse$json = {
   '1': 'ChatMessageResponse',
   '2': [
-    {'1': 'message', '3': 1, '4': 1, '5': 11, '6': '.lobby.LobbyMessage', '10': 'message'},
+    {
+      '1': 'message',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LobbyMessage',
+      '10': 'message'
+    },
   ],
 };
 
@@ -732,8 +1205,9 @@ const ChatRejectResponse$json = {
 };
 
 /// Descriptor for `ChatRejectResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List chatRejectResponseDescriptor = $convert.base64Decode(
-    'ChJDaGF0UmVqZWN0UmVzcG9uc2USFgoGcmVhc29uGAEgASgJUgZyZWFzb24=');
+final $typed_data.Uint8List chatRejectResponseDescriptor =
+    $convert.base64Decode(
+        'ChJDaGF0UmVqZWN0UmVzcG9uc2USFgoGcmVhc29uGAEgASgJUgZyZWFzb24=');
 
 @$core.Deprecated('Use anonymousChangedResponseDescriptor instead')
 const AnonymousChangedResponse$json = {
@@ -774,9 +1248,10 @@ const SpriteChangeSuccessResponse$json = {
 };
 
 /// Descriptor for `SpriteChangeSuccessResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List spriteChangeSuccessResponseDescriptor = $convert.base64Decode(
-    'ChtTcHJpdGVDaGFuZ2VTdWNjZXNzUmVzcG9uc2USGwoJc3ByaXRlX2lkGAEgASgJUghzcHJpdG'
-    'VJZA==');
+final $typed_data.Uint8List spriteChangeSuccessResponseDescriptor =
+    $convert.base64Decode(
+        'ChtTcHJpdGVDaGFuZ2VTdWNjZXNzUmVzcG9uc2USGwoJc3ByaXRlX2lkGAEgASgJUghzcHJpdG'
+        'VJZA==');
 
 @$core.Deprecated('Use spriteChangeRejectResponseDescriptor instead')
 const SpriteChangeRejectResponse$json = {
@@ -787,8 +1262,9 @@ const SpriteChangeRejectResponse$json = {
 };
 
 /// Descriptor for `SpriteChangeRejectResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List spriteChangeRejectResponseDescriptor = $convert.base64Decode(
-    'ChpTcHJpdGVDaGFuZ2VSZWplY3RSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbg==');
+final $typed_data.Uint8List spriteChangeRejectResponseDescriptor =
+    $convert.base64Decode(
+        'ChpTcHJpdGVDaGFuZ2VSZWplY3RSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbg==');
 
 @$core.Deprecated('Use statusTextBroadcastResponseDescriptor instead')
 const StatusTextBroadcastResponse$json = {
@@ -800,9 +1276,10 @@ const StatusTextBroadcastResponse$json = {
 };
 
 /// Descriptor for `StatusTextBroadcastResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List statusTextBroadcastResponseDescriptor = $convert.base64Decode(
-    'ChtTdGF0dXNUZXh0QnJvYWRjYXN0UmVzcG9uc2USFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEh'
-    '8KC3N0YXR1c190ZXh0GAIgASgJUgpzdGF0dXNUZXh0');
+final $typed_data.Uint8List statusTextBroadcastResponseDescriptor =
+    $convert.base64Decode(
+        'ChtTdGF0dXNUZXh0QnJvYWRjYXN0UmVzcG9uc2USFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEh'
+        '8KC3N0YXR1c190ZXh0GAIgASgJUgpzdGF0dXNUZXh0');
 
 @$core.Deprecated('Use displayNameChangedResponseDescriptor instead')
 const DisplayNameChangedResponse$json = {
@@ -814,16 +1291,31 @@ const DisplayNameChangedResponse$json = {
 };
 
 /// Descriptor for `DisplayNameChangedResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List displayNameChangedResponseDescriptor = $convert.base64Decode(
-    'ChpEaXNwbGF5TmFtZUNoYW5nZWRSZXNwb25zZRIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSGg'
-    'oIbmlja25hbWUYAiABKAlSCG5pY2tuYW1l');
+final $typed_data.Uint8List displayNameChangedResponseDescriptor =
+    $convert.base64Decode(
+        'ChpEaXNwbGF5TmFtZUNoYW5nZWRSZXNwb25zZRIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSGg'
+        'oIbmlja25hbWUYAiABKAlSCG5pY2tuYW1l');
 
 @$core.Deprecated('Use assetsResponseDescriptor instead')
 const AssetsResponse$json = {
   '1': 'AssetsResponse',
   '2': [
-    {'1': 'maps', '3': 1, '4': 3, '5': 11, '6': '.lobby.LobbyMapConfig', '10': 'maps'},
-    {'1': 'sprites', '3': 2, '4': 3, '5': 11, '6': '.lobby.LobbySpriteConfig', '10': 'sprites'},
+    {
+      '1': 'maps',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyMapConfig',
+      '10': 'maps'
+    },
+    {
+      '1': 'sprites',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbySpriteConfig',
+      '10': 'sprites'
+    },
   ],
 };
 
@@ -877,21 +1369,30 @@ const PortalUseRejectResponse$json = {
 };
 
 /// Descriptor for `PortalUseRejectResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List portalUseRejectResponseDescriptor = $convert.base64Decode(
-    'ChdQb3J0YWxVc2VSZWplY3RSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbg==');
+final $typed_data.Uint8List portalUseRejectResponseDescriptor =
+    $convert.base64Decode(
+        'ChdQb3J0YWxVc2VSZWplY3RSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbg==');
 
 @$core.Deprecated('Use broadcastMessageResponseDescriptor instead')
 const BroadcastMessageResponse$json = {
   '1': 'BroadcastMessageResponse',
   '2': [
-    {'1': 'message', '3': 1, '4': 1, '5': 11, '6': '.lobby.LobbyBroadcastMessage', '10': 'message'},
+    {
+      '1': 'message',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.LobbyBroadcastMessage',
+      '10': 'message'
+    },
   ],
 };
 
 /// Descriptor for `BroadcastMessageResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List broadcastMessageResponseDescriptor = $convert.base64Decode(
-    'ChhCcm9hZGNhc3RNZXNzYWdlUmVzcG9uc2USNgoHbWVzc2FnZRgBIAEoCzIcLmxvYmJ5LkxvYm'
-    'J5QnJvYWRjYXN0TWVzc2FnZVIHbWVzc2FnZQ==');
+final $typed_data.Uint8List broadcastMessageResponseDescriptor =
+    $convert.base64Decode(
+        'ChhCcm9hZGNhc3RNZXNzYWdlUmVzcG9uc2USNgoHbWVzc2FnZRgBIAEoCzIcLmxvYmJ5LkxvYm'
+        'J5QnJvYWRjYXN0TWVzc2FnZVIHbWVzc2FnZQ==');
 
 @$core.Deprecated('Use broadcastRejectResponseDescriptor instead')
 const BroadcastRejectResponse$json = {
@@ -902,8 +1403,9 @@ const BroadcastRejectResponse$json = {
 };
 
 /// Descriptor for `BroadcastRejectResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List broadcastRejectResponseDescriptor = $convert.base64Decode(
-    'ChdCcm9hZGNhc3RSZWplY3RSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbg==');
+final $typed_data.Uint8List broadcastRejectResponseDescriptor =
+    $convert.base64Decode(
+        'ChdCcm9hZGNhc3RSZWplY3RSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbg==');
 
 @$core.Deprecated('Use broadcastCDResponseDescriptor instead')
 const BroadcastCDResponse$json = {
@@ -926,8 +1428,22 @@ const OnlineStatsResponse$json = {
   '1': 'OnlineStatsResponse',
   '2': [
     {'1': 'total', '3': 1, '4': 1, '5': 5, '10': 'total'},
-    {'1': 'by_map', '3': 2, '4': 3, '5': 11, '6': '.lobby.OnlineStatsResponse.ByMapEntry', '10': 'byMap'},
-    {'1': 'users', '3': 3, '4': 3, '5': 11, '6': '.lobby.LobbyUser', '10': 'users'},
+    {
+      '1': 'by_map',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.OnlineStatsResponse.ByMapEntry',
+      '10': 'byMap'
+    },
+    {
+      '1': 'users',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyUser',
+      '10': 'users'
+    },
   ],
   '3': [OnlineStatsResponse_ByMapEntry$json],
 };
@@ -972,8 +1488,9 @@ const SystemNoticeResponse$json = {
 };
 
 /// Descriptor for `SystemNoticeResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List systemNoticeResponseDescriptor = $convert.base64Decode(
-    'ChRTeXN0ZW1Ob3RpY2VSZXNwb25zZRIYCgdtZXNzYWdlGAEgASgJUgdtZXNzYWdl');
+final $typed_data.Uint8List systemNoticeResponseDescriptor =
+    $convert.base64Decode(
+        'ChRTeXN0ZW1Ob3RpY2VSZXNwb25zZRIYCgdtZXNzYWdlGAEgASgJUgdtZXNzYWdl');
 
 @$core.Deprecated('Use systemKickedResponseDescriptor instead')
 const SystemKickedResponse$json = {
@@ -1010,7 +1527,13 @@ const LobbyJoinRequest$json = {
   '1': 'LobbyJoinRequest',
   '2': [
     {'1': 'device_type', '3': 1, '4': 1, '5': 9, '10': 'deviceType'},
-    {'1': 'protocol_features', '3': 2, '4': 1, '5': 5, '10': 'protocolFeatures'},
+    {
+      '1': 'protocol_features',
+      '3': 2,
+      '4': 1,
+      '5': 5,
+      '10': 'protocolFeatures'
+    },
     {'1': 'token', '3': 3, '4': 1, '5': 9, '10': 'token'},
   ],
 };
@@ -1052,8 +1575,9 @@ const SteamUserInfoRequest$json = {
 };
 
 /// Descriptor for `SteamUserInfoRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List steamUserInfoRequestDescriptor = $convert.base64Decode(
-    'ChRTdGVhbVVzZXJJbmZvUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQ=');
+final $typed_data.Uint8List steamUserInfoRequestDescriptor =
+    $convert.base64Decode(
+        'ChRTdGVhbVVzZXJJbmZvUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQ=');
 
 @$core.Deprecated('Use steamUserInfoResponseDescriptor instead')
 const SteamUserInfoResponse$json = {
@@ -1074,7 +1598,13 @@ const SteamUserInfoResponse$json = {
     {'1': 'vip_date', '3': 13, '4': 1, '5': 9, '10': 'vipDate'},
     {'1': 'vip_end', '3': 14, '4': 1, '5': 9, '10': 'vipEnd'},
     {'1': 'csgo_gold', '3': 15, '4': 1, '5': 3, '10': 'csgoGold'},
-    {'1': 'online_time_total', '3': 16, '4': 1, '5': 3, '10': 'onlineTimeTotal'},
+    {
+      '1': 'online_time_total',
+      '3': 16,
+      '4': 1,
+      '5': 3,
+      '10': 'onlineTimeTotal'
+    },
     {'1': 'online_time_day', '3': 17, '4': 1, '5': 3, '10': 'onlineTimeDay'},
     {'1': 'cs2_gold', '3': 18, '4': 1, '5': 3, '10': 'cs2Gold'},
     {'1': 'cs2_point', '3': 19, '4': 1, '5': 3, '10': 'cs2Point'},
@@ -1094,34 +1624,118 @@ const SteamUserInfoResponse$json = {
     {'1': 'csgo_online_time', '3': 33, '4': 1, '5': 3, '10': 'csgoOnlineTime'},
     {'1': 'csgo_zombie_pts', '3': 34, '4': 1, '5': 3, '10': 'csgoZombiePts'},
     {'1': 'csgo_zombie_kill', '3': 35, '4': 1, '5': 3, '10': 'csgoZombieKill'},
-    {'1': 'csgo_zombie_knife', '3': 36, '4': 1, '5': 3, '10': 'csgoZombieKnife'},
-    {'1': 'csgo_zombie_kick_ass', '3': 37, '4': 1, '5': 3, '10': 'csgoZombieKickAss'},
-    {'1': 'csgo_zombie_lost_ass', '3': 38, '4': 1, '5': 3, '10': 'csgoZombieLostAss'},
-    {'1': 'csgo_zombie_pro_level', '3': 39, '4': 1, '5': 3, '10': 'csgoZombieProLevel'},
+    {
+      '1': 'csgo_zombie_knife',
+      '3': 36,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoZombieKnife'
+    },
+    {
+      '1': 'csgo_zombie_kick_ass',
+      '3': 37,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoZombieKickAss'
+    },
+    {
+      '1': 'csgo_zombie_lost_ass',
+      '3': 38,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoZombieLostAss'
+    },
+    {
+      '1': 'csgo_zombie_pro_level',
+      '3': 39,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoZombieProLevel'
+    },
     {'1': 'csgo_mg_pts', '3': 40, '4': 1, '5': 3, '10': 'csgoMgPts'},
     {'1': 'csgo_surf_pts', '3': 41, '4': 1, '5': 3, '10': 'csgoSurfPts'},
     {'1': 'csgo_bhop_pts', '3': 42, '4': 1, '5': 3, '10': 'csgoBhopPts'},
     {'1': 'csgo_kz_pts', '3': 43, '4': 1, '5': 3, '10': 'csgoKzPts'},
-    {'1': 'csgo_ttt_innocent_pts', '3': 44, '4': 1, '5': 3, '10': 'csgoTttInnocentPts'},
-    {'1': 'csgo_ttt_detective_pts', '3': 45, '4': 1, '5': 3, '10': 'csgoTttDetectivePts'},
-    {'1': 'csgo_ttt_traitor_pts', '3': 46, '4': 1, '5': 3, '10': 'csgoTttTraitorPts'},
+    {
+      '1': 'csgo_ttt_innocent_pts',
+      '3': 44,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoTttInnocentPts'
+    },
+    {
+      '1': 'csgo_ttt_detective_pts',
+      '3': 45,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoTttDetectivePts'
+    },
+    {
+      '1': 'csgo_ttt_traitor_pts',
+      '3': 46,
+      '4': 1,
+      '5': 3,
+      '10': 'csgoTttTraitorPts'
+    },
     {'1': 'css_zombie_pts', '3': 47, '4': 1, '5': 3, '10': 'cssZombiePts'},
     {'1': 'css_zombie_kill', '3': 48, '4': 1, '5': 3, '10': 'cssZombieKill'},
     {'1': 'css_zombie_knife', '3': 49, '4': 1, '5': 3, '10': 'cssZombieKnife'},
-    {'1': 'css_zombie_kick_ass', '3': 50, '4': 1, '5': 3, '10': 'cssZombieKickAss'},
-    {'1': 'css_zombie_pro_level', '3': 51, '4': 1, '5': 3, '10': 'cssZombieProLevel'},
+    {
+      '1': 'css_zombie_kick_ass',
+      '3': 50,
+      '4': 1,
+      '5': 3,
+      '10': 'cssZombieKickAss'
+    },
+    {
+      '1': 'css_zombie_pro_level',
+      '3': 51,
+      '4': 1,
+      '5': 3,
+      '10': 'cssZombieProLevel'
+    },
     {'1': 'css_titan_pts', '3': 52, '4': 1, '5': 3, '10': 'cssTitanPts'},
     {'1': 'css_titan_kills', '3': 53, '4': 1, '5': 3, '10': 'cssTitanKills'},
-    {'1': 'css_titan_special_kills', '3': 54, '4': 1, '5': 3, '10': 'cssTitanSpecialKills'},
-    {'1': 'css_titan_human_kills', '3': 55, '4': 1, '5': 3, '10': 'cssTitanHumanKills'},
-    {'1': 'css_titan_assists', '3': 56, '4': 1, '5': 3, '10': 'cssTitanAssists'},
+    {
+      '1': 'css_titan_special_kills',
+      '3': 54,
+      '4': 1,
+      '5': 3,
+      '10': 'cssTitanSpecialKills'
+    },
+    {
+      '1': 'css_titan_human_kills',
+      '3': 55,
+      '4': 1,
+      '5': 3,
+      '10': 'cssTitanHumanKills'
+    },
+    {
+      '1': 'css_titan_assists',
+      '3': 56,
+      '4': 1,
+      '5': 3,
+      '10': 'cssTitanAssists'
+    },
     {'1': 'css_ttt_pts', '3': 57, '4': 1, '5': 3, '10': 'cssTttPts'},
-    {'1': 'css_ttt_wrong_kill', '3': 58, '4': 1, '5': 3, '10': 'cssTttWrongKill'},
+    {
+      '1': 'css_ttt_wrong_kill',
+      '3': 58,
+      '4': 1,
+      '5': 3,
+      '10': 'cssTttWrongKill'
+    },
     {'1': 'css_ttt_karma', '3': 59, '4': 1, '5': 3, '10': 'cssTttKarma'},
     {'1': 'donator_level', '3': 60, '4': 1, '5': 5, '10': 'donatorLevel'},
     {'1': 'donate_date', '3': 61, '4': 1, '5': 9, '10': 'donateDate'},
     {'1': 'donate_end', '3': 62, '4': 1, '5': 9, '10': 'donateEnd'},
-    {'1': 'donator_sign_today', '3': 63, '4': 1, '5': 8, '10': 'donatorSignToday'},
+    {
+      '1': 'donator_sign_today',
+      '3': 63,
+      '4': 1,
+      '5': 8,
+      '10': 'donatorSignToday'
+    },
     {'1': 'current_date', '3': 64, '4': 1, '5': 9, '10': 'currentDate'},
   ],
 };
@@ -1181,8 +1795,9 @@ const InventoryStatsRequest$json = {
 };
 
 /// Descriptor for `InventoryStatsRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List inventoryStatsRequestDescriptor = $convert.base64Decode(
-    'ChVJbnZlbnRvcnlTdGF0c1JlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklk');
+final $typed_data.Uint8List inventoryStatsRequestDescriptor =
+    $convert.base64Decode(
+        'ChVJbnZlbnRvcnlTdGF0c1JlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklk');
 
 @$core.Deprecated('Use inventoryStatsResponseDescriptor instead')
 const InventoryStatsResponse$json = {
@@ -1199,7 +1814,13 @@ const InventoryStatsResponse$json = {
     {'1': 'cheer_count', '3': 9, '4': 1, '5': 5, '10': 'cheerCount'},
     {'1': 'skinmenu_count', '3': 10, '4': 1, '5': 5, '10': 'skinmenuCount'},
     {'1': 'total_gold_value', '3': 11, '4': 1, '5': 3, '10': 'totalGoldValue'},
-    {'1': 'total_point_value', '3': 12, '4': 1, '5': 3, '10': 'totalPointValue'},
+    {
+      '1': 'total_point_value',
+      '3': 12,
+      '4': 1,
+      '5': 3,
+      '10': 'totalPointValue'
+    },
   ],
 };
 
@@ -1218,9 +1839,23 @@ final $typed_data.Uint8List inventoryStatsResponseDescriptor = $convert.base64De
 const PresenceDeltaResponse$json = {
   '1': 'PresenceDeltaResponse',
   '2': [
-    {'1': 'joined', '3': 1, '4': 3, '5': 11, '6': '.lobby.LobbyUser', '10': 'joined'},
+    {
+      '1': 'joined',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.LobbyUser',
+      '10': 'joined'
+    },
     {'1': 'left_user_ids', '3': 2, '4': 3, '5': 9, '10': 'leftUserIds'},
-    {'1': 'cross_map_events', '3': 3, '4': 3, '5': 11, '6': '.lobby.CrossMapPresenceEvent', '10': 'crossMapEvents'},
+    {
+      '1': 'cross_map_events',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.CrossMapPresenceEvent',
+      '10': 'crossMapEvents'
+    },
     {'1': 'seq', '3': 10, '4': 1, '5': 3, '10': 'seq'},
   ],
 };
@@ -1263,8 +1898,9 @@ const QueueStatusRequest$json = {
 };
 
 /// Descriptor for `QueueStatusRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List queueStatusRequestDescriptor = $convert.base64Decode(
-    'ChJRdWV1ZVN0YXR1c1JlcXVlc3QSFgoGdGlja2V0GAEgASgJUgZ0aWNrZXQ=');
+final $typed_data.Uint8List queueStatusRequestDescriptor =
+    $convert.base64Decode(
+        'ChJRdWV1ZVN0YXR1c1JlcXVlc3QSFgoGdGlja2V0GAEgASgJUgZ0aWNrZXQ=');
 
 @$core.Deprecated('Use queueStatusResponseDescriptor instead')
 const QueueStatusResponse$json = {
@@ -1300,8 +1936,9 @@ const QueueCancelRequest$json = {
 };
 
 /// Descriptor for `QueueCancelRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List queueCancelRequestDescriptor = $convert.base64Decode(
-    'ChJRdWV1ZUNhbmNlbFJlcXVlc3QSFgoGdGlja2V0GAEgASgJUgZ0aWNrZXQ=');
+final $typed_data.Uint8List queueCancelRequestDescriptor =
+    $convert.base64Decode(
+        'ChJRdWV1ZUNhbmNlbFJlcXVlc3QSFgoGdGlja2V0GAEgASgJUgZ0aWNrZXQ=');
 
 @$core.Deprecated('Use queueCancelResponseDescriptor instead')
 const QueueCancelResponse$json = {
@@ -1312,50 +1949,147 @@ const QueueCancelResponse$json = {
 };
 
 /// Descriptor for `QueueCancelResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List queueCancelResponseDescriptor = $convert.base64Decode(
-    'ChNRdWV1ZUNhbmNlbFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3M=');
+final $typed_data.Uint8List queueCancelResponseDescriptor =
+    $convert.base64Decode(
+        'ChNRdWV1ZUNhbmNlbFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3M=');
 
 @$core.Deprecated('Use batchPresenceJoinSignalDescriptor instead')
 const BatchPresenceJoinSignal$json = {
   '1': 'BatchPresenceJoinSignal',
   '2': [
-    {'1': 'joins', '3': 1, '4': 3, '5': 11, '6': '.lobby.PresenceJoinSignal', '10': 'joins'},
+    {
+      '1': 'joins',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.PresenceJoinSignal',
+      '10': 'joins'
+    },
   ],
 };
 
 /// Descriptor for `BatchPresenceJoinSignal`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List batchPresenceJoinSignalDescriptor = $convert.base64Decode(
-    'ChdCYXRjaFByZXNlbmNlSm9pblNpZ25hbBIvCgVqb2lucxgBIAMoCzIZLmxvYmJ5LlByZXNlbm'
-    'NlSm9pblNpZ25hbFIFam9pbnM=');
+final $typed_data.Uint8List batchPresenceJoinSignalDescriptor =
+    $convert.base64Decode(
+        'ChdCYXRjaFByZXNlbmNlSm9pblNpZ25hbBIvCgVqb2lucxgBIAMoCzIZLmxvYmJ5LlByZXNlbm'
+        'NlSm9pblNpZ25hbFIFam9pbnM=');
 
 @$core.Deprecated('Use batchPresenceLeaveSignalDescriptor instead')
 const BatchPresenceLeaveSignal$json = {
   '1': 'BatchPresenceLeaveSignal',
   '2': [
-    {'1': 'leaves', '3': 1, '4': 3, '5': 11, '6': '.lobby.PresenceLeaveSignal', '10': 'leaves'},
+    {
+      '1': 'leaves',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.PresenceLeaveSignal',
+      '10': 'leaves'
+    },
   ],
 };
 
 /// Descriptor for `BatchPresenceLeaveSignal`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List batchPresenceLeaveSignalDescriptor = $convert.base64Decode(
-    'ChhCYXRjaFByZXNlbmNlTGVhdmVTaWduYWwSMgoGbGVhdmVzGAEgAygLMhoubG9iYnkuUHJlc2'
-    'VuY2VMZWF2ZVNpZ25hbFIGbGVhdmVz');
+final $typed_data.Uint8List batchPresenceLeaveSignalDescriptor =
+    $convert.base64Decode(
+        'ChhCYXRjaFByZXNlbmNlTGVhdmVTaWduYWwSMgoGbGVhdmVzGAEgAygLMhoubG9iYnkuUHJlc2'
+        'VuY2VMZWF2ZVNpZ25hbFIGbGVhdmVz');
 
 @$core.Deprecated('Use matchSignalDescriptor instead')
 const MatchSignal$json = {
   '1': 'MatchSignal',
   '2': [
     {'1': 'action', '3': 1, '4': 1, '5': 9, '10': 'action'},
-    {'1': 'kick', '3': 10, '4': 1, '5': 11, '6': '.lobby.KickSignal', '9': 0, '10': 'kick'},
-    {'1': 'assets_updated', '3': 11, '4': 1, '5': 11, '6': '.lobby.AssetsUpdatedSignal', '9': 0, '10': 'assetsUpdated'},
-    {'1': 'broadcast_message', '3': 12, '4': 1, '5': 11, '6': '.lobby.BroadcastMessageSignal', '9': 0, '10': 'broadcastMessage'},
-    {'1': 'teleport_arrival', '3': 13, '4': 1, '5': 11, '6': '.lobby.TeleportArrivalSignal', '9': 0, '10': 'teleportArrival'},
-    {'1': 'chat_message', '3': 14, '4': 1, '5': 11, '6': '.lobby.ChatMessageSignal', '9': 0, '10': 'chatMessage'},
-    {'1': 'online_count_changed', '3': 18, '4': 1, '5': 11, '6': '.lobby.OnlineCountChangedSignal', '9': 0, '10': 'onlineCountChanged'},
-    {'1': 'presence_join', '3': 19, '4': 1, '5': 11, '6': '.lobby.PresenceJoinSignal', '9': 0, '10': 'presenceJoin'},
-    {'1': 'presence_leave', '3': 20, '4': 1, '5': 11, '6': '.lobby.PresenceLeaveSignal', '9': 0, '10': 'presenceLeave'},
-    {'1': 'batch_presence_join', '3': 21, '4': 1, '5': 11, '6': '.lobby.BatchPresenceJoinSignal', '9': 0, '10': 'batchPresenceJoin'},
-    {'1': 'batch_presence_leave', '3': 22, '4': 1, '5': 11, '6': '.lobby.BatchPresenceLeaveSignal', '9': 0, '10': 'batchPresenceLeave'},
+    {
+      '1': 'kick',
+      '3': 10,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.KickSignal',
+      '9': 0,
+      '10': 'kick'
+    },
+    {
+      '1': 'assets_updated',
+      '3': 11,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.AssetsUpdatedSignal',
+      '9': 0,
+      '10': 'assetsUpdated'
+    },
+    {
+      '1': 'broadcast_message',
+      '3': 12,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BroadcastMessageSignal',
+      '9': 0,
+      '10': 'broadcastMessage'
+    },
+    {
+      '1': 'teleport_arrival',
+      '3': 13,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.TeleportArrivalSignal',
+      '9': 0,
+      '10': 'teleportArrival'
+    },
+    {
+      '1': 'chat_message',
+      '3': 14,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.ChatMessageSignal',
+      '9': 0,
+      '10': 'chatMessage'
+    },
+    {
+      '1': 'online_count_changed',
+      '3': 18,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.OnlineCountChangedSignal',
+      '9': 0,
+      '10': 'onlineCountChanged'
+    },
+    {
+      '1': 'presence_join',
+      '3': 19,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PresenceJoinSignal',
+      '9': 0,
+      '10': 'presenceJoin'
+    },
+    {
+      '1': 'presence_leave',
+      '3': 20,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.PresenceLeaveSignal',
+      '9': 0,
+      '10': 'presenceLeave'
+    },
+    {
+      '1': 'batch_presence_join',
+      '3': 21,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BatchPresenceJoinSignal',
+      '9': 0,
+      '10': 'batchPresenceJoin'
+    },
+    {
+      '1': 'batch_presence_leave',
+      '3': 22,
+      '4': 1,
+      '5': 11,
+      '6': '.lobby.BatchPresenceLeaveSignal',
+      '9': 0,
+      '10': 'batchPresenceLeave'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -1508,7 +2242,14 @@ const OnlineCountChangedSignal$json = {
   '1': 'OnlineCountChangedSignal',
   '2': [
     {'1': 'total', '3': 1, '4': 1, '5': 5, '10': 'total'},
-    {'1': 'by_map', '3': 2, '4': 3, '5': 11, '6': '.lobby.OnlineCountChangedSignal.ByMapEntry', '10': 'byMap'},
+    {
+      '1': 'by_map',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.lobby.OnlineCountChangedSignal.ByMapEntry',
+      '10': 'byMap'
+    },
   ],
   '3': [OnlineCountChangedSignal_ByMapEntry$json],
 };
@@ -1529,4 +2270,3 @@ final $typed_data.Uint8List onlineCountChangedSignalDescriptor = $convert.base64
     '1hcBgCIAMoCzIqLmxvYmJ5Lk9ubGluZUNvdW50Q2hhbmdlZFNpZ25hbC5CeU1hcEVudHJ5UgVi'
     'eU1hcBo4CgpCeU1hcEVudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgFUgV2YW'
     'x1ZToCOAE=');
-

@@ -193,9 +193,7 @@ class _StatCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? Colors.white
-                                  : AppColors.slate800,
+                              color: isDark ? Colors.white : AppColors.slate800,
                             ),
                           ),
                           if (suffix.isNotEmpty)

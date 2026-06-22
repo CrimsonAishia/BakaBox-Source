@@ -73,8 +73,7 @@ class CrashReportState extends Equatable {
   bool get isEmpty => items.isEmpty && !isLoading;
   bool get isLocalEmpty => localFiles.isEmpty && !isLoadingLocal;
   bool get canLoadMore => hasMore && !isLoading && !isLoadingMore;
-  int get totalPages =>
-      totalCount > 0 ? (totalCount / pageSize).ceil() : 1;
+  int get totalPages => totalCount > 0 ? (totalCount / pageSize).ceil() : 1;
 
   CrashReportState copyWith({
     List<CrashReportListItem>? items,
@@ -124,22 +123,21 @@ class CrashReportState extends Equatable {
       currentCategory: currentCategory ?? this.currentCategory,
       currentSort: currentSort ?? this.currentSort,
       currentKeyword: currentKeyword ?? this.currentKeyword,
-      currentSignature: clearSignature ? null : (currentSignature ?? this.currentSignature),
+      currentSignature: clearSignature
+          ? null
+          : (currentSignature ?? this.currentSignature),
       error: clearError ? null : (error ?? this.error),
       detail: clearDetail ? null : (detail ?? this.detail),
       isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
       selectedId: clearSelectedId ? null : (selectedId ?? this.selectedId),
       localFiles: localFiles ?? this.localFiles,
       isLoadingLocal: isLoadingLocal ?? this.isLoadingLocal,
-      localError:
-          clearLocalError ? null : (localError ?? this.localError),
+      localError: clearLocalError ? null : (localError ?? this.localError),
       selectedLocalPath: clearSelectedLocalPath
           ? null
           : (selectedLocalPath ?? this.selectedLocalPath),
-      localDetail:
-          clearLocalDetail ? null : (localDetail ?? this.localDetail),
-      isLoadingLocalDetail:
-          isLoadingLocalDetail ?? this.isLoadingLocalDetail,
+      localDetail: clearLocalDetail ? null : (localDetail ?? this.localDetail),
+      isLoadingLocalDetail: isLoadingLocalDetail ?? this.isLoadingLocalDetail,
       gamePathConfigured: gamePathConfigured ?? this.gamePathConfigured,
       stats: stats ?? this.stats,
       isLoadingStats: isLoadingStats ?? this.isLoadingStats,

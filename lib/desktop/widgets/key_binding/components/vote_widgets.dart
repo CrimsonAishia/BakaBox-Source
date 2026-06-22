@@ -150,9 +150,7 @@ class VoteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isDownVote
-        ? AppColors.red500
-        : AppColors.emerald500;
+    final activeColor = isDownVote ? AppColors.red500 : AppColors.emerald500;
     final bgColor = Colors.grey[200]!;
     final normalColor = Colors.grey[500]!;
     final disabledColor = Colors.grey[300]!;

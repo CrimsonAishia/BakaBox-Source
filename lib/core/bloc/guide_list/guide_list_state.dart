@@ -32,8 +32,7 @@ class GuideListState extends Equatable {
   });
 
   /// 列表为空且非加载中时为 true
-  bool get isEmpty =>
-      items.isEmpty && status != GuideListStatus.loading;
+  bool get isEmpty => items.isEmpty && status != GuideListStatus.loading;
 
   /// 满足以下条件时可继续加载下一页：有更多数据 + 当前非加载中
   bool get canLoadMore =>
@@ -70,15 +69,15 @@ class GuideListState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        items,
-        pinned,
-        filter,
-        sortBy,
-        keyword,
-        total,
-        hasMore,
-        error,
-        currentPage,
-      ];
+    status,
+    items,
+    pinned,
+    filter,
+    sortBy,
+    keyword,
+    total,
+    hasMore,
+    error,
+    currentPage,
+  ];
 }

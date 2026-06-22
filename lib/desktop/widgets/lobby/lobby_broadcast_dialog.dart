@@ -113,7 +113,10 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                             padding: EdgeInsets.all(widget.compact ? 7 : 10),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [AppColors.indigo500, AppColors.violet500],
+                                colors: [
+                                  AppColors.indigo500,
+                                  AppColors.violet500,
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),

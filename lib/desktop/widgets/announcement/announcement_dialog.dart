@@ -144,9 +144,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           : '暂无未读',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white54 : AppColors.gray400,
                       ),
                     );
                   },
@@ -165,10 +163,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                     padding: const EdgeInsets.all(8),
                     child: Text(
                       '全部已读',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primary,
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.primary),
                     ),
                   ),
                 ),
@@ -264,9 +259,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         fontWeight: FontWeight.w600,
                         color: isSelected
                             ? Colors.white
-                            : (isDark
-                                  ? Colors.white54
-                                  : AppColors.gray400),
+                            : (isDark ? Colors.white54 : AppColors.gray400),
                       ),
                     ),
                   ),
@@ -386,9 +379,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           fontWeight: isRead
                               ? FontWeight.w500
                               : FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.gray800,
+                          color: isDark ? Colors.white : AppColors.gray800,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -512,9 +503,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.gray800,
+                            color: isDark ? Colors.white : AppColors.gray800,
                           ),
                         ),
                       ],
@@ -719,9 +708,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
         color: isDark ? AppColors.gray200 : AppColors.gray700,
       ),
       code: TextStyle(
-        backgroundColor: isDark
-            ? AppColors.gray700
-            : AppColors.gray100,
+        backgroundColor: isDark ? AppColors.gray700 : AppColors.gray100,
         color: isDark ? const Color(0xFFFCA5A5) : AppColors.red600,
         fontFamily: 'Consolas, Monaco, monospace',
         fontSize: 13,

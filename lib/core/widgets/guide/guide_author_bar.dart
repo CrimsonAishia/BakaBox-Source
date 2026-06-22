@@ -108,10 +108,7 @@ class _GuideAuthorBarState extends State<GuideAuthorBar> {
       child: Row(
         children: [
           // 头像
-          GestureDetector(
-            onTap: widget.onAuthorTap,
-            child: _buildAvatar(),
-          ),
+          GestureDetector(onTap: widget.onAuthorTap, child: _buildAvatar()),
           const SizedBox(width: GuideTokens.space8),
 
           // 昵称
@@ -266,7 +263,9 @@ class _GuideAuthorBarState extends State<GuideAuthorBar> {
       color: theme.colorScheme.primary.withValues(alpha: 0.1),
       child: Center(
         child: Text(
-          widget.authorName.isNotEmpty ? widget.authorName[0].toUpperCase() : '?',
+          widget.authorName.isNotEmpty
+              ? widget.authorName[0].toUpperCase()
+              : '?',
           style: TextStyle(
             color: theme.colorScheme.primary,
             fontSize: 12,

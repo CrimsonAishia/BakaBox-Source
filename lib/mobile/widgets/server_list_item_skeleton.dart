@@ -20,9 +20,7 @@ class ServerListItemSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark
-        ? const Color(0xFF2D3748)
-        : AppColors.slate200;
+    final baseColor = isDark ? const Color(0xFF2D3748) : AppColors.slate200;
     final blockColor = isDark
         ? const Color(0xFF4A5568)
         : const Color(0xFFCBD5E0);

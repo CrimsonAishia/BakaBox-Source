@@ -169,19 +169,22 @@ class CrashInspector {
 
     // 第三方模块
     final tpRaw = (r['third_party_modules'] as List?) ?? const [];
-    final thirdParties = tpRaw
-        .cast<Map<String, dynamic>>()
-        .map((m) => CrashThirdPartyEntry(
-              name: m['name']?.toString() ?? '',
-              label: m['label']?.toString() ?? '',
-              advice: m['advice']?.toString() ?? '',
-              severity: m['sev']?.toString() ?? 'medium',
-            ))
-        .toList()
-      ..sort((a, b) {
-        const order = {'high': 0, 'medium': 1, 'benign': 2};
-        return (order[a.severity] ?? 1).compareTo(order[b.severity] ?? 1);
-      });
+    final thirdParties =
+        tpRaw
+            .cast<Map<String, dynamic>>()
+            .map(
+              (m) => CrashThirdPartyEntry(
+                name: m['name']?.toString() ?? '',
+                label: m['label']?.toString() ?? '',
+                advice: m['advice']?.toString() ?? '',
+                severity: m['sev']?.toString() ?? 'medium',
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            const order = {'high': 0, 'medium': 1, 'benign': 2};
+            return (order[a.severity] ?? 1).compareTo(order[b.severity] ?? 1);
+          });
 
     // 致命错误
     final fatals = ((r['fatal_strings'] as List?) ?? const [])
@@ -192,18 +195,19 @@ class CrashInspector {
         .toList();
 
     // 嫌疑资源 (按栈深度排序, 取前 6)
-    final resourcesRaw = ((r['resources'] as List?) ?? const [])
-        .cast<Map<String, dynamic>>()
-        .toList()
-      ..sort((a, b) {
-        final oa = (a['stack_offset'] as int? ?? -1);
-        final ob = (b['stack_offset'] as int? ?? -1);
-        // 寄存器命中 (-1) 优先级最高, 其次按栈深度由浅到深
-        if (oa < 0 && ob < 0) return 0;
-        if (oa < 0) return -1;
-        if (ob < 0) return 1;
-        return oa.compareTo(ob);
-      });
+    final resourcesRaw =
+        ((r['resources'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .toList()
+          ..sort((a, b) {
+            final oa = (a['stack_offset'] as int? ?? -1);
+            final ob = (b['stack_offset'] as int? ?? -1);
+            // 寄存器命中 (-1) 优先级最高, 其次按栈深度由浅到深
+            if (oa < 0 && ob < 0) return 0;
+            if (oa < 0) return -1;
+            if (ob < 0) return 1;
+            return oa.compareTo(ob);
+          });
 
     final kindLabelMap = _kindLabels;
     final resources = resourcesRaw.take(6).map((m) {
@@ -223,8 +227,7 @@ class CrashInspector {
         .toList();
 
     // 严重程度 (有任意高危第三方 -> high; 资源/工具 -> medium; 其它 -> low)
-    final hasHighThird =
-        thirdParties.any((e) => e.severity == 'high');
+    final hasHighThird = thirdParties.any((e) => e.severity == 'high');
     CrashSeverity severity;
     if (hasHighThird) {
       severity = CrashSeverity.high;
@@ -306,23 +309,30 @@ class CrashInspector {
 
   // 与 rules.dart 中 kindLabel 同步; 仅用于摘要展示.
   static const Map<String, String> _kindLabels = {
-    'vmdl': '模型', 'vmdl_c': '模型',
-    'vmap': '地图', 'vmap_c': '地图',
-    'vmat': '材质', 'vmat_c': '材质',
+    'vmdl': '模型',
+    'vmdl_c': '模型',
+    'vmap': '地图',
+    'vmap_c': '地图',
+    'vmat': '材质',
+    'vmat_c': '材质',
     'vtex_c': '贴图',
-    'vpcf': '粒子', 'vpcf_c': '粒子',
-    'vsnd': '声音', 'vsnd_c': '声音',
-    'vsndevts': '声音事件', 'vsndevts_c': '声音事件',
+    'vpcf': '粒子',
+    'vpcf_c': '粒子',
+    'vsnd': '声音',
+    'vsnd_c': '声音',
+    'vsndevts': '声音事件',
+    'vsndevts_c': '声音事件',
     'vanim_c': '动画',
     'vrman_c': '资源清单',
-    'vwnod': '地图世界节点', 'vwnod_c': '地图世界节点',
-    'vphys': '物理碰撞', 'vphys_c': '物理碰撞',
+    'vwnod': '地图世界节点',
+    'vwnod_c': '地图世界节点',
+    'vphys': '物理碰撞',
+    'vphys_c': '物理碰撞',
     'vnmgraph_c': '导航网格',
     'vpk': 'VPK 包',
     'other': '其他',
   };
 }
-
 
 /// 跨 isolate 传输的解析中间产物.
 class _AnalyzeBundle {

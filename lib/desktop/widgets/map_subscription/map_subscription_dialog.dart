@@ -83,9 +83,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
     return Container(
       width: 180,
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.03)
-            : AppColors.gray50,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : AppColors.gray50,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
@@ -159,9 +157,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                     ? AppColors.amber500
                     : (state.isTtsEnabled
                           ? AppColors.emerald500
-                          : (isDark
-                                ? Colors.white38
-                                : AppColors.gray400)),
+                          : (isDark ? Colors.white38 : AppColors.gray400)),
                 isSelected: _selectedNav == MapSubscriptionNavItem.tts,
                 onTap: () => setState(() {
                   _selectedNav = MapSubscriptionNavItem.tts;
@@ -181,9 +177,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: TextButton.styleFrom(
-                  foregroundColor: isDark
-                      ? Colors.white54
-                      : AppColors.gray500,
+                  foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

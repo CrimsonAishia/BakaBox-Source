@@ -39,10 +39,7 @@ class GuideDetailBloc extends Bloc<GuideDetailEvent, GuideDetailState> {
     LoadGuide event,
     Emitter<GuideDetailState> emit,
   ) async {
-    emit(state.copyWith(
-      status: DetailStatus.loading,
-      clearError: true,
-    ));
+    emit(state.copyWith(status: DetailStatus.loading, clearError: true));
 
     try {
       final guide = await _guideApi.getGuideDetail(event.id);
@@ -50,27 +47,23 @@ class GuideDetailBloc extends Bloc<GuideDetailEvent, GuideDetailState> {
         emit(state.copyWith(status: DetailStatus.notFound));
         return;
       }
-      emit(state.copyWith(
-        status: DetailStatus.success,
-        guide: guide,
-      ));
+      emit(state.copyWith(status: DetailStatus.success, guide: guide));
     } on ApiException catch (e) {
       if (e.code == 404) {
         emit(state.copyWith(status: DetailStatus.notFound));
       } else if (e.code == 403) {
         emit(state.copyWith(status: DetailStatus.blocked));
       } else {
-        emit(state.copyWith(
-          status: DetailStatus.failure,
-          error: e.message,
-        ));
+        emit(state.copyWith(status: DetailStatus.failure, error: e.message));
       }
       LogService.e('加载攻略详情失败', e);
     } catch (e) {
-      emit(state.copyWith(
-        status: DetailStatus.failure,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(
+          status: DetailStatus.failure,
+          error: _getErrorMessage(e),
+        ),
+      );
       LogService.e('加载攻略详情失败', e);
     }
   }
@@ -139,15 +132,10 @@ class GuideDetailBloc extends Bloc<GuideDetailEvent, GuideDetailState> {
         'action': nowLiked ? 'like' : 'unlike',
       });
       // 互动成功，递增 lastInteractionId 通知列表刷新
-      emit(state.copyWith(
-        lastInteractionId: state.lastInteractionId + 1,
-      ));
+      emit(state.copyWith(lastInteractionId: state.lastInteractionId + 1));
     } catch (e) {
       // 失败回滚
-      emit(state.copyWith(
-        guide: guide,
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(guide: guide, error: _getErrorMessage(e)));
       LogService.e('点赞操作失败', e);
     }
   }
@@ -160,8 +148,7 @@ class GuideDetailBloc extends Bloc<GuideDetailEvent, GuideDetailState> {
     if (guide == null) return;
 
     final nowFavorited = !guide.isFavorited;
-    final newFavoriteCount =
-        guide.favoriteCount + (nowFavorited ? 1 : -1);
+    final newFavoriteCount = guide.favoriteCount + (nowFavorited ? 1 : -1);
 
     // 乐观更新
     final optimisticGuide = Guide(
@@ -217,15 +204,10 @@ class GuideDetailBloc extends Bloc<GuideDetailEvent, GuideDetailState> {
         'action': nowFavorited ? 'favorite' : 'unfavorite',
       });
       // 互动成功，递增 lastInteractionId 通知列表刷新
-      emit(state.copyWith(
-        lastInteractionId: state.lastInteractionId + 1,
-      ));
+      emit(state.copyWith(lastInteractionId: state.lastInteractionId + 1));
     } catch (e) {
       // 失败回滚
-      emit(state.copyWith(
-        guide: guide,
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(guide: guide, error: _getErrorMessage(e)));
       LogService.e('收藏操作失败', e);
     }
   }
@@ -246,10 +228,7 @@ class GuideDetailBloc extends Bloc<GuideDetailEvent, GuideDetailState> {
     }
   }
 
-  Future<void> _onShare(
-    Share event,
-    Emitter<GuideDetailState> emit,
-  ) async {
+  Future<void> _onShare(Share event, Emitter<GuideDetailState> emit) async {
     final guide = state.guide;
     if (guide == null) return;
 

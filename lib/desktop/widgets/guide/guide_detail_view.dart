@@ -44,10 +44,7 @@ import '../../../core/constants/app_colors.dart';
 class GuideDetailView extends StatefulWidget {
   final int id;
 
-  const GuideDetailView({
-    super.key,
-    required this.id,
-  });
+  const GuideDetailView({super.key, required this.id});
 
   @override
   State<GuideDetailView> createState() => _GuideDetailViewState();
@@ -151,10 +148,11 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   }
 
   void _scrollToComments() {
-    final renderBox = _commentSectionKey.currentContext?.findRenderObject()
-        as RenderBox?;
+    final renderBox =
+        _commentSectionKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox != null && _scrollController.hasClients) {
-      final offset = renderBox.localToGlobal(Offset.zero).dy +
+      final offset =
+          renderBox.localToGlobal(Offset.zero).dy +
           _scrollController.offset -
           100; // 留出 100px 顶部空间
       _scrollController.animateTo(
@@ -192,9 +190,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
         listener: (context, state) {
           // 互动（点赞/收藏）成功后通知列表 Bloc 刷新对应卡片
           try {
-            context
-                .read<GuideListBloc>()
-                .add(RefreshGuide(widget.id));
+            context.read<GuideListBloc>().add(RefreshGuide(widget.id));
           } catch (_) {
             // GuideListBloc 不在当前上下文时静默忽略
           }
@@ -221,9 +217,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   // ─── 加载态 ─────────────────────────────────────────────────────────────
 
   Widget _buildLoading(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 
   // ─── 404 ────────────────────────────────────────────────────────────────
@@ -353,21 +347,17 @@ class _GuideDetailViewState extends State<GuideDetailView> {
                 decoration: BoxDecoration(
                   color: GuideTokens.cardSurface(context),
                   borderRadius: BorderRadius.zero,
-                  border: Border.all(
-                    color: GuideTokens.border(context),
-                  ),
+                  border: Border.all(color: GuideTokens.border(context)),
                 ),
                 padding: const EdgeInsets.all(GuideTokens.space20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Hero 封面
-                    if (guide.coverUrl != null &&
-                        guide.coverUrl!.isNotEmpty)
+                    if (guide.coverUrl != null && guide.coverUrl!.isNotEmpty)
                       _buildHeroCover(context, guide),
 
-                    if (guide.coverUrl != null &&
-                        guide.coverUrl!.isNotEmpty)
+                    if (guide.coverUrl != null && guide.coverUrl!.isNotEmpty)
                       const SizedBox(height: GuideTokens.space16),
 
                     // 分类 chip + 标签（药丸形）
@@ -396,16 +386,14 @@ class _GuideDetailViewState extends State<GuideDetailView> {
                       GuideStatusBanner(
                         status: guide.status,
                         rejectReason: guide.rejectReason,
-                        onEditTap:
-                            guide.status == GuideStatus.rejected
-                                ? () => _navigateToEditor(guide.id)
-                                : null,
+                        onEditTap: guide.status == GuideStatus.rejected
+                            ? () => _navigateToEditor(guide.id)
+                            : null,
                       ),
                     ],
 
                     // 正文 RichTextViewer
-                    if (guide.content != null &&
-                        guide.content!.isNotEmpty) ...[
+                    if (guide.content != null && guide.content!.isNotEmpty) ...[
                       const SizedBox(height: GuideTokens.space20),
                       _buildRichContent(context, guide),
                     ],
@@ -413,10 +401,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
                     const SizedBox(height: GuideTokens.space20),
 
                     // 顶部分隔线 + 互动栏
-                    Container(
-                      height: 1,
-                      color: GuideTokens.divider(context),
-                    ),
+                    Container(height: 1, color: GuideTokens.divider(context)),
                     const SizedBox(height: GuideTokens.space8),
 
                     // 互动栏（文内）
@@ -449,9 +434,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
                 outline: _outline,
               ),
               if (_outline.isNotEmpty) const SizedBox(height: 10),
-              GuideInteractionDock(
-                scrollController: _scrollController,
-              ),
+              GuideInteractionDock(scrollController: _scrollController),
             ],
           ),
         ),
@@ -465,8 +448,10 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             child: _ScrollIndicator(
               direction: _ScrollDirection.up,
               onTap: () => _scrollController.animateTo(
-                (_scrollController.offset - 300)
-                    .clamp(0.0, _scrollController.position.maxScrollExtent),
+                (_scrollController.offset - 300).clamp(
+                  0.0,
+                  _scrollController.position.maxScrollExtent,
+                ),
                 duration: GuideTokens.durationSlow,
                 curve: Curves.easeOutCubic,
               ),
@@ -482,8 +467,10 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             child: _ScrollIndicator(
               direction: _ScrollDirection.down,
               onTap: () => _scrollController.animateTo(
-                (_scrollController.offset + 300)
-                    .clamp(0.0, _scrollController.position.maxScrollExtent),
+                (_scrollController.offset + 300).clamp(
+                  0.0,
+                  _scrollController.position.maxScrollExtent,
+                ),
                 duration: GuideTokens.durationSlow,
                 curve: Curves.easeOutCubic,
               ),
@@ -498,9 +485,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
           child: AnimatedSlide(
             duration: const Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
-            offset: _commentBarVisible
-                ? Offset.zero
-                : const Offset(0, 1.2),
+            offset: _commentBarVisible ? Offset.zero : const Offset(0, 1.2),
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 200),
               opacity: _commentBarVisible ? 1.0 : 0.0,
@@ -554,23 +539,25 @@ class _GuideDetailViewState extends State<GuideDetailView> {
         if (guide.categoryName != null && guide.categoryName!.isNotEmpty)
           _buildCategoryChip(context, guide),
         // 标签 chips（药丸形 / 半透明主色底）
-        ...guide.tags.map((tag) => Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: GuideTokens.space12,
-                vertical: 5,
+        ...guide.tags.map(
+          (tag) => Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: GuideTokens.space12,
+              vertical: 5,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '#$tag',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w500,
               ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '#$tag',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            )),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -615,7 +602,8 @@ class _GuideDetailViewState extends State<GuideDetailView> {
 
   Widget _buildAuthorRow(BuildContext context, Guide guide) {
     final theme = Theme.of(context);
-    final publishedAt = guide.publishedAt?.toIso8601String() ??
+    final publishedAt =
+        guide.publishedAt?.toIso8601String() ??
         guide.createdAt.toIso8601String();
     final tertiary = GuideTokens.textTertiary(context);
 
@@ -688,10 +676,10 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   Widget _buildMapBannerHero(BuildContext context, Guide guide) {
     final mapInfo = guide.mapInfo!;
     final effectiveMapName = guide.mapName ?? mapInfo.mapName;
-    final effectiveMapLabel =
-        mapInfo.mapLabel.isNotEmpty ? mapInfo.mapLabel : (guide.mapLabel ?? '');
-    final effectiveMapBackground =
-        guide.mapBackground ?? mapInfo.mapBackground;
+    final effectiveMapLabel = mapInfo.mapLabel.isNotEmpty
+        ? mapInfo.mapLabel
+        : (guide.mapLabel ?? '');
+    final effectiveMapBackground = guide.mapBackground ?? mapInfo.mapBackground;
 
     return _MapBannerHero(
       mapName: effectiveMapName,
@@ -699,8 +687,9 @@ class _GuideDetailViewState extends State<GuideDetailView> {
       mapBackground: effectiveMapBackground,
       tags: mapInfo.tags,
       onViewMap: () {
-        DesktopNavigatorProvider.of(context)
-            ?.openMapDatabase(mapName: effectiveMapName);
+        DesktopNavigatorProvider.of(
+          context,
+        )?.openMapDatabase(mapName: effectiveMapName);
       },
     );
   }
@@ -718,10 +707,12 @@ class _GuideDetailViewState extends State<GuideDetailView> {
         if (!mounted) return;
         // outline 内容相同则跳过 setState，避免不必要的重建
         if (_outline.length == outline.length &&
-            List.generate(outline.length, (i) =>
+            List.generate(
+              outline.length,
+              (i) =>
                   _outline[i].text == outline[i].text &&
-                  _outline[i].level == outline[i].level)
-                .every((e) => e)) {
+                  _outline[i].level == outline[i].level,
+            ).every((e) => e)) {
           return;
         }
         setState(() => _outline = outline);
@@ -752,30 +743,26 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             onTap: !isLoggedIn
                 ? () => ToastUtils.showInfo(context, '登录后才能点赞')
                 : isOwnGuide
-                    ? () => ToastUtils.showInfo(context, '不能给自己的攻略点赞')
-                    : () => _detailBloc.add(const ToggleLike()),
+                ? () => ToastUtils.showInfo(context, '不能给自己的攻略点赞')
+                : () => _detailBloc.add(const ToggleLike()),
           ),
           _InteractionButton(
             icon: guide.isFavorited
                 ? Icons.favorite_rounded
                 : Icons.favorite_border_rounded,
-            label: guide.favoriteCount > 0
-                ? '${guide.favoriteCount}'
-                : '收藏',
+            label: guide.favoriteCount > 0 ? '${guide.favoriteCount}' : '收藏',
             color: guide.isFavorited
                 ? GuideTokens.favoriteColor(context)
                 : GuideTokens.textSecondary(context),
             onTap: !isLoggedIn
                 ? () => ToastUtils.showInfo(context, '登录后才能收藏')
                 : isOwnGuide
-                    ? () => ToastUtils.showInfo(context, '不能收藏自己的攻略')
-                    : () => _detailBloc.add(const ToggleFavorite()),
+                ? () => ToastUtils.showInfo(context, '不能收藏自己的攻略')
+                : () => _detailBloc.add(const ToggleFavorite()),
           ),
           _InteractionButton(
             icon: Icons.chat_bubble_outline,
-            label: guide.commentCount > 0
-                ? '评论 (${guide.commentCount})'
-                : '评论',
+            label: guide.commentCount > 0 ? '评论 (${guide.commentCount})' : '评论',
             color: GuideTokens.textSecondary(context),
             onTap: _scrollToComments,
           ),
@@ -819,8 +806,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
 
   /// 导航到编辑器（用于驳回 banner 的「修改后重新提交」入口）
   void _navigateToEditor(int guideId) {
-    DesktopNavigatorProvider.of(context)
-        ?.openGuideEditor(guideId: guideId);
+    DesktopNavigatorProvider.of(context)?.openGuideEditor(guideId: guideId);
   }
 
   /// 判断当前用户是否可以看到状态 Banner（仅作者本人或管理员/版主）
@@ -1165,8 +1151,11 @@ class _MapBannerHeroState extends State<_MapBannerHero> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.open_in_new,
-                                size: 13, color: Colors.white),
+                            Icon(
+                              Icons.open_in_new,
+                              size: 13,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 5),
                             Text(
                               '查看地图',
@@ -1250,7 +1239,9 @@ class _MapBannerHeroState extends State<_MapBannerHero> {
                                     color: Colors.white.withValues(alpha: 0.9),
                                     shadows: const [
                                       Shadow(
-                                          color: Colors.black, blurRadius: 4),
+                                        color: Colors.black,
+                                        blurRadius: 4,
+                                      ),
                                       Shadow(
                                         color: Colors.black,
                                         offset: Offset(1, 1),
@@ -1297,18 +1288,11 @@ class _MapBannerHeroState extends State<_MapBannerHero> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            GuideTokens.gradientDarkStart,
-            GuideTokens.gradientDarkEnd,
-          ],
+          colors: [GuideTokens.gradientDarkStart, GuideTokens.gradientDarkEnd],
         ),
       ),
       child: const Center(
-        child: Icon(
-          Icons.map_outlined,
-          size: 48,
-          color: Colors.white24,
-        ),
+        child: Icon(Icons.map_outlined, size: 48, color: Colors.white24),
       ),
     );
   }
@@ -1334,17 +1318,17 @@ class _MapTagWrapState extends State<_MapTagWrap> {
   static const double _tagSpacing = 6.0;
 
   TextStyle get _tagTextStyle => TextStyle(
-        color: Colors.white.withValues(alpha: 0.9),
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        shadows: [
-          Shadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      );
+    color: Colors.white.withValues(alpha: 0.9),
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    shadows: [
+      Shadow(
+        color: Colors.black.withValues(alpha: 0.4),
+        blurRadius: 2,
+        offset: const Offset(0, 1),
+      ),
+    ],
+  );
 
   @override
   void initState() {
@@ -1544,11 +1528,7 @@ class _MapTagWrapState extends State<_MapTagWrap> {
             fontSize: 12,
             fontWeight: FontWeight.w600,
             shadows: [
-              Shadow(
-                color: Colors.black,
-                blurRadius: 1,
-                offset: Offset(1, 1),
-              ),
+              Shadow(color: Colors.black, blurRadius: 1, offset: Offset(1, 1)),
             ],
           ),
         ),
@@ -1572,11 +1552,7 @@ class _MapTagWrapState extends State<_MapTagWrap> {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           shadows: const [
-            Shadow(
-              color: Colors.black,
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
+            Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
           ],
         ),
       ),
@@ -1596,10 +1572,7 @@ class _ScrollIndicator extends StatelessWidget {
   final _ScrollDirection direction;
   final VoidCallback? onTap;
 
-  const _ScrollIndicator({
-    required this.direction,
-    this.onTap,
-  });
+  const _ScrollIndicator({required this.direction, this.onTap});
 
   @override
   Widget build(BuildContext context) {

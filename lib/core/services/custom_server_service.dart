@@ -212,9 +212,7 @@ class CustomServerService {
     categories[categoryIndex] = updatedCategory;
     await saveCustomCategories(categories);
 
-    LogService.i(
-      '添加服务器对象 $serverAddress 到分类 $categoryName',
-    );
+    LogService.i('添加服务器对象 $serverAddress 到分类 $categoryName');
     return updatedCategory;
   }
 

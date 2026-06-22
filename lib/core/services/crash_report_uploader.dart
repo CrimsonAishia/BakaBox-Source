@@ -21,11 +21,9 @@ import 'cs2_crash_monitor_service.dart';
 ///    避免重启后重复发同一份崩溃.
 /// 3. 用户在设置里关闭"匿名上传 CS2 崩溃帮助分析"开关时, 整个上传链路停掉.
 class CrashReportUploader {
-  static final CrashReportUploader _instance =
-      CrashReportUploader._internal();
+  static final CrashReportUploader _instance = CrashReportUploader._internal();
   factory CrashReportUploader() => _instance;
   CrashReportUploader._internal();
-
 
   static const _settingsKey = 'crash_report_auto_upload_enabled';
   static const _seenKey = 'crash_report_uploaded_signatures';
@@ -48,8 +46,7 @@ class CrashReportUploader {
     if (_initialized) return;
     _initialized = true;
 
-    _subscription =
-        Cs2CrashMonitorService().crashStream.listen((event) {
+    _subscription = Cs2CrashMonitorService().crashStream.listen((event) {
       unawaited(_handleNewCrash(event.summary));
     });
     LogService.d('[CrashReportUploader] 已初始化');
@@ -62,7 +59,6 @@ class CrashReportUploader {
   }
 }
 
-
 extension _CrashReportUploaderImpl on CrashReportUploader {
   Future<void> _handleNewCrash(CrashSummary summary) async {
     if (!CrashReportUploader.isEnabled) {
@@ -72,7 +68,8 @@ extension _CrashReportUploaderImpl on CrashReportUploader {
     try {
       final fingerprint = await _clientFingerprint();
       final signature = _signatureOf(summary);
-      final dedupKey = '$fingerprint|$signature|'
+      final dedupKey =
+          '$fingerprint|$signature|'
           '${summary.createdAt.millisecondsSinceEpoch}';
       if (_isDuplicate(dedupKey)) {
         LogService.d('[CrashReportUploader] 命中本地幂等缓存, 跳过');
@@ -85,9 +82,7 @@ extension _CrashReportUploaderImpl on CrashReportUploader {
       );
       final id = await _api.uploadReport(body);
       if (id != null) {
-        LogService.i(
-          '[CrashReportUploader] 上传成功 id=$id signature=$signature',
-        );
+        LogService.i('[CrashReportUploader] 上传成功 id=$id signature=$signature');
         await _markUploaded(dedupKey);
       }
     } catch (e) {
@@ -135,7 +130,6 @@ extension _CrashReportUploaderImpl on CrashReportUploader {
     }
   }
 }
-
 
 extension _CrashReportUploaderDedup on CrashReportUploader {
   bool _isDuplicate(String key) {

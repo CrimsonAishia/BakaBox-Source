@@ -66,7 +66,10 @@ class RealtimeServerUsersCountChannel {
   /// 用于用户手动刷新：强制纠正本地可能停留的旧人数。频率限制由调用方
   /// （ServerBloc 刷新事件）负责，避免高频请求冲击服务端。
   void forceResnapshot() {
-    _service.requestResnapshot(RealtimeChannels.serverUsersCount, emitSyncing: true);
+    _service.requestResnapshot(
+      RealtimeChannels.serverUsersCount,
+      emitSyncing: true,
+    );
   }
 
   void unsubscribe() {
@@ -107,7 +110,10 @@ class RealtimeServerUsersCountChannel {
     _flushScheduled = false;
     if (!_controller.isClosed) {
       _controller.add(
-        const UsersCountUpdateEvent(kind: UsersCountUpdateEventKind.syncing, counts: []),
+        const UsersCountUpdateEvent(
+          kind: UsersCountUpdateEventKind.syncing,
+          counts: [],
+        ),
       );
     }
   }

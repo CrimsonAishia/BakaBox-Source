@@ -198,7 +198,10 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.indigo500, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppColors.indigo500,
+              width: 1.5,
+            ),
           ),
         ),
       ),
@@ -627,9 +630,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: isDark
-                  ? Colors.white54
-                  : AppColors.gray500,
+              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
             ),
             child: const Text('取消'),
           ),

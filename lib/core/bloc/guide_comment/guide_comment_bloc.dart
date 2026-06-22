@@ -27,8 +27,7 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
   /// 限速间隔
   static const Duration _rateLimitInterval = Duration(seconds: 5);
 
-  GuideCommentBloc({required this.guideId})
-      : super(const GuideCommentState()) {
+  GuideCommentBloc({required this.guideId}) : super(const GuideCommentState()) {
     on<LoadComments>(_onLoadComments);
     on<LoadReplies>(_onLoadReplies);
     on<PostComment>(_onPostComment);
@@ -51,9 +50,7 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     Set<int> blockedIds,
   ) {
     if (blockedIds.isEmpty) return comments;
-    return comments
-        .where((c) => !blockedIds.contains(c.authorId))
-        .toList();
+    return comments.where((c) => !blockedIds.contains(c.authorId)).toList();
   }
 
   // ─── 事件处理 ─────────────────────────────────────────────────────────────
@@ -65,10 +62,12 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     final isReset = event.reset;
     final page = isReset ? 1 : state.currentPage;
 
-    emit(state.copyWith(
-      status: isReset ? CommentStatus.loading : CommentStatus.loadingMore,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        status: isReset ? CommentStatus.loading : CommentStatus.loadingMore,
+        clearError: true,
+      ),
+    );
 
     try {
       final response = await _guideApi.getComments(
@@ -79,22 +78,25 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
       );
 
       final filtered = _filterBlocked(response.items, state.blockedUserIds);
-      final newComments =
-          isReset ? filtered : [...state.comments, ...filtered];
+      final newComments = isReset ? filtered : [...state.comments, ...filtered];
       final hasMore = response.items.length >= _pageSize;
 
-      emit(state.copyWith(
-        status: CommentStatus.success,
-        comments: newComments,
-        total: response.total,
-        hasMore: hasMore,
-        currentPage: page + 1,
-      ));
+      emit(
+        state.copyWith(
+          status: CommentStatus.success,
+          comments: newComments,
+          total: response.total,
+          hasMore: hasMore,
+          currentPage: page + 1,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: CommentStatus.failure,
-        error: _getErrorMessage(e),
-      ));
+      emit(
+        state.copyWith(
+          status: CommentStatus.failure,
+          error: _getErrorMessage(e),
+        ),
+      );
       LogService.e('加载评论列表失败', e);
     }
   }
@@ -141,10 +143,12 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
         replyToName: event.replyToName,
       );
 
-      LogService.d('[GuideCommentBloc] PostComment: '
-          'parentId=${event.parentId}, '
-          'replyToId=${event.replyToId}, '
-          'replyToName=${event.replyToName}');
+      LogService.d(
+        '[GuideCommentBloc] PostComment: '
+        'parentId=${event.parentId}, '
+        'replyToId=${event.replyToId}, '
+        'replyToName=${event.replyToName}',
+      );
 
       final newComment = await _guideApi.addComment(guideId, request);
       _lastPostTime = DateTime.now();
@@ -156,13 +160,17 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
       });
 
       if (newComment != null) {
-        LogService.d('[GuideCommentBloc] newComment received: '
-            'id=${newComment.id}, '
-            'parentId=${newComment.parentId}, '
-            'replyToId=${newComment.replyToId}');
+        LogService.d(
+          '[GuideCommentBloc] newComment received: '
+          'id=${newComment.id}, '
+          'parentId=${newComment.parentId}, '
+          'replyToId=${newComment.replyToId}',
+        );
         if (event.parentId != null && event.parentId != 0) {
           // 楼中楼回复：追加到对应 replyMaps
-          LogService.d('[GuideCommentBloc] placing in replyMaps[${event.parentId}]');
+          LogService.d(
+            '[GuideCommentBloc] placing in replyMaps[${event.parentId}]',
+          );
 
           // 找到父级一级评论，用于在 replyMaps 尚未加载时回填已有的内嵌 replies 预览
           GuideComment? parentComment;
@@ -173,22 +181,30 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
             }
           }
 
-          final newReplyMaps =
-              Map<int, List<GuideComment>>.from(state.replyMaps);
+          final newReplyMaps = Map<int, List<GuideComment>>.from(
+            state.replyMaps,
+          );
 
           // 关键修复：replyMaps[parentId] 未加载时，用父评论自带的 replies 预览作为基础，
           // 否则会把面板从「展示预览 replies」切换成「只展示这一条新回复」，
           // 导致刚被回复的那条二级评论看起来「被替换」。
           final List<GuideComment> baseReplies;
           if (newReplyMaps.containsKey(event.parentId)) {
-            baseReplies = List<GuideComment>.from(newReplyMaps[event.parentId]!);
-            LogService.d('[GuideCommentBloc] replyMaps[${event.parentId}] '
-                '已加载，基础回复数=${baseReplies.length}');
+            baseReplies = List<GuideComment>.from(
+              newReplyMaps[event.parentId]!,
+            );
+            LogService.d(
+              '[GuideCommentBloc] replyMaps[${event.parentId}] '
+              '已加载，基础回复数=${baseReplies.length}',
+            );
           } else {
-            baseReplies =
-                List<GuideComment>.from(parentComment?.replies ?? const []);
-            LogService.d('[GuideCommentBloc] replyMaps[${event.parentId}] '
-                '未加载，用父评论内嵌预览作为基础，基础回复数=${baseReplies.length}');
+            baseReplies = List<GuideComment>.from(
+              parentComment?.replies ?? const [],
+            );
+            LogService.d(
+              '[GuideCommentBloc] replyMaps[${event.parentId}] '
+              '未加载，用父评论内嵌预览作为基础，基础回复数=${baseReplies.length}',
+            );
           }
 
           // 避免重复追加（防御：若新回复 id 已存在则跳过）
@@ -196,8 +212,10 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
             baseReplies.add(newComment);
           }
           newReplyMaps[event.parentId!] = baseReplies;
-          LogService.d('[GuideCommentBloc] replyMaps[${event.parentId}] '
-              '追加后回复数=${baseReplies.length}');
+          LogService.d(
+            '[GuideCommentBloc] replyMaps[${event.parentId}] '
+            '追加后回复数=${baseReplies.length}',
+          );
 
           // 更新对应一级评论的 replyCount
           final updatedComments = state.comments.map((c) {
@@ -225,21 +243,27 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
             return c;
           }).toList();
 
-          emit(state.copyWith(
-            posting: false,
-            replyMaps: newReplyMaps,
-            comments: updatedComments,
-            total: state.total + 1,
-          ));
+          emit(
+            state.copyWith(
+              posting: false,
+              replyMaps: newReplyMaps,
+              comments: updatedComments,
+              total: state.total + 1,
+            ),
+          );
         } else {
           // 一级评论：插入到列表头部
-          LogService.d('[GuideCommentBloc] placing as top-level comment (parentId is null)');
+          LogService.d(
+            '[GuideCommentBloc] placing as top-level comment (parentId is null)',
+          );
           final updatedComments = [newComment, ...state.comments];
-          emit(state.copyWith(
-            posting: false,
-            comments: updatedComments,
-            total: state.total + 1,
-          ));
+          emit(
+            state.copyWith(
+              posting: false,
+              comments: updatedComments,
+              total: state.total + 1,
+            ),
+          );
         }
       } else {
         emit(state.copyWith(posting: false));
@@ -248,23 +272,14 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
       _lastPostTime = DateTime.now();
       if (e.code == 429) {
         // 服务端 429 限速
-        emit(state.copyWith(
-          posting: false,
-          error: '评论太快了，稍后再试',
-        ));
+        emit(state.copyWith(posting: false, error: '评论太快了，稍后再试'));
       } else {
-        emit(state.copyWith(
-          posting: false,
-          error: e.message,
-        ));
+        emit(state.copyWith(posting: false, error: e.message));
       }
       LogService.e('发表评论失败', e);
     } catch (e) {
       _lastPostTime = DateTime.now();
-      emit(state.copyWith(
-        posting: false,
-        error: _getErrorMessage(e),
-      ));
+      emit(state.copyWith(posting: false, error: _getErrorMessage(e)));
       LogService.e('发表评论失败', e);
     }
   }
@@ -303,8 +318,9 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
       }).toList();
 
       // 也检查 replyMaps 中的评论
-      final updatedReplyMaps =
-          Map<int, List<GuideComment>>.from(state.replyMaps);
+      final updatedReplyMaps = Map<int, List<GuideComment>>.from(
+        state.replyMaps,
+      );
       for (final entry in updatedReplyMaps.entries) {
         updatedReplyMaps[entry.key] = entry.value.map((c) {
           if (c.id == event.id) {
@@ -332,10 +348,9 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
         }).toList();
       }
 
-      emit(state.copyWith(
-        comments: updatedComments,
-        replyMaps: updatedReplyMaps,
-      ));
+      emit(
+        state.copyWith(comments: updatedComments, replyMaps: updatedReplyMaps),
+      );
     } catch (e) {
       emit(state.copyWith(error: _getErrorMessage(e)));
       LogService.e('删除评论失败', e);
@@ -376,8 +391,7 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     if (targetComment == null) return;
 
     final nowLiked = !targetComment.isLiked;
-    final newLikeCount =
-        targetComment.likeCount + (nowLiked ? 1 : -1);
+    final newLikeCount = targetComment.likeCount + (nowLiked ? 1 : -1);
 
     final optimistic = GuideComment(
       id: targetComment.id,
@@ -401,8 +415,7 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
 
     // 乐观更新
     if (isReply && parentId != null) {
-      final newReplyMaps =
-          Map<int, List<GuideComment>>.from(state.replyMaps);
+      final newReplyMaps = Map<int, List<GuideComment>>.from(state.replyMaps);
       newReplyMaps[parentId] = newReplyMaps[parentId]!.map((c) {
         return c.id == event.id ? optimistic : c;
       }).toList();
@@ -424,24 +437,28 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     } catch (e) {
       // 失败回滚
       if (isReply && parentId != null) {
-        final rollbackReplyMaps =
-            Map<int, List<GuideComment>>.from(state.replyMaps);
-        rollbackReplyMaps[parentId] =
-            rollbackReplyMaps[parentId]!.map((c) {
+        final rollbackReplyMaps = Map<int, List<GuideComment>>.from(
+          state.replyMaps,
+        );
+        rollbackReplyMaps[parentId] = rollbackReplyMaps[parentId]!.map((c) {
           return c.id == event.id ? targetComment! : c;
         }).toList();
-        emit(state.copyWith(
-          replyMaps: rollbackReplyMaps,
-          error: _getErrorMessage(e),
-        ));
+        emit(
+          state.copyWith(
+            replyMaps: rollbackReplyMaps,
+            error: _getErrorMessage(e),
+          ),
+        );
       } else {
         final rollbackComments = state.comments.map((c) {
           return c.id == event.id ? targetComment! : c;
         }).toList();
-        emit(state.copyWith(
-          comments: rollbackComments,
-          error: _getErrorMessage(e),
-        ));
+        emit(
+          state.copyWith(
+            comments: rollbackComments,
+            error: _getErrorMessage(e),
+          ),
+        );
       }
       LogService.e('评论点赞失败', e);
     }
@@ -494,9 +511,11 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     final newDislikeCount =
         (targetComment.dislikeCount + (nowDisliked ? 1 : -1)).clamp(0, 1 << 31);
 
-    LogService.d('[GuideCommentBloc] ToggleCommentDislike: '
-        'id=${event.id}, nowDisliked=$nowDisliked, wasLiked=$wasLiked, '
-        'dislikeCount=${targetComment.dislikeCount}->$newDislikeCount');
+    LogService.d(
+      '[GuideCommentBloc] ToggleCommentDislike: '
+      'id=${event.id}, nowDisliked=$nowDisliked, wasLiked=$wasLiked, '
+      'dislikeCount=${targetComment.dislikeCount}->$newDislikeCount',
+    );
 
     final optimistic = targetComment.copyWith(
       isDisliked: nowDisliked,
@@ -507,8 +526,7 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
 
     // 乐观更新
     if (isReply && parentId != null) {
-      final newReplyMaps =
-          Map<int, List<GuideComment>>.from(state.replyMaps);
+      final newReplyMaps = Map<int, List<GuideComment>>.from(state.replyMaps);
       newReplyMaps[parentId] = newReplyMaps[parentId]!
           .map((c) => c.id == event.id ? optimistic : c)
           .toList();
@@ -530,23 +548,28 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     } catch (e) {
       // 失败回滚
       if (isReply && parentId != null) {
-        final rollbackReplyMaps =
-            Map<int, List<GuideComment>>.from(state.replyMaps);
+        final rollbackReplyMaps = Map<int, List<GuideComment>>.from(
+          state.replyMaps,
+        );
         rollbackReplyMaps[parentId] = rollbackReplyMaps[parentId]!
             .map((c) => c.id == event.id ? targetComment! : c)
             .toList();
-        emit(state.copyWith(
-          replyMaps: rollbackReplyMaps,
-          error: _getErrorMessage(e),
-        ));
+        emit(
+          state.copyWith(
+            replyMaps: rollbackReplyMaps,
+            error: _getErrorMessage(e),
+          ),
+        );
       } else {
         final rollbackComments = state.comments
             .map((c) => c.id == event.id ? targetComment! : c)
             .toList();
-        emit(state.copyWith(
-          comments: rollbackComments,
-          error: _getErrorMessage(e),
-        ));
+        emit(
+          state.copyWith(
+            comments: rollbackComments,
+            error: _getErrorMessage(e),
+          ),
+        );
       }
       LogService.e('评论点踩失败', e);
     }
@@ -558,15 +581,17 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
   ) async {
     if (event.sort == state.sort) return;
 
-    emit(state.copyWith(
-      sort: event.sort,
-      comments: [],
-      replyMaps: {},
-      currentPage: 1,
-      hasMore: true,
-      status: CommentStatus.loading,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        sort: event.sort,
+        comments: [],
+        replyMaps: {},
+        currentPage: 1,
+        hasMore: true,
+        status: CommentStatus.loading,
+        clearError: true,
+      ),
+    );
 
     // 重新加载第一页
     add(const LoadComments(reset: true));
@@ -582,17 +607,19 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     final filteredComments = _filterBlocked(state.comments, newBlockedIds);
 
     // 重新过滤楼中楼
-    final filteredReplyMaps =
-        Map<int, List<GuideComment>>.from(state.replyMaps);
+    final filteredReplyMaps = Map<int, List<GuideComment>>.from(
+      state.replyMaps,
+    );
     for (final entry in filteredReplyMaps.entries) {
-      filteredReplyMaps[entry.key] =
-          _filterBlocked(entry.value, newBlockedIds);
+      filteredReplyMaps[entry.key] = _filterBlocked(entry.value, newBlockedIds);
     }
 
-    emit(state.copyWith(
-      blockedUserIds: newBlockedIds,
-      comments: filteredComments,
-      replyMaps: filteredReplyMaps,
-    ));
+    emit(
+      state.copyWith(
+        blockedUserIds: newBlockedIds,
+        comments: filteredComments,
+        replyMaps: filteredReplyMaps,
+      ),
+    );
   }
 }

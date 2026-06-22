@@ -126,9 +126,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.gray100,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: PageLayout(
         title: tool.name,
         subtitle: tool.description,
@@ -439,9 +437,7 @@ class _ToolCardState extends State<_ToolCard> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: !isEnabled
-                        ? (isDark
-                              ? AppColors.slate600
-                              : AppColors.gray300)
+                        ? (isDark ? AppColors.slate600 : AppColors.gray300)
                         : _isHovered
                         ? AppColors.green500.withValues(alpha: 0.4)
                         : (isDark
@@ -622,8 +618,9 @@ class _ToolCardState extends State<_ToolCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                (isEnabled ? AppColors.blue500 : AppColors.gray500)
-                    .withValues(alpha: _isHovered && isEnabled ? 0.25 : 0.15),
+                (isEnabled ? AppColors.blue500 : AppColors.gray500).withValues(
+                  alpha: _isHovered && isEnabled ? 0.25 : 0.15,
+                ),
                 (isEnabled ? const Color(0xFF9333EA) : AppColors.gray500)
                     .withValues(alpha: _isHovered && isEnabled ? 0.25 : 0.15),
               ],
@@ -637,9 +634,7 @@ class _ToolCardState extends State<_ToolCard> {
                       ? (isDark
                             ? const Color(0xFF60A5FA)
                             : const Color(0xFF1D4ED8))
-                      : (isDark
-                            ? const Color(0xFF60A5FA)
-                            : AppColors.blue500))
+                      : (isDark ? const Color(0xFF60A5FA) : AppColors.blue500))
                 : (isDark ? Colors.white38 : AppColors.gray400),
           ),
         ),

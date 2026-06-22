@@ -553,11 +553,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
         children: [
           Row(
             children: [
-              Icon(
-                MdiIcons.accountGroup,
-                color: AppColors.primary,
-                size: 20,
-              ),
+              Icon(MdiIcons.accountGroup, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 '玩家列表 ($playerCount)',

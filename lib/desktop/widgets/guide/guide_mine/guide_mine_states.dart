@@ -22,11 +22,7 @@ class GuideMineErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: colors.textTertiary,
-          ),
+          Icon(Icons.error_outline, size: 64, color: colors.textTertiary),
           const SizedBox(height: 16),
           Text(
             error ?? '加载失败',
@@ -65,26 +61,14 @@ class GuideMineEmptyState extends StatelessWidget {
         '还没有发布的攻略',
         '点击右上角「新建攻略」开始创作',
       ),
-      MineTab.drafts => (
-        Icons.edit_note_outlined,
-        '没有草稿',
-        '编辑器自动保存的草稿会出现在这里',
-      ),
+      MineTab.drafts => (Icons.edit_note_outlined, '没有草稿', '编辑器自动保存的草稿会出现在这里'),
       MineTab.favorites => (
         Icons.bookmark_border,
         '还没有收藏攻略',
         '在攻略详情页点击收藏按钮即可加入这里',
       ),
-      MineTab.liked => (
-        Icons.thumb_up_outlined,
-        '还没有赞过的攻略',
-        '点赞过的攻略会显示在这里',
-      ),
-      MineTab.trash => (
-        Icons.delete_outline,
-        '回收站是空的',
-        '删除的攻略会保留 30 天，可在此恢复',
-      ),
+      MineTab.liked => (Icons.thumb_up_outlined, '还没有赞过的攻略', '点赞过的攻略会显示在这里'),
+      MineTab.trash => (Icons.delete_outline, '回收站是空的', '删除的攻略会保留 30 天，可在此恢复'),
     };
 
     return Padding(
@@ -93,11 +77,7 @@ class GuideMineEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 72,
-              color: colors.textTertiary,
-            ),
+            Icon(icon, size: 72, color: colors.textTertiary),
             const SizedBox(height: 16),
             Text(
               title,
@@ -111,10 +91,7 @@ class GuideMineEmptyState extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: colors.textTertiary,
-              ),
+              style: TextStyle(fontSize: 13, color: colors.textTertiary),
             ),
           ],
         ),

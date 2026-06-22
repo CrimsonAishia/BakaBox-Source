@@ -49,8 +49,7 @@ class GuideEditorView extends StatefulWidget {
   State<GuideEditorView> createState() => GuideEditorViewState();
 }
 
-class GuideEditorViewState extends State<GuideEditorView>
-    with WindowListener {
+class GuideEditorViewState extends State<GuideEditorView> with WindowListener {
   late final GuideEditorBloc _editorBloc;
   late final GuideTagSuggestBloc _tagSuggestBloc;
 
@@ -84,12 +83,14 @@ class GuideEditorViewState extends State<GuideEditorView>
     if (widget.prefillMapName != null) {
       Future.microtask(() {
         if (mounted) {
-          _editorBloc.add(UpdateMap(
-            MapInfo(
-              mapName: widget.prefillMapName!,
-              mapLabel: widget.prefillMapName!,
+          _editorBloc.add(
+            UpdateMap(
+              MapInfo(
+                mapName: widget.prefillMapName!,
+                mapLabel: widget.prefillMapName!,
+              ),
             ),
-          ));
+          );
         }
       });
     }
@@ -188,9 +189,7 @@ class GuideEditorViewState extends State<GuideEditorView>
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('草稿版本冲突'),
-          content: const Text(
-            '云端有更新版本的草稿。请选择要保留的版本：',
-          ),
+          content: const Text('云端有更新版本的草稿。请选择要保留的版本：'),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GuideTokens.radius16),
           ),
@@ -242,7 +241,8 @@ class GuideEditorViewState extends State<GuideEditorView>
         onBack: () async {
           // 通过祖先 State 触发离开检查，避免直接 Navigator.maybePop()
           // 冒泡到 DesktopHomeScreen 的 PopScope 弹出「退出程序」对话框。
-          final guideScreen = context.findAncestorStateOfType<CommunityGuideScreenState>();
+          final guideScreen = context
+              .findAncestorStateOfType<CommunityGuideScreenState>();
           if (guideScreen != null) {
             final canLeave = await guideScreen.canLeaveCurrentView();
             if (canLeave) {
@@ -283,7 +283,8 @@ class _EditorBody extends StatelessWidget {
   final Future<void> Function() onBack;
   final VoidCallback onPublishSuccess;
   final VoidCallback onConflict;
-  final void Function(String event, Map<String, dynamic> params) reportAnalytics;
+  final void Function(String event, Map<String, dynamic> params)
+  reportAnalytics;
 
   const _EditorBody({
     this.guideId,
@@ -311,9 +312,7 @@ class _EditorBody extends StatelessWidget {
         if (state.phase == EditorPhase.error && state.error != null) {
           final prefix = guideId != null ? '修改失败：' : '发布失败：';
           ToastUtils.showError(context, '$prefix${state.error!}');
-          reportAnalytics('guide_publish_fail', {
-            'error': state.error,
-          });
+          reportAnalytics('guide_publish_fail', {'error': state.error});
         }
       },
       listenWhen: (prev, curr) => prev.phase != curr.phase,
@@ -322,10 +321,7 @@ class _EditorBody extends StatelessWidget {
         body: Column(
           children: [
             // 返回 + 标题 + 保存状态文本；右上角不放按钮，避免被窗口控件遮挡
-            GuideEditorHeader(
-              onBack: () => onBack(),
-              guideId: guideId,
-            ),
+            GuideEditorHeader(onBack: () => onBack(), guideId: guideId),
 
             // 编辑模式状态 Banner（已发布 / 已驳回时显示）
             const Padding(
@@ -446,8 +442,10 @@ class _PublishedEditBanner extends StatelessWidget {
 enum _LeaveAction {
   /// 先保存草稿再离开
   saveDraft,
+
   /// 放弃更改直接离开
   discard,
+
   /// 取消，留在编辑器
   cancel,
 }

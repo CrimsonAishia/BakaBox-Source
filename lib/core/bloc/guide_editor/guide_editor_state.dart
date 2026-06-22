@@ -99,7 +99,8 @@ class GuideEditorState extends Equatable {
     if (draft == null) return false;
 
     // 判断是否有实质内容（标题、正文、封面、摘要任一非空）
-    final hasContent = (draft!.title?.isNotEmpty ?? false) ||
+    final hasContent =
+        (draft!.title?.isNotEmpty ?? false) ||
         (draft!.content?.isNotEmpty ?? false) ||
         (draft!.coverUrl?.isNotEmpty ?? false) ||
         (draft!.summary?.isNotEmpty ?? false);
@@ -134,14 +135,13 @@ class GuideEditorState extends Equatable {
     return GuideEditorState(
       phase: phase ?? this.phase,
       draft: draft ?? this.draft,
-      lastSavedAt:
-          clearLastSavedAt ? null : (lastSavedAt ?? this.lastSavedAt),
-      remoteDraft:
-          clearRemoteDraft ? null : (remoteDraft ?? this.remoteDraft),
+      lastSavedAt: clearLastSavedAt ? null : (lastSavedAt ?? this.lastSavedAt),
+      remoteDraft: clearRemoteDraft ? null : (remoteDraft ?? this.remoteDraft),
       validateErrors: validateErrors ?? this.validateErrors,
       canPublish: canPublish ?? this.canPublish,
       dirty: dirty ?? this.dirty,
-      contentPlainTextLength: contentPlainTextLength ?? this.contentPlainTextLength,
+      contentPlainTextLength:
+          contentPlainTextLength ?? this.contentPlainTextLength,
       error: clearError ? null : (error ?? this.error),
       originalGuideStatus: clearOriginalGuideInfo
           ? null
@@ -154,16 +154,16 @@ class GuideEditorState extends Equatable {
 
   @override
   List<Object?> get props => [
-        phase,
-        draft,
-        lastSavedAt,
-        remoteDraft,
-        validateErrors,
-        canPublish,
-        dirty,
-        contentPlainTextLength,
-        error,
-        originalGuideStatus,
-        originalRejectReason,
-      ];
+    phase,
+    draft,
+    lastSavedAt,
+    remoteDraft,
+    validateErrors,
+    canPublish,
+    dirty,
+    contentPlainTextLength,
+    error,
+    originalGuideStatus,
+    originalRejectReason,
+  ];
 }

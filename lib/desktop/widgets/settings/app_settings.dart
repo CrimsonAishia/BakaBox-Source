@@ -175,7 +175,9 @@ class _WarmupVolumeSlider extends StatelessWidget {
               divisions: 20,
               label: '$volumePercent%',
               onChanged: (value) {
-                context.read<SettingsBloc>().add(SettingsSetWarmupAudioVolume(value));
+                context.read<SettingsBloc>().add(
+                  SettingsSetWarmupAudioVolume(value),
+                );
               },
             ),
           ),

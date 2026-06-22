@@ -36,7 +36,6 @@ part 'map_contribution/map_tag_chip.dart';
 part 'map_contribution/tag_voters_dialogs.dart';
 part 'map_contribution/tooltip_shape_border.dart';
 
-
 /// 地图贡献对话框
 class MapContributionDialog extends StatefulWidget {
   final String mapName;
@@ -157,9 +156,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         ),
         content: Text(
           '确定要撤销标签 "${tag.name}" 的变更申请吗？撤销后可重新发起申请。',
-          style: TextStyle(
-            color: isDark ? Colors.white70 : AppColors.gray700,
-          ),
+          style: TextStyle(color: isDark ? Colors.white70 : AppColors.gray700),
         ),
         actions: [
           TextButton(
@@ -256,9 +253,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       context.read<MapTagBloc>().add(const LoadUserTags());
       // 拉取最新的游玩时长 / 投票门槛状态（含本图维度）
       // 用于在投票弹窗顶部显示「您在本图玩了 X」+ 是否可投票
-      context.read<MapTagBloc>().add(
-        LoadUserPlaytime(mapName: widget.mapName),
-      );
+      context.read<MapTagBloc>().add(LoadUserPlaytime(mapName: widget.mapName));
     }
   }
 
@@ -305,9 +300,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建头部
   Widget _buildHeader(Color textColor, bool isDark) {
-    final secondaryTextColor = isDark
-        ? Colors.white54
-        : AppColors.gray500;
+    final secondaryTextColor = isDark ? Colors.white54 : AppColors.gray500;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 16, 12),
@@ -322,11 +315,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       ),
       child: Row(
         children: [
-          Icon(
-            MdiIcons.pencilOutline,
-            color: AppColors.primary,
-            size: 24,
-          ),
+          Icon(MdiIcons.pencilOutline, color: AppColors.primary, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -434,17 +423,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Icon(
-            MdiIcons.informationOutline,
-            size: 16,
-            color: AppColors.primary,
-          ),
+          Icon(MdiIcons.informationOutline, size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -673,9 +656,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         voting?.voteThresholdSeconds ?? playtime?.voteThresholdSeconds ?? 0;
     // 投票门槛只看本图时长：voting 优先，没有就用 playtime.currentMap
     final mapValidSeconds =
-        voting?.userMapValidSeconds ??
-        playtime?.currentMap?.validSeconds ??
-        0;
+        voting?.userMapValidSeconds ?? playtime?.currentMap?.validSeconds ?? 0;
     final remainSeconds =
         voting?.secondsUntilCanVote ?? playtime?.secondsUntilCanVote ?? 0;
 
@@ -701,12 +682,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       iconColor = isDark ? Colors.white54 : AppColors.gray500;
       iconData = MdiIcons.clockOutline;
       borderColor = (isDark ? Colors.white24 : Colors.black12);
-      bgColor = (isDark ? Colors.white : Colors.black).withValues(
-        alpha: 0.04,
-      );
+      bgColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.04);
     } else if (canVote) {
-      hintText =
-          '您在本图玩了 $mapDurationText，已达到投票门槛';
+      hintText = '您在本图玩了 $mapDurationText，已达到投票门槛';
       iconColor = AppColors.primary;
       iconData = MdiIcons.checkCircleOutline;
       borderColor = AppColors.primary.withValues(alpha: 0.25);
@@ -819,7 +797,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     isDark,
                     icon: MdiIcons.monitor,
                     title: '移动端不统计时长',
-                    desc: '请在桌面版 BakaBox 上游玩累计；同一论坛账号的时长在所有设备共享，'
+                    desc:
+                        '请在桌面版 BakaBox 上游玩累计；同一论坛账号的时长在所有设备共享，'
                         '累计达标后移动端也能投票。',
                   ),
                 ] else ...[
@@ -842,7 +821,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     isDark,
                     icon: MdiIcons.steam,
                     title: '方式二：给 Steam 添加启动项',
-                    desc: 'Steam 库 → 右键 CS2 → 属性 → 通用 → 启动选项，填入 -condebug，'
+                    desc:
+                        'Steam 库 → 右键 CS2 → 属性 → 通用 → 启动选项，填入 -condebug，'
                         '之后正常从 Steam 启动即可。',
                   ),
                   const SizedBox(height: 16),
@@ -1184,9 +1164,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           ),
           title: Text(
             '修改标签',
-            style: TextStyle(
-              color: isDark ? Colors.white : AppColors.gray800,
-            ),
+            style: TextStyle(color: isDark ? Colors.white : AppColors.gray800),
           ),
           content: SizedBox(
             width: 320,
@@ -1252,15 +1230,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     decoration: InputDecoration(
                       labelText: '变更理由',
                       labelStyle: TextStyle(
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.gray500,
+                        color: isDark ? Colors.white54 : AppColors.gray500,
                       ),
                       hintText: '请输入申请变更的理由',
                       hintStyle: TextStyle(
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray500,
+                        color: isDark ? Colors.white38 : AppColors.gray500,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -1549,9 +1523,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           ),
           title: Text(
             '添加标签',
-            style: TextStyle(
-              color: isDark ? Colors.white : AppColors.gray800,
-            ),
+            style: TextStyle(color: isDark ? Colors.white : AppColors.gray800),
           ),
           content: SizedBox(
             width: 320,
@@ -1630,9 +1602,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           '审核通过自动为该地图投票',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark
-                                ? Colors.white70
-                                : AppColors.gray700,
+                            color: isDark ? Colors.white70 : AppColors.gray700,
                           ),
                         ),
                       ),
@@ -1682,9 +1652,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建空状态
   Widget _buildEmptyState(bool isDark) {
-    final secondaryTextColor = isDark
-        ? Colors.white54
-        : AppColors.gray500;
+    final secondaryTextColor = isDark ? Colors.white54 : AppColors.gray500;
     final isNameTab = _currentType == ContributionType.name;
 
     return Center(
@@ -1921,9 +1889,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     bool canEdit,
   ) {
     final isPending = contribution.isPending;
-    final statusColor = isPending
-        ? AppColors.amber500
-        : AppColors.red500;
+    final statusColor = isPending ? AppColors.amber500 : AppColors.red500;
     final statusIcon = isPending
         ? MdiIcons.clockOutline
         : MdiIcons.alertCircleOutline;
@@ -2186,9 +2152,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                         contribution.content,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.gray800,
+                          color: isDark ? Colors.white : AppColors.gray800,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -2323,9 +2287,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           '拒绝原因: ${contribution.auditRemark}',
                           style: TextStyle(
                             fontSize: 16,
-                            color: isDark
-                                ? Colors.white70
-                                : AppColors.gray700,
+                            color: isDark ? Colors.white70 : AppColors.gray700,
                           ),
                         ),
                       ),
@@ -2372,9 +2334,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     child: Text(
                       '取消',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.gray500,
+                        color: isDark ? Colors.white54 : AppColors.gray500,
                       ),
                     ),
                   ),
@@ -2430,9 +2390,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           backgroundColor: isDark ? AppColors.slate800 : Colors.white,
           title: Text(
             '修改背景贡献',
-            style: TextStyle(
-              color: isDark ? Colors.white : AppColors.gray800,
-            ),
+            style: TextStyle(color: isDark ? Colors.white : AppColors.gray800),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2461,9 +2419,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           '拒绝原因: ${contribution.auditRemark}',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark
-                                ? Colors.white70
-                                : AppColors.gray700,
+                            color: isDark ? Colors.white70 : AppColors.gray700,
                           ),
                         ),
                       ),
@@ -2880,9 +2836,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     bool isDownVote = false,
     bool disabled = false,
   }) {
-    final activeColor = isDownVote
-        ? AppColors.red500
-        : AppColors.primary;
+    final activeColor = isDownVote ? AppColors.red500 : AppColors.primary;
 
     // 确定图标和文字颜色
     final Color contentColor;
@@ -2932,9 +2886,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       return const SizedBox.shrink();
     }
 
-    final inputBgColor = isDark
-        ? AppColors.slate700
-        : AppColors.slate100;
+    final inputBgColor = isDark ? AppColors.slate700 : AppColors.slate100;
     final textColor = isDark ? Colors.white : AppColors.gray800;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
@@ -3238,9 +3190,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         voting?.voteThresholdSeconds ?? playtime?.voteThresholdSeconds ?? 0;
     // 投票门槛只看本图时长，不再使用总时长
     final mapValidSeconds =
-        voting?.userMapValidSeconds ??
-        playtime?.currentMap?.validSeconds ??
-        0;
+        voting?.userMapValidSeconds ?? playtime?.currentMap?.validSeconds ?? 0;
     _showPlaytimePrompt(
       thresholdSeconds: thresholdSeconds,
       validSeconds: mapValidSeconds,
@@ -3255,9 +3205,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final remainSeconds = thresholdSeconds - validSeconds;
-    final remainText = _formatPlaytime(
-      remainSeconds > 0 ? remainSeconds : 0,
-    );
+    final remainText = _formatPlaytime(remainSeconds > 0 ? remainSeconds : 0);
     final thresholdText = _formatPlaytime(thresholdSeconds);
     final mineText = _formatPlaytime(validSeconds);
 
@@ -3522,4 +3470,3 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     }
   }
 }
-

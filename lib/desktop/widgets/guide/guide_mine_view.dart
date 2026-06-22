@@ -175,8 +175,7 @@ class GuideMineViewState extends State<GuideMineView> {
                   style: TextStyle(
                     color: isCurrent ? colors.accentBlue : colors.textPrimary,
                     fontSize: 13,
-                    fontWeight:
-                        isCurrent ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ),
@@ -211,9 +210,7 @@ class GuideMineViewState extends State<GuideMineView> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('删除'),
           ),
         ],
@@ -343,11 +340,11 @@ class GuideMineViewState extends State<GuideMineView> {
               item: item,
               showExpiryBadge: isTrash,
               onTap: () => widget.onViewDetail?.call(item.id),
-              onEdit: showEdit
-                  ? () => widget.onEditGuide?.call(item.id)
-                  : null,
+              onEdit: showEdit ? () => widget.onEditGuide?.call(item.id) : null,
               onDelete: isTrash ? null : () => _bloc.add(DeleteGuide(item.id)),
-              onRestore: isTrash ? () => _bloc.add(RestoreGuide(item.id)) : null,
+              onRestore: isTrash
+                  ? () => _bloc.add(RestoreGuide(item.id))
+                  : null,
               onPublish: showEdit && item.status == GuideStatus.offShelf
                   ? () => _bloc.add(PublishGuide(item.id))
                   : null,
@@ -358,10 +355,12 @@ class GuideMineViewState extends State<GuideMineView> {
     );
 
     if (state.status == GuideMineStatus.loadingMore) {
-      result.add(_buildSkeletonGrid(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-        count: 4,
-      ));
+      result.add(
+        _buildSkeletonGrid(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+          count: 4,
+        ),
+      );
     }
 
     if (!state.hasMore && state.items.isNotEmpty) {
@@ -396,17 +395,14 @@ class GuideMineViewState extends State<GuideMineView> {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: CommunityGuideShimmer(
-                    child: GuideMineDraftCardSkeleton(),
-                  ),
-                );
-              },
-              childCount: 6,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: CommunityGuideShimmer(
+                  child: GuideMineDraftCardSkeleton(),
+                ),
+              );
+            }, childCount: 6),
           ),
         ),
       ];
@@ -425,20 +421,17 @@ class GuideMineViewState extends State<GuideMineView> {
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
         sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final draft = state.drafts[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: GuideMineDraftCard(
-                  draft: draft,
-                  onTap: () => widget.onEditDraft?.call(draft.draftId),
-                  onDelete: () => _confirmDeleteDraft(context, draft),
-                ),
-              );
-            },
-            childCount: state.drafts.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final draft = state.drafts[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GuideMineDraftCard(
+                draft: draft,
+                onTap: () => widget.onEditDraft?.call(draft.draftId),
+                onDelete: () => _confirmDeleteDraft(context, draft),
+              ),
+            );
+          }, childCount: state.drafts.length),
         ),
       ),
     ];
@@ -446,10 +439,7 @@ class GuideMineViewState extends State<GuideMineView> {
 
   // ─── helpers ────────────────────────────────────────────────────────────
 
-  Widget _buildSkeletonGrid({
-    required EdgeInsets padding,
-    required int count,
-  }) {
+  Widget _buildSkeletonGrid({required EdgeInsets padding, required int count}) {
     final crossCount = guideCrossAxisCount(MediaQuery.of(context).size.width);
     return CommunityGuideSkeletonGrid(
       crossCount: crossCount,

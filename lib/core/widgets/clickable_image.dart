@@ -88,9 +88,7 @@ class _ClickableImageState extends State<ClickableImage> {
 
     final borderColor = _isHovering
         ? AppColors.primary
-        : (isDark
-              ? Colors.white.withValues(alpha: 0.15)
-              : AppColors.gray200);
+        : (isDark ? Colors.white.withValues(alpha: 0.15) : AppColors.gray200);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),

@@ -56,16 +56,14 @@ class _GuideInteractionDockState extends State<GuideInteractionDock>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.5, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
-    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(1.5, 0), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
+    _opacityAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     widget.scrollController.addListener(_onScroll);
     // 初始检测
@@ -122,8 +120,8 @@ class _GuideInteractionDockState extends State<GuideInteractionDock>
     final borderColor = isDark
         ? Colors.white.withValues(alpha: _hover ? 0.18 : 0.10)
         : (_hover
-            ? GuideTokens.borderLight
-            : GuideTokens.borderLight.withValues(alpha: 0.8));
+              ? GuideTokens.borderLight
+              : GuideTokens.borderLight.withValues(alpha: 0.8));
     final iconColor = _hover
         ? theme.colorScheme.primary
         : GuideTokens.textSecondary(context);
@@ -145,10 +143,7 @@ class _GuideInteractionDockState extends State<GuideInteractionDock>
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: borderColor,
-                  width: 1,
-                ),
+                border: Border.all(color: borderColor, width: 1),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(

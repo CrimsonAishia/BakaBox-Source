@@ -23,15 +23,9 @@ class GuideMapPickerSheet extends StatefulWidget {
   /// 当前已选中的地图（不为空时在标题栏显示「移除关联」按钮）
   final MapInfo? current;
 
-  const GuideMapPickerSheet({
-    super.key,
-    this.current,
-  });
+  const GuideMapPickerSheet({super.key, this.current});
 
-  static Future<MapInfo?> show(
-    BuildContext context, {
-    MapInfo? current,
-  }) async {
+  static Future<MapInfo?> show(BuildContext context, {MapInfo? current}) async {
     final result = await showDialog<_PickerResult>(
       context: context,
       barrierDismissible: true,
@@ -278,8 +272,7 @@ class _GuideMapPickerSheetState extends State<GuideMapPickerSheet> {
           hintText: '搜索地图名称（支持中文/英文）...',
           hintStyle: TextStyle(fontSize: 13, color: colors.textMuted),
           prefixIcon: Icon(Icons.search, size: 18, color: colors.textMuted),
-          prefixIconConstraints:
-              BoxConstraints(minWidth: 38, minHeight: 38),
+          prefixIconConstraints: BoxConstraints(minWidth: 38, minHeight: 38),
           isDense: true,
           filled: false,
           fillColor: Colors.transparent,
@@ -296,10 +289,7 @@ class _GuideMapPickerSheetState extends State<GuideMapPickerSheet> {
     final colors = _T.of(context);
     if (_isLoading && _maps.isEmpty) {
       return Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: colors.accent,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2, color: colors.accent),
       );
     }
 
@@ -441,7 +431,8 @@ class _MapPickerCardState extends State<_MapPickerCard> {
   Widget build(BuildContext context) {
     final colors = _T.of(context);
     final hasBackground =
-        widget.map.mapBackground != null && widget.map.mapBackground!.isNotEmpty;
+        widget.map.mapBackground != null &&
+        widget.map.mapBackground!.isNotEmpty;
     final hasDifferentLabel = widget.map.mapLabel != widget.map.mapName;
 
     return Padding(
@@ -458,14 +449,13 @@ class _MapPickerCardState extends State<_MapPickerCard> {
               color: widget.isSelected
                   ? colors.accent
                   : _hovering
-                      ? colors.borderHover
-                      : Colors.white.withValues(alpha: 0.08),
+                  ? colors.borderHover
+                  : Colors.white.withValues(alpha: 0.08),
               width: widget.isSelected ? 1.6 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color:
-                    Colors.black.withValues(alpha: _hovering ? 0.25 : 0.15),
+                color: Colors.black.withValues(alpha: _hovering ? 0.25 : 0.15),
                 blurRadius: _hovering ? 10 : 5,
                 offset: Offset(0, _hovering ? 4 : 2),
               ),
@@ -488,9 +478,7 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                       ),
                     )
                   else
-                    Positioned.fill(
-                      child: Container(color: colors.fieldBg),
-                    ),
+                    Positioned.fill(child: Container(color: colors.fieldBg)),
                   // 渐变遮罩（增强文字可读性）
                   if (hasBackground)
                     Positioned.fill(
@@ -525,13 +513,14 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                         onTap: widget.onTap,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     // 译名（中文）：使用翻译图标
@@ -541,15 +530,15 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                           Icons.translate,
                                           size: 13,
                                           color: hasBackground
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.95)
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.95,
+                                                )
                                               : colors.textPrimary,
                                           shadows: hasBackground
                                               ? [
                                                   Shadow(
                                                     color: Colors.black
-                                                        .withValues(
-                                                            alpha: 0.6),
+                                                        .withValues(alpha: 0.6),
                                                     blurRadius: 4,
                                                   ),
                                                 ]
@@ -568,7 +557,8 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                                       Shadow(
                                                         color: Colors.black
                                                             .withValues(
-                                                                alpha: 0.6),
+                                                              alpha: 0.6,
+                                                            ),
                                                         blurRadius: 4,
                                                       ),
                                                     ]
@@ -589,15 +579,17 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                             Icons.map_outlined,
                                             size: 12,
                                             color: hasBackground
-                                                ? Colors.white
-                                                    .withValues(alpha: 0.7)
+                                                ? Colors.white.withValues(
+                                                    alpha: 0.7,
+                                                  )
                                                 : colors.textMuted,
                                             shadows: hasBackground
                                                 ? [
                                                     Shadow(
                                                       color: Colors.black
                                                           .withValues(
-                                                              alpha: 0.6),
+                                                            alpha: 0.6,
+                                                          ),
                                                       blurRadius: 4,
                                                     ),
                                                   ]
@@ -609,14 +601,16 @@ class _MapPickerCardState extends State<_MapPickerCard> {
                                               widget.map.mapName,
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.78),
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.78,
+                                                ),
                                                 shadows: hasBackground
                                                     ? [
                                                         Shadow(
                                                           color: Colors.black
                                                               .withValues(
-                                                                  alpha: 0.6),
+                                                                alpha: 0.6,
+                                                              ),
                                                           blurRadius: 4,
                                                         ),
                                                       ]

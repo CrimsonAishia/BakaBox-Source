@@ -83,11 +83,11 @@ class GuideFilter extends Equatable {
   });
 
   const GuideFilter.empty()
-      : category = null,
-        tags = null,
-        hasVideo = null,
-        authorId = null,
-        mapName = null;
+    : category = null,
+      tags = null,
+      hasVideo = null,
+      authorId = null,
+      mapName = null;
 
   GuideFilter copyWith({
     String? category,

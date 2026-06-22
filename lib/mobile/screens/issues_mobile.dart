@@ -242,10 +242,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                                     const Color(0xFF0066CC),
                                     const Color(0xFF004499),
                                   ]
-                                : [
-                                    AppColors.primary,
-                                    const Color(0xFF0066CC),
-                                  ],
+                                : [AppColors.primary, const Color(0xFF0066CC)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),

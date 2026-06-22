@@ -34,9 +34,7 @@ class AboutSettings extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border(
               left: BorderSide(
-                color: isDark
-                    ? AppColors.sky400
-                    : const Color(0xFF0EA5E9),
+                color: isDark ? AppColors.sky400 : const Color(0xFF0EA5E9),
                 width: 4,
               ),
             ),
@@ -96,9 +94,7 @@ class AboutSettings extends StatelessWidget {
                       placeholder: Container(
                         width: 42,
                         height: 42,
-                        color: isDark
-                            ? AppColors.slate600
-                            : AppColors.gray200,
+                        color: isDark ? AppColors.slate600 : AppColors.gray200,
                         child: const Icon(
                           Icons.person,
                           size: 20,
@@ -108,9 +104,7 @@ class AboutSettings extends StatelessWidget {
                       errorWidget: Container(
                         width: 42,
                         height: 42,
-                        color: isDark
-                            ? AppColors.slate600
-                            : AppColors.gray200,
+                        color: isDark ? AppColors.slate600 : AppColors.gray200,
                         child: const Icon(
                           Icons.person,
                           size: 20,
@@ -245,9 +239,7 @@ class _UpdateInfoItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (iconColor ?? AppColors.primary).withValues(
-                  alpha: 0.1,
-                ),
+                color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(

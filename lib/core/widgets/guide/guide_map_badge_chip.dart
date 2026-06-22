@@ -74,10 +74,10 @@ class GuideMapBadgeChip extends StatelessWidget {
             Text(
               _truncatedLabel,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontSize: 11,
-                    height: 1.2,
-                  ),
+                color: Colors.white,
+                fontSize: 11,
+                height: 1.2,
+              ),
             ),
           ],
         ),
@@ -93,11 +93,7 @@ class GuideMapBadgeChip extends StatelessWidget {
         shape: BoxShape.circle,
         color: GuideTokens.fallbackIcon,
       ),
-      child: const Icon(
-        Icons.map_outlined,
-        size: 10,
-        color: Colors.white70,
-      ),
+      child: const Icon(Icons.map_outlined, size: 10, color: Colors.white70),
     );
   }
 }

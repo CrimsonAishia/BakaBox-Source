@@ -2811,82 +2811,109 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
 
     String fmt(num v) => v % 1 == 0 ? v.toInt().toString() : v.toString();
     if (speed != null) {
-      statItems.add(_buildStatItemWithShadow(Icons.speed, '弹幕初速', fmt(speed),
-          CharacterGalleryTheme.getSpeedColor(context), overlayColor));
+      statItems.add(
+        _buildStatItemWithShadow(
+          Icons.speed,
+          '弹幕初速',
+          fmt(speed),
+          CharacterGalleryTheme.getSpeedColor(context),
+          overlayColor,
+        ),
+      );
     }
     if (count != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.scatter_plot,
           '弹幕数量',
           count.toString(),
           CharacterGalleryTheme.getCountColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (angle != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.architecture,
           '散射角度',
           '${fmt(angle)}°',
           CharacterGalleryTheme.getAngleColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (puncture != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.swap_horiz,
           '穿刺次数',
           puncture.toString(),
           CharacterGalleryTheme.getPunctureColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (bounce != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.replay,
           '反弹次数',
           bounce.toString(),
           CharacterGalleryTheme.getBounceColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (explode != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.brightness_5,
           '影响范围',
           fmt(explode),
           CharacterGalleryTheme.getExplodeColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (holdTime != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.hourglass_bottom,
           '持续时间',
           '${fmt(holdTime)}s',
           CharacterGalleryTheme.getHoldTimeColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (trackSpeed != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.gps_fixed,
           '追踪转向',
           fmt(trackSpeed),
           CharacterGalleryTheme.getTrackSpeedColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
     if (customCd != null) {
-      statItems.add(_buildStatItemWithShadow(
+      statItems.add(
+        _buildStatItemWithShadow(
           Icons.settings,
           '内置CD',
           '${fmt(customCd)}s',
           CharacterGalleryTheme.getCustomCdColor(context),
-          overlayColor));
+          overlayColor,
+        ),
+      );
     }
 
     if (statItems.isEmpty) return const SizedBox.shrink();
 
     // 字段较多时使用 Wrap 自动换行；不再使用竖线分隔符（在多行布局里视觉断裂）
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      children: statItems,
-    );
+    return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
 
   /// 单个属性项（带阴影，用于符卡）

@@ -33,9 +33,7 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.gray100,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           return PageLayout(

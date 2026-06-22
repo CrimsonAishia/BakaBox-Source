@@ -97,13 +97,14 @@ class _CategoryPillState extends State<_CategoryPill> {
           duration: GuideTokens.durationFast,
           curve: Curves.easeOutCubic,
           height: 36,
-          padding: const EdgeInsets.symmetric(
-            horizontal: GuideTokens.space16,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: GuideTokens.space16),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? AppColors.primary // Bright blue
-                : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                ? AppColors
+                      .primary // Bright blue
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05)),
             borderRadius: GuideTokens.borderRadius8,
           ),
           alignment: Alignment.center,
@@ -119,8 +120,9 @@ class _CategoryPillState extends State<_CategoryPill> {
                       color: widget.isSelected
                           ? Colors.white
                           : GuideTokens.textSecondary(context),
-                      fontWeight:
-                          widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: widget.isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                   ),
                   if (widget.count != null) ...[

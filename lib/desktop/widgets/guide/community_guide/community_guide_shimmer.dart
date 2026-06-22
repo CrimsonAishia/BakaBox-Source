@@ -21,9 +21,7 @@ class CommunityGuideShimmer extends StatelessWidget {
         : Colors.white.withValues(alpha: 0.65);
 
     return child
-        .animate(
-          onPlay: (controller) => controller.repeat(),
-        )
+        .animate(onPlay: (controller) => controller.repeat())
         .shimmer(
           duration: const Duration(milliseconds: 1400),
           color: highlight,

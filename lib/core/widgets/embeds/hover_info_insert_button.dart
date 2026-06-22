@@ -38,8 +38,9 @@ class HoverInfoInsertButton extends StatelessWidget {
       final index = controller.selection.baseOffset;
       final length = controller.selection.extentOffset - index;
       final docLength = controller.document.length;
-      final safeIndex =
-          (index < 0 || index > docLength) ? (docLength > 0 ? docLength - 1 : 0) : index;
+      final safeIndex = (index < 0 || index > docLength)
+          ? (docLength > 0 ? docLength - 1 : 0)
+          : index;
 
       if (length > 0 && index >= 0) {
         controller.replaceText(safeIndex, length, embed, null);

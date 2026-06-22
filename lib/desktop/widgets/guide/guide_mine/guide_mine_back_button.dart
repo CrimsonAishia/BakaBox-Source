@@ -37,8 +37,8 @@ class _GuideMineBackButtonState extends State<GuideMineBackButton> {
               decoration: BoxDecoration(
                 color: _hovering
                     ? (colors.isDark
-                        ? Colors.white.withValues(alpha: 0.10)
-                        : Colors.black.withValues(alpha: 0.06))
+                          ? Colors.white.withValues(alpha: 0.10)
+                          : Colors.black.withValues(alpha: 0.06))
                     : colors.chipInactiveBg,
                 borderRadius: BorderRadius.circular(10),
               ),

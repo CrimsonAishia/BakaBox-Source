@@ -49,14 +49,10 @@ class WeakNetworkSettings extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    value
-                        ? '弱网模式已开启，所有自动刷新已暂停'
-                        : '弱网模式已关闭，已恢复自动刷新',
+                    value ? '弱网模式已开启，所有自动刷新已暂停' : '弱网模式已关闭，已恢复自动刷新',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: value
-                      ? Colors.orange
-                      : AppColors.primary,
+                  backgroundColor: value ? Colors.orange : AppColors.primary,
                 ),
               );
             },
@@ -95,7 +91,9 @@ class WeakNetworkSettings extends StatelessWidget {
                 item,
                 style: TextStyle(
                   fontSize: 12.5,
-                  color: isDark ? Colors.orange.shade200 : Colors.orange.shade900,
+                  color: isDark
+                      ? Colors.orange.shade200
+                      : Colors.orange.shade900,
                   height: 1.4,
                 ),
               ),

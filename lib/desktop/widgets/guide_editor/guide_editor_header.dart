@@ -18,11 +18,7 @@ class GuideEditorHeader extends StatelessWidget {
   /// 编辑的攻略 ID；非空表示编辑模式，null 表示新建
   final int? guideId;
 
-  const GuideEditorHeader({
-    super.key,
-    this.onBack,
-    this.guideId,
-  });
+  const GuideEditorHeader({super.key, this.onBack, this.guideId});
 
   @override
   Widget build(BuildContext context) {
@@ -170,9 +166,7 @@ class _StatusTextState extends State<_StatusText> {
   Color _getStatusColor(CommunityGuideColors colors) {
     return switch (widget.phase) {
       EditorPhase.idle => colors.textTertiary,
-      EditorPhase.saving ||
-      EditorPhase.savingRemote =>
-        colors.accentBlue,
+      EditorPhase.saving || EditorPhase.savingRemote => colors.accentBlue,
       EditorPhase.conflict => GuideTokens.statusPending,
       EditorPhase.publishing => colors.accentBlue,
       EditorPhase.submitted => GuideTokens.shareGreen,

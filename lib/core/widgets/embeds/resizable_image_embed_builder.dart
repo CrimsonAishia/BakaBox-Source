@@ -29,10 +29,7 @@ class ResizableImageEmbedBuilder extends EmbedBuilder {
   /// 替换图片回调（点击工具栏「替换」时触发，返回新的 fileId 引用或 null）
   final Future<String?> Function()? onReplace;
 
-  const ResizableImageEmbedBuilder({
-    this.readOnly = false,
-    this.onReplace,
-  });
+  const ResizableImageEmbedBuilder({this.readOnly = false, this.onReplace});
 
   @override
   String get key => resizableImageEmbedType;
@@ -209,11 +206,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
 
   void _handleDoubleTap() {
     if (_signedUrl == null) return;
-    ImageViewerDialog.show(
-      context,
-      imageUrls: [_signedUrl!],
-      initialIndex: 0,
-    );
+    ImageViewerDialog.show(context, imageUrls: [_signedUrl!], initialIndex: 0);
   }
 
   // ─── 文档变更 ─────────────────────────────────────────────────────────
@@ -278,8 +271,10 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
   /// 通过 +/- 按钮调整宽度（点击式，保持当前对齐意图）
   void _stepWidth({required bool increase}) {
     final data = _effectiveData;
-    final next =
-        ResizableImageSnap.nextSnapPoint(data.width, increase: increase);
+    final next = ResizableImageSnap.nextSnapPoint(
+      data.width,
+      increase: increase,
+    );
     if ((next - data.width).abs() < 0.001) return;
 
     final widthCols = ResizableImageSnap.widthToCols(next);
@@ -511,9 +506,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
           decoration: BoxDecoration(
             color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.5),
-            ),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
@@ -563,9 +556,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.slate200
-                        : AppColors.gray700,
+                    color: isDark ? AppColors.slate200 : AppColors.gray700,
                   ),
                 ),
               ),
@@ -647,9 +638,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
       width: 1,
       height: 16,
       margin: const EdgeInsets.symmetric(horizontal: 3),
-      color: isDark
-          ? Colors.white.withValues(alpha: 0.12)
-          : AppColors.gray200,
+      color: isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.gray200,
     );
   }
 }
@@ -688,8 +677,7 @@ class _ResizableImageFallback extends StatelessWidget {
             '图片加载失败',
             style: TextStyle(
               fontSize: 13,
-              color:
-                  isDark ? AppColors.slate500 : AppColors.gray400,
+              color: isDark ? AppColors.slate500 : AppColors.gray400,
             ),
           ),
         ],

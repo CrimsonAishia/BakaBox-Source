@@ -19,6 +19,7 @@ class GuideMineCard extends StatefulWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onRestore;
   final VoidCallback? onPublish;
+
   /// 回收站 Tab 时显示剩余天数角标
   final bool showExpiryBadge;
 
@@ -288,7 +289,8 @@ class GuideMineStatusBadge extends StatelessWidget {
 
     if (label.isEmpty) return const SizedBox.shrink();
 
-    final tooltip = status == GuideStatus.rejected &&
+    final tooltip =
+        status == GuideStatus.rejected &&
             rejectReason != null &&
             rejectReason!.isNotEmpty
         ? '驳回原因：$rejectReason'
@@ -339,11 +341,7 @@ class _StatLabel extends StatelessWidget {
   final Color? iconColor;
   final String text;
 
-  const _StatLabel({
-    required this.icon,
-    required this.text,
-    this.iconColor,
-  });
+  const _StatLabel({required this.icon, required this.text, this.iconColor});
 
   @override
   Widget build(BuildContext context) {
@@ -351,11 +349,7 @@ class _StatLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 18,
-          color: iconColor ?? colors.textTertiary,
-        ),
+        Icon(icon, size: 18, color: iconColor ?? colors.textTertiary),
         const SizedBox(width: 6),
         Text(
           text,
@@ -375,6 +369,7 @@ class _StatLabel extends StatelessWidget {
 class GuideMineTagsRow extends StatelessWidget {
   final List<String> tags;
   final String? categoryName;
+
   /// 最多显示的 chip 数量（超出截断）
   final int maxItems;
 
@@ -419,9 +414,7 @@ class GuideMineTagsRow extends StatelessWidget {
     final bgColor = primary
         ? colors.accentBlue.withValues(alpha: colors.isDark ? 0.22 : 0.16)
         : colors.tagSecondaryBg;
-    final textColor = primary
-        ? colors.tagPrimaryText
-        : colors.tagSecondaryText;
+    final textColor = primary ? colors.tagPrimaryText : colors.tagSecondaryText;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -468,18 +461,12 @@ class GuideMineMoreMenu extends StatelessWidget {
       height: 32,
       child: PopupMenuButton<String>(
         tooltip: '更多',
-        icon: Icon(
-          Icons.more_vert,
-          size: 18,
-          color: colors.textTertiary,
-        ),
+        icon: Icon(Icons.more_vert, size: 18, color: colors.textTertiary),
         padding: EdgeInsets.zero,
         iconSize: 18,
         splashRadius: 16,
         color: colors.menuBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         itemBuilder: (context) {
           final menuTextColor = colors.textPrimary;
           return [
@@ -490,8 +477,11 @@ class GuideMineMoreMenu extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.restore_outlined,
-                        size: 14, color: colors.accentBlue),
+                    Icon(
+                      Icons.restore_outlined,
+                      size: 14,
+                      color: colors.accentBlue,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '还原',
@@ -507,8 +497,11 @@ class GuideMineMoreMenu extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.publish_outlined,
-                        size: 14, color: colors.accentBlue),
+                    Icon(
+                      Icons.publish_outlined,
+                      size: 14,
+                      color: colors.accentBlue,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '上架',
@@ -524,8 +517,7 @@ class GuideMineMoreMenu extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.edit_outlined,
-                        size: 14, color: menuTextColor),
+                    Icon(Icons.edit_outlined, size: 14, color: menuTextColor),
                     const SizedBox(width: 8),
                     Text(
                       '修改',
@@ -541,8 +533,11 @@ class GuideMineMoreMenu extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.delete_outline,
-                        size: 14, color: Colors.redAccent.shade100),
+                    Icon(
+                      Icons.delete_outline,
+                      size: 14,
+                      color: Colors.redAccent.shade100,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '删除',
@@ -576,9 +571,7 @@ class GuideMineMoreMenu extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           '确认删除',
           style: TextStyle(
@@ -594,10 +587,7 @@ class GuideMineMoreMenu extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              '取消',
-              style: TextStyle(color: colors.textSecondary),
-            ),
+            child: Text('取消', style: TextStyle(color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),

@@ -85,9 +85,7 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
   // 公共方法（由 DesktopNavigator 通过 GlobalKey 调用）
-  // ---------------------------------------------------------------------------
 
   /// 切换到攻略列表视图，可按地图名筛选
   void showList({String? mapName}) {
@@ -315,8 +313,9 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
                           Positioned(
                             top: 0,
                             right: 0,
-                            child:
-                                CommunityGuideCloseButton(onTap: closeDetail),
+                            child: CommunityGuideCloseButton(
+                              onTap: closeDetail,
+                            ),
                           ),
                         ],
                       ),
@@ -388,8 +387,10 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
 enum _UnsavedAction {
   /// 暂存草稿后离开
   saveDraft,
+
   /// 放弃更改直接离开
   discard,
+
   /// 取消，留在编辑器
   cancel,
 }

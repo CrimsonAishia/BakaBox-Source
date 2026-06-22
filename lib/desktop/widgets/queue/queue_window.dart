@@ -283,6 +283,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
       onClose: () => _handleClose(context, state),
     );
   }
+
   /// 构建内容区域
   Widget _buildContent(BuildContext context, QueueBlocState state) {
     return Padding(
@@ -322,14 +323,12 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
                 context.read<QueueBloc>().add(QueueSetDonator(value));
               },
               onMultiThreadEnabledChanged: (value) {
-                context
-                    .read<QueueBloc>()
-                    .add(QueueSetMultiThreadEnabled(value));
+                context.read<QueueBloc>().add(
+                  QueueSetMultiThreadEnabled(value),
+                );
               },
               onRequestIntervalChanged: (value) {
-                context
-                    .read<QueueBloc>()
-                    .add(QueueSetRequestInterval(value));
+                context.read<QueueBloc>().add(QueueSetRequestInterval(value));
               },
             ),
           const SizedBox(height: 16),
@@ -402,9 +401,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
     // CS:Source 只发连接指令、不需要"启动游戏"，仅显示挤服按钮。
     if (state.isConnectOnlyServer) {
       return Row(
-        children: [
-          Expanded(child: _buildQueueButton(context, state)),
-        ],
+        children: [Expanded(child: _buildQueueButton(context, state))],
       );
     }
 

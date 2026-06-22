@@ -75,7 +75,8 @@ class GuideCommentSection extends StatefulWidget {
     int? parentId,
     int? replyToId,
     String? replyToName,
-  )? onSubmit;
+  )?
+  onSubmit;
 
   /// 加载更多
   final VoidCallback? onLoadMore;
@@ -177,10 +178,7 @@ class _GuideCommentSectionState extends State<GuideCommentSection> {
         ),
         const Spacer(),
         // 排序切换
-        _SortToggle(
-          currentSort: widget.sort,
-          onChanged: widget.onSortChanged,
-        ),
+        _SortToggle(currentSort: widget.sort, onChanged: widget.onSortChanged),
       ],
     );
   }
@@ -215,9 +213,7 @@ class _GuideCommentSectionState extends State<GuideCommentSection> {
               ? Colors.white.withValues(alpha: 0.06)
               : theme.colorScheme.surface.withValues(alpha: 0.6),
           borderRadius: GuideTokens.borderRadius12,
-          border: Border.all(
-            color: GuideTokens.divider(context),
-          ),
+          border: Border.all(color: GuideTokens.divider(context)),
         ),
         alignment: Alignment.centerLeft,
         child: Text(
@@ -242,8 +238,9 @@ class _GuideCommentSectionState extends State<GuideCommentSection> {
     return Column(
       children: widget.comments.map((comment) {
         final replies = widget.replyMaps[comment.id] ?? [];
-        final defaultReplies =
-            replies.isNotEmpty ? replies : comment.replies.take(3).toList();
+        final defaultReplies = replies.isNotEmpty
+            ? replies
+            : comment.replies.take(3).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,10 +268,7 @@ class _GuideCommentSectionState extends State<GuideCommentSection> {
             // 就地展开的回复输入框
             if (_replyTarget != null && _isReplyingTo(comment))
               _buildInlineReplyInput(context, comment),
-            Divider(
-              height: 1,
-              color: GuideTokens.divider(context),
-            ),
+            Divider(height: 1, color: GuideTokens.divider(context)),
           ],
         );
       }).toList(),
@@ -306,10 +300,7 @@ class _GuideCommentSectionState extends State<GuideCommentSection> {
         _replyTarget = target;
         _replyEditorController.clear();
         // 自动填入 @对方昵称
-        _replyEditorController.document.insert(
-          0,
-          '@${target.authorName} ',
-        );
+        _replyEditorController.document.insert(0, '@${target.authorName} ');
         // 移动光标到末尾
         _replyEditorController.updateSelection(
           TextSelection.collapsed(
@@ -433,10 +424,7 @@ class _SortToggle extends StatelessWidget {
   final CommentSortType currentSort;
   final ValueChanged<CommentSortType>? onChanged;
 
-  const _SortToggle({
-    required this.currentSort,
-    this.onChanged,
-  });
+  const _SortToggle({required this.currentSort, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -526,9 +514,7 @@ class _CommentInputBoxState extends State<_CommentInputBox> {
             ? Colors.white.withValues(alpha: 0.06)
             : theme.colorScheme.surface.withValues(alpha: 0.6),
         borderRadius: GuideTokens.borderRadius12,
-        border: Border.all(
-          color: GuideTokens.divider(context),
-        ),
+        border: Border.all(color: GuideTokens.divider(context)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

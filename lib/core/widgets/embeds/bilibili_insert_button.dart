@@ -16,10 +16,7 @@ class BilibiliInsertButton extends StatelessWidget {
   /// Quill 编辑器 Controller，用于在文档中插入 embed
   final QuillController controller;
 
-  const BilibiliInsertButton({
-    super.key,
-    required this.controller,
-  });
+  const BilibiliInsertButton({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +130,8 @@ class _BilibiliUrlInputDialogState extends State<_BilibiliUrlInputDialog> {
     }
 
     // 基础校验：是否含 bilibili 或 BV 号
-    final hasBilibili = url.contains('bilibili.com') ||
+    final hasBilibili =
+        url.contains('bilibili.com') ||
         url.contains('b23.tv') ||
         url.startsWith('BV');
     if (!hasBilibili) {
@@ -203,8 +201,9 @@ class _BilibiliUrlInputDialogState extends State<_BilibiliUrlInputDialog> {
                 hintText: '粘贴 B 站视频链接，例如 https://www.bilibili.com/video/BV...',
                 hintStyle: TextStyle(
                   fontSize: 13,
-                  color:
-                      isDark ? GuideTokens.textSecondaryLight : GuideTokens.textTertiaryLight,
+                  color: isDark
+                      ? GuideTokens.textSecondaryLight
+                      : GuideTokens.textTertiaryLight,
                 ),
                 filled: true,
                 fillColor: isDark
@@ -251,8 +250,9 @@ class _BilibiliUrlInputDialogState extends State<_BilibiliUrlInputDialog> {
               '支持 bilibili.com/video/BV... 或 b23.tv 短链',
               style: TextStyle(
                 fontSize: 12,
-                color:
-                    isDark ? GuideTokens.textSecondaryLight : GuideTokens.textTertiaryLight,
+                color: isDark
+                    ? GuideTokens.textSecondaryLight
+                    : GuideTokens.textTertiaryLight,
               ),
             ),
             const SizedBox(height: 20),
@@ -261,8 +261,9 @@ class _BilibiliUrlInputDialogState extends State<_BilibiliUrlInputDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed:
-                      _isLoading ? null : () => Navigator.of(context).pop(),
+                  onPressed: _isLoading
+                      ? null
+                      : () => Navigator.of(context).pop(),
                   child: Text(
                     '取消',
                     style: TextStyle(

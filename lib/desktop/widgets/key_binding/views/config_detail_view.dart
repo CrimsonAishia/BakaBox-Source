@@ -257,9 +257,7 @@ class DetailHeader extends StatelessWidget {
                       '${config.useCount} 次应用',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -273,9 +271,7 @@ class DetailHeader extends StatelessWidget {
                       '${config.commentCount} 条评论',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark
-                            ? Colors.white38
-                            : AppColors.gray400,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -343,9 +339,7 @@ class DetailHeader extends StatelessWidget {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.slate600
-                          : Colors.grey[300]!,
+                      color: isDark ? AppColors.slate600 : Colors.grey[300]!,
                     ),
                   ),
                 ),
@@ -368,9 +362,7 @@ class DetailHeader extends StatelessWidget {
                   ),
                 );
               },
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.red500,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.red500),
               child: const Text('删除'),
             ),
           ],
@@ -406,9 +398,7 @@ class DetailHeader extends StatelessWidget {
                 Navigator.pop(ctx);
                 bloc.add(KeyBindingDeleteConfig(config.id));
               },
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.red500,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.red500),
               child: const Text('删除'),
             ),
           ],
@@ -439,18 +429,12 @@ class _PendingChangeActions extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.amber500.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: AppColors.amber500.withValues(alpha: 0.4),
-          ),
+          border: Border.all(color: AppColors.amber500.withValues(alpha: 0.4)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.clockOutline,
-              size: 13,
-              color: AppColors.amber500,
-            ),
+            Icon(MdiIcons.clockOutline, size: 13, color: AppColors.amber500),
             const SizedBox(width: 6),
             const Text(
               '审核中',
@@ -552,9 +536,7 @@ class AuditStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isPending = config.isPending;
-    final statusColor = isPending
-        ? AppColors.amber500
-        : AppColors.red500;
+    final statusColor = isPending ? AppColors.amber500 : AppColors.red500;
     final statusIcon = isPending
         ? MdiIcons.clockOutline
         : MdiIcons.alertCircleOutline;

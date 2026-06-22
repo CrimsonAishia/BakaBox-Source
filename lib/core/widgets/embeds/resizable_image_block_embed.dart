@@ -21,7 +21,7 @@ const String resizableImageEmbedType = 'resizableImage';
 /// ```
 class ResizableImageBlockEmbed extends CustomBlockEmbed {
   ResizableImageBlockEmbed(Map<String, dynamic> data)
-      : super(resizableImageEmbedType, jsonEncode(data));
+    : super(resizableImageEmbedType, jsonEncode(data));
 
   /// 创建新的可缩放图片 embed
   ///
@@ -126,14 +126,14 @@ class ResizableImageData {
   }
 
   Map<String, dynamic> toJson() => {
-        'src': src,
-        'width': width,
-        'gridCol': gridCol,
-        'gridFloat': gridFloat,
-        'floatOffset': floatOffset,
-        'alt': alt,
-        'caption': caption,
-      };
+    'src': src,
+    'width': width,
+    'gridCol': gridCol,
+    'gridFloat': gridFloat,
+    'floatOffset': floatOffset,
+    'alt': alt,
+    'caption': caption,
+  };
 
   /// 计算在 24 列网格中占用的列数
   int get widthCols => (width * 24).round().clamp(3, 24);

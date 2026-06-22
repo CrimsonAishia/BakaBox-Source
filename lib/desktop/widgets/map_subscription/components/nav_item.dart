@@ -97,9 +97,7 @@ class _NavItemState extends State<NavItem> {
                               : FontWeight.normal,
                           color: isSelected
                               ? AppColors.indigo500
-                              : (isDark
-                                    ? Colors.white70
-                                    : AppColors.gray700),
+                              : (isDark ? Colors.white70 : AppColors.gray700),
                         ),
                       ),
                     ),
@@ -125,9 +123,7 @@ class _NavItemState extends State<NavItem> {
                             fontWeight: FontWeight.w500,
                             color: isSelected
                                 ? AppColors.indigo500
-                                : (isDark
-                                      ? Colors.white54
-                                      : AppColors.gray500),
+                                : (isDark ? Colors.white54 : AppColors.gray500),
                           ),
                         ),
                       )

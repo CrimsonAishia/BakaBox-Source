@@ -40,7 +40,6 @@ class CrashReportPalette {
   }
 }
 
-
 /// 第三方注入严重度颜色
 ({Color color, String label}) crashThirdPartyPalette(String severity) {
   switch (severity) {

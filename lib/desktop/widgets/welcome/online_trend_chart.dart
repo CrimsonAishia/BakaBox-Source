@@ -404,8 +404,7 @@ class _HourlyBarChart extends StatelessWidget {
         }).toList(),
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) =>
-                isDark ? AppColors.slate800 : Colors.white,
+            getTooltipColor: (_) => isDark ? AppColors.slate800 : Colors.white,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 '${group.x.toString().padLeft(2, '0')}:00\n${rod.toY.toInt()}人',

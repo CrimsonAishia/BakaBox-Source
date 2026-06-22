@@ -351,9 +351,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
       final lastCategoryName = StorageUtils.getString('last_selected_category');
       if (lastCategoryName != null) {
         // last_selected_category_custom 为 null 时（旧版本数据）按名称匹配兜底
-        final lastIsCustom = StorageUtils.containsKey(
-          'last_selected_category_custom',
-        )
+        final lastIsCustom =
+            StorageUtils.containsKey('last_selected_category_custom')
             ? StorageUtils.getBool('last_selected_category_custom')
             : null;
 
@@ -706,9 +705,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         decoration: BoxDecoration(
           color: AppColors.blue500.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: AppColors.blue500.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.blue500.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1748,9 +1745,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: isDark
-                    ? AppColors.slate700
-                    : AppColors.gray200,
+                color: isDark ? AppColors.slate700 : AppColors.gray200,
                 width: 1,
               ),
             ),
@@ -1867,9 +1862,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.15)
-                    : (isDark
-                          ? AppColors.slate700
-                          : AppColors.gray100),
+                    : (isDark ? AppColors.slate700 : AppColors.gray100),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -2008,7 +2001,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
         context: context,
         builder: (context) => ApiServerSelectionDialog(
           targetCategoryName: categoryName,
-          targetApiCategoryKey: category.sourceApiCategoryName ?? categoryName, // 回退到 categoryName 以防万一
+          targetApiCategoryKey:
+              category.sourceApiCategoryName ??
+              categoryName, // 回退到 categoryName 以防万一
           existingServers: category.serverList,
         ),
       );
@@ -2427,9 +2422,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
           if (mounted) _updateScrollIndicators();
         });
 
-        final bgColor = isDark
-            ? AppColors.slate800
-            : AppColors.gray50;
+        final bgColor = isDark ? AppColors.slate800 : AppColors.gray50;
 
         return Stack(
           children: [

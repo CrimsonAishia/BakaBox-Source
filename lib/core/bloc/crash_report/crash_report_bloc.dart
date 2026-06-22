@@ -103,8 +103,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         severity: state.currentSeverity,
         category: state.currentCategory,
         sort: state.currentSort,
-        keyword:
-            state.currentKeyword.isEmpty ? null : state.currentKeyword,
+        keyword: state.currentKeyword.isEmpty ? null : state.currentKeyword,
         signature: state.currentSignature,
       );
       // 去重：按 id 合并，避免服务端在分页间隙插入新数据导致重复项
@@ -140,8 +139,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
           severity: state.currentSeverity,
           category: state.currentCategory,
           sort: state.currentSort,
-          keyword:
-              state.currentKeyword.isEmpty ? null : state.currentKeyword,
+          keyword: state.currentKeyword.isEmpty ? null : state.currentKeyword,
           signature: state.currentSignature,
         ),
       );
@@ -189,8 +187,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         severity: event.severity,
         category: state.currentCategory,
         sort: state.currentSort,
-        keyword:
-            state.currentKeyword.isEmpty ? null : state.currentKeyword,
+        keyword: state.currentKeyword.isEmpty ? null : state.currentKeyword,
         signature: state.currentSignature,
       ),
     );
@@ -210,8 +207,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         severity: state.currentSeverity,
         category: event.category,
         sort: state.currentSort,
-        keyword:
-            state.currentKeyword.isEmpty ? null : state.currentKeyword,
+        keyword: state.currentKeyword.isEmpty ? null : state.currentKeyword,
         signature: state.currentSignature,
       ),
     );
@@ -248,12 +244,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
     try {
       final detail = await _api.getReportDetail(event.id);
       if (detail == null) {
-        emit(
-          state.copyWith(
-            error: '崩溃报告不存在或已删除',
-            isLoadingDetail: false,
-          ),
-        );
+        emit(state.copyWith(error: '崩溃报告不存在或已删除', isLoadingDetail: false));
         return;
       }
       emit(state.copyWith(detail: detail, isLoadingDetail: false));
@@ -319,20 +310,10 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
       final summary = await _localService.analyze(event.path);
       // race-guard: 用户在解析过程中又点了别的文件 -> 丢弃这个结果
       if (state.selectedLocalPath != event.path) return;
-      emit(
-        state.copyWith(
-          localDetail: summary,
-          isLoadingLocalDetail: false,
-        ),
-      );
+      emit(state.copyWith(localDetail: summary, isLoadingLocalDetail: false));
     } catch (e) {
       if (state.selectedLocalPath != event.path) return;
-      emit(
-        state.copyWith(
-          localError: _err(e),
-          isLoadingLocalDetail: false,
-        ),
-      );
+      emit(state.copyWith(localError: _err(e), isLoadingLocalDetail: false));
       LogService.e('解析本地崩溃文件失败', e);
     }
   }
@@ -341,12 +322,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
     CrashReportCloseLocalDetail event,
     Emitter<CrashReportState> emit,
   ) {
-    emit(
-      state.copyWith(
-        clearLocalDetail: true,
-        clearSelectedLocalPath: true,
-      ),
-    );
+    emit(state.copyWith(clearLocalDetail: true, clearSelectedLocalPath: true));
   }
 
   Future<void> _onDeleteLocal(
@@ -358,9 +334,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
       emit(state.copyWith(localError: '删除文件失败'));
       return;
     }
-    final left = state.localFiles
-        .where((f) => f.path != event.path)
-        .toList();
+    final left = state.localFiles.where((f) => f.path != event.path).toList();
     final wasSelected = state.selectedLocalPath == event.path;
     emit(
       state.copyWith(
@@ -382,8 +356,11 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
       final remoteFuture = _api.getStats();
       final hasPathFuture = _localService.hasGamePath();
       final localFuture = _localService.listLocalDumps();
-      final results =
-          await Future.wait([remoteFuture, hasPathFuture, localFuture]);
+      final results = await Future.wait([
+        remoteFuture,
+        hasPathFuture,
+        localFuture,
+      ]);
       final remote = results[0] as CrashReportStats?;
       final hasPath = results[1] as bool;
       final local = results[2] as List<LocalCrashFileInfo>;

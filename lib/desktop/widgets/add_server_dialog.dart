@@ -99,15 +99,9 @@ class _AddServerDialogState extends State<AddServerDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.gray800;
-    final secondaryTextColor = isDark
-        ? Colors.white54
-        : AppColors.gray500;
-    final inputBgColor = isDark
-        ? AppColors.slate700
-        : AppColors.gray50;
-    final borderColor = isDark
-        ? AppColors.slate600
-        : AppColors.gray200;
+    final secondaryTextColor = isDark ? Colors.white54 : AppColors.gray500;
+    final inputBgColor = isDark ? AppColors.slate700 : AppColors.gray50;
+    final borderColor = isDark ? AppColors.slate600 : AppColors.gray200;
 
     return AlertDialog(
       backgroundColor: bgColor,

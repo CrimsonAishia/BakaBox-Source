@@ -418,11 +418,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         children: [
           Row(
             children: [
-              Icon(
-                MdiIcons.calendarClock,
-                color: AppColors.primary,
-                size: 18,
-              ),
+              Icon(MdiIcons.calendarClock, color: AppColors.primary, size: 18),
               const SizedBox(width: 8),
               Text(
                 '已加载 ${_historyData.length} / $_totalRecords 条',
@@ -697,9 +693,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isLatest
-                  ? AppColors.amber500
-                  : AppColors.slate500,
+              color: isLatest ? AppColors.amber500 : AppColors.slate500,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -721,18 +715,14 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                 Icon(
                   isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
                   size: 16,
-                  color: isLatest
-                      ? AppColors.amber500
-                      : AppColors.slate500,
+                  color: isLatest ? AppColors.amber500 : AppColors.slate500,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   _formatDateTime(snapshot.createdAt),
                   style: TextStyle(
                     fontSize: 13,
-                    color: isLatest
-                        ? AppColors.amber500
-                        : AppColors.slate500,
+                    color: isLatest ? AppColors.amber500 : AppColors.slate500,
                     fontWeight: isLatest ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),

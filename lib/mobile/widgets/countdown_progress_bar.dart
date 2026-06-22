@@ -144,9 +144,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
                         0xFF0080FF,
                       ).withValues(alpha: 0.2),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        _remaining <= 5
-                            ? Colors.orange
-                            : AppColors.primary,
+                        _remaining <= 5 ? Colors.orange : AppColors.primary,
                       ),
                     ),
             ),

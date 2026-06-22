@@ -18,8 +18,8 @@ class GuideTokens {
 
   static Color cardSurface(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? surfaceDark
-          : Colors.white;
+      ? surfaceDark
+      : Colors.white;
 
   // ─── 互动色 ─────────────────────────────────────────────────────────────────
   // 亮色
@@ -40,18 +40,18 @@ class GuideTokens {
 
   static Color favoriteColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? favoriteAmberDark
-          : favoriteAmber;
+      ? favoriteAmberDark
+      : favoriteAmber;
 
   static Color commentColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? commentBlueDark
-          : commentBlue;
+      ? commentBlueDark
+      : commentBlue;
 
   static Color shareColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? shareGreenDark
-          : shareGreen;
+      ? shareGreenDark
+      : shareGreen;
 
   // ─── 状态色 ─────────────────────────────────────────────────────────────────
 
@@ -137,20 +137,20 @@ class GuideTokens {
   /// 封面 fallback 背景（根据亮暗自动选择）
   static Color fallbackBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? fallbackBgDark
-          : fallbackBgLight;
+      ? fallbackBgDark
+      : fallbackBgLight;
 
   /// 边框色（根据亮暗自动选择）
   static Color border(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.1)
-          : borderLight;
+      ? Colors.white.withValues(alpha: 0.1)
+      : borderLight;
 
   /// 对话框背景色（根据亮暗自动选择）
   static Color dialogBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? dialogBgDark
-          : Colors.white;
+      ? dialogBgDark
+      : Colors.white;
 
   // ─── 文本语义色（补充 textTheme 之外的场景）──────────────────────────────────
 
@@ -164,32 +164,32 @@ class GuideTokens {
 
   static Color textPrimary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? textPrimaryDark
-          : textPrimaryLight;
+      ? textPrimaryDark
+      : textPrimaryLight;
 
   static Color textSecondary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? textSecondaryDark
-          : textSecondaryLight;
+      ? textSecondaryDark
+      : textSecondaryLight;
 
   static Color textTertiary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? textTertiaryDark
-          : textTertiaryLight;
+      ? textTertiaryDark
+      : textTertiaryLight;
 
   // ─── 分隔 / 描边 ───────────────────────────────────────────────────────────
 
   static Color divider(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.08)
-          : Colors.black.withValues(alpha: 0.06);
+      ? Colors.white.withValues(alpha: 0.08)
+      : Colors.black.withValues(alpha: 0.06);
 
   // ─── 玻璃面 ─────────────────────────────────────────────────────────────────
 
   static Color glassSurface(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? AppColors.slate900.withValues(alpha: 0.80)
-          : Colors.white.withValues(alpha: 0.65);
+      ? AppColors.slate900.withValues(alpha: 0.80)
+      : Colors.white.withValues(alpha: 0.65);
 
   /// 玻璃面模糊半径
   static const double glassBlurSigma = 24.0;
@@ -197,8 +197,8 @@ class GuideTokens {
   /// 玻璃面描边色
   static Color glassBorder(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.10)
-          : Colors.white.withValues(alpha: 0.30);
+      ? Colors.white.withValues(alpha: 0.10)
+      : Colors.white.withValues(alpha: 0.30);
 
   // ─── 间距（4 的倍数，米游社风格紧凑型）─────────────────────────────────────
 
@@ -228,37 +228,47 @@ class GuideTokens {
   static const double radius20 = 20.0;
   static const double radius24 = 24.0;
 
-  static const BorderRadius borderRadius8 = BorderRadius.all(Radius.circular(radius8));
-  static const BorderRadius borderRadius12 = BorderRadius.all(Radius.circular(radius12));
-  static const BorderRadius borderRadius16 = BorderRadius.all(Radius.circular(radius16));
-  static const BorderRadius borderRadius20 = BorderRadius.all(Radius.circular(radius20));
-  static const BorderRadius borderRadius24 = BorderRadius.all(Radius.circular(radius24));
+  static const BorderRadius borderRadius8 = BorderRadius.all(
+    Radius.circular(radius8),
+  );
+  static const BorderRadius borderRadius12 = BorderRadius.all(
+    Radius.circular(radius12),
+  );
+  static const BorderRadius borderRadius16 = BorderRadius.all(
+    Radius.circular(radius16),
+  );
+  static const BorderRadius borderRadius20 = BorderRadius.all(
+    Radius.circular(radius20),
+  );
+  static const BorderRadius borderRadius24 = BorderRadius.all(
+    Radius.circular(radius24),
+  );
 
   // ─── 阴影（3 档）──────────────────────────────────────────────────────────
 
   static List<BoxShadow> get shadowSm => [
-        BoxShadow(
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-          color: Colors.black.withValues(alpha: 0.04),
-        ),
-      ];
+    BoxShadow(
+      blurRadius: 4,
+      offset: const Offset(0, 2),
+      color: Colors.black.withValues(alpha: 0.04),
+    ),
+  ];
 
   static List<BoxShadow> get shadowMd => [
-        BoxShadow(
-          blurRadius: 16,
-          offset: const Offset(0, 8),
-          color: Colors.black.withValues(alpha: 0.12),
-        ),
-      ];
+    BoxShadow(
+      blurRadius: 16,
+      offset: const Offset(0, 8),
+      color: Colors.black.withValues(alpha: 0.12),
+    ),
+  ];
 
   static List<BoxShadow> get shadowLg => [
-        BoxShadow(
-          blurRadius: 32,
-          offset: const Offset(0, 16),
-          color: Colors.black.withValues(alpha: 0.20),
-        ),
-      ];
+    BoxShadow(
+      blurRadius: 32,
+      offset: const Offset(0, 16),
+      color: Colors.black.withValues(alpha: 0.20),
+    ),
+  ];
 
   // ─── 动效时长（§13.6 统一节奏）────────────────────────────────────────────
 

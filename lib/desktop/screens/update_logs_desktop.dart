@@ -79,9 +79,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.slate900
-          : AppColors.gray100,
+      backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: PageLayout(
         title: '更新日志',
         subtitle: '查看最新更新和改动',
@@ -308,9 +306,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   Widget _buildLoadingSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppColors.slate800 : Colors.white;
-    final shimmerColor = isDark
-        ? AppColors.slate700
-        : Colors.grey.shade200;
+    final shimmerColor = isDark ? AppColors.slate700 : Colors.grey.shade200;
     final borderColor = isDark ? AppColors.slate700 : Colors.grey.shade200;
 
     return ListView.builder(
@@ -551,9 +547,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 // 分隔线
                 Container(
                   height: 1,
-                  color: isDark
-                      ? AppColors.slate700
-                      : AppColors.gray100,
+                  color: isDark ? AppColors.slate700 : AppColors.gray100,
                 ),
                 const SizedBox(height: 14),
                 // 内容
@@ -716,9 +710,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           textDecoration: TextDecoration.none,
         ),
         'code': Style(
-          backgroundColor: isDark
-              ? AppColors.slate700
-              : AppColors.gray100,
+          backgroundColor: isDark ? AppColors.slate700 : AppColors.gray100,
           color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFE74C3C),
           padding: HtmlPaddings.symmetric(horizontal: 6, vertical: 2),
           fontFamily: 'Consolas, Monaco, monospace',

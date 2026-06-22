@@ -101,9 +101,7 @@ class PathInvalidDialog extends StatelessWidget {
                       child: Text(
                         '跳过',
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white54
-                              : AppColors.slate500,
+                          color: isDark ? Colors.white54 : AppColors.slate500,
                         ),
                       ),
                     ),
@@ -190,9 +188,7 @@ class PathInvalidDialog extends StatelessWidget {
                           '选择有效路径后将自动关闭此弹窗，无需手动确认。',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.color,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
                       ),
@@ -237,10 +233,7 @@ class PathInvalidDialog extends StatelessWidget {
       title: '跳过${brokenPaths.join("与")}设置？',
       description: '清空失效路径后，以下功能将无法使用：',
       items: [
-        SkipWarningItem(
-          icon: MdiIcons.rocketLaunchOutline,
-          text: '一键加入服务器',
-        ),
+        SkipWarningItem(icon: MdiIcons.rocketLaunchOutline, text: '一键加入服务器'),
         SkipWarningItem(
           icon: MdiIcons.accountGroupOutline,
           text: '自动挤服 / 控制台监控',
@@ -332,16 +325,12 @@ class _PathSelector extends StatelessWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.slate800
-                      : AppColors.slate50,
+                  color: isDark ? AppColors.slate800 : AppColors.slate50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasError
                         ? Colors.red.withValues(alpha: 0.5)
-                        : (isDark
-                              ? AppColors.slate600
-                              : AppColors.slate200),
+                        : (isDark ? AppColors.slate600 : AppColors.slate200),
                   ),
                 ),
                 child: Text(

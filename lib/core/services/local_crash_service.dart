@@ -4,6 +4,7 @@ import '../services/crash_inspector/crash_inspector.dart';
 import '../services/game_path_service.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
+
 /// 本地崩溃文件扫描服务
 ///
 /// 扫描 `<gamePath>\game\bin\win64\*.mdmp`，仅 Windows 桌面端可用。
@@ -30,8 +31,7 @@ class LocalCrashService {
     final results = <LocalCrashFileInfo>[];
     try {
       await for (final entity in dumpDir.list(followLinks: false)) {
-        if (entity is File &&
-            entity.path.toLowerCase().endsWith('.mdmp')) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.mdmp')) {
           try {
             final stat = await entity.stat();
             results.add(

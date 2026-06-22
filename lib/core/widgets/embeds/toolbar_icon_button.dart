@@ -56,8 +56,7 @@ class ToolbarIconButton extends StatelessWidget {
 
     final defaultColor = isDark ? AppColors.slate400 : AppColors.slate500;
     final disabledColor = isDark ? AppColors.slate600 : AppColors.slate300;
-    final iconColor =
-        isDisabled ? disabledColor : (color ?? defaultColor);
+    final iconColor = isDisabled ? disabledColor : (color ?? defaultColor);
 
     // 与 RichTextEditor._buildIconTheme 中官方按钮的 hover overlay 完全一致
     final hoverBg = isDark

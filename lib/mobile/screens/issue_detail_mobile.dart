@@ -1412,11 +1412,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                MdiIcons.replyOutline,
-                size: 16,
-                color: AppColors.primary,
-              ),
+              Icon(MdiIcons.replyOutline, size: 16, color: AppColors.primary),
               const SizedBox(width: 6),
               Text(
                 '回复',
@@ -1562,9 +1558,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: issue.isVoted
-                  ? AppColors.primary
-                  : Colors.transparent,
+              color: issue.isVoted ? AppColors.primary : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -1997,9 +1991,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

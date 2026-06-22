@@ -19,10 +19,7 @@ class WarmupConfig extends Equatable {
   /// 是否显示原生浮动窗口（暖服悬浮窗）
   final bool showFloatingWindow;
 
-  const WarmupConfig({
-    this.targetPlayers = 20,
-    this.showFloatingWindow = true,
-  });
+  const WarmupConfig({this.targetPlayers = 20, this.showFloatingWindow = true});
 
   WarmupConfig copyWith({int? targetPlayers, bool? showFloatingWindow}) {
     return WarmupConfig(

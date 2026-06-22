@@ -21,10 +21,7 @@ class AnalyticsService {
     _doTrackEvent(event, params);
   }
 
-  Future<void> _doTrackEvent(
-    String event,
-    Map<String, dynamic>? params,
-  ) async {
+  Future<void> _doTrackEvent(String event, Map<String, dynamic>? params) async {
     try {
       final data = <String, dynamic>{
         'event': event,

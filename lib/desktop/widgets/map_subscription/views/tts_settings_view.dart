@@ -183,9 +183,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : AppColors.gray50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
@@ -236,9 +234,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                           : '需要下载语音模型才能使用播报功能',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? Colors.white54
-                            : AppColors.gray500,
+                        color: isDark ? Colors.white54 : AppColors.gray500,
                       ),
                     ),
                   ],
@@ -315,9 +311,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : AppColors.gray50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
@@ -412,9 +406,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : AppColors.gray50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
