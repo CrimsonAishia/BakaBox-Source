@@ -16,6 +16,7 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
   IssueDetailBloc() : super(const IssueDetailState()) {
     on<IssueDetailFetch>(_onFetch);
     on<IssueDetailLoadComments>(_onLoadComments);
+    on<IssueDetailLoadMoreComments>(_onLoadMoreComments);
     on<IssueDetailToggleVote>(_onToggleVote);
     on<IssueDetailAddComment>(_onAddComment);
     on<IssueDetailClose>(_onClose);
@@ -62,13 +63,51 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     IssueDetailLoadComments event,
     Emitter<IssueDetailState> emit,
   ) async {
-    emit(state.copyWith(isLoadingComments: true));
+    emit(state.copyWith(
+      isLoadingComments: true, 
+      commentsCurrentPage: 1, 
+      hasMoreComments: true,
+      hasLoadMoreError: false,
+    ));
     try {
-      final response = await _issueApi.getComments(event.issueId);
-      emit(state.copyWith(comments: response.items, isLoadingComments: false));
+      final response = await _issueApi.getComments(event.issueId, page: 1, pageSize: 10);
+      emit(state.copyWith(
+        comments: response.items,
+        isLoadingComments: false,
+        hasMoreComments: response.items.length >= 10,
+      ));
     } catch (e) {
       LogService.e('获取评论失败', e);
       emit(state.copyWith(isLoadingComments: false));
+    }
+  }
+
+  Future<void> _onLoadMoreComments(
+    IssueDetailLoadMoreComments event,
+    Emitter<IssueDetailState> emit,
+  ) async {
+    if (state.isLoadingMoreComments || !state.hasMoreComments) return;
+    
+    emit(state.copyWith(isLoadingMoreComments: true, hasLoadMoreError: false));
+    try {
+      final nextPage = state.commentsCurrentPage + 1;
+      final response = await _issueApi.getComments(event.issueId, page: nextPage, pageSize: 10);
+      
+      // 去重：如果用户在分页加载期间发送了新评论，可能导致后端分页数据错位（偏移），
+      // 从而拉取到已经存在于列表中的评论。
+      final newItems = response.items.where(
+        (newItem) => !state.comments.any((c) => c.id == newItem.id)
+      ).toList();
+
+      emit(state.copyWith(
+        comments: [...state.comments, ...newItems],
+        commentsCurrentPage: nextPage,
+        isLoadingMoreComments: false,
+        hasMoreComments: response.items.length >= 10,
+      ));
+    } catch (e) {
+      LogService.e('获取更多评论失败', e);
+      emit(state.copyWith(isLoadingMoreComments: false, hasLoadMoreError: true));
     }
   }
 

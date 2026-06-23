@@ -1389,15 +1389,56 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   bool _showCommentDraftPrompt = false;
   DraftData? _savedCommentDraft;
 
+  bool _isLoadingMore = false;
+
   @override
   void initState() {
     super.initState();
     _checkCommentDraftExists();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant _IssueDetailView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.issueId != oldWidget.issueId) {
+      _isLoadingMore = false;
+      _checkCommentDraftExists();
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    
+    // 提前 200px 触发加载
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final bloc = context.read<IssueDetailBloc>();
+      if (!bloc.state.isLoadingComments && 
+          !bloc.state.isLoadingMoreComments && 
+          bloc.state.hasMoreComments && 
+          !bloc.state.hasLoadMoreError &&
+          !_isLoadingMore) {
+        
+        _isLoadingMore = true;
+        
+        // 必须在下一帧执行，避免在 Layout 阶段修改状态导致 "Tried to build dirty widget in the wrong build scope"
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            bloc.add(IssueDetailLoadMoreComments(widget.issueId));
+            // 短暂延迟恢复标志位，避免在 bloc 状态更新前重复触发
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (mounted) _isLoadingMore = false;
+            });
+          }
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _commentController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -2004,6 +2045,32 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           else
             ...state.comments.map(
               (comment) => _buildCommentItem(comment, state.comments),
+            ),
+          if (state.isLoadingMoreComments)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+            ),
+          if (state.hasLoadMoreError)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    if (_isLoadingMore) return;
+                    _isLoadingMore = true;
+                    context.read<IssueDetailBloc>().add(IssueDetailLoadMoreComments(widget.issueId));
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      if (mounted) _isLoadingMore = false;
+                    });
+                  },
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('加载失败，点击重试'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDark ? const Color(0xFFFCA5A5) : AppColors.red600,
+                  ),
+                ),
+              ),
             ),
         ],
       ),

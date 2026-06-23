@@ -6,6 +6,10 @@ class IssueDetailState extends Equatable {
   final List<IssueComment> comments;
   final bool isLoading;
   final bool isLoadingComments;
+  final bool isLoadingMoreComments;
+  final bool hasMoreComments;
+  final bool hasLoadMoreError;
+  final int commentsCurrentPage;
   final bool isSubmitting;
   final String? error;
   final String? successMessage;
@@ -15,6 +19,10 @@ class IssueDetailState extends Equatable {
     this.comments = const [],
     this.isLoading = false,
     this.isLoadingComments = false,
+    this.isLoadingMoreComments = false,
+    this.hasMoreComments = true,
+    this.hasLoadMoreError = false,
+    this.commentsCurrentPage = 1,
     this.isSubmitting = false,
     this.error,
     this.successMessage,
@@ -29,6 +37,10 @@ class IssueDetailState extends Equatable {
     List<IssueComment>? comments,
     bool? isLoading,
     bool? isLoadingComments,
+    bool? isLoadingMoreComments,
+    bool? hasMoreComments,
+    bool? hasLoadMoreError,
+    int? commentsCurrentPage,
     bool? isSubmitting,
     String? error,
     bool clearError = false,
@@ -40,6 +52,10 @@ class IssueDetailState extends Equatable {
       comments: comments ?? this.comments,
       isLoading: isLoading ?? this.isLoading,
       isLoadingComments: isLoadingComments ?? this.isLoadingComments,
+      isLoadingMoreComments: isLoadingMoreComments ?? this.isLoadingMoreComments,
+      hasMoreComments: hasMoreComments ?? this.hasMoreComments,
+      hasLoadMoreError: hasLoadMoreError ?? this.hasLoadMoreError,
+      commentsCurrentPage: commentsCurrentPage ?? this.commentsCurrentPage,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: clearError ? null : (error ?? this.error),
       successMessage: clearSuccess
@@ -54,6 +70,10 @@ class IssueDetailState extends Equatable {
     comments,
     isLoading,
     isLoadingComments,
+    isLoadingMoreComments,
+    hasMoreComments,
+    hasLoadMoreError,
+    commentsCurrentPage,
     isSubmitting,
     error,
     successMessage,

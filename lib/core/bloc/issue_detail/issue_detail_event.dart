@@ -24,6 +24,14 @@ class IssueDetailLoadComments extends IssueDetailEvent {
   List<Object?> get props => [issueId];
 }
 
+/// 加载更多评论
+class IssueDetailLoadMoreComments extends IssueDetailEvent {
+  final int issueId;
+  const IssueDetailLoadMoreComments(this.issueId);
+  @override
+  List<Object?> get props => [issueId];
+}
+
 /// 投票/取消投票
 class IssueDetailToggleVote extends IssueDetailEvent {
   const IssueDetailToggleVote();
