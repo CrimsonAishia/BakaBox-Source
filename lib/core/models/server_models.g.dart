@@ -40,6 +40,7 @@ ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(
   nickname: json['nickname'] as String?,
   dataSourceMode: json['dataSourceMode'] as String?,
   sourceApiUrl: json['sourceApiUrl'] as String?,
+  isDifficultySeparated: json['isDifficultySeparated'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$ServerItemToJson(ServerItem instance) =>
@@ -51,6 +52,7 @@ Map<String, dynamic> _$ServerItemToJson(ServerItem instance) =>
       'nickname': instance.nickname,
       'dataSourceMode': instance.dataSourceMode,
       'sourceApiUrl': instance.sourceApiUrl,
+      'isDifficultySeparated': instance.isDifficultySeparated,
     };
 
 ServerInfo _$ServerInfoFromJson(Map<String, dynamic> json) => ServerInfo(

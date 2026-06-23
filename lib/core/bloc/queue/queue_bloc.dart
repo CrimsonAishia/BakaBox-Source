@@ -205,7 +205,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         // 获取地图信息
         MapData? mapInfo;
         try {
-          mapInfo = await _serverApi.getMapInfo(sourceInfo.map);
+          mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: serverAddress);
         } catch (e) {
           LogService.d('[QueueBloc] 获取地图信息失败: $e');
         }

@@ -219,7 +219,7 @@ class ServerQueueService {
 
         if (sourceInfo.map != _lastMapName) {
           try {
-            mapInfo = await _serverApi.getMapInfo(sourceInfo.map);
+            mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: _targetServer);
           } catch (e) {
             LogService.d('[ServerQueueService] 获取地图信息失败: $e');
           }

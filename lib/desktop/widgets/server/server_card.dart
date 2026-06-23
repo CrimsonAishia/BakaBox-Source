@@ -269,9 +269,21 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     }
   }
 
+  /// 排序后的标签列表
+  List<MapTagSimple> get _sortedTags {
+    final tags = widget.server.mapInfo?.tags.toList() ?? [];
+    if (tags.length <= 1) return tags;
+    tags.sort((a, b) {
+      if (a.isOfficial == true && b.isOfficial != true) return -1;
+      if (a.isOfficial != true && b.isOfficial == true) return 1;
+      return 0; // 保持原有相对顺序
+    });
+    return tags;
+  }
+
   /// 计划显示 Tag popover（200ms 延迟）
   void _scheduleShowTagPopover() {
-    final tags = widget.server.mapInfo?.tags ?? const [];
+    final tags = _sortedTags;
     if (tags.isEmpty) return;
     // 没有溢出（标签全部显示）就不需要 popover
     if (!_hasTagOverflow) return;
@@ -373,7 +385,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// Tag popover 跟随层（卡片左/右侧弹出，带指向卡片的箭头）
   Widget _buildTagPopoverFollower() {
-    final tags = widget.server.mapInfo?.tags ?? const [];
+    final tags = _sortedTags;
     final followerAnchor = _showPopoverOnRight
         ? Alignment.centerLeft
         : Alignment.centerRight;
@@ -519,7 +531,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           ),
         ),
         child: Text(
-          tag.name,
+          tag.isOfficial == true ? '官：${tag.name}' : tag.name,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 12,
@@ -547,7 +559,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         ),
       ),
       child: Text(
-        tag.name,
+        tag.isOfficial == true ? '官：${tag.name}' : tag.name,
         style: TextStyle(
           color: Colors.white.withValues(alpha: 0.9),
           fontSize: 12,
@@ -860,7 +872,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         // 地图标签（非 hover 时显示，hover 时隐藏，让位给底部操作层）
         if (!_isHovered) ...[
           SizedBox(height: verticalSpacing),
-          _buildMapTagRow(widget.server.mapInfo?.tags ?? []),
+          _buildMapTagRow(_sortedTags),
         ],
       ],
     );
@@ -2071,8 +2083,17 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (mapName == null) return;
 
     final mapLabel = widget.server.mapInfo?.mapLabel;
+    final isDifficultySeparated =
+        widget.server.serverItem.isDifficultySeparated;
+    final serverAddress = widget.server.serverItem.address;
 
-    MapContributionDialog.show(context, mapName: mapName, mapLabel: mapLabel);
+    MapContributionDialog.show(
+      context,
+      mapName: mapName,
+      mapLabel: mapLabel,
+      isDifficultySeparated: isDifficultySeparated,
+      serverAddress: serverAddress,
+    );
   }
 }
 
@@ -2360,7 +2381,9 @@ class _OverflowTagRowState extends State<_OverflowTagRow> {
     // 先看不加 +N 的情况下能不能全部塞下
     double total = 0;
     for (int i = 0; i < widget.tags.length; i++) {
-      total += _measureTagWidth(widget.tags[i].name);
+      final tag = widget.tags[i];
+      final displayName = tag.isOfficial == true ? '官：${tag.name}' : tag.name;
+      total += _measureTagWidth(displayName);
       if (i < widget.tags.length - 1) total += _tagSpacing;
     }
     if (total <= maxWidth) return 0; // 全部能塞下，不需要 +N
@@ -2373,7 +2396,9 @@ class _OverflowTagRowState extends State<_OverflowTagRow> {
     double used = 0;
     int visible = 0;
     for (int i = 0; i < widget.tags.length; i++) {
-      final tagWidth = _measureTagWidth(widget.tags[i].name);
+      final tag = widget.tags[i];
+      final displayName = tag.isOfficial == true ? '官：${tag.name}' : tag.name;
+      final tagWidth = _measureTagWidth(displayName);
       final addition = (i == 0 ? 0 : _tagSpacing) + tagWidth;
       if (used + addition <= visibleArea) {
         used += addition;
@@ -2420,7 +2445,7 @@ class _OverflowTagRowState extends State<_OverflowTagRow> {
           ],
         ),
         child: Text(
-          tag.name,
+          tag.isOfficial == true ? '官：${tag.name}' : tag.name,
           style: TextStyle(
             color: Colors.white,
             fontSize: 12,
@@ -2458,7 +2483,10 @@ class _OverflowTagRowState extends State<_OverflowTagRow> {
           width: 1,
         ),
       ),
-      child: Text(tag.name, style: _tagTextStyle),
+      child: Text(
+        tag.isOfficial == true ? '官：${tag.name}' : tag.name,
+        style: _tagTextStyle,
+      ),
     );
   }
 

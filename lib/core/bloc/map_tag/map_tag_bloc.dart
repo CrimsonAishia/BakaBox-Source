@@ -75,11 +75,15 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         isLoadingMapTagVotes: true,
         clearError: true,
         currentMapName: event.mapName,
+        serverAddress: event.serverAddress,
       ),
     );
 
     try {
-      final response = await _api.getMapTagList(event.mapName);
+      final response = await _api.getMapTagList(
+        event.mapName,
+        address: event.serverAddress,
+      );
       if (response != null) {
         emit(
           state.copyWith(
@@ -148,6 +152,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         state.currentMapName!,
         event.tagId,
         voteType: event.voteType,
+        address: state.serverAddress,
       );
       if (response != null && response.success) {
         // 更新地图标签投票列表
@@ -272,6 +277,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         event.name,
         mapName: mapName,
         color: event.color,
+        address: state.serverAddress,
       );
       if (tag != null) {
         // 将新标签添加到列表（但可能还在审核中，不显示在全局列表）
@@ -299,7 +305,10 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     Emitter<MapTagState> emit,
   ) async {
     if (state.currentMapName != null) {
-      add(LoadMapTagList(mapName: state.currentMapName!));
+      add(LoadMapTagList(
+        mapName: state.currentMapName!,
+        serverAddress: state.serverAddress,
+      ));
     }
   }
 

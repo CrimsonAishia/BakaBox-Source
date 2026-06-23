@@ -40,11 +40,15 @@ part 'map_contribution/tooltip_shape_border.dart';
 class MapContributionDialog extends StatefulWidget {
   final String mapName;
   final String? mapLabel;
+  final bool isDifficultySeparated;
+  final String? serverAddress;
 
   const MapContributionDialog({
     super.key,
     required this.mapName,
     this.mapLabel,
+    this.isDifficultySeparated = false,
+    this.serverAddress,
   });
 
   /// 显示地图贡献对话框
@@ -52,6 +56,8 @@ class MapContributionDialog extends StatefulWidget {
     BuildContext context, {
     required String mapName,
     String? mapLabel,
+    bool isDifficultySeparated = false,
+    String? serverAddress,
   }) {
     return showDialog(
       context: context,
@@ -61,7 +67,12 @@ class MapContributionDialog extends StatefulWidget {
           BlocProvider(create: (context) => MapContributionBloc()),
           BlocProvider(create: (context) => MapTagBloc()),
         ],
-        child: MapContributionDialog(mapName: mapName, mapLabel: mapLabel),
+        child: MapContributionDialog(
+          mapName: mapName,
+          mapLabel: mapLabel,
+          isDifficultySeparated: isDifficultySeparated,
+          serverAddress: serverAddress,
+        ),
       ),
     );
   }
@@ -245,7 +256,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   void _loadTagData() {
     context.read<MapTagBloc>()
       ..add(const LoadTagList())
-      ..add(LoadMapTagList(mapName: widget.mapName));
+      ..add(
+        LoadMapTagList(
+          mapName: widget.mapName,
+          serverAddress: widget.serverAddress,
+        ),
+      );
 
     // 只有登录用户才加载个人标签（pending/rejected 状态）
     final authState = context.read<AuthBloc>().state;
@@ -560,6 +576,44 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
         return Column(
           children: [
+            // 难度独立提示横幅
+            if (widget.isDifficultySeparated)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.amber500.withValues(alpha: 0.1),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppColors.amber500.withValues(alpha: 0.2),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      MdiIcons.informationOutline,
+                      size: 18,
+                      color: AppColors.amber500,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '由于该模式采用按难度分服的机制，当前的地图投票仅反映本服务器所属的标签',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark
+                              ? Colors.amber.shade300
+                              : Colors.amber.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // 搜索栏
             _buildTagSearchBar(isDark),
             // 标签显示规则提示
@@ -1422,7 +1476,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   void _showTagVotersDialog(String mapName, MapTag tag) {
     showDialog(
       context: context,
-      builder: (dialogContext) => _TagVotersDialog(mapName: mapName, tag: tag),
+      builder: (dialogContext) => _TagVotersDialog(
+        mapName: mapName,
+        tag: tag,
+        isDifficultySeparated: widget.isDifficultySeparated,
+        serverAddress: widget.serverAddress,
+      ),
     );
   }
 
@@ -1433,6 +1492,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       builder: (dialogContext) => _MapAllVotersDialog(
         mapName: widget.mapName,
         mapLabel: widget.mapLabel,
+        isDifficultySeparated: widget.isDifficultySeparated,
+        serverAddress: widget.serverAddress,
       ),
     );
   }

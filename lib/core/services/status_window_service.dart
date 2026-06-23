@@ -1706,7 +1706,7 @@ class StatusWindowService {
         if (sourceInfo.map != _lastMapName) {
           // 地图变化时，重新获取地图信息
           try {
-            mapInfo = await _serverApi.getMapInfo(sourceInfo.map);
+            mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: serverAddress);
           } catch (e) {
             LogService.d('[StatusWindowService] 获取地图信息失败: $e');
           }

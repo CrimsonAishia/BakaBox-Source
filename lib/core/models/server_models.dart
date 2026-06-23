@@ -102,6 +102,8 @@ class ServerItem extends Equatable {
   final String? nickname; // 自定义服务器备注名
   final String? dataSourceMode; // 数据更新模式：'a2s' 或 'api'
   final String? sourceApiUrl; // 第三方接口URL
+  @JsonKey(defaultValue: false)
+  final bool isDifficultySeparated; // 是否独立隔离投票
 
   const ServerItem({
     this.address,
@@ -111,6 +113,7 @@ class ServerItem extends Equatable {
     this.nickname,
     this.dataSourceMode,
     this.sourceApiUrl,
+    this.isDifficultySeparated = false,
   });
 
   factory ServerItem.fromJson(Map<String, dynamic> json) =>
@@ -133,6 +136,7 @@ class ServerItem extends Equatable {
     bool clearNickname = false,
     String? dataSourceMode,
     String? sourceApiUrl,
+    bool? isDifficultySeparated,
   }) {
     return ServerItem(
       address: address ?? this.address,
@@ -142,6 +146,8 @@ class ServerItem extends Equatable {
       nickname: clearNickname ? null : (nickname ?? this.nickname),
       dataSourceMode: dataSourceMode ?? this.dataSourceMode,
       sourceApiUrl: sourceApiUrl ?? this.sourceApiUrl,
+      isDifficultySeparated:
+          isDifficultySeparated ?? this.isDifficultySeparated,
     );
   }
 
@@ -154,6 +160,7 @@ class ServerItem extends Equatable {
     nickname,
     dataSourceMode,
     sourceApiUrl,
+    isDifficultySeparated,
   ];
 }
 

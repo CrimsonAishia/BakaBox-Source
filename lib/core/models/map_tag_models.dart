@@ -427,7 +427,10 @@ class MapTagSimple extends Equatable {
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
 
-  const MapTagSimple({required this.name, this.color});
+  @JsonKey(name: 'is_official')
+  final bool? isOfficial;
+
+  const MapTagSimple({required this.name, this.color, this.isOfficial});
 
   /// 将十六进制颜色字符串转换为 Color
   Color? get colorValue {
@@ -448,5 +451,5 @@ class MapTagSimple extends Equatable {
   Map<String, dynamic> toJson() => _$MapTagSimpleToJson(this);
 
   @override
-  List<Object?> get props => [name, color];
+  List<Object?> get props => [name, color, isOfficial];
 }

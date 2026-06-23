@@ -213,8 +213,15 @@ Map<String, dynamic> _$MapAllTagVotesResponseToJson(
   'total': instance.total,
 };
 
-MapTagSimple _$MapTagSimpleFromJson(Map<String, dynamic> json) =>
-    MapTagSimple(name: json['name'] as String, color: json['color'] as String?);
+MapTagSimple _$MapTagSimpleFromJson(Map<String, dynamic> json) => MapTagSimple(
+  name: json['name'] as String,
+  color: json['color'] as String?,
+  isOfficial: json['is_official'] as bool?,
+);
 
 Map<String, dynamic> _$MapTagSimpleToJson(MapTagSimple instance) =>
-    <String, dynamic>{'name': instance.name, 'color': instance.color};
+    <String, dynamic>{
+      'name': instance.name,
+      'color': instance.color,
+      'is_official': instance.isOfficial,
+    };

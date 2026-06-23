@@ -45,6 +45,9 @@ class MapTagState extends Equatable {
   /// 当前地图名称
   final String? currentMapName;
 
+  /// 当前服务器地址（若为空则表示泛用或全局页面）
+  final String? serverAddress;
+
   /// 投票门槛信息（来自 GET /zedbox/tag/{mapName}/list 的 voting 字段）
   /// 旧后端 / 未启用时为 null
   final MapTagVotingInfo? voting;
@@ -68,6 +71,7 @@ class MapTagState extends Equatable {
     this.cancelSuccess = false,
     this.error,
     this.currentMapName,
+    this.serverAddress,
     this.voting,
     this.userPlaytime,
   });
@@ -146,6 +150,7 @@ class MapTagState extends Equatable {
     String? error,
     bool clearError = false,
     String? currentMapName,
+    String? serverAddress,
     MapTagVotingInfo? voting,
     UserPlaytimeStatus? userPlaytime,
   }) {
@@ -164,6 +169,7 @@ class MapTagState extends Equatable {
       cancelSuccess: cancelSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
+      serverAddress: serverAddress ?? this.serverAddress,
       voting: voting ?? this.voting,
       userPlaytime: userPlaytime ?? this.userPlaytime,
     );
@@ -185,6 +191,7 @@ class MapTagState extends Equatable {
     cancelSuccess,
     error,
     currentMapName,
+    serverAddress,
     voting,
     userPlaytime,
   ];

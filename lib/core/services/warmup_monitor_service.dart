@@ -138,7 +138,7 @@ class WarmupMonitorService {
 
     MapData? mapInfo;
     try {
-      mapInfo = await _serverApi.getMapInfo(mapName);
+      mapInfo = await _serverApi.getMapInfo(mapName, address: apiAddress);
     } catch (_) {}
     // await 期间又发生了换图，本次结果已过期，直接丢弃，避免覆盖新地图状态
     if (mapName != _currentMapName) {

@@ -4,8 +4,15 @@ part of '../map_contribution_dialog.dart';
 class _MapAllVotersDialog extends StatefulWidget {
   final String mapName;
   final String? mapLabel;
+  final bool isDifficultySeparated;
+  final String? serverAddress;
 
-  const _MapAllVotersDialog({required this.mapName, this.mapLabel});
+  const _MapAllVotersDialog({
+    required this.mapName,
+    this.mapLabel,
+    this.isDifficultySeparated = false,
+    this.serverAddress,
+  });
 
   @override
   State<_MapAllVotersDialog> createState() => _MapAllVotersDialogState();
@@ -57,6 +64,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
         widget.mapName,
         pageIndex: 1,
         pageSize: _pageSize,
+        address: widget.serverAddress,
       );
       if (mounted) {
         if (result != null) {
@@ -93,6 +101,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
         widget.mapName,
         pageIndex: nextPage,
         pageSize: _pageSize,
+        address: widget.serverAddress,
       );
       if (mounted) {
         if (result != null) {
@@ -481,8 +490,15 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
 class _TagVotersDialog extends StatefulWidget {
   final String mapName;
   final MapTag tag;
+  final bool isDifficultySeparated;
+  final String? serverAddress;
 
-  const _TagVotersDialog({required this.mapName, required this.tag});
+  const _TagVotersDialog({
+    required this.mapName,
+    required this.tag,
+    this.isDifficultySeparated = false,
+    this.serverAddress,
+  });
 
   @override
   State<_TagVotersDialog> createState() => _TagVotersDialogState();
@@ -535,6 +551,7 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
         widget.tag.id,
         pageIndex: 1,
         pageSize: _pageSize,
+        address: widget.serverAddress,
       );
       if (mounted) {
         if (result != null) {
@@ -572,6 +589,7 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
         widget.tag.id,
         pageIndex: nextPage,
         pageSize: _pageSize,
+        address: widget.serverAddress,
       );
       if (mounted) {
         if (result != null) {

@@ -16,11 +16,12 @@ class LoadTagList extends MapTagEvent {
 /// 加载地图的标签投票列表
 class LoadMapTagList extends MapTagEvent {
   final String mapName;
+  final String? serverAddress;
 
-  const LoadMapTagList({required this.mapName});
+  const LoadMapTagList({required this.mapName, this.serverAddress});
 
   @override
-  List<Object?> get props => [mapName];
+  List<Object?> get props => [mapName, serverAddress];
 }
 
 /// 投票/取消投票

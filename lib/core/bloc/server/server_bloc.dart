@@ -1283,7 +1283,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     ServerApi serverApi,
   ) {
     _retryWithExponentialBackoff<MapData>(
-          operation: () => serverApi.getMapInfo(mapName),
+          operation: () => serverApi.getMapInfo(mapName, address: address),
           requestId: requestId,
         )
         .then((mapInfo) {
@@ -2447,7 +2447,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         if (mapName != 'graphics_settings') {
           final serverApi = ServerApi();
           serverApi
-              .getMapInfo(mapName)
+              .getMapInfo(mapName, address: serverAddress)
               .then((mapInfo) {
                 if (isClosed) return;
                 if (mapInfo != null) {
