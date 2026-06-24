@@ -444,6 +444,36 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
               ],
             ),
           ),
+          const SizedBox(width: 4),
+          if (TokenService.instance.userInfo?.id != item.userId)
+            IconButton(
+              icon: Icon(Icons.flag_outlined, size: 18, color: secondaryColor),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: '举报',
+              onPressed: () {
+                CommonReportDialog.show<TagVoteReportReason>(
+                  context,
+                  showPenalties: true,
+                  reasons: TagVoteReportReason.values
+                      .map((r) => ReportReasonItem(value: r, label: r.label))
+                      .toList(),
+                  onSubmit: (payload) async {
+                    final report = MapTagVoteReport(
+                      mapName: widget.mapName,
+                      tagId: item.tagId,
+                      voteUserId: item.userId,
+                      voteUsername: item.username,
+                      reason: payload.reason,
+                      description: payload.description,
+                      evidenceImages: payload.evidenceImages,
+                      penalties: payload.penalties ?? const [],
+                    );
+                    await MapTagApi().reportVote(report);
+                  },
+                );
+              },
+            ),
         ],
       ),
     );
@@ -921,6 +951,36 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
               ],
             ),
           ),
+          const SizedBox(width: 4),
+          if (TokenService.instance.userInfo?.id != item.userId)
+            IconButton(
+              icon: Icon(Icons.flag_outlined, size: 18, color: secondaryColor),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: '举报',
+              onPressed: () {
+                CommonReportDialog.show<TagVoteReportReason>(
+                  context,
+                  showPenalties: true,
+                  reasons: TagVoteReportReason.values
+                      .map((r) => ReportReasonItem(value: r, label: r.label))
+                      .toList(),
+                  onSubmit: (payload) async {
+                    final report = MapTagVoteReport(
+                      mapName: widget.mapName,
+                      tagId: widget.tag.id,
+                      voteUserId: item.userId,
+                      voteUsername: item.username,
+                      reason: payload.reason,
+                      description: payload.description,
+                      evidenceImages: payload.evidenceImages,
+                      penalties: payload.penalties ?? const [],
+                    );
+                    await MapTagApi().reportVote(report);
+                  },
+                );
+              },
+            ),
         ],
       ),
     );

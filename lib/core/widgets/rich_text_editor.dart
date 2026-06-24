@@ -87,6 +87,9 @@ class RichTextEditor extends StatefulWidget {
   /// 工具栏按钮尺寸（默认 32）
   final double toolbarButtonSize;
 
+  /// 是否显示工具栏
+  final bool showToolbar;
+
   const RichTextEditor({
     super.key,
     required this.controller,
@@ -106,6 +109,7 @@ class RichTextEditor extends StatefulWidget {
     this.enableAdvancedEmbeds = false,
     this.toolbarIconSize = 16,
     this.toolbarButtonSize = 32,
+    this.showToolbar = true,
   });
 
   @override
@@ -226,7 +230,7 @@ class RichTextEditorState extends State<RichTextEditor> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildToolbar(context),
+              if (widget.showToolbar) _buildToolbar(context),
               Expanded(child: _buildEditor(context)),
               if (showBottomBar) _buildBottomBar(context, isDark),
             ],
@@ -238,7 +242,7 @@ class RichTextEditorState extends State<RichTextEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildToolbar(context),
+        if (widget.showToolbar) _buildToolbar(context),
         // 编辑器区域 - 填充剩余空间
         Expanded(child: _buildEditor(context)),
         // 底部栏（包含附件和状态信息）
@@ -888,7 +892,17 @@ class RichTextEditorState extends State<RichTextEditor> {
     Widget editor = Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.slate800 : Colors.white,
+        borderRadius: widget.showToolbar
+            ? BorderRadius.zero
+            : const BorderRadius.vertical(top: Radius.circular(12)),
         border: Border(
+          top: widget.showToolbar
+              ? BorderSide.none
+              : BorderSide(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : AppColors.gray200,
+                ),
           left: BorderSide(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.1)

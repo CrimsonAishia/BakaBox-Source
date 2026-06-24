@@ -18,6 +18,7 @@ import '../api/map_tag_api.dart';
 import '../constants/credit_constants.dart';
 import '../models/map_contribution_models.dart';
 import '../models/map_tag_models.dart';
+import '../models/report_models.dart';
 import '../utils/contribution_validation_utils.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
@@ -28,6 +29,7 @@ import '../services/image_url_service.dart';
 import '../services/token_service.dart';
 import 'disk_cached_image.dart';
 import 'tag_color_picker.dart';
+import 'common_report_dialog.dart';
 import '../../desktop/widgets/login_dialog.dart';
 import '../constants/app_colors.dart';
 

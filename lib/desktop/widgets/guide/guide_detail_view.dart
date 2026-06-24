@@ -10,6 +10,7 @@ import '../../../core/bloc/guide_list/guide_list_bloc.dart';
 import '../../../core/bloc/guide_list/guide_list_event.dart';
 import '../../../core/bloc/auth/auth_bloc.dart';
 import '../../../core/api/server_api.dart';
+import '../../../core/api/guide_api.dart';
 import '../../../core/models/guide_models.dart';
 import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../../../core/models/server_models.dart' show MapData;
@@ -22,7 +23,7 @@ import '../../../core/widgets/embeds/bilibili_embed_builder.dart';
 import '../../../core/widgets/marquee_text.dart';
 import '../../../core/widgets/guide/guide_interaction_dock.dart';
 import '../../../core/widgets/guide/guide_reading_progress.dart';
-import '../../../core/widgets/guide/guide_report_dialog.dart';
+import '../../../core/widgets/common_report_dialog.dart';
 import '../../../core/widgets/guide/guide_status_banner.dart';
 import '../../../core/widgets/guide/guide_toc_dock.dart';
 import '../../../core/widgets/guide/guide_toc_outline.dart';
@@ -772,10 +773,21 @@ class _GuideDetailViewState extends State<GuideDetailView> {
               guideId: guide.id,
               authorId: guide.authorId,
               authorName: guide.authorName,
-              onReport: () => ReportDialog.show(
+              onReport: () => CommonReportDialog.show<ReportReason>(
                 context,
-                targetId: guide.id,
-                targetType: 'guide',
+                reasons: ReportReason.values
+                    .map((r) => ReportReasonItem(value: r, label: r.label))
+                    .toList(),
+                onSubmit: (payload) async {
+                  final report = GuideReport(
+                    targetId: guide.id,
+                    targetType: 'guide',
+                    reason: payload.reason,
+                    description: payload.description,
+                    evidenceImages: payload.evidenceImages,
+                  );
+                  await GuideApi().report(report);
+                },
               ),
             ),
         ],

@@ -10,7 +10,8 @@ import '../../../core/services/token_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/clickable_image.dart';
-import '../../../core/widgets/guide/guide_report_dialog.dart';
+import '../../../core/widgets/common_report_dialog.dart';
+import '../../../core/api/guide_api.dart';
 import '../../../core/widgets/guide/guide_tokens.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
 import '../../../core/widgets/signed_network_image.dart';
@@ -405,7 +406,22 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
       _requireLogin();
       return;
     }
-    ReportDialog.show(context, targetId: comment.id, targetType: 'comment');
+    CommonReportDialog.show<ReportReason>(
+      context,
+      reasons: ReportReason.values
+          .map((r) => ReportReasonItem(value: r, label: r.label))
+          .toList(),
+      onSubmit: (payload) async {
+        final report = GuideReport(
+          targetId: comment.id,
+          targetType: 'comment',
+          reason: payload.reason,
+          description: payload.description,
+          evidenceImages: payload.evidenceImages,
+        );
+        await GuideApi().report(report);
+      },
+    );
   }
 
   Widget _buildLoadMore(BuildContext context, GuideCommentState state) {

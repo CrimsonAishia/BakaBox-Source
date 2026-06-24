@@ -117,7 +117,7 @@ export 'widgets/clickable_image.dart';
 export 'widgets/map_background.dart';
 export 'widgets/rich_text_viewer.dart';
 export 'widgets/lobby_kicked_overlay.dart';
-export 'widgets/guide/guide_report_dialog.dart';
+export 'widgets/common_report_dialog.dart';
 export 'widgets/guide/guide_map_picker_sheet.dart';
 export 'widgets/guide/guide_tokens.dart';
 export 'widgets/guide/guide_map_badge_chip.dart';
