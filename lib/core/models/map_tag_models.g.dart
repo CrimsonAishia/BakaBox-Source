@@ -217,6 +217,8 @@ MapTagSimple _$MapTagSimpleFromJson(Map<String, dynamic> json) => MapTagSimple(
   name: json['name'] as String,
   color: json['color'] as String?,
   isOfficial: json['is_official'] as bool?,
+  isDifficulty: json['isDifficulty'] as bool?,
+  difficultyType: json['difficultyType'] as String?,
 );
 
 Map<String, dynamic> _$MapTagSimpleToJson(MapTagSimple instance) =>
@@ -224,4 +226,6 @@ Map<String, dynamic> _$MapTagSimpleToJson(MapTagSimple instance) =>
       'name': instance.name,
       'color': instance.color,
       'is_official': instance.isOfficial,
+      'isDifficulty': instance.isDifficulty,
+      'difficultyType': instance.difficultyType,
     };

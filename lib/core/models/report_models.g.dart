@@ -14,11 +14,13 @@ MapTagVoteReport _$MapTagVoteReportFromJson(Map<String, dynamic> json) =>
       voteUsername: json['voteUsername'] as String,
       reason: $enumDecode(_$TagVoteReportReasonEnumMap, json['reason']),
       description: json['description'] as String?,
-      evidenceImages: (json['evidenceImages'] as List<dynamic>?)
+      evidenceImages:
+          (json['evidenceImages'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
-      penalties: (json['penalties'] as List<dynamic>?)
+      penalties:
+          (json['penalties'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
