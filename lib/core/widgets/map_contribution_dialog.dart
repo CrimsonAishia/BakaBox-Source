@@ -1047,6 +1047,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     votedTags.sort(byVoteCountDesc);
     unvotedTags.sort(byVoteCountDesc);
 
+    final difficultyUnvotedTags = unvotedTags.where((t) => t.isDifficulty == true && t.difficultyType == 'difficulty').toList();
+    final tierUnvotedTags = unvotedTags.where((t) => t.isDifficulty == true && t.difficultyType == 'tier').toList();
+    final otherUnvotedTags = unvotedTags.where((t) => !(t.isDifficulty == true && (t.difficultyType == 'difficulty' || t.difficultyType == 'tier'))).toList();
+
     final hasNoTags =
         filteredUserTags.isEmpty &&
         filteredTagList.isEmpty &&
@@ -1113,20 +1117,59 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               isUserSection: true,
               mapName: widget.mapName,
             ),
-          // 全局标签区块：当还有未投票标签、正在加载、或没有已投票标签时显示
-          // （避免所有标签都已投票后只剩一个空的「暂无」分区）
-          if (unvotedTags.isNotEmpty ||
-              state.isLoadingTagList ||
-              votedTags.isEmpty)
+          // 全局标签区块：按类别拆分
+          if (state.isLoadingTagList)
             _buildTagSection(
               title: '全局标签',
-              tags: unvotedTags,
-              isLoading: state.isLoadingTagList,
+              tags: const [],
+              isLoading: true,
               isDark: isDark,
               state: state,
               isUserSection: false,
               mapName: widget.mapName,
-            ),
+            )
+          else if (unvotedTags.isEmpty && votedTags.isEmpty)
+            _buildTagSection(
+              title: '其他标签',
+              tags: const [],
+              isLoading: false,
+              isDark: isDark,
+              state: state,
+              isUserSection: false,
+              mapName: widget.mapName,
+            )
+          else ...[
+            if (difficultyUnvotedTags.isNotEmpty)
+              _buildTagSection(
+                title: '难度标签',
+                tags: difficultyUnvotedTags,
+                isLoading: false,
+                isDark: isDark,
+                state: state,
+                isUserSection: false,
+                mapName: widget.mapName,
+              ),
+            if (tierUnvotedTags.isNotEmpty)
+              _buildTagSection(
+                title: 'Tier 标签',
+                tags: tierUnvotedTags,
+                isLoading: false,
+                isDark: isDark,
+                state: state,
+                isUserSection: false,
+                mapName: widget.mapName,
+              ),
+            if (otherUnvotedTags.isNotEmpty)
+              _buildTagSection(
+                title: '其他标签',
+                tags: otherUnvotedTags,
+                isLoading: false,
+                isDark: isDark,
+                state: state,
+                isUserSection: false,
+                mapName: widget.mapName,
+              ),
+          ],
         ],
       ),
     );

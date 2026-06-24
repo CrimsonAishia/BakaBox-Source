@@ -18,6 +18,8 @@ MapTag _$MapTagFromJson(Map<String, dynamic> json) => MapTag(
   auditStatus: $enumDecodeNullable(_$AuditStatusEnumMap, json['auditStatus']),
   auditRemark: json['auditRemark'] as String?,
   isPinned: json['isPinned'] as bool?,
+  isDifficulty: json['isDifficulty'] as bool?,
+  difficultyType: json['difficultyType'] as String?,
 );
 
 Map<String, dynamic> _$MapTagToJson(MapTag instance) => <String, dynamic>{
@@ -30,6 +32,8 @@ Map<String, dynamic> _$MapTagToJson(MapTag instance) => <String, dynamic>{
   'auditStatus': _$AuditStatusEnumMap[instance.auditStatus],
   'auditRemark': instance.auditRemark,
   'isPinned': instance.isPinned,
+  'isDifficulty': instance.isDifficulty,
+  'difficultyType': instance.difficultyType,
 };
 
 const _$AuditStatusEnumMap = {

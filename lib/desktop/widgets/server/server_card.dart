@@ -459,6 +459,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// Tag popover 跟随层（卡片左/右侧弹出，带指向卡片的箭头）
   Widget _buildTagPopoverFollower() {
     final tags = _sortedTags;
+    final officialTags = tags.where((t) => t.isOfficial == true).toList();
+    final difficultyTags = tags.where((t) => t.isOfficial != true && t.isDifficulty == true && t.difficultyType == 'difficulty').toList();
+    final tierTags = tags.where((t) => t.isOfficial != true && t.isDifficulty == true && (t.difficultyType == 'tier' || t.difficultyType == 'tier_combined')).toList();
+    final otherTags = tags.where((t) => t.isOfficial != true && !(t.isDifficulty == true && (t.difficultyType == 'difficulty' || t.difficultyType == 'tier' || t.difficultyType == 'tier_combined'))).toList();
+    
     final followerAnchor = _showPopoverOnRight
         ? Alignment.centerLeft
         : Alignment.centerRight;
@@ -528,30 +533,21 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      MdiIcons.tagMultipleOutline,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '全部标签 · ${tags.length}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: tags.map(_buildPopoverTagChip).toList(),
-                ),
+                if (officialTags.isNotEmpty) ...[
+                  _buildPopoverTagSection('官方标签', officialTags),
+                  if (difficultyTags.isNotEmpty || tierTags.isNotEmpty || otherTags.isNotEmpty) const SizedBox(height: 12),
+                ],
+                if (difficultyTags.isNotEmpty) ...[
+                  _buildPopoverTagSection('难度标签', difficultyTags),
+                  if (tierTags.isNotEmpty || otherTags.isNotEmpty) const SizedBox(height: 12),
+                ],
+                if (tierTags.isNotEmpty) ...[
+                  _buildPopoverTagSection('Tier 标签', tierTags),
+                  if (otherTags.isNotEmpty) const SizedBox(height: 12),
+                ],
+                if (otherTags.isNotEmpty) ...[
+                  _buildPopoverTagSection('其他标签', otherTags),
+                ],
               ],
             ),
           ),
@@ -573,6 +569,39 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       targetAnchor: targetAnchor,
       offset: offset,
       child: content,
+    );
+  }
+
+  Widget _buildPopoverTagSection(String title, List<MapTagSimple> sectionTags) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(
+              MdiIcons.tagMultipleOutline,
+              size: 14,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$title · ${sectionTags.length}',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: sectionTags.map(_buildPopoverTagChip).toList(),
+        ),
+      ],
     );
   }
 
