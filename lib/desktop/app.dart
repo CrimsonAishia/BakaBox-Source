@@ -20,7 +20,7 @@ import '../core/services/console_log_service.dart';
 import '../core/services/cs2_crash_monitor_service.dart';
 import '../core/services/crash_report_uploader.dart';
 import '../core/services/map_change_monitor_service.dart';
-import '../core/services/playtime_report_service.dart';
+
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
 import 'theme/desktop_theme.dart';
@@ -246,10 +246,6 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
 
       // 启动挤服守护进程（依赖 ConsoleLogService、GsiService 和 ServerAddressMappingService）
       QueueGuardService().start();
-
-      // 启动游玩时长心跳上报
-      // 用于「投票门槛」校验
-      await PlaytimeReportService().start();
     } catch (e) {
       LogService.e('[DesktopAppHome] 初始化服务时出错', e);
     }

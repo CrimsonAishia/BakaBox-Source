@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../models/playtime_models.dart';
 
 abstract class MapTagEvent extends Equatable {
   const MapTagEvent();
@@ -114,29 +113,6 @@ class CancelTagChangeRequest extends MapTagEvent {
   List<Object?> get props => [tagId];
 }
 
-/// 加载当前用户的游玩时长（含可选地图维度）
-class LoadUserPlaytime extends MapTagEvent {
-  /// 地图名（带上后会查询「您在本图玩了多久」）
-  final String? mapName;
-
-  const LoadUserPlaytime({this.mapName});
-
-  @override
-  List<Object?> get props => [mapName];
-}
-
-/// 内部事件：游玩时长心跳推送的状态更新
-///
-/// 由 [MapTagBloc] 订阅 `PlaytimeReportService.statusStream` 时自动派发，
-/// 让弹窗在用户玩到达标的瞬间自动解锁投票按钮。
-class PlaytimeStatusUpdated extends MapTagEvent {
-  final UserPlaytimeStatus status;
-
-  const PlaytimeStatusUpdated(this.status);
-
-  @override
-  List<Object?> get props => [status];
-}
 
 /// 清除错误
 class ClearTagError extends MapTagEvent {
