@@ -634,6 +634,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   Widget _buildServerFilter(MapTagState state, bool isDark) {
     if (state.mapServers.isEmpty) return const SizedBox.shrink();
 
+    final effectiveAddress = state.mapServers.any(
+      (s) => s.serverAddress == state.serverAddress,
+    )
+        ? state.serverAddress
+        : null;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       child: Row(
@@ -667,7 +673,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String?>(
-                  value: state.serverAddress,
+                  value: effectiveAddress,
                   isExpanded: true,
                   icon: Icon(
                     MdiIcons.chevronDown,
