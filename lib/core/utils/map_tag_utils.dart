@@ -12,19 +12,22 @@ class MapTagUtils {
   static List<MapTagSimple> prepareTags(List<MapTagSimple> rawTags) {
     if (rawTags.length <= 1) return rawTags.toList();
 
-    var tags = rawTags.toList();
+    final officialTags = <MapTagSimple>[];
     final tierTags = <MapTagSimple>[];
     final otherTags = <MapTagSimple>[];
 
-    for (final tag in tags) {
-      if (tag.isDifficulty == true &&
-          tag.difficultyType == 'tier' &&
-          tag.isOfficial != true) {
+    for (final tag in rawTags) {
+      if (tag.isOfficial == true) {
+        officialTags.add(tag);
+      } else if (tag.isDifficulty == true &&
+          tag.difficultyType == 'tier') {
         tierTags.add(tag);
       } else {
         otherTags.add(tag);
       }
     }
+
+    var tags = otherTags;
 
     if (tierTags.isNotEmpty) {
       tierTags.sort((a, b) {
@@ -75,7 +78,17 @@ class MapTagUtils {
         difficultyType: 'tier_combined',
         isOfficial: false,
       );
-      tags = [combinedTag, ...otherTags];
+      tags = [combinedTag, ...tags];
+    }
+
+    if (officialTags.isNotEmpty) {
+      final names = officialTags.expand((t) => t.name.split(',')).map((s) => s.trim()).where((s) => s.isNotEmpty).join('、');
+      final combinedOfficialTag = MapTagSimple(
+        name: names,
+        color: officialTags.first.color,
+        isOfficial: true,
+      );
+      tags = [combinedOfficialTag, ...tags];
     }
 
     tags.sort((a, b) {
