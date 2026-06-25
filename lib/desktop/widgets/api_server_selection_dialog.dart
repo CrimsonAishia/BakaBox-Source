@@ -935,7 +935,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
               Expanded(
                 child: _buildModeOption(
                   title: '接口获取 (推荐)',
-                  subtitle: '从第三方网站统一获取人数和地图',
+                  subtitle: '从第三方接口统一获取人数和地图信息',
                   value: 'api',
                   icon: Icons.cloud_sync_rounded,
                   isDark: isDark,
