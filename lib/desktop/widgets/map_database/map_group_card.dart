@@ -8,6 +8,8 @@ import '../../../core/widgets/marquee_text.dart';
 import '../cd_badge.dart';
 import 'map_history_dialog.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/map_tag_utils.dart';
+import '../server/server_card_components/server_card_tag_chip.dart';
 
 /// 地图大卡片组件
 ///
@@ -477,7 +479,8 @@ class _MapGroupCardState extends State<MapGroupCard> {
   }
 
   Widget _buildMapTagRow(List<MapTagSimple> tags) {
-    if (tags.isEmpty) {
+    final sortedTags = MapTagUtils.prepareTags(tags);
+    if (sortedTags.isEmpty) {
       return Row(
         children: [
           Icon(
@@ -524,7 +527,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
           color: Colors.white.withValues(alpha: 0.8),
         ),
         const SizedBox(width: 6),
-        Expanded(child: _MapTagRow(tags: tags)),
+        Expanded(child: _MapTagRow(tags: sortedTags)),
       ],
     );
   }
@@ -671,91 +674,22 @@ class _MapTagRowState extends State<_MapTagRow> {
 
   /// 构建单个标签 Widget
   Widget _buildTagChip(MapTagSimple tag) {
-    final tagColorValue = tag.colorValue;
-
-    if (tagColorValue != null) {
-      final darkColor = Color.lerp(tagColorValue, Colors.black, 0.2)!;
-      final lightColor = Color.lerp(tagColorValue, Colors.white, 0.6)!;
-
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              lightColor.withValues(alpha: 0.4),
-              tagColorValue.withValues(alpha: 0.5),
-              darkColor.withValues(alpha: 0.45),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: tagColorValue.withValues(alpha: 0.7),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: tagColorValue.withValues(alpha: 0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Text(
-          tag.name,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            shadows: [
-              Shadow(
-                color: tagColorValue.withValues(alpha: 0.8),
-                blurRadius: 2,
-                offset: const Offset(0, 0),
-              ),
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 1,
-                offset: const Offset(1, 1),
-              ),
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 1,
-                offset: const Offset(-1, -1),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 无颜色时的处理
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Text(tag.name, style: _tagTextStyle),
-    );
+    return ServerCardTagChip(tag: tag, showPrefix: true);
   }
 
   /// 测量单个标签的宽度
   double _measureTagWidth(MapTagSimple tag) {
+    final displayName = tag.isOfficial == true ? '官:${tag.name}' : tag.name;
     final textPainter = TextPainter(
-      text: TextSpan(text: tag.name, style: _tagTextStyle),
+      text: TextSpan(text: displayName, style: _tagTextStyle),
       maxLines: 1,
       textDirection: Directionality.of(context),
     )..layout();
 
-    // padding(horizontal: 8 * 2) + textWidth
-    return textPainter.width + 16;
+    // padding(horizontal: 8 * 2) + border(1 * 2) + ceil(textWidth) 防亚像素误差
+    final width = textPainter.width.ceilToDouble() + 18;
+    textPainter.dispose();
+    return width;
   }
 
   /// 检查是否需要滚动（通过 LayoutBuilder 获取容器宽度）
