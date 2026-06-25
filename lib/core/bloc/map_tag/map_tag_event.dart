@@ -23,6 +23,26 @@ class LoadMapTagList extends MapTagEvent {
   List<Object?> get props => [mapName, serverAddress];
 }
 
+/// 加载地图服务器列表
+class LoadMapServers extends MapTagEvent {
+  final String mapName;
+
+  const LoadMapServers({required this.mapName});
+
+  @override
+  List<Object?> get props => [mapName];
+}
+
+/// 切换当前选中的服务器
+class ChangeServerAddress extends MapTagEvent {
+  final String? serverAddress;
+
+  const ChangeServerAddress({this.serverAddress});
+
+  @override
+  List<Object?> get props => [serverAddress];
+}
+
 /// 投票/取消投票
 class ToggleTagVote extends MapTagEvent {
   final int tagId;

@@ -255,20 +255,23 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   void _loadTagData() {
-    context.read<MapTagBloc>()
-      ..add(const LoadTagList())
-      ..add(
-        LoadMapTagList(
-          mapName: widget.mapName,
-          serverAddress: widget.serverAddress,
-        ),
-      );
+    context.read<MapTagBloc>().add(const LoadTagList());
+
+    if (widget.serverAddress == null) {
+      context.read<MapTagBloc>().add(LoadMapServers(mapName: widget.mapName));
+    }
+
+    context.read<MapTagBloc>().add(
+      LoadMapTagList(
+        mapName: widget.mapName,
+        serverAddress: widget.serverAddress,
+      ),
+    );
 
     // 只有登录用户才加载个人标签（pending/rejected 状态）
     final authState = context.read<AuthBloc>().state;
     if (authState.isAuthenticated) {
       context.read<MapTagBloc>().add(const LoadUserTags());
-
     }
   }
 
@@ -613,8 +616,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   ],
                 ),
               ),
+            // 服务器版本筛选（单独一行）
+            _buildServerFilter(state, isDark),
             // 搜索栏
-            _buildTagSearchBar(isDark),
+            _buildTagSearchBar(state, isDark),
             // 标签列表
             Expanded(child: _buildTagList(state, isDark)),
             // 提交区域
@@ -625,8 +630,83 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
+  /// 构建服务器筛选
+  Widget _buildServerFilter(MapTagState state, bool isDark) {
+    if (state.mapServers.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Row(
+        children: [
+          Icon(
+            MdiIcons.serverNetwork,
+            size: 16,
+            color: isDark ? Colors.white54 : AppColors.gray500,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '分服服务器特定版本：',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white70 : AppColors.gray500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                ),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String?>(
+                  value: state.serverAddress,
+                  isExpanded: true,
+                  icon: Icon(
+                    MdiIcons.chevronDown,
+                    size: 16,
+                    color: isDark ? Colors.white54 : AppColors.gray500,
+                  ),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white : AppColors.gray800,
+                  ),
+                  dropdownColor: isDark ? AppColors.slate800 : Colors.white,
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('默认'),
+                    ),
+                    ...state.mapServers.map((server) {
+                      return DropdownMenuItem<String?>(
+                        value: server.serverAddress,
+                        child: Text(server.serverName),
+                      );
+                    }),
+                  ],
+                  onChanged: (String? newValue) {
+                    context.read<MapTagBloc>().add(
+                      ChangeServerAddress(serverAddress: newValue),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 构建标签搜索栏
-  Widget _buildTagSearchBar(bool isDark) {
+  Widget _buildTagSearchBar(MapTagState state, bool isDark) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: TextField(
@@ -687,7 +767,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 构建标签列表
   Widget _buildTagList(MapTagState state, bool isDark) {
     final query = _tagSearchController.text.trim().toLowerCase();
@@ -747,9 +826,22 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     votedTags.sort(byVoteCountDesc);
     unvotedTags.sort(byVoteCountDesc);
 
-    final difficultyUnvotedTags = unvotedTags.where((t) => t.isDifficulty == true && t.difficultyType == 'difficulty').toList();
-    final tierUnvotedTags = unvotedTags.where((t) => t.isDifficulty == true && t.difficultyType == 'tier').toList();
-    final otherUnvotedTags = unvotedTags.where((t) => !(t.isDifficulty == true && (t.difficultyType == 'difficulty' || t.difficultyType == 'tier'))).toList();
+    final difficultyUnvotedTags = unvotedTags
+        .where(
+          (t) => t.isDifficulty == true && t.difficultyType == 'difficulty',
+        )
+        .toList();
+    final tierUnvotedTags = unvotedTags
+        .where((t) => t.isDifficulty == true && t.difficultyType == 'tier')
+        .toList();
+    final otherUnvotedTags = unvotedTags
+        .where(
+          (t) =>
+              !(t.isDifficulty == true &&
+                  (t.difficultyType == 'difficulty' ||
+                      t.difficultyType == 'tier')),
+        )
+        .toList();
 
     final hasNoTags =
         filteredUserTags.isEmpty &&
@@ -1218,26 +1310,30 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 显示标签投票用户对话框
   void _showTagVotersDialog(String mapName, MapTag tag) {
+    final currentServerAddress =
+        context.read<MapTagBloc>().state.serverAddress ?? widget.serverAddress;
     showDialog(
       context: context,
       builder: (dialogContext) => _TagVotersDialog(
         mapName: mapName,
         tag: tag,
         isDifficultySeparated: widget.isDifficultySeparated,
-        serverAddress: widget.serverAddress,
+        serverAddress: currentServerAddress,
       ),
     );
   }
 
   /// 显示地图所有标签投票记录对话框
   void _showMapAllVotersDialog() {
+    final currentServerAddress =
+        context.read<MapTagBloc>().state.serverAddress ?? widget.serverAddress;
     showDialog(
       context: context,
       builder: (dialogContext) => _MapAllVotersDialog(
         mapName: widget.mapName,
         mapLabel: widget.mapLabel,
         isDifficultySeparated: widget.isDifficultySeparated,
-        serverAddress: widget.serverAddress,
+        serverAddress: currentServerAddress,
       ),
     );
   }

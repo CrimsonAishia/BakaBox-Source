@@ -47,6 +47,11 @@ class MapTagState extends Equatable {
   /// 当前服务器地址（若为空则表示泛用或全局页面）
   final String? serverAddress;
 
+  /// 地图服务器列表
+  final List<MapTagServerInfo> mapServers;
+
+  /// 是否正在加载服务器列表
+  final bool isLoadingServers;
 
   const MapTagState({
     this.tagList = const [],
@@ -64,6 +69,8 @@ class MapTagState extends Equatable {
     this.error,
     this.currentMapName,
     this.serverAddress,
+    this.mapServers = const [],
+    this.isLoadingServers = false,
   });
 
   /// 是否正在加载
@@ -141,6 +148,9 @@ class MapTagState extends Equatable {
     bool clearError = false,
     String? currentMapName,
     String? serverAddress,
+    bool clearServerAddress = false,
+    List<MapTagServerInfo>? mapServers,
+    bool? isLoadingServers,
   }) {
     return MapTagState(
       tagList: tagList ?? this.tagList,
@@ -157,7 +167,9 @@ class MapTagState extends Equatable {
       cancelSuccess: cancelSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
-      serverAddress: serverAddress ?? this.serverAddress,
+      serverAddress: clearServerAddress ? null : (serverAddress ?? this.serverAddress),
+      mapServers: mapServers ?? this.mapServers,
+      isLoadingServers: isLoadingServers ?? this.isLoadingServers,
     );
   }
 
@@ -178,5 +190,7 @@ class MapTagState extends Equatable {
     error,
     currentMapName,
     serverAddress,
+    mapServers,
+    isLoadingServers,
   ];
 }

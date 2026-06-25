@@ -233,3 +233,33 @@ Map<String, dynamic> _$MapTagSimpleToJson(MapTagSimple instance) =>
       'isDifficulty': instance.isDifficulty,
       'difficultyType': instance.difficultyType,
     };
+
+MapTagServerInfo _$MapTagServerInfoFromJson(Map<String, dynamic> json) =>
+    MapTagServerInfo(
+      serverKey: json['serverKey'] as String,
+      serverName: json['serverName'] as String,
+      serverAddress: json['serverAddress'] as String,
+    );
+
+Map<String, dynamic> _$MapTagServerInfoToJson(MapTagServerInfo instance) =>
+    <String, dynamic>{
+      'serverKey': instance.serverKey,
+      'serverName': instance.serverName,
+      'serverAddress': instance.serverAddress,
+    };
+
+MapTagServerListResponse _$MapTagServerListResponseFromJson(
+  Map<String, dynamic> json,
+) => MapTagServerListResponse(
+  mapName: json['mapName'] as String,
+  servers: (json['servers'] as List<dynamic>?)
+      ?.map((e) => MapTagServerInfo.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$MapTagServerListResponseToJson(
+  MapTagServerListResponse instance,
+) => <String, dynamic>{
+  'mapName': instance.mapName,
+  'servers': instance.servers,
+};

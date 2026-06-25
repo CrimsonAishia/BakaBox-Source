@@ -24,7 +24,8 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     on<DeleteTag>(_onDeleteTag);
     on<CancelTagChangeRequest>(_onCancelTagChangeRequest);
     on<ClearTagError>(_onClearError);
-
+    on<LoadMapServers>(_onLoadMapServers);
+    on<ChangeServerAddress>(_onChangeServerAddress);
   }
 
 
@@ -303,6 +304,48 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     add(const LoadUserTags());
   }
 
+
+  /// 加载地图服务器列表
+  Future<void> _onLoadMapServers(
+    LoadMapServers event,
+    Emitter<MapTagState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingServers: true, clearError: true));
+
+    try {
+      final response = await _api.getMapTagServers(event.mapName);
+      if (response != null) {
+        emit(
+          state.copyWith(
+            mapServers: response.servers ?? [],
+            isLoadingServers: false,
+          ),
+        );
+      } else {
+        emit(state.copyWith(isLoadingServers: false));
+      }
+    } catch (e) {
+      emit(state.copyWith(error: _getErrorMessage(e), isLoadingServers: false));
+      LogService.e('加载地图服务器列表失败', e);
+    }
+  }
+
+  /// 切换服务器并刷新地图标签
+  Future<void> _onChangeServerAddress(
+    ChangeServerAddress event,
+    Emitter<MapTagState> emit,
+  ) async {
+    emit(state.copyWith(
+      serverAddress: event.serverAddress,
+      clearServerAddress: event.serverAddress == null,
+    ));
+    if (state.currentMapName != null) {
+      add(LoadMapTagList(
+        mapName: state.currentMapName!,
+        serverAddress: event.serverAddress,
+      ));
+    }
+  }
 
   /// 清除错误
   void _onClearError(ClearTagError event, Emitter<MapTagState> emit) {

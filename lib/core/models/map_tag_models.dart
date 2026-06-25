@@ -481,3 +481,41 @@ class MapTagSimple extends Equatable {
     difficultyType,
   ];
 }
+
+/// 地图标签服务器信息
+@JsonSerializable()
+class MapTagServerInfo extends Equatable {
+  final String serverKey;
+  final String serverName;
+  final String serverAddress;
+
+  const MapTagServerInfo({
+    required this.serverKey,
+    required this.serverName,
+    required this.serverAddress,
+  });
+
+  factory MapTagServerInfo.fromJson(Map<String, dynamic> json) => _$MapTagServerInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$MapTagServerInfoToJson(this);
+
+  @override
+  List<Object?> get props => [serverKey, serverName, serverAddress];
+}
+
+/// 地图标签服务器列表响应
+@JsonSerializable()
+class MapTagServerListResponse extends Equatable {
+  final String mapName;
+  final List<MapTagServerInfo>? servers;
+
+  const MapTagServerListResponse({
+    required this.mapName,
+    this.servers,
+  });
+
+  factory MapTagServerListResponse.fromJson(Map<String, dynamic> json) => _$MapTagServerListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MapTagServerListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [mapName, servers];
+}
