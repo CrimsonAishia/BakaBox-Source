@@ -115,7 +115,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     });
 
     try {
-      final address = widget.server.serverItem.address;
+      final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
       if (address == null || address.isEmpty) {
         if (mounted) {
           setState(() {
@@ -163,7 +163,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     });
 
     try {
-      final address = widget.server.serverItem.address;
+      final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
       if (address == null || address.isEmpty) {
         if (mounted) {
           setState(() {
@@ -432,7 +432,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                     const SizedBox(width: 12),
                     _buildInfoChip(
                       MdiIcons.ip,
-                      widget.server.serverItem.address ?? '未知',
+                      widget.server.serverItem.address ?? widget.server.serverItem.serverAddress ?? '未知',
                     ),
                     const SizedBox(width: 12),
                     if (_pingLatency != null) _buildPingChip(_pingLatency!),
