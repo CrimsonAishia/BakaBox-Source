@@ -219,14 +219,10 @@ class MapTagListSimpleResponse extends Equatable {
   final String mapName;
   final List<MapTagVoteSimple> items;
 
-  /// 投票门槛信息（游玩时长 / 是否可投票）
-  /// 详见 `docs/playtime-voting.md`，旧后端不返回时为 null
-  final MapTagVotingInfo? voting;
 
   const MapTagListSimpleResponse({
     required this.mapName,
     required this.items,
-    this.voting,
   });
 
   factory MapTagListSimpleResponse.fromJson(Map<String, dynamic> json) =>
@@ -234,49 +230,7 @@ class MapTagListSimpleResponse extends Equatable {
   Map<String, dynamic> toJson() => _$MapTagListSimpleResponseToJson(this);
 
   @override
-  List<Object?> get props => [mapName, items, voting];
-}
-
-/// 标签投票门槛信息
-///
-/// 由后端按当前用户的游玩时长 + 风控状态综合判定，前端不要再用本地数据
-/// 自行计算 `canVote`，应直接信任后端结果。
-@JsonSerializable()
-class MapTagVotingInfo extends Equatable {
-  /// 投票所需累计有效秒数
-  final int voteThresholdSeconds;
-
-  /// 当前用户在本图的累计有效秒数（未登录为 0）
-  ///
-  /// 投票门槛只看「本图」时长，不再使用总时长。
-  final int userMapValidSeconds;
-
-  /// 服务端最终判断（综合登录 / 时长 / 封禁）
-  final bool canVote;
-
-  const MapTagVotingInfo({
-    required this.voteThresholdSeconds,
-    required this.userMapValidSeconds,
-    required this.canVote,
-  });
-
-  /// 距离投票门槛还差多少秒（已达标返回 0）
-  int get secondsUntilCanVote {
-    if (canVote) return 0;
-    final diff = voteThresholdSeconds - userMapValidSeconds;
-    return diff > 0 ? diff : 0;
-  }
-
-  factory MapTagVotingInfo.fromJson(Map<String, dynamic> json) =>
-      _$MapTagVotingInfoFromJson(json);
-  Map<String, dynamic> toJson() => _$MapTagVotingInfoToJson(this);
-
-  @override
-  List<Object?> get props => [
-    voteThresholdSeconds,
-    userMapValidSeconds,
-    canVote,
-  ];
+  List<Object?> get props => [mapName, items];
 }
 
 /// 标签投票响应

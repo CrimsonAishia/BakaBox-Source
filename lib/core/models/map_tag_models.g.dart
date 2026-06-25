@@ -92,32 +92,11 @@ MapTagListSimpleResponse _$MapTagListSimpleResponseFromJson(
   items: (json['items'] as List<dynamic>)
       .map((e) => MapTagVoteSimple.fromJson(e as Map<String, dynamic>))
       .toList(),
-  voting: json['voting'] == null
-      ? null
-      : MapTagVotingInfo.fromJson(json['voting'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$MapTagListSimpleResponseToJson(
   MapTagListSimpleResponse instance,
-) => <String, dynamic>{
-  'mapName': instance.mapName,
-  'items': instance.items,
-  'voting': instance.voting,
-};
-
-MapTagVotingInfo _$MapTagVotingInfoFromJson(Map<String, dynamic> json) =>
-    MapTagVotingInfo(
-      voteThresholdSeconds: (json['voteThresholdSeconds'] as num).toInt(),
-      userMapValidSeconds: (json['userMapValidSeconds'] as num).toInt(),
-      canVote: json['canVote'] as bool,
-    );
-
-Map<String, dynamic> _$MapTagVotingInfoToJson(MapTagVotingInfo instance) =>
-    <String, dynamic>{
-      'voteThresholdSeconds': instance.voteThresholdSeconds,
-      'userMapValidSeconds': instance.userMapValidSeconds,
-      'canVote': instance.canVote,
-    };
+) => <String, dynamic>{'mapName': instance.mapName, 'items': instance.items};
 
 TagVoteResponse _$TagVoteResponseFromJson(Map<String, dynamic> json) =>
     TagVoteResponse(
