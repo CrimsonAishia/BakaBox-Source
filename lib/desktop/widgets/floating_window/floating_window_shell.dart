@@ -441,6 +441,8 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
               ),
             ),
             _buildMinimizeButton(),
+            const SizedBox(width: 4),
+            _buildCloseButton(),
           ],
         ),
       ),
@@ -481,19 +483,40 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   }
 
   Widget _buildMinimizeButton() {
-    return InkWell(
-      onTap: _toggleMinimize,
+    return Material(
+      color: Colors.white.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _toggleMinimize,
+        hoverColor: Colors.white.withValues(alpha: 0.2),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            _isMinimized ? Icons.expand_more : Icons.expand_less,
+            color: Colors.white70,
+            size: 14,
+          ),
         ),
-        child: Icon(
-          _isMinimized ? Icons.expand_more : Icons.expand_less,
-          color: Colors.white70,
-          size: 14,
+      ),
+    );
+  }
+
+  Widget _buildCloseButton() {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _closeWindow,
+        hoverColor: Colors.red.withValues(alpha: 0.8),
+        child: const Padding(
+          padding: EdgeInsets.all(4),
+          child: Icon(
+            Icons.close,
+            color: Colors.white70,
+            size: 14,
+          ),
         ),
       ),
     );

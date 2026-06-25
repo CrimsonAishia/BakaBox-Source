@@ -17,6 +17,7 @@ class FloatingWindowLauncher {
 
   static Timer? _visibilityTimer;
   static bool _isHiddenByFullscreen = false;
+  static bool _isLogicallyVisible = true;
 
   /// 启动浮动窗口
   static Future<void> launch(
@@ -46,6 +47,8 @@ class FloatingWindowLauncher {
       _visibilityTimer = Timer.periodic(const Duration(seconds: 2), (
         timer,
       ) async {
+        if (!_isLogicallyVisible) return;
+
         if (!FullscreenDetector.instance.canCreateWindow()) {
           if (!_isHiddenByFullscreen) {
             _isHiddenByFullscreen = true;
@@ -101,6 +104,7 @@ class FloatingWindowLauncher {
           }
           return true;
         case 'window_show':
+          _isLogicallyVisible = true;
           _isHiddenByFullscreen = false;
           try {
             // 浮窗复显同样不应抢焦点（用户可能正在游戏/打字）
@@ -114,6 +118,7 @@ class FloatingWindowLauncher {
           }
           return true;
         case 'window_hide':
+          _isLogicallyVisible = false;
           await windowManager.hide();
           return true;
         case 'window_focus':
