@@ -149,8 +149,7 @@ class MainWindowLauncher {
     // 4. 销毁托盘图标
     await TrayService.instance.dispose();
 
-    // 5. 销毁窗口句柄并退出进程
-    await windowManager.destroy();
+    // 5. 退出进程
     exit(0);
   }
 }
