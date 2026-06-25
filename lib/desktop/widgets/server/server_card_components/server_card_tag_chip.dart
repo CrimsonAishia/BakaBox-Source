@@ -3,8 +3,13 @@ import '../../../../core/models/map_tag_models.dart';
 
 class ServerCardTagChip extends StatelessWidget {
   final MapTagSimple tag;
+  final bool showPrefix;
 
-  const ServerCardTagChip({super.key, required this.tag});
+  const ServerCardTagChip({
+    super.key, 
+    required this.tag,
+    this.showPrefix = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +68,7 @@ class ServerCardTagChip extends StatelessWidget {
             ],
           ),
           child: Text(
-            tag.isOfficial == true ? '官:${tag.name}' : tag.name,
+            (showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name,
             style: TextStyle(
               color: Colors.white,
               fontSize: 12,
@@ -124,7 +129,7 @@ class ServerCardTagChip extends StatelessWidget {
           ],
         ),
         child: Text(
-          tag.isOfficial == true ? '官:${tag.name}' : tag.name,
+          (showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name,
           style: TextStyle(
             color: Colors.white,
             fontSize: 12,
@@ -163,7 +168,7 @@ class ServerCardTagChip extends StatelessWidget {
         ),
       ),
       child: Text(
-        tag.isOfficial == true ? '官:${tag.name}' : tag.name,
+        (showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name,
         style: TextStyle(
           color: Colors.white.withValues(alpha: 0.9),
           fontSize: 12,

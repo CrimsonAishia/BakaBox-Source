@@ -27,9 +27,10 @@ import '../../../core/constants/app_colors.dart';
 import 'server_card_components/server_card_marquee_text.dart';
 import 'server_card_components/server_card_overflow_tag_row.dart';
 import 'server_card_components/server_card_icon_buttons.dart';
-import 'server_card_components/server_card_painters.dart';
+import 'server_card_components/hover_tag_popover.dart';
 import 'server_card_components/server_card_floating_yellow_dot.dart';
-import 'server_card_components/server_card_tag_chip.dart';
+import 'server_card_components/server_card_painters.dart';
+import '../../../core/utils/map_tag_utils.dart';
 
 /// 服务器卡片
 class ServerCard extends StatefulWidget {
@@ -58,13 +59,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   bool _isConnecting = false;
   bool _isHovered = false;
 
-  // 卡片侧边 Tag popover：hover 卡片 200ms 后在卡片左/右侧弹出
-  final OverlayPortalController _tagPortalController =
-      OverlayPortalController();
-  final LayerLink _cardLink = LayerLink();
-  Timer? _tagPopoverShowTimer;
-  Timer? _tagPopoverHideTimer;
-  bool _showPopoverOnRight = true; // popover 显示在卡片右侧（默认）还是左侧
   bool _hasTagOverflow = false; // 标签是否被截断（出现 +N 徽章）
 
   // 监听 StatusWindowService 状态
@@ -250,166 +244,38 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
     _warmupRefreshTimer?.cancel();
-    _tagPopoverShowTimer?.cancel();
-    _tagPopoverHideTimer?.cancel();
-    if (_tagPortalController.isShowing) {
-      _tagPortalController.hide();
-    }
     _rgbController?.dispose();
     _marchingAntsController?.dispose();
     super.dispose();
   }
 
-  /// 处理卡片hover状态变化
-  void _onCardHoverChanged(bool isHovered) {
-    if (!mounted) return;
+  @override
+  Widget build(BuildContext context) {
+    final sortedTags = MapTagUtils.prepareTags(widget.server.mapInfo?.tags.toList() ?? []);
 
-    if (_isHovered != isHovered) {
-      setState(() => _isHovered = isHovered);
-    }
-
-    if (isHovered) {
-      _scheduleShowTagPopover();
-    } else {
-      _scheduleHideTagPopover();
-    }
-  }
-
-  int? _extractNumber(String text) {
-    final match = RegExp(r'\d+').firstMatch(text);
-    return match != null ? int.tryParse(match.group(0)!) : null;
-  }
-
-  /// 排序后的标签列表
-  List<MapTagSimple> get _sortedTags {
-    var rawTags = widget.server.mapInfo?.tags.toList() ?? [];
-    if (rawTags.length <= 1) return rawTags;
-
-    final tierTags = <MapTagSimple>[];
-    final otherTags = <MapTagSimple>[];
-    for (final tag in rawTags) {
-      if (tag.isDifficulty == true &&
-          tag.difficultyType == 'tier' &&
-          tag.isOfficial != true) {
-        tierTags.add(tag);
-      } else {
-        otherTags.add(tag);
-      }
-    }
-
-    if (tierTags.isNotEmpty) {
-      tierTags.sort((a, b) {
-        final numA = _extractNumber(a.name) ?? 0;
-        final numB = _extractNumber(b.name) ?? 0;
-        return numA.compareTo(numB);
-      });
-
-      final nums = tierTags
-          .map((t) => _extractNumber(t.name))
-          .whereType<int>()
-          .toList();
-      String combinedName;
-      if (nums.length == tierTags.length && nums.length > 2) {
-        bool isContinuous = true;
-        for (int i = 1; i < nums.length; i++) {
-          if (nums[i] != nums[i - 1] + 1) {
-            isContinuous = false;
-            break;
-          }
-        }
-        if (isContinuous) {
-          combinedName = '玩家:Tier ${nums.first}~${nums.last}';
-        } else {
-          combinedName = '玩家:Tier ${nums.join(' ')}';
-        }
-      } else {
-        final parts = tierTags.map(
-          (t) =>
-              _extractNumber(t.name)?.toString() ??
-              t.name.replaceAll('Tier', '').trim(),
-        );
-        combinedName = '玩家:Tier ${parts.join(' ')}';
-      }
-
-      final colorsStr = tierTags
-          .map((t) => t.color)
-          .whereType<String>()
-          .join(',');
-
-      final combinedTag = MapTagSimple(
-        name: combinedName,
-        color: colorsStr,
-        isDifficulty: true,
-        difficultyType: 'tier_combined',
-        isOfficial: false,
-      );
-      rawTags = [combinedTag, ...otherTags];
-    }
-
-    rawTags.sort((a, b) {
-      if (a.isOfficial == true && b.isOfficial != true) return -1;
-      if (a.isOfficial != true && b.isOfficial == true) return 1;
-      return 0; // 保持原有相对顺序
-    });
-    return rawTags;
-  }
-
-  /// 计划显示 Tag popover（200ms 延迟）
-  void _scheduleShowTagPopover() {
-    final tags = _sortedTags;
-    if (tags.isEmpty) return;
-    // 没有溢出（标签全部显示）就不需要 popover
-    if (!_hasTagOverflow) return;
-
-    _tagPopoverHideTimer?.cancel();
-    if (_tagPortalController.isShowing) return;
-
-    _tagPopoverShowTimer?.cancel();
-    _tagPopoverShowTimer = Timer(const Duration(milliseconds: 200), () {
-      if (!mounted || !_isHovered) return;
-      // 二次校验：可能在延迟期间布局变化导致不再溢出
-      if (!_hasTagOverflow) return;
-      _decideTagPopoverDirection();
-      _tagPortalController.show();
-    });
-  }
-
-  /// 计划隐藏 Tag popover（150ms 延迟，给鼠标跨越间隙留余地）
-  void _scheduleHideTagPopover() {
-    _tagPopoverShowTimer?.cancel();
-    _tagPopoverHideTimer?.cancel();
-    _tagPopoverHideTimer = Timer(const Duration(milliseconds: 150), () {
-      if (!mounted) return;
-      if (_tagPortalController.isShowing) {
-        _tagPortalController.hide();
-      }
-    });
-  }
-
-  /// 根据卡片在屏幕中的位置决定 popover 弹出方向（左 / 右）
-  void _decideTagPopoverDirection() {
-    final box = context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) {
-      _showPopoverOnRight = true;
-      return;
-    }
-    final topLeft = box.localToGlobal(Offset.zero);
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    final spaceRight = screenWidth - (topLeft.dx + box.size.width);
-    final spaceLeft = topLeft.dx;
-
-    // 期望的最小可用宽度（含 gap + 安全边距）
-    const required = _kPopoverMinWidth + _kPopoverGap + _kPopoverScreenMargin;
-
-    // 右侧空间够 → 弹右；否则若左侧空间够 → 弹左；都不够也选更宽的一侧
-    if (spaceRight >= required) {
-      _showPopoverOnRight = true;
-    } else if (spaceLeft >= required) {
-      _showPopoverOnRight = false;
-    } else {
-      _showPopoverOnRight = spaceRight >= spaceLeft;
-    }
+    return HoverTagPopover(
+      tags: sortedTags,
+      isHovered: _isHovered,
+      hasOverflow: _hasTagOverflow,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) {
+          if (!mounted) return;
+          setState(() => _isHovered = true);
+        },
+        onExit: (_) {
+          if (!mounted) return;
+          setState(() => _isHovered = false);
+        },
+          child: _rgbController != null
+              ? AnimatedBuilder(
+                  animation: _rgbController!,
+                  builder: (context, child) =>
+                      _buildCardContent(_getRgbColor(_rgbController!.value)),
+                )
+              : _buildCardContent(AppColors.primary),
+        ),
+    );
   }
 
   bool get _isWarmingUp {
@@ -424,190 +290,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       mapName: widget.server.serverData?.map,
       hasError: widget.server.mapRuntimeError,
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _cardLink,
-      child: OverlayPortal(
-        controller: _tagPortalController,
-        overlayChildBuilder: (overlayContext) => _buildTagPopoverFollower(),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => _onCardHoverChanged(true),
-          onExit: (_) => _onCardHoverChanged(false),
-          child: _rgbController != null
-              ? AnimatedBuilder(
-                  animation: _rgbController!,
-                  builder: (context, child) =>
-                      _buildCardContent(_getRgbColor(_rgbController!.value)),
-                )
-              : _buildCardContent(AppColors.primary),
-        ),
-      ),
-    );
-  }
-
-  /// Tag popover 尺寸常量（统一管理，方便调整）
-  static const double _kPopoverMinWidth = 240;
-  static const double _kPopoverMaxWidth = 360;
-  static const double _kPopoverMaxHeight = 360;
-  static const double _kPopoverGap = 0; // 与卡片间的间距（箭头尖端贴卡片）
-  static const double _kPopoverScreenMargin = 16; // 与屏幕边缘的安全边距
-
-  /// Tag popover 跟随层（卡片左/右侧弹出，带指向卡片的箭头）
-  Widget _buildTagPopoverFollower() {
-    final tags = _sortedTags;
-    final officialTags = tags.where((t) => t.isOfficial == true).toList();
-    final difficultyTags = tags.where((t) => t.isOfficial != true && t.isDifficulty == true && t.difficultyType == 'difficulty').toList();
-    final tierTags = tags.where((t) => t.isOfficial != true && t.isDifficulty == true && (t.difficultyType == 'tier' || t.difficultyType == 'tier_combined')).toList();
-    final otherTags = tags.where((t) => t.isOfficial != true && !(t.isDifficulty == true && (t.difficultyType == 'difficulty' || t.difficultyType == 'tier' || t.difficultyType == 'tier_combined'))).toList();
-    
-    final followerAnchor = _showPopoverOnRight
-        ? Alignment.centerLeft
-        : Alignment.centerRight;
-    final targetAnchor = _showPopoverOnRight
-        ? Alignment.centerRight
-        : Alignment.centerLeft;
-    // 箭头紧贴卡片，面板在箭头外侧；offset 用于面板与卡片间总间距
-    final offset = _showPopoverOnRight
-        ? const Offset(_kPopoverGap, 0)
-        : const Offset(-_kPopoverGap, 0);
-
-    // 根据当前可用空间动态钳制 popover 最大宽度，保证不超出屏幕
-    final box = context.findRenderObject() as RenderBox?;
-    double availableMaxWidth = _kPopoverMaxWidth;
-    if (box != null && box.hasSize) {
-      final topLeft = box.localToGlobal(Offset.zero);
-      final screenWidth = MediaQuery.of(context).size.width;
-      final spaceRight = screenWidth - (topLeft.dx + box.size.width);
-      final spaceLeft = topLeft.dx;
-      final available =
-          (_showPopoverOnRight ? spaceRight : spaceLeft) -
-          _kPopoverGap -
-          _kPopoverScreenMargin;
-      // 钳制到 [_kPopoverMinWidth, _kPopoverMaxWidth] 区间
-      availableMaxWidth = available
-          .clamp(_kPopoverMinWidth, _kPopoverMaxWidth)
-          .toDouble();
-    }
-
-    // 面板背景色与边框（与下面 Container 保持一致）
-    const panelColor = Color(0xF21A1A1A);
-    final borderColor = Colors.white.withValues(alpha: 0.12);
-
-    final arrow = CustomPaint(
-      size: const Size(8, 14),
-      painter: ServerCardPopoverArrowPainter(
-        pointingRight: !_showPopoverOnRight, // 在卡片右侧时箭头朝左指向卡片
-        fillColor: panelColor,
-        borderColor: borderColor,
-      ),
-    );
-
-    final panel = Material(
-      color: Colors.transparent,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: _kPopoverMinWidth.clamp(0, availableMaxWidth),
-          maxWidth: availableMaxWidth,
-          maxHeight: _kPopoverMaxHeight,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: panelColor,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: borderColor, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (officialTags.isNotEmpty) ...[
-                  _buildPopoverTagSection('官方标签', officialTags),
-                  if (difficultyTags.isNotEmpty || tierTags.isNotEmpty || otherTags.isNotEmpty) const SizedBox(height: 12),
-                ],
-                if (difficultyTags.isNotEmpty) ...[
-                  _buildPopoverTagSection('难度标签', difficultyTags),
-                  if (tierTags.isNotEmpty || otherTags.isNotEmpty) const SizedBox(height: 12),
-                ],
-                if (tierTags.isNotEmpty) ...[
-                  _buildPopoverTagSection('Tier 标签', tierTags),
-                  if (otherTags.isNotEmpty) const SizedBox(height: 12),
-                ],
-                if (otherTags.isNotEmpty) ...[
-                  _buildPopoverTagSection('其他标签', otherTags),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    // 箭头与面板并排：popover 在右侧时为 [箭头][面板]，反之 [面板][箭头]
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: _showPopoverOnRight ? [arrow, panel] : [panel, arrow],
-    );
-
-    return CompositedTransformFollower(
-      link: _cardLink,
-      showWhenUnlinked: false,
-      followerAnchor: followerAnchor,
-      targetAnchor: targetAnchor,
-      offset: offset,
-      child: content,
-    );
-  }
-
-  Widget _buildPopoverTagSection(String title, List<MapTagSimple> sectionTags) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.tagMultipleOutline,
-              size: 14,
-              color: Colors.white.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '$title · ${sectionTags.length}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: sectionTags.map(_buildPopoverTagChip).toList(),
-        ),
-      ],
-    );
-  }
-
-  /// popover 内的标签 chip（与卡片内 chip 样式一致）
-  Widget _buildPopoverTagChip(MapTagSimple tag) {
-    return ServerCardTagChip(tag: tag);
   }
 
   /// 构建卡片内容
@@ -913,7 +595,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         // 地图标签（非 hover 时显示，hover 时隐藏，让位给底部操作层）
         if (!_isHovered) ...[
           SizedBox(height: verticalSpacing),
-          _buildMapTagRow(_sortedTags),
+          _buildMapTagRow(MapTagUtils.prepareTags(widget.server.mapInfo?.tags.toList() ?? [])),
         ],
       ],
     );
@@ -971,15 +653,13 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         Expanded(
           child: ServerCardOverflowTagRow(
             tags: tags,
+            showPrefix: true,
             onOverflowChanged: (overflow) {
               if (!mounted) return;
               if (_hasTagOverflow != overflow) {
-                _hasTagOverflow = overflow;
-                // 不再溢出时主动关闭已打开的 popover
-                if (!overflow && _tagPortalController.isShowing) {
-                  _tagPortalController.hide();
-                  _tagPopoverShowTimer?.cancel();
-                }
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _hasTagOverflow = overflow);
+                });
               }
             },
           ),
