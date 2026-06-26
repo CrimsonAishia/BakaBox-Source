@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:win32_registry/win32_registry.dart';
+
 import '../utils/log_service.dart';
 
 /// Steam 用户信息服务
@@ -44,28 +46,11 @@ class SteamUserService {
     if (!Platform.isWindows) return null;
 
     try {
-      final result = await Process.run('reg', [
-        'query',
-        r'HKCU\Software\Valve\Steam',
-        '/v',
-        'SteamPath',
-      ], runInShell: true);
-
-      if (result.exitCode != 0) return null;
-
-      final output = result.stdout.toString();
-      final lines = output.split('\n');
-      for (final line in lines) {
-        if (line.contains('SteamPath')) {
-          // 格式: "    SteamPath    REG_SZ    C:/Program Files (x86)/Steam"
-          final parts = line.split(RegExp(r'\s{4,}'));
-          if (parts.length >= 3) {
-            var steamPath = parts.last.trim();
-            // 将正斜杠转换为反斜杠
-            steamPath = steamPath.replaceAll('/', '\\');
-            return steamPath;
-          }
-        }
+      final key = Registry.openPath(RegistryHive.currentUser, path: r'Software\Valve\Steam');
+      final steamPath = key.getValueAsString('SteamPath');
+      key.close();
+      if (steamPath != null && steamPath.isNotEmpty) {
+        return steamPath.replaceAll('/', '\\');
       }
     } catch (e) {
       LogService.d('[SteamUserService] 获取Steam路径失败: $e');
@@ -78,24 +63,18 @@ class SteamUserService {
     if (!Platform.isWindows) return null;
 
     try {
-      // 读取注册表 ActiveUser (SteamID3)
-      final result = await Process.run('reg', [
-        'query',
-        r'HKCU\Software\Valve\Steam\ActiveProcess',
-        '/v',
-        'ActiveUser',
-      ], runInShell: true);
+      int? activeUser;
+      try {
+        final key = Registry.openPath(RegistryHive.currentUser, path: r'Software\Valve\Steam\ActiveProcess');
+        activeUser = key.getValueAsInt('ActiveUser');
+        key.close();
+      } catch (e) {
+        LogService.d('[SteamUserService] 读取 ActiveUser 失败: $e');
+      }
 
-      if (result.exitCode != 0) return null;
+      if (activeUser == null || activeUser == 0) return null;
 
-      // 解析：ActiveUser    REG_DWORD    0x12345678
-      final match = RegExp(
-        r'ActiveUser\s+REG_DWORD\s+0x([0-9a-fA-F]+)',
-      ).firstMatch(result.stdout.toString());
-      if (match == null) return null;
-
-      final steamId3 = int.parse(match.group(1)!, radix: 16);
-      if (steamId3 == 0) return null;
+      final steamId3 = activeUser;
 
       // 直接从注册表获取 Steam 路径，不依赖 GameLauncherService
       String? steamPath = await _getSteamPathFromRegistry();
@@ -131,22 +110,18 @@ class SteamUserService {
     if (!Platform.isWindows) return null;
 
     try {
-      final result = await Process.run('reg', [
-        'query',
-        r'HKCU\Software\Valve\Steam\ActiveProcess',
-        '/v',
-        'ActiveUser',
-      ], runInShell: true);
+      int? activeUser;
+      try {
+        final key = Registry.openPath(RegistryHive.currentUser, path: r'Software\Valve\Steam\ActiveProcess');
+        activeUser = key.getValueAsInt('ActiveUser');
+        key.close();
+      } catch (e) {
+        LogService.d('[SteamUserService] 读取 ActiveUser 失败: $e');
+      }
 
-      if (result.exitCode != 0) return null;
+      if (activeUser == null || activeUser == 0) return null;
 
-      final match = RegExp(
-        r'ActiveUser\s+REG_DWORD\s+0x([0-9a-fA-F]+)',
-      ).firstMatch(result.stdout.toString());
-      if (match == null) return null;
-
-      final steamId3 = int.parse(match.group(1)!, radix: 16);
-      if (steamId3 == 0) return null;
+      final steamId3 = activeUser;
 
       // 缓存结果
       _cachedSteamUserId = steamId3.toString();

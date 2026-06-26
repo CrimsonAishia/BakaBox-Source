@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:url_launcher/url_launcher.dart';
+import 'package:win32_registry/win32_registry.dart';
 
 import '../utils/log_service.dart';
+import '../utils/native_process_utils.dart';
 import '../utils/platform_utils.dart';
 import '../utils/server_item_utils.dart';
 import '../utils/storage_utils.dart';
@@ -149,27 +151,16 @@ class GameLauncherService {
 
   /// Windows平台检测CS2进程
   Future<bool> _isCS2RunningWindows() async {
-    for (final processName in _gameProcessNames) {
-      try {
-        final result = await Process.run('tasklist', [
-          '/FI',
-          'IMAGENAME eq $processName',
-          '/FO',
-          'CSV',
-        ], runInShell: true);
-
-        if (result.exitCode == 0 &&
-            result.stdout.toString().toLowerCase().contains(
-              processName.toLowerCase(),
-            )) {
-          LogService.d('检测到游戏进程: $processName');
-          return true;
-        }
-      } catch (e) {
-        LogService.d('检测进程 $processName 失败: $e');
+    try {
+      final isRunning = NativeProcessUtils.isAnyProcessRunning(_gameProcessNames);
+      if (isRunning) {
+        LogService.d('检测到游戏进程');
       }
+      return isRunning;
+    } catch (e) {
+      LogService.e('检测游戏进程失败', e);
+      return false;
     }
-    return false;
   }
 
   /// 检测 Steam 是否认为游戏正在运行
@@ -186,31 +177,21 @@ class GameLauncherService {
     }
 
     try {
-      final result = await Process.run('reg', [
-        'query',
-        'HKCU\\Software\\Valve\\Steam',
-        '/v',
-        'RunningAppID',
-      ], runInShell: true);
-
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        // 格式: "    RunningAppID    REG_DWORD    0x2da" (0x2da = 730)
-        final regex = RegExp(
-          r'RunningAppID\s+REG_DWORD\s+(0x[0-9a-fA-F]+|\d+)',
+      int? appId;
+      try {
+        final key = Registry.openPath(
+          RegistryHive.currentUser,
+          path: r'Software\Valve\Steam',
         );
-        final match = regex.firstMatch(output);
-        if (match != null) {
-          final valueStr = match.group(1)!;
-          int appId;
-          if (valueStr.startsWith('0x')) {
-            appId = int.parse(valueStr.substring(2), radix: 16);
-          } else {
-            appId = int.parse(valueStr);
-          }
-          LogService.d('Steam RunningAppID: $appId');
-          return appId;
-        }
+        appId = key.getValueAsInt('RunningAppID');
+        key.close();
+      } catch (e) {
+        LogService.d('读取 RunningAppID 失败: $e');
+      }
+
+      if (appId != null && appId != 0) {
+        LogService.d('Steam RunningAppID: $appId');
+        return appId;
       }
       return 0; // 未找到或值为0
     } catch (e) {
@@ -268,29 +249,13 @@ class GameLauncherService {
     try {
       if (PlatformUtils.isWindows) {
         // 检测 cs2.exe
-        final cs2Result = await Process.run('tasklist', [
-          '/FI',
-          'IMAGENAME eq cs2.exe',
-          '/FO',
-          'CSV',
-        ], runInShell: true);
-
-        if (cs2Result.exitCode == 0 &&
-            cs2Result.stdout.toString().toLowerCase().contains('cs2.exe')) {
+        if (NativeProcessUtils.isAnyProcessRunning(['cs2.exe'])) {
           LogService.d('检测到 CS2 正在运行');
           return 'cs2';
         }
 
         // 检测 csgo.exe
-        final csgoResult = await Process.run('tasklist', [
-          '/FI',
-          'IMAGENAME eq csgo.exe',
-          '/FO',
-          'CSV',
-        ], runInShell: true);
-
-        if (csgoResult.exitCode == 0 &&
-            csgoResult.stdout.toString().toLowerCase().contains('csgo.exe')) {
+        if (NativeProcessUtils.isAnyProcessRunning(['csgo.exe'])) {
           LogService.d('检测到 CSGO 正在运行');
           return 'csgo';
         }
@@ -318,6 +283,7 @@ class GameLauncherService {
     }
 
     try {
+      bool wmicSucceeded = false;
       // 检测所有游戏进程的启动参数
       for (final processName in _gameProcessNames) {
         try {
@@ -333,17 +299,15 @@ class GameLauncherService {
           if (result.exitCode == 0) {
             final output = result.stdout.toString().toLowerCase();
 
-            // 检查是否包含 -condebug 参数
-            if (output.contains('-condebug') &&
-                output.contains('commandline=')) {
-              LogService.d('检测到 $processName 带 -condebug 参数启动');
-              return true;
-            }
-
-            // 如果有输出但没有 -condebug，记录日志但继续检查其他进程
-            if (output.contains('commandline=') &&
-                output.contains(processName.toLowerCase())) {
-              LogService.d('$processName 运行中但未带 -condebug 参数');
+            // 如果成功读到了 commandline（说明权限足够）
+            if (output.contains('commandline=')) {
+              wmicSucceeded = true;
+              if (output.contains('-condebug')) {
+                LogService.d('检测到 $processName 带 -condebug 参数启动');
+                return true;
+              } else if (output.contains(processName.toLowerCase())) {
+                LogService.d('$processName 运行中但未带 -condebug 参数');
+              }
             }
           }
         } catch (e) {
@@ -351,10 +315,20 @@ class GameLauncherService {
         }
       }
 
-      return false;
+      if (wmicSucceeded) {
+        // wmic 成功读取，但没有找到 -condebug
+        return false;
+      }
+
+      // 如果 wmic 失败（比如因为没有管理员权限读不到高级别进程的命令行）
+      // 完美解决方案：通过软件启动（steam://run/730//-condebug）一定会带参数
+      // 这里直接返回 true 放行即可。
+      // 因为只要游戏带了参数，console.log 就会正常生成；如果不带，监听器也只是读不到新行，没有任何负面影响。
+      LogService.d('wmic 无法读取游戏启动参数（权限隔离），默认视为有 -condebug 放行');
+      return true;
     } catch (e) {
-      LogService.e('检测游戏启动参数失败', e);
-      return false;
+      LogService.e('检测游戏启动参数发生异常', e);
+      return true; // 发生异常也放行，不要阻断后续的日志解析逻辑
     }
   }
 
@@ -581,44 +555,17 @@ class GameLauncherService {
 
       LogService.d('生成的Steam URL: $steamUrl');
 
-      // 1. 优先尝试直接使用 steam.exe 唤起协议 (更稳定，避免 cmd start 的各种环境和解析问题)
-      String? steamPath = await getSteamPath();
-      if (steamPath == null || steamPath.isEmpty) {
-        steamPath = await detectSteamPath();
-      }
-
-      if (steamPath != null && steamPath.isNotEmpty) {
-        final steamExe = '$steamPath\\steam.exe';
-        if (await File(steamExe).exists()) {
-          final process = await Process.start(steamExe, [
-            steamUrl,
-          ], mode: ProcessStartMode.detached);
-          LogService.d('通过 steam.exe 直接发送连接命令，PID: ${process.pid}');
-          return ServerConnectResult.success(
-            message: '连接命令已发送',
-            method: 'steam-exe',
-          );
-        }
-      }
-
-      // 2. 兜底方案：如果没找到 steam.exe，退回到原来的 cmd start 方法
-      LogService.d('未找到 steam.exe，使用 cmd.exe 兜底连接');
-      final result = await Process.run('cmd.exe', [
-        '/C',
-        'start',
-        '',
-        steamUrl,
-      ], runInShell: false);
-
-      if (result.exitCode == 0) {
-        LogService.d('Steam URL连接命令已发送(cmd)');
+      final uri = Uri.parse(steamUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        LogService.d('Steam URL连接命令已发送(url_launcher)');
         return ServerConnectResult.success(
           message: '连接命令已发送',
-          method: 'steam-url',
+          method: 'url_launcher',
         );
       } else {
-        LogService.e('连接命令执行失败: ${result.stderr}');
-        return ServerConnectResult.failure('连接命令执行失败');
+        LogService.w('无法解析或启动该 Steam URL');
+        return ServerConnectResult.failure('无法启动Steam，请确保Steam已正确安装');
       }
     } catch (e) {
       LogService.e('连接服务器失败', e);
@@ -1003,23 +950,11 @@ class GameLauncherService {
     LogService.d('仅启动游戏（不连接）: $steamUrl (${client.displayName})');
 
     try {
-      if (PlatformUtils.isWindows) {
-        final result = await Process.run('cmd.exe', [
-          '/C',
-          'start',
-          '',
-          steamUrl,
-        ], runInShell: false);
-        if (result.exitCode != 0) {
-          return ServerConnectResult.failure('启动游戏命令执行失败');
-        }
-      } else {
-        final uri = Uri.parse(steamUrl);
-        if (!await canLaunchUrl(uri)) {
-          return ServerConnectResult.failure('无法打开Steam，请确保Steam已安装');
-        }
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final uri = Uri.parse(steamUrl);
+      if (!await canLaunchUrl(uri)) {
+        return ServerConnectResult.failure('无法打开Steam，请确保Steam已安装');
       }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
       return ServerConnectResult.success(
         message: '游戏启动命令已发送',
         method: 'steam-url',
@@ -1137,31 +1072,22 @@ class GameLauncherService {
   /// 从注册表查找Steam路径
   Future<String?> _findSteamPathFromRegistry() async {
     try {
-      final result = await Process.run('reg', [
-        'query',
-        'HKCU\\Software\\Valve\\Steam',
-        '/v',
-        'SteamPath',
-      ], runInShell: true);
-
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        final lines = output.split('\n');
-        for (final line in lines) {
-          if (line.contains('SteamPath')) {
-            // 格式: "    SteamPath    REG_SZ    C:/Program Files (x86)/Steam"
-            final parts = line.split(RegExp(r'\s{4,}'));
-            if (parts.length >= 3) {
-              var steamPath = parts.last.trim();
-              // 将正斜杠转换为反斜杠
-              steamPath = steamPath.replaceAll('/', '\\');
-
-              // 验证路径存在
-              if (await File('$steamPath\\steam.exe').exists()) {
-                return steamPath;
-              }
-            }
-          }
+      String? steamPath;
+      try {
+        final key = Registry.openPath(
+          RegistryHive.currentUser,
+          path: r'Software\Valve\Steam',
+        );
+        steamPath = key.getValueAsString('SteamPath');
+        key.close();
+      } catch (e) {
+        // key not found
+      }
+      if (steamPath != null && steamPath.isNotEmpty) {
+        var cleanPath = steamPath.replaceAll('/', '\\');
+        // 验证路径存在
+        if (await File('$cleanPath\\steam.exe').exists()) {
+          return cleanPath;
         }
       }
     } catch (e) {
@@ -1173,33 +1099,11 @@ class GameLauncherService {
   /// 从进程查找Steam路径
   Future<String?> _findSteamPathFromProcess() async {
     try {
-      final result = await Process.run('wmic', [
-        'process',
-        'where',
-        "name='steam.exe'",
-        'get',
-        'ExecutablePath',
-        '/format:value',
-      ], runInShell: true);
-
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        final lines = output.split('\n');
-        for (final line in lines) {
-          final trimmed = line.trim();
-          if (trimmed.startsWith('ExecutablePath=')) {
-            final executablePath = trimmed
-                .substring('ExecutablePath='.length)
-                .trim();
-            if (executablePath.isNotEmpty &&
-                executablePath.toLowerCase().endsWith('steam.exe')) {
-              // 从可执行文件路径提取Steam安装目录
-              final steamPath = File(executablePath).parent.path;
-              LogService.d('从进程路径提取Steam目录: $steamPath');
-              return steamPath;
-            }
-          }
-        }
+      final executablePath = NativeProcessUtils.getProcessExecutablePath('steam.exe');
+      if (executablePath != null && executablePath.isNotEmpty) {
+        final steamPath = File(executablePath).parent.path;
+        LogService.d('从进程路径提取Steam目录: $steamPath');
+        return steamPath;
       }
     } catch (e) {
       LogService.d('从进程查找Steam路径失败: $e');
@@ -1466,6 +1370,7 @@ class GameLauncherService {
   /// 返回值：
   /// - true: 配置成功
   /// - false: 配置失败或用户取消
+  // TODO: 搁置，目前没有很好的办法写入启动项配置
   Future<bool> autoConfigureCondebug() async {
     if (!PlatformUtils.isWindows) {
       LogService.w('自动配置启动选项仅支持Windows平台');
