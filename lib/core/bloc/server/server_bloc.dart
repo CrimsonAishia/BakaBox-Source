@@ -2198,7 +2198,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final serverApi = ServerApi();
 
       // 直接从 API 获取最新地图信息（不清除缓存）
-      final mapInfo = await serverApi.refreshMapInfo(event.mapName);
+      final mapInfo = await serverApi.refreshMapInfo(event.mapName, address: event.address);
 
       if (mapInfo != null && !emit.isDone) {
         // 更新服务器的地图信息
@@ -2992,7 +2992,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     await _refreshMapInfoForCards(changedMap, emit);
   }
 
-  /// 拉取权威地图信息并刷新所有正在显示该地图的卡片（单次 emit 批量更新）。
   Future<void> _refreshMapInfoForCards(
     String changedMap,
     Emitter<ServerState> emit,
@@ -3009,23 +3008,28 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     if (!state.servers.any(showsChangedMap)) return;
 
-    // 强制拉取权威的最新地图信息
     final serverApi = ServerApi();
-    final MapData? mapData = await serverApi.refreshMapInfo(changedMap);
-    if (mapData == null || isClosed) return;
-
-    // 单次 emit 批量更新所有正在显示该地图的卡片，避免 N 个同图服务器触发 N 次重绘。
-    // 仅当 mapInfo 确实变化时才替换（MapData 是 Equatable），完全相同则跳过整次 emit。
     var changed = false;
-    final servers = state.servers.map((server) {
-      if (!showsChangedMap(server)) return server;
-      if (server.mapInfo == mapData) return server;
-      changed = true;
-      return server.copyWith(mapInfo: mapData);
-    }).toList();
 
-    if (!changed) return;
-    emit(state.copyWith(servers: servers));
+    // 分别为每个受影响的服务器拉取其对应的最新地图信息（包含服务器专属 tags）
+    final updatedServers = await Future.wait(state.servers.map((server) async {
+      if (!showsChangedMap(server)) return server;
+
+      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      try {
+        final mapData = await serverApi.refreshMapInfo(changedMap, address: address);
+        if (mapData != null && server.mapInfo != mapData) {
+          changed = true;
+          return server.copyWith(mapInfo: mapData);
+        }
+      } catch (e) {
+        LogService.w('更新卡片地图信息失败: $changedMap, address=$address, $e');
+      }
+      return server;
+    }));
+
+    if (!changed || isClosed) return;
+    emit(state.copyWith(servers: updatedServers));
   }
 
   /// 清除所有服务器卡片上的实时推送数据（比分、排队/暖服人数）

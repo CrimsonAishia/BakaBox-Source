@@ -574,12 +574,35 @@ class GameLauncherService {
     try {
       LogService.d('使用命令行连接服务器: $serverAddress (${client.displayName})');
 
-      // 构建Steam URL，使用目标游戏对应的 AppID
-      final steamUrl = client.buildConnectUrl(serverAddress, password);
+      // 构建Steam URL，使用目标游戏对应的 AppID，并将空格替换为 %20
+      // （防止 Windows 注册表损坏导致带有空格的 URL 被截断）
+      final rawSteamUrl = client.buildConnectUrl(serverAddress, password);
+      final steamUrl = rawSteamUrl.replaceAll(' ', '%20');
 
       LogService.d('生成的Steam URL: $steamUrl');
 
-      // 使用cmd.exe的start命令打开Steam URL
+      // 1. 优先尝试直接使用 steam.exe 唤起协议 (更稳定，避免 cmd start 的各种环境和解析问题)
+      String? steamPath = await getSteamPath();
+      if (steamPath == null || steamPath.isEmpty) {
+        steamPath = await detectSteamPath();
+      }
+
+      if (steamPath != null && steamPath.isNotEmpty) {
+        final steamExe = '$steamPath\\steam.exe';
+        if (await File(steamExe).exists()) {
+          final process = await Process.start(steamExe, [
+            steamUrl,
+          ], mode: ProcessStartMode.detached);
+          LogService.d('通过 steam.exe 直接发送连接命令，PID: ${process.pid}');
+          return ServerConnectResult.success(
+            message: '连接命令已发送',
+            method: 'steam-exe',
+          );
+        }
+      }
+
+      // 2. 兜底方案：如果没找到 steam.exe，退回到原来的 cmd start 方法
+      LogService.d('未找到 steam.exe，使用 cmd.exe 兜底连接');
       final result = await Process.run('cmd.exe', [
         '/C',
         'start',
@@ -588,7 +611,7 @@ class GameLauncherService {
       ], runInShell: false);
 
       if (result.exitCode == 0) {
-        LogService.d('Steam URL连接命令已发送');
+        LogService.d('Steam URL连接命令已发送(cmd)');
         return ServerConnectResult.success(
           message: '连接命令已发送',
           method: 'steam-url',
