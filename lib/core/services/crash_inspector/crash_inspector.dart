@@ -180,6 +180,7 @@ class CrashInspector {
                 severity: m['sev']?.toString() ?? 'medium',
               ),
             )
+            .where((e) => e.severity != 'benign')
             .toList()
           ..sort((a, b) {
             const order = {'high': 0, 'medium': 1, 'benign': 2};
@@ -226,12 +227,12 @@ class CrashInspector {
         .where((id) => id.isNotEmpty)
         .toList();
 
-    // 严重程度 (有任意高危第三方 -> high; 资源/工具 -> medium; 其它 -> low)
-    final hasHighThird = thirdParties.any((e) => e.severity == 'high');
+    // 严重程度 (有致命错误 -> high; 可疑第三方/资源/工具 -> medium; 其它 -> low)
+    final hasSuspiciousThird = thirdParties.any((e) => e.severity == 'high' || e.severity == 'medium');
     CrashSeverity severity;
-    if (hasHighThird) {
+    if (fatals.isNotEmpty) {
       severity = CrashSeverity.high;
-    } else if (cat == 'resource' || cat == 'tools' || cat == 'code_exec') {
+    } else if (hasSuspiciousThird || cat == 'resource' || cat == 'tools' || cat == 'code_exec') {
       severity = CrashSeverity.medium;
     } else {
       severity = CrashSeverity.low;

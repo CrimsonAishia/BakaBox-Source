@@ -81,7 +81,7 @@ class CrashDetailViewModel {
       fatalStrings: r.fatalStrings,
       resources: r.resources,
       workshopIds: r.workshopIds,
-      thirdPartyModules: r.thirdPartyModules,
+      thirdPartyModules: r.thirdPartyModules.where((e) => e.severity != 'benign').toList(),
       fullReport: r.fullReport,
       appVersion: r.appVersion,
       osVersion: r.osVersion,

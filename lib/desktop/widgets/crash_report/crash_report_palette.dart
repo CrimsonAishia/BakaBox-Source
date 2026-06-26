@@ -43,10 +43,9 @@ class CrashReportPalette {
 /// 第三方注入严重度颜色
 ({Color color, String label}) crashThirdPartyPalette(String severity) {
   switch (severity) {
-    case 'high':
-      return (color: AppColors.red500, label: '严重');
     case 'benign':
       return (color: AppColors.emerald500, label: '正常');
+    case 'high':
     case 'medium':
     default:
       return (color: AppColors.amber500, label: '可疑');

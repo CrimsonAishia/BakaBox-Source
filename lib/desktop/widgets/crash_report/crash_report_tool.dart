@@ -330,7 +330,6 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
   }
 
   Widget _buildEmptyList(CrashReportState state, {required bool mine}) {
-    final isSignatureMatch = state.currentSignature != null && !mine;
     final isSearching = state.currentKeyword.isNotEmpty && !mine;
 
     if (mine && state.gamePathConfigured == false) {
@@ -338,23 +337,6 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
         icon: MdiIcons.cogOutline,
         title: '尚未配置 CS2 游戏路径',
         subtitle: '在「设置 → 游戏」里指定 CS2 安装目录后，本机崩溃就会出现在这里',
-      );
-    }
-
-    if (isSignatureMatch) {
-      return _CrashEmptyState(
-        icon: Icons.search_off,
-        title: '没有找到同款崩溃',
-        subtitle: '社区中暂时没有与该崩溃特征码一致的公开报告',
-        action: OutlinedButton.icon(
-          onPressed: () {
-            _searchController.clear();
-            setState(() {});
-            _search('');
-          },
-          icon: Icon(MdiIcons.close, size: 16),
-          label: const Text('清除同款过滤'),
-        ),
       );
     }
 
@@ -430,13 +412,6 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
           onBack: () => context.read<CrashReportBloc>().add(
             const CrashReportCloseDetail(),
           ),
-          onFindSimilar: (signature) {
-            _searchController.text = signature;
-            context.read<CrashReportBloc>().add(
-              CrashReportFetch(keyword: signature, signature: signature),
-            );
-            context.read<CrashReportBloc>().add(const CrashReportCloseDetail());
-          },
         );
       },
     );

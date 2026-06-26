@@ -157,18 +157,22 @@ const Map<String, ThirdPartyHint> thirdPartyHints = {
     'Steam 游戏内覆盖层 (Shift+Tab / 帧数显示)',
     'Steam 官方组件, 正常注入, 一般无需处理',
   ),
-  // 高危
+  // 常见嫌疑
   'rivatuner': ThirdPartyHint(
-    'high',
+    'medium',
     'RivaTuner Statistics Server (RTSS)',
-    '已知会引发 CS2 崩溃',
+    '有引发 CS2 崩溃的嫌疑',
   ),
   'rtss': ThirdPartyHint(
-    'high',
+    'medium',
     'RivaTuner Statistics Server (RTSS)',
-    '已知会引发 CS2 崩溃',
+    '有引发 CS2 崩溃的嫌疑',
   ),
-  'nahimic': ThirdPartyHint('high', 'Nahimic 音效软件', '历史上多次引发游戏崩溃, 建议卸载或禁用其服务'),
+  'nahimic': ThirdPartyHint(
+    'medium',
+    'Nahimic 音效软件',
+    '有引发 CS2 崩溃的嫌疑, 建议临时禁用其服务',
+  ),
   // 中等
   'msi.dll': ThirdPartyHint(
     'medium',
@@ -191,11 +195,15 @@ const Map<String, ThirdPartyHint> thirdPartyHints = {
   'fraps': ThirdPartyHint('medium', 'Fraps 录屏', '老旧软件, 建议关闭'),
   'shadowplay': ThirdPartyHint('medium', 'NVIDIA ShadowPlay', '可临时关闭即时回放测试'),
   'rtsshooks': ThirdPartyHint(
-    'high',
+    'medium',
     'RivaTuner Statistics Server (RTSS) Hook',
-    '已知会引发 CS2 崩溃',
+    '有引发 CS2 崩溃的嫌疑',
   ),
-  'rtssvklayer': ThirdPartyHint('high', 'RivaTuner Vulkan 层', '已知会引发 CS2 崩溃'),
+  'rtssvklayer': ThirdPartyHint(
+    'medium',
+    'RivaTuner Vulkan 层',
+    '有引发 CS2 崩溃的嫌疑',
+  ),
 };
 
 const Set<String> coreModules = {

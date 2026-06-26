@@ -160,35 +160,6 @@ class _CrashReportCardState extends State<CrashReportCard> {
             ],
           ),
         ),
-        if (widget.report.similarCount > 1) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.violet500.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  MdiIcons.linkVariant,
-                  size: 12,
-                  color: AppColors.violet500,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '同款 ${widget.report.similarCount}',
-                  style: const TextStyle(
-                    color: AppColors.violet500,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
         const Spacer(),
         Text.rich(
           TextSpan(

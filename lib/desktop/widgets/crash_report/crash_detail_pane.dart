@@ -24,16 +24,12 @@ class CrashDetailPane extends StatefulWidget {
   /// 详情上下文给本地 dump 提供"删除 .mdmp 文件"
   final VoidCallback? onDeleteLocal;
 
-  /// 远端详情提供"找同款 (按 signature)"，本地 dump 不展示
-  final ValueChanged<String>? onFindSimilar;
-
   const CrashDetailPane({
     super.key,
     required this.detail,
     required this.isLoading,
     required this.onBack,
     this.onDeleteLocal,
-    this.onFindSimilar,
   });
 
   @override
@@ -100,9 +96,6 @@ class _CrashDetailPaneState extends State<CrashDetailPane> {
               ToastUtils.showSuccess(context, '已复制完整崩溃报告');
             },
             onDeleteLocal: widget.onDeleteLocal,
-            onFindSimilar: !detail.isLocal && detail.signature != null
-                ? () => widget.onFindSimilar?.call(detail.signature!)
-                : null,
           ),
         ],
       ),
@@ -190,13 +183,6 @@ class _DetailHeader extends StatelessWidget {
                         label: '本地',
                         outlined: true,
                       ),
-                    ] else if (detail.similarCount > 1) ...[
-                      const SizedBox(width: 6),
-                      _Badge(
-                        color: AppColors.violet500,
-                        icon: MdiIcons.linkVariant,
-                        label: '同款 ${detail.similarCount}',
-                      ),
                     ],
                   ],
                 ),
@@ -233,7 +219,6 @@ class _DetailFooter extends StatelessWidget {
   final VoidCallback onToggleFull;
   final VoidCallback onCopy;
   final VoidCallback? onDeleteLocal;
-  final VoidCallback? onFindSimilar;
 
   const _DetailFooter({
     required this.detail,
@@ -243,7 +228,6 @@ class _DetailFooter extends StatelessWidget {
     required this.onToggleFull,
     required this.onCopy,
     required this.onDeleteLocal,
-    required this.onFindSimilar,
   });
 
   @override
@@ -262,14 +246,6 @@ class _DetailFooter extends StatelessWidget {
             ),
             label: Text(showFullReport ? '返回摘要' : '查看完整报告'),
           ),
-          if (onFindSimilar != null) ...[
-            const SizedBox(width: 4),
-            TextButton.icon(
-              onPressed: onFindSimilar,
-              icon: Icon(MdiIcons.linkVariant, size: 16),
-              label: const Text('找同款'),
-            ),
-          ],
           const Spacer(),
           if (onDeleteLocal != null) ...[
             OutlinedButton.icon(
@@ -311,14 +287,12 @@ class _DetailFooter extends StatelessWidget {
 
 class _Badge extends StatelessWidget {
   final Color color;
-  final IconData? icon;
   final String label;
   final bool outlined;
 
   const _Badge({
     required this.color,
     required this.label,
-    this.icon,
     this.outlined = false,
   });
 
@@ -336,10 +310,6 @@ class _Badge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: color),
-            const SizedBox(width: 4),
-          ],
           Text(
             label,
             style: TextStyle(
