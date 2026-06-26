@@ -9,7 +9,9 @@ import '../cd_badge.dart';
 import 'map_history_dialog.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/map_tag_utils.dart';
-import '../server/server_card_components/server_card_tag_chip.dart';
+import '../server/server_card_components/hover_tag_popover.dart';
+import '../server/server_card_components/server_card_overflow_tag_row.dart';
+
 
 /// 地图大卡片组件
 ///
@@ -32,6 +34,7 @@ class MapGroupCard extends StatefulWidget {
 
 class _MapGroupCardState extends State<MapGroupCard> {
   bool _isHovered = false;
+  bool _hasTagOverflow = false;
   Future<String>? _signedUrlFuture;
 
   @override
@@ -71,10 +74,15 @@ class _MapGroupCardState extends State<MapGroupCard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final mapInfo = widget.group.mapInfo;
+    final sortedTags = MapTagUtils.prepareTags(mapInfo.tags.toList());
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+    return HoverTagPopover(
+      tags: sortedTags,
+      isHovered: _isHovered,
+      hasOverflow: _hasTagOverflow,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
@@ -316,6 +324,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
               ],
             ),
           ),
+          ),
         ),
       ),
     );
@@ -527,7 +536,17 @@ class _MapGroupCardState extends State<MapGroupCard> {
           color: Colors.white.withValues(alpha: 0.8),
         ),
         const SizedBox(width: 6),
-        Expanded(child: _MapTagRow(tags: sortedTags)),
+        Expanded(
+          child: ServerCardOverflowTagRow(
+            tags: sortedTags,
+            onOverflowChanged: (overflow) {
+              if (mounted && _hasTagOverflow != overflow) {
+                setState(() => _hasTagOverflow = overflow);
+              }
+            },
+            showPrefix: true,
+          ),
+        ),
       ],
     );
   }
@@ -604,215 +623,5 @@ class _BottomButtonState extends State<_BottomButton> {
         ),
       ),
     );
-  }
-}
-
-/// 滚动标签行组件 - 标签过多时自动水平滚动
-class _MapTagRow extends StatefulWidget {
-  final List<MapTagSimple> tags;
-
-  const _MapTagRow({required this.tags});
-
-  @override
-  State<_MapTagRow> createState() => _MapTagRowState();
-}
-
-class _MapTagRowState extends State<_MapTagRow> {
-  ScrollController? _scrollController;
-  bool _needsScroll = false;
-  bool _isScrolling = false;
-  double _totalScrollWidth = 0;
-  double _containerWidth = 0;
-
-  // 固定间距（spacing: 6）
-  static const double _tagSpacing = 6.0;
-
-  // 标签样式（与 _buildTagChip 保持一致）
-  TextStyle get _tagTextStyle => TextStyle(
-    color: Colors.white.withValues(alpha: 0.9),
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    shadows: [
-      Shadow(
-        color: Colors.black.withValues(alpha: 0.4),
-        blurRadius: 2,
-        offset: const Offset(0, 1),
-      ),
-    ],
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController();
-  }
-
-  @override
-  void didUpdateWidget(_MapTagRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.tags != widget.tags) {
-      _stopScrolling();
-      _scrollController?.jumpTo(0);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _containerWidth > 0) {
-          _checkOverflowWithContainerWidth(_containerWidth);
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _stopScrolling();
-    _scrollController?.dispose();
-    super.dispose();
-  }
-
-  void _stopScrolling() {
-    _isScrolling = false;
-  }
-
-  /// 构建单个标签 Widget
-  Widget _buildTagChip(MapTagSimple tag) {
-    return ServerCardTagChip(tag: tag, showPrefix: true);
-  }
-
-  /// 测量单个标签的宽度
-  double _measureTagWidth(MapTagSimple tag) {
-    final displayName = tag.isOfficial == true ? '官:${tag.name}' : tag.name;
-    final textPainter = TextPainter(
-      text: TextSpan(text: displayName, style: _tagTextStyle),
-      maxLines: 1,
-      textDirection: Directionality.of(context),
-    )..layout();
-
-    // padding(horizontal: 8 * 2) + border(1 * 2) + ceil(textWidth) 防亚像素误差
-    final width = textPainter.width.ceilToDouble() + 18;
-    textPainter.dispose();
-    return width;
-  }
-
-  /// 检查是否需要滚动（通过 LayoutBuilder 获取容器宽度）
-  void _checkOverflowWithContainerWidth(double maxWidth) {
-    if (!mounted) return;
-
-    _containerWidth = maxWidth;
-    if (_containerWidth <= 0) return;
-
-    double totalWidth = 0;
-    for (int i = 0; i < widget.tags.length; i++) {
-      totalWidth += _measureTagWidth(widget.tags[i]);
-      if (i < widget.tags.length - 1) {
-        totalWidth += _tagSpacing;
-      }
-    }
-
-    final needsScroll = totalWidth > _containerWidth;
-
-    if (needsScroll != _needsScroll ||
-        (needsScroll && (totalWidth - _totalScrollWidth).abs() > 1)) {
-      setState(() {
-        _needsScroll = needsScroll;
-        _totalScrollWidth = totalWidth;
-      });
-    }
-
-    if (_needsScroll && !_isScrolling) {
-      _startScrolling();
-    }
-  }
-
-  /// 开始滚动动画
-  void _startScrolling() async {
-    if (!mounted || !_needsScroll || _scrollController == null) return;
-    if (!_scrollController!.hasClients) return;
-
-    _isScrolling = true;
-
-    while (mounted && _needsScroll && _isScrolling) {
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted || !_needsScroll || _scrollController == null) break;
-      if (!_scrollController!.hasClients) break;
-
-      final maxScroll = _scrollController!.position.maxScrollExtent;
-      if (maxScroll <= 0) break;
-
-      try {
-        await _scrollController!.animateTo(
-          maxScroll,
-          duration: Duration(
-            milliseconds: (maxScroll * 0.05).toInt().clamp(3000, 10000),
-          ),
-          curve: Curves.linear,
-        );
-      } catch (_) {
-        break;
-      }
-
-      if (!mounted) break;
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) break;
-
-      try {
-        await _scrollController!.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } catch (_) {
-        break;
-      }
-
-      if (!mounted) break;
-      await Future.delayed(const Duration(seconds: 1));
-    }
-
-    _isScrolling = false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 离屏渲染降级
-    if (View.maybeOf(context) == null) {
-      return Row(
-        children: [
-          ..._buildTagRow().take(5),
-          if (widget.tags.length > 5)
-            Text('...', style: _tagTextStyle.copyWith(color: Colors.white54)),
-        ],
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _checkOverflowWithContainerWidth(constraints.maxWidth);
-        });
-        return ClipRect(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            physics: _needsScroll
-                ? const ClampingScrollPhysics()
-                : const NeverScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(children: _buildTagRow()),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  List<Widget> _buildTagRow() {
-    final List<Widget> widgets = [];
-    for (int i = 0; i < widget.tags.length; i++) {
-      widgets.add(_buildTagChip(widget.tags[i]));
-      if (i < widget.tags.length - 1) {
-        widgets.add(const SizedBox(width: _tagSpacing));
-      }
-    }
-    return widgets;
   }
 }
