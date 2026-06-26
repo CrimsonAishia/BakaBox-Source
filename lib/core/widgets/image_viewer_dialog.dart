@@ -41,7 +41,7 @@ class ImageViewerDialog extends StatefulWidget {
 }
 
 class _ImageViewerDialogState extends State<ImageViewerDialog> {
-  static const double _minScale = 0.5;
+  static const double _minScale = 1.0;
   static const double _maxScale = 4.0;
   static const double _zoomStep = 0.4;
 
@@ -181,38 +181,43 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
                         constraints.maxWidth,
                         constraints.maxHeight,
                       );
-                      return Center(
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
                         child: InteractiveViewer(
                           transformationController: index == _currentIndex
                               ? _transformationController
                               : null,
                           minScale: _minScale,
                           maxScale: _maxScale,
-                          child: DiskCachedImage(
-                            imageUrl: widget.imageUrls[index],
-                            fit: BoxFit.contain,
-                            placeholder: const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
+                          clipBehavior: Clip.none,
+                          child: Center(
+                            child: DiskCachedImage(
+                              imageUrl: widget.imageUrls[index],
+                              fit: BoxFit.contain,
+                              placeholder: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                            errorWidget: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.broken_image_rounded,
-                                  size: 64,
-                                  color: Colors.white54,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  '图片加载失败',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    fontSize: 14,
+                              errorWidget: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.broken_image_rounded,
+                                    size: 64,
+                                    color: Colors.white54,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    '图片加载失败',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
