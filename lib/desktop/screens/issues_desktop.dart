@@ -1681,6 +1681,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
 
   Widget _buildContent(IssueDetailState state) {
     final issue = state.issue!;
+    final isAuthenticated = context.watch<AuthBloc>().state.isAuthenticated;
     return Scrollbar(
       controller: _scrollController,
       thumbVisibility: true,
@@ -1694,12 +1695,12 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             const SizedBox(height: 20),
             _buildCommentsSection(state),
             const SizedBox(height: 20),
-            if (issue.issueStatus.isOpen)
+            if (issue.issueStatus.isOpen && isAuthenticated)
               Container(
                 key: _commentInputKey,
                 child: _buildCommentInput(state),
               ),
-            if (issue.issueStatus.isOpen) const SizedBox(height: 20),
+            if (issue.issueStatus.isOpen && isAuthenticated) const SizedBox(height: 20),
           ],
         ),
       ),
@@ -2089,6 +2090,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         : null;
     final issue = context.read<IssueDetailBloc>().state.issue;
     final isOpen = issue?.issueStatus.isOpen ?? false;
+    final isAuthenticated = context.watch<AuthBloc>().state.isAuthenticated;
 
     final commentKey = _commentKeys.putIfAbsent(comment.id, () => GlobalKey());
     final isHighlighted = _highlightedCommentId == comment.id;
@@ -2192,7 +2194,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                         ),
                       ),
                       const Spacer(),
-                      if (isOpen) _buildReplyButton(comment, isDark),
+                      if (isOpen && isAuthenticated) _buildReplyButton(comment, isDark),
                     ],
                   ),
                   if (replyTarget != null) ...[
