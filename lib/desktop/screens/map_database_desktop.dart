@@ -179,10 +179,9 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
       ('zm_', '僵尸感染'),
       ('surf_', '滑翔'),
       ('bhop_', '连跳'),
-      ('kz_', '攀爬'),
       ('mg_', '闯关'),
       ('bkz_', '攀岩'),
-      ('', '其他'),
+      ('', '全部'),
     ];
 
     final activeColor = AppColors.primary;
