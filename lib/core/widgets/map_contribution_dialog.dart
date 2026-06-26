@@ -620,8 +620,19 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             _buildServerFilter(state, isDark),
             // 搜索栏
             _buildTagSearchBar(state, isDark),
-            // 标签列表
-            Expanded(child: _buildTagList(state, isDark)),
+            // 标签列表与浮动面板
+            Expanded(
+              child: Stack(
+                children: [
+                  _buildTagList(state, isDark),
+                  Positioned(
+                    bottom: 0,
+                    right: 16,
+                    child: _buildVotedTagsPanel(state, isDark),
+                  ),
+                ],
+              ),
+            ),
             // 提交区域
             _buildTagSubmitArea(state, isDark),
           ],
@@ -630,13 +641,40 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
+  /// 构建已投票标签浮动面板
+  Widget _buildVotedTagsPanel(MapTagState state, bool isDark) {
+    // 获取有票数的标签（任何人投过票的标签）
+    // 这里我们将全局标签和用户标签去重后，再筛选
+    final seen = <int>{};
+    final allUniqueTags = [
+      ...state.userTags,
+      ...state.tagList,
+    ].where((t) => seen.add(t.id)).toList();
+    final votedTags = allUniqueTags
+        .where((t) => (state.getMapTagVoteByTagId(t.id)?.voteCount ?? 0) > 0)
+        .toList();
+
+    // 按票数排序
+    votedTags.sort((a, b) {
+      final av = state.getMapTagVoteByTagId(a.id)?.voteCount ?? 0;
+      final bv = state.getMapTagVoteByTagId(b.id)?.voteCount ?? 0;
+      return bv.compareTo(av);
+    });
+
+    return _VotedTagsFloatingPanel(
+      votedTags: votedTags,
+      state: state,
+      isDark: isDark,
+      mapName: widget.mapName,
+    );
+  }
+
   /// 构建服务器筛选
   Widget _buildServerFilter(MapTagState state, bool isDark) {
     if (state.mapServers.isEmpty) return const SizedBox.shrink();
 
-    final effectiveAddress = state.mapServers.any(
-      (s) => s.serverAddress == state.serverAddress,
-    )
+    final effectiveAddress =
+        state.mapServers.any((s) => s.serverAddress == state.serverAddress)
         ? state.serverAddress
         : null;
 
@@ -819,28 +857,17 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       return bv.compareTo(av);
     }
 
-    // 拆分出「有票数」的标签（任何人投的赞成/反对票），单独置顶显示
-    final votedTags = <MapTag>[];
-    final unvotedTags = <MapTag>[];
-    for (final tag in filteredTagList) {
-      if (state.hasAnyVotes(tag.id)) {
-        votedTags.add(tag);
-      } else {
-        unvotedTags.add(tag);
-      }
-    }
-    votedTags.sort(byVoteCountDesc);
-    unvotedTags.sort(byVoteCountDesc);
+    filteredTagList.sort(byVoteCountDesc);
 
-    final difficultyUnvotedTags = unvotedTags
+    final difficultyTags = filteredTagList
         .where(
           (t) => t.isDifficulty == true && t.difficultyType == 'difficulty',
         )
         .toList();
-    final tierUnvotedTags = unvotedTags
+    final tierTags = filteredTagList
         .where((t) => t.isDifficulty == true && t.difficultyType == 'tier')
         .toList();
-    final otherUnvotedTags = unvotedTags
+    final otherTags = filteredTagList
         .where(
           (t) =>
               !(t.isDifficulty == true &&
@@ -893,17 +920,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 已有投票的标签区块（任何人投过票的标签，按票数置顶，放最前）
-          if (votedTags.isNotEmpty)
-            _buildTagSection(
-              title: '已有投票',
-              tags: votedTags,
-              isLoading: false,
-              isDark: isDark,
-              state: state,
-              isUserSection: false,
-              mapName: widget.mapName,
-            ),
           // 用户标签区块（审核中 + 已拒绝），无数据且非加载中时隐藏
           if (filteredUserTags.isNotEmpty || state.isLoadingUserTags)
             _buildTagSection(
@@ -926,7 +942,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               isUserSection: false,
               mapName: widget.mapName,
             )
-          else if (unvotedTags.isEmpty && votedTags.isEmpty)
+          else if (filteredTagList.isEmpty)
             _buildTagSection(
               title: '其他标签',
               tags: const [],
@@ -937,30 +953,30 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               mapName: widget.mapName,
             )
           else ...[
-            if (difficultyUnvotedTags.isNotEmpty)
+            if (difficultyTags.isNotEmpty)
               _buildTagSection(
                 title: '难度标签',
-                tags: difficultyUnvotedTags,
+                tags: difficultyTags,
                 isLoading: false,
                 isDark: isDark,
                 state: state,
                 isUserSection: false,
                 mapName: widget.mapName,
               ),
-            if (tierUnvotedTags.isNotEmpty)
+            if (tierTags.isNotEmpty)
               _buildTagSection(
                 title: 'Tier 标签',
-                tags: tierUnvotedTags,
+                tags: tierTags,
                 isLoading: false,
                 isDark: isDark,
                 state: state,
                 isUserSection: false,
                 mapName: widget.mapName,
               ),
-            if (otherUnvotedTags.isNotEmpty)
+            if (otherTags.isNotEmpty)
               _buildTagSection(
                 title: '其他标签',
-                tags: otherUnvotedTags,
+                tags: otherTags,
                 isLoading: false,
                 isDark: isDark,
                 state: state,
@@ -3262,5 +3278,149 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         ToastUtils.showError(context, '上传失败，请稍后重试');
       }
     }
+  }
+}
+
+/// 底部悬浮的已投票标签面板
+class _VotedTagsFloatingPanel extends StatefulWidget {
+  final List<MapTag> votedTags;
+  final MapTagState state;
+  final bool isDark;
+  final String mapName;
+
+  const _VotedTagsFloatingPanel({
+    required this.votedTags,
+    required this.state,
+    required this.isDark,
+    required this.mapName,
+  });
+
+  @override
+  State<_VotedTagsFloatingPanel> createState() =>
+      _VotedTagsFloatingPanelState();
+}
+
+class _VotedTagsFloatingPanelState extends State<_VotedTagsFloatingPanel> {
+  bool _isExpanded = false;
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = widget.isDark ? AppColors.slate700 : Colors.white;
+    final borderColor = widget.isDark ? Colors.white24 : Colors.black12;
+    final textColor = widget.isDark ? Colors.white : AppColors.gray800;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isHovered
+                ? AppColors.primary.withValues(alpha: 0.5)
+                : borderColor,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.15),
+              blurRadius: _isHovered ? 16 : 10,
+              offset: Offset(0, _isHovered ? 6 : 4),
+            ),
+          ],
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          alignment: Alignment.bottomRight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SizedBox(
+                width: _isExpanded ? 480 : null,
+                child: InkWell(
+                  onTap: () {
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                      });
+                    },
+                    borderRadius: _isExpanded
+                        ? const BorderRadius.vertical(top: Radius.circular(12))
+                        : BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                MdiIcons.checkCircleOutline,
+                                size: 20,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '已投票(${widget.votedTags.length})',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Icon(
+                              _isExpanded
+                                  ? MdiIcons.chevronDown
+                                  : MdiIcons.chevronUp,
+                              size: 20,
+                              color: widget.isDark
+                                  ? Colors.white54
+                                  : AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (_isExpanded)
+                    Container(
+                      width: 480,
+                      constraints: const BoxConstraints(maxHeight: 240),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: borderColor)),
+                      ),
+                      child: ListView(
+                        padding: const EdgeInsets.all(12),
+                        shrinkWrap: true,
+                        children: [
+                          _TagGrid(
+                            tags: widget.votedTags,
+                            state: widget.state,
+                            isDark: widget.isDark,
+                            isUserSection: false,
+                            mapName: widget.mapName,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
   }
 }
