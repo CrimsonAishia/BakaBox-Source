@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -76,7 +77,24 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
   final _penaltyOtherController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _quillController.addListener(_onTextChanged);
+    _banHoursController.addListener(_onTextChanged);
+    _penaltyOtherController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    _quillController.removeListener(_onTextChanged);
+    _banHoursController.removeListener(_onTextChanged);
+    _penaltyOtherController.removeListener(_onTextChanged);
     _quillController.dispose();
     _banHoursController.dispose();
     _penaltyOtherController.dispose();
@@ -90,11 +108,25 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
     return _selectedReason == widget.reasons.last.value;
   }
 
-  bool get _canSubmit =>
-      _selectedReason != null &&
-      !_isSubmitting &&
-      (!_isDescriptionRequired ||
-          _quillController.document.toPlainText().trim().isNotEmpty);
+  bool get _canSubmit {
+    if (_selectedReason == null || _isSubmitting) return false;
+    
+    if (_isDescriptionRequired && _quillController.document.toPlainText().trim().isEmpty) {
+      return false;
+    }
+    
+    if (widget.showPenalties) {
+      if (_banHours) {
+        final hrs = _banHoursController.text.trim();
+        if (hrs.isEmpty || int.tryParse(hrs) == null || int.parse(hrs) <= 0) {
+          return false;
+        }
+      }
+      if (_penaltyOther && _penaltyOtherController.text.trim().isEmpty) return false;
+    }
+    
+    return true;
+  }
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
@@ -112,8 +144,8 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
       if (_clearAllVotes) penalties.add('clear_all_votes');
       if (_banHours) {
         final hrs = _banHoursController.text.trim();
-        if (hrs.isEmpty) {
-          ToastUtils.showWarning(context, '请填写封禁小时数');
+        if (hrs.isEmpty || int.tryParse(hrs) == null || int.parse(hrs) <= 0) {
+          ToastUtils.showWarning(context, '请输入有效的封禁小时数');
           return;
         }
         penalties.add('ban_vote_hours:$hrs');
@@ -246,19 +278,22 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    SizedBox(
-                      height: 240,
-                      child: RichTextEditor(
-                        controller: _quillController,
-                        showToolbar: false,
-                        maxImages: _maxImages,
-                        hintText: '请描述具体情况...',
-                        onImagesChanged: (images) {
-                          setState(() {
-                            _evidenceImages.clear();
-                            _evidenceImages.addAll(images);
-                          });
-                        },
+                    IgnorePointer(
+                      ignoring: _isSubmitting,
+                      child: SizedBox(
+                        height: 240,
+                        child: RichTextEditor(
+                          controller: _quillController,
+                          showToolbar: false,
+                          maxImages: _maxImages,
+                          hintText: '请描述具体情况...',
+                          onImagesChanged: (images) {
+                            setState(() {
+                              _evidenceImages.clear();
+                              _evidenceImages.addAll(images);
+                            });
+                          },
+                        ),
                       ),
                     ),
 
@@ -371,7 +406,9 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
                 height: 32,
                 child: TextField(
                   controller: _banHoursController,
+                  enabled: !_isSubmitting,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: const InputDecoration(
                     hintText: '小时数',
                     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -407,6 +444,7 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
                   height: 32,
                   child: TextField(
                     controller: _penaltyOtherController,
+                    enabled: !_isSubmitting,
                     decoration: const InputDecoration(
                       hintText: '具体惩罚说明',
                       contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
