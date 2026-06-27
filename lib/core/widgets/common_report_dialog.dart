@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import '../models/report_models.dart';
 import '../utils/log_service.dart';
 import '../utils/toast_utils.dart';
+import '../utils/error_utils.dart';
 import 'guide/guide_tokens.dart';
 import 'rich_text_editor.dart';
 
@@ -150,6 +151,7 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
       LogService.e('提交举报失败', e);
       if (mounted) {
         setState(() => _isSubmitting = false);
+        ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '提交举报失败，请稍后重试'));
       }
     }
   }
