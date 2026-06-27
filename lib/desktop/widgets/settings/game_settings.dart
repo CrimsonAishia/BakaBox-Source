@@ -125,30 +125,12 @@ class _GameSettingsState extends State<GameSettings> {
         Row(
           children: [
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.slate800 : AppColors.slate50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: hasError
-                        ? Colors.red.withValues(alpha: 0.5)
-                        : (isDark ? AppColors.slate600 : AppColors.slate200),
-                  ),
-                ),
-                child: Text(
-                  hasPath ? path! : placeholder,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: hasPath
-                        ? (isDark ? Colors.white : AppColors.gray700)
-                        : (isDark ? Colors.white38 : AppColors.gray400),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              child: _HoverablePathBox(
+                hasPath: hasPath,
+                path: path,
+                placeholder: placeholder,
+                hasError: hasError,
+                isDark: isDark,
               ),
             ),
             const SizedBox(width: 10),
@@ -552,6 +534,70 @@ class _PlatformOption extends StatelessWidget {
               Icon(MdiIcons.checkCircle, size: 18, color: AppColors.primary),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HoverablePathBox extends StatefulWidget {
+  final bool hasPath;
+  final String? path;
+  final String placeholder;
+  final bool hasError;
+  final bool isDark;
+
+  const _HoverablePathBox({
+    required this.hasPath,
+    required this.path,
+    required this.placeholder,
+    required this.hasError,
+    required this.isDark,
+  });
+
+  @override
+  State<_HoverablePathBox> createState() => _HoverablePathBoxState();
+}
+
+class _HoverablePathBoxState extends State<_HoverablePathBox> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: widget.isDark 
+              ? (_isHovering ? AppColors.slate700 : AppColors.slate800) 
+              : (_isHovering ? AppColors.slate100 : AppColors.slate50),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: widget.hasError
+                ? Colors.red.withValues(alpha: 0.5)
+                : (widget.isDark 
+                    ? (_isHovering ? AppColors.slate500 : AppColors.slate600) 
+                    : (_isHovering ? AppColors.slate300 : AppColors.slate200)),
+          ),
+        ),
+        child: Tooltip(
+          message: widget.hasPath ? widget.path! : widget.placeholder,
+          waitDuration: const Duration(milliseconds: 500),
+          child: Text(
+            widget.hasPath ? widget.path! : widget.placeholder,
+            style: TextStyle(
+              fontSize: 13,
+              color: widget.hasPath
+                  ? (widget.isDark ? Colors.white : AppColors.gray700)
+                  : (widget.isDark ? Colors.white38 : AppColors.gray400),
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

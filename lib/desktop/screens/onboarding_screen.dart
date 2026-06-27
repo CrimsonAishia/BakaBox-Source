@@ -52,6 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _passwordController = TextEditingController();
   bool _isLoggingIn = false;
   String? _captchaToken;
+  bool _isHoveringPath = false;
 
   @override
   void initState() {
@@ -565,22 +566,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 16),
               // 当前路径显示
-              Container(
-                width: double.infinity,
-                height: 56, // 固定高度
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.slate700 : AppColors.slate100,
-                  borderRadius: BorderRadius.circular(12),
-                  border: hasError
-                      ? Border.all(
-                          color: AppColors.red500.withValues(alpha: 0.5),
-                        )
-                      : null,
-                ),
+              MouseRegion(
+                onEnter: (_) => setState(() => _isHoveringPath = true),
+                onExit: (_) => setState(() => _isHoveringPath = false),
+                child: Container(
+                  width: double.infinity,
+                  height: 56, // 固定高度
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? (_isHoveringPath ? AppColors.slate600 : AppColors.slate700) 
+                        : (_isHoveringPath ? AppColors.slate200 : AppColors.slate100),
+                    borderRadius: BorderRadius.circular(12),
+                    border: hasError
+                        ? Border.all(
+                            color: AppColors.red500.withValues(alpha: 0.5),
+                          )
+                        : (_isHoveringPath 
+                            ? Border.all(
+                                color: isDark ? AppColors.slate500 : AppColors.slate300,
+                              )
+                            : null),
+                  ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -637,7 +647,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ],
                 ),
               ),
-              // 错误提示
+            ),
+            // 错误提示
               if (hasError) ...[
                 const SizedBox(height: 8),
                 Row(

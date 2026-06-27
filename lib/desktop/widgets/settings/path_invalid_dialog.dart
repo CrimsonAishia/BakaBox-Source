@@ -283,7 +283,7 @@ class PathInvalidDialog extends StatelessWidget {
   }
 }
 
-class _PathSelector extends StatelessWidget {
+class _PathSelector extends StatefulWidget {
   final String label;
   final String? path;
   final String placeholder;
@@ -303,58 +303,77 @@ class _PathSelector extends StatelessWidget {
   });
 
   @override
+  State<_PathSelector> createState() => _PathSelectorState();
+}
+
+class _PathSelectorState extends State<_PathSelector> {
+  bool _isHovering = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasPath = path?.isNotEmpty == true;
-    final hasError = errorMessage != null && errorMessage!.isNotEmpty;
+    final hasPath = widget.path?.isNotEmpty == true;
+    final hasError = widget.errorMessage != null && widget.errorMessage!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.slate800 : AppColors.slate50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: hasError
-                        ? Colors.red.withValues(alpha: 0.5)
-                        : (isDark ? AppColors.slate600 : AppColors.slate200),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isHovering = true),
+                onExit: (_) => setState(() => _isHovering = false),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
                   ),
-                ),
-                child: Text(
-                  hasPath ? path! : placeholder,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: hasPath
-                        ? (isDark ? Colors.white : AppColors.gray700)
-                        : (isDark ? Colors.white38 : AppColors.gray400),
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? (_isHovering ? AppColors.slate700 : AppColors.slate800) 
+                        : (_isHovering ? AppColors.slate100 : AppColors.slate50),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: hasError
+                          ? Colors.red.withValues(alpha: 0.5)
+                          : (isDark 
+                              ? (_isHovering ? AppColors.slate500 : AppColors.slate600) 
+                              : (_isHovering ? AppColors.slate300 : AppColors.slate200)),
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  child: Tooltip(
+                    message: hasPath ? widget.path! : widget.placeholder,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      hasPath ? widget.path! : widget.placeholder,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: hasPath
+                            ? (isDark ? Colors.white : AppColors.gray700)
+                            : (isDark ? Colors.white38 : AppColors.gray400),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 10),
             OutlinedButton(
-              onPressed: isDetecting ? null : onDetect,
+              onPressed: widget.isDetecting ? null : widget.onDetect,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 14,
                 ),
               ),
-              child: isDetecting
+              child: widget.isDetecting
                   ? const SizedBox(
                       width: 16,
                       height: 16,
@@ -364,7 +383,7 @@ class _PathSelector extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             OutlinedButton(
-              onPressed: onSelect,
+              onPressed: widget.onSelect,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -379,7 +398,7 @@ class _PathSelector extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              errorMessage!,
+              widget.errorMessage!,
               style: const TextStyle(fontSize: 12, color: Colors.red),
             ),
           ),
