@@ -1087,7 +1087,11 @@ class GameLauncherService {
         var cleanPath = steamPath.replaceAll('/', '\\');
         // 验证路径存在
         if (await File('$cleanPath\\steam.exe').exists()) {
-          return cleanPath;
+          try {
+            return await Directory(cleanPath).resolveSymbolicLinks();
+          } catch (_) {
+            return cleanPath;
+          }
         }
       }
     } catch (e) {
@@ -1101,7 +1105,10 @@ class GameLauncherService {
     try {
       final executablePath = NativeProcessUtils.getProcessExecutablePath('steam.exe');
       if (executablePath != null && executablePath.isNotEmpty) {
-        final steamPath = File(executablePath).parent.path;
+        var steamPath = File(executablePath).parent.path;
+        try {
+          steamPath = await Directory(steamPath).resolveSymbolicLinks();
+        } catch (_) {}
         LogService.d('从进程路径提取Steam目录: $steamPath');
         return steamPath;
       }
@@ -1134,8 +1141,12 @@ class GameLauncherService {
         if (await File(exePath).exists()) {
           LogService.d('检测到游戏路径: $gamePath');
           _gamePathDetectionAttempted = true;
-          _cachedGamePath = gamePath;
-          return gamePath;
+          try {
+            _cachedGamePath = await Directory(gamePath).resolveSymbolicLinks();
+          } catch (_) {
+            _cachedGamePath = gamePath;
+          }
+          return _cachedGamePath;
         }
 
         // 检查Steam库文件夹配置
@@ -1157,8 +1168,12 @@ class GameLauncherService {
                 if (await File(altExePath).exists()) {
                   LogService.d('在Steam库中检测到游戏路径: $altGamePath');
                   _gamePathDetectionAttempted = true;
-                  _cachedGamePath = altGamePath;
-                  return altGamePath;
+                  try {
+                    _cachedGamePath = await Directory(altGamePath).resolveSymbolicLinks();
+                  } catch (_) {
+                    _cachedGamePath = altGamePath;
+                  }
+                  return _cachedGamePath;
                 }
               }
             }
