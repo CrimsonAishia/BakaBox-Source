@@ -122,12 +122,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
-      body: PageLayout(
-        title: _getTitle(),
-        subtitle: _getSubtitle(),
-        headerActions: _buildHeaderActions(),
-        child: _buildContent(),
-      ),
+      body: _buildContent(),
     );
   }
 
@@ -171,18 +166,31 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
 
   Widget _buildContent() {
     return switch (_currentView) {
-      _IssueView.list => _buildListView(),
+      _IssueView.list => PageLayout(
+          title: _getTitle(),
+          subtitle: _getSubtitle(),
+          headerActions: _buildHeaderActions(),
+          child: _buildListView(),
+        ),
       _IssueView.detail => _IssueDetailView(
-        issueId: _selectedIssueId!,
-        onBack: _navigateToList,
-      ),
-      _IssueView.create => _IssueCreateView(
-        onBack: _navigateToList,
-        onCreated: (id) {
-          context.read<IssueBloc>().add(const IssueRefresh());
-          _navigateToDetail(id);
-        },
-      ),
+          issueId: _selectedIssueId!,
+          onBack: _navigateToList,
+          title: _getTitle(),
+          subtitle: _getSubtitle(),
+          headerActions: _buildHeaderActions(),
+        ),
+      _IssueView.create => PageLayout(
+          title: _getTitle(),
+          subtitle: _getSubtitle(),
+          headerActions: _buildHeaderActions(),
+          child: _IssueCreateView(
+            onBack: _navigateToList,
+            onCreated: (id) {
+              context.read<IssueBloc>().add(const IssueRefresh());
+              _navigateToDetail(id);
+            },
+          ),
+        ),
     };
   }
 
@@ -1365,18 +1373,25 @@ class _IssueCardState extends State<_IssueCard> {
 class _IssueDetailView extends StatefulWidget {
   final int issueId;
   final VoidCallback onBack;
-  const _IssueDetailView({required this.issueId, required this.onBack});
+  final String title;
+  final String subtitle;
+  final Widget? headerActions;
+
+  const _IssueDetailView({
+    super.key,
+    required this.issueId,
+    required this.onBack,
+    required this.title,
+    required this.subtitle,
+    this.headerActions,
+  });
 
   @override
   State<_IssueDetailView> createState() => _IssueDetailViewState();
 }
 
 class _IssueDetailViewState extends State<_IssueDetailView> {
-  final _commentController = quill.QuillController.basic();
   final _scrollController = ScrollController();
-  final _commentEditorKey = GlobalKey<RichTextEditorState>();
-  final _commentInputKey = GlobalKey();
-  List<String> _commentImageUrls = [];
 
   // 回复相关
   IssueComment? _replyToComment;
@@ -1385,16 +1400,14 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   // 高亮的评论 ID，用于跳转时进行动画提示
   int? _highlightedCommentId;
 
-  // 评论草稿相关
-  bool _showCommentDraftPrompt = false;
-  DraftData? _savedCommentDraft;
-
   bool _isLoadingMore = false;
+  
+  bool _commentBarVisible = false;
+  final GlobalKey _commentSectionKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _checkCommentDraftExists();
     _scrollController.addListener(_onScroll);
   }
 
@@ -1403,7 +1416,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     super.didUpdateWidget(oldWidget);
     if (widget.issueId != oldWidget.issueId) {
       _isLoadingMore = false;
-      _checkCommentDraftExists();
+      _commentBarVisible = false;
     }
   }
 
@@ -1433,115 +1446,21 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         });
       }
     }
+
+    _checkCommentBarVisibility();
   }
 
   @override
   void dispose() {
-    _commentController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  /// 检查评论草稿是否存在
-  Future<void> _checkCommentDraftExists() async {
-    try {
-      final draftId = 'comment_${widget.issueId}';
-      final hasDraft = await DraftService().hasDraft(draftId);
-      if (hasDraft) {
-        final draft = await DraftService().restoreDraft(draftId);
-        if (draft != null && mounted) {
-          setState(() {
-            _savedCommentDraft = draft;
-            _showCommentDraftPrompt = true;
-          });
-        }
-      }
-    } catch (e) {
-      LogService.e('检查评论草稿失败', e);
-    }
-  }
-
-  /// 恢复评论草稿
-  void _restoreCommentDraft() {
-    if (_savedCommentDraft == null) return;
-
-    // 恢复内容
-    if (_savedCommentDraft!.content.isNotEmpty) {
-      try {
-        final document = QuillDeltaCodec.decode(_savedCommentDraft!.content);
-        _commentController.document = document;
-      } catch (e) {
-        LogService.e('解码评论草稿失败', e);
-      }
-    }
-
-    // 恢复图片
-    setState(() {
-      _commentImageUrls = _savedCommentDraft!.imageUrls;
-      _showCommentDraftPrompt = false;
-      _savedCommentDraft = null;
-    });
-
-    ToastUtils.showSuccess(context, '草稿已恢复');
-  }
-
-  /// 忽略评论草稿
-  void _ignoreCommentDraft() {
-    DraftService().deleteDraft('comment_${widget.issueId}');
-    setState(() {
-      _showCommentDraftPrompt = false;
-      _savedCommentDraft = null;
-    });
-  }
-
-  void _submitComment() {
-    final content = QuillDeltaCodec.encode(_commentController.document);
-    if (_commentController.document.toPlainText().trim().isEmpty) {
-      ToastUtils.showWarning(context, '请输入评论内容');
-      return;
-    }
-    final authState = context.read<AuthBloc>().state;
-    if (!authState.isAuthenticated) {
-      ToastUtils.showWarning(context, '请先登录后再评论');
-      return;
-    }
-    // 设置当前用户信息用于构建评论
-    context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
-    context.read<IssueDetailBloc>().add(
-      IssueDetailAddComment(
-        content,
-        images: _commentImageUrls,
-        replyToId: _replyToComment?.id,
-      ),
-    );
-
-    // 提交后删除草稿
-    DraftService().deleteDraft('comment_${widget.issueId}');
-
-    _commentController.clear();
-    _commentEditorKey.currentState?.clearImages();
-    setState(() {
-      _commentImageUrls = [];
-      _replyToComment = null;
-    });
-  }
 
   void _setReplyTo(IssueComment comment) {
     setState(() {
       _replyToComment = comment;
-    });
-    // 滚动到评论输入区域
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _commentInputKey.currentContext;
-      if (context != null) {
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: 0.1,
-        );
-      }
     });
   }
 
@@ -1558,6 +1477,21 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
       return;
     }
     context.read<IssueDetailBloc>().add(const IssueDetailToggleVote());
+  }
+
+  void _checkCommentBarVisibility() {
+    final ctx = _commentSectionKey.currentContext;
+    if (ctx != null) {
+      final renderBox = ctx.findRenderObject() as RenderBox?;
+      if (renderBox != null && renderBox.attached) {
+        final topOffset = renderBox.localToGlobal(Offset.zero).dy;
+        final viewportHeight = MediaQuery.of(context).size.height;
+        final shouldShow = topOffset < viewportHeight * 0.85;
+        if (shouldShow != _commentBarVisible) {
+          setState(() => _commentBarVisible = shouldShow);
+        }
+      }
+    }
   }
 
   @override
@@ -1578,6 +1512,11 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           return const Center(child: CircularProgressIndicator());
         }
         if (state.issue == null) return _buildError(state.error);
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _checkCommentBarVisibility();
+        });
+        
         return _buildContent(state);
       },
     );
@@ -1682,28 +1621,53 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   Widget _buildContent(IssueDetailState state) {
     final issue = state.issue!;
     final isAuthenticated = context.watch<AuthBloc>().state.isAuthenticated;
-    return Scrollbar(
-      controller: _scrollController,
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildIssueCard(issue, state),
-            const SizedBox(height: 20),
-            _buildCommentsSection(state),
-            const SizedBox(height: 20),
-            if (issue.issueStatus.isOpen && isAuthenticated)
-              Container(
-                key: _commentInputKey,
-                child: _buildCommentInput(state),
+    final showComposer = issue.issueStatus.isOpen && isAuthenticated;
+    
+    return Stack(
+      children: [
+        PageLayout(
+          title: widget.title,
+          subtitle: widget.subtitle,
+          headerActions: widget.headerActions,
+          child: Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildIssueCard(issue, state),
+                  const SizedBox(height: 20),
+                  _buildCommentsSection(state),
+                  SizedBox(height: (showComposer && _commentBarVisible) ? 150 : 20),
+                ],
               ),
-            if (issue.issueStatus.isOpen && isAuthenticated) const SizedBox(height: 20),
-          ],
+            ),
+          ),
         ),
-      ),
+        if (showComposer)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              offset: _commentBarVisible ? Offset.zero : const Offset(0, 1.2),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _commentBarVisible ? 1.0 : 0.0,
+                child: _IssueBottomCommentComposer(
+                  issueId: widget.issueId,
+                  replyTarget: _replyToComment,
+                  onCancelReply: _cancelReply,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -2004,6 +1968,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   Widget _buildCommentsSection(IssueDetailState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
+      key: _commentSectionKey,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isDark ? AppColors.slate800 : Colors.white,
@@ -2332,242 +2297,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     );
   }
 
-  Widget _buildReplyBar(bool isDark) {
-    if (_replyToComment == null) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(MdiIcons.replyOutline, size: 16, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Text(
-            '回复 ',
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white70 : AppColors.gray700,
-            ),
-          ),
-          Text(
-            _replyToComment!.authorName,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
-          const Spacer(),
-          InkWell(
-            onTap: _cancelReply,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.close,
-                size: 16,
-                color: isDark ? Colors.white38 : AppColors.gray400,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildCommentInput(IssueDetailState state) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.slate800 : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.slate700 : AppColors.gray200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _replyToComment != null ? '回复评论' : '发表评论',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white70 : AppColors.gray700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // 回复提示条
-          _buildReplyBar(isDark),
-          // 评论草稿提示条
-          if (_showCommentDraftPrompt) ...[
-            _buildCommentDraftPrompt(),
-            const SizedBox(height: 12),
-          ],
-          SizedBox(
-            height: 320,
-            child: RichTextEditor(
-              key: _commentEditorKey,
-              controller: _commentController,
-              hintText: '写下你的评论...',
-              maxLength: 500,
-              maxImages: 5,
-              compactMode: false,
-              draftId: 'comment_${widget.issueId}',
-              enableDraftManualSave: true,
-              onImagesChanged: (urls) {
-                setState(() {
-                  _commentImageUrls = urls;
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton.icon(
-                onPressed: state.isSubmitting ? null : _saveCommentDraft,
-                icon: const Icon(Icons.save_outlined, size: 18),
-                label: const Text('保存草稿'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: state.isSubmitting ? null : _submitComment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-                child: state.isSubmitting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(_replyToComment != null ? '回复' : '发表评论'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _saveCommentDraft() async {
-    final plainText = _commentController.document.toPlainText().trim();
-    if (plainText.isEmpty) {
-      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
-      return;
-    }
-
-    try {
-      final content = QuillDeltaCodec.encode(_commentController.document);
-
-      await DraftService().saveDraft(
-        draftId: 'comment_${widget.issueId}',
-        content: content,
-        imageUrls: _commentImageUrls,
-      );
-
-      if (mounted) {
-        ToastUtils.showSuccess(context, '草稿已保存');
-      }
-    } catch (e) {
-      LogService.e('保存草稿失败', e);
-      if (mounted) {
-        ToastUtils.showError(context, '保存草稿失败');
-      }
-    }
-  }
-
-  /// 评论草稿提示条
-  Widget _buildCommentDraftPrompt() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(
-              Icons.restore_rounded,
-              size: 16,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '发现未保存的评论草稿',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : AppColors.gray800,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: _ignoreCommentDraft,
-            style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            ),
-            child: const Text('忽略', style: TextStyle(fontSize: 13)),
-          ),
-          const SizedBox(width: 4),
-          ElevatedButton(
-            onPressed: _restoreCommentDraft,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            child: const Text(
-              '恢复',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Issue 创建视图（内嵌在 IssuesDesktop 中）
@@ -3347,3 +3077,488 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
     }
   }
 }
+
+class _IssueBottomCommentComposer extends StatefulWidget {
+  final int issueId;
+  final IssueComment? replyTarget;
+  final VoidCallback? onCancelReply;
+
+  const _IssueBottomCommentComposer({
+    required this.issueId,
+    this.replyTarget,
+    this.onCancelReply,
+  });
+
+  @override
+  State<_IssueBottomCommentComposer> createState() => _IssueBottomCommentComposerState();
+}
+
+class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer> {
+  final _commentController = quill.QuillController.basic();
+  final _commentEditorKey = GlobalKey<RichTextEditorState>();
+  final FocusNode _focusNode = FocusNode();
+
+  bool _expanded = false;
+  List<String> _commentImageUrls = const [];
+  
+  bool _showCommentDraftPrompt = false;
+  DraftData? _savedCommentDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCommentDraftExists();
+  }
+
+  @override
+  void didUpdateWidget(_IssueBottomCommentComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.issueId != oldWidget.issueId) {
+      _commentController.clear();
+      _commentImageUrls = const [];
+      _checkCommentDraftExists();
+    }
+    if (widget.replyTarget != null && widget.replyTarget != oldWidget.replyTarget) {
+      _expand();
+    }
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  bool _isLoggedIn() => context.read<AuthBloc>().state.isAuthenticated;
+
+  String? _avatarUrl() {
+    final info = context.read<AuthBloc>().state.userInfo;
+    if (info == null || info.avatar.isEmpty) return null;
+    return info.avatar;
+  }
+
+  String _displayName() {
+    final info = context.read<AuthBloc>().state.userInfo;
+    return info?.username ?? '游客';
+  }
+
+  Future<void> _checkCommentDraftExists() async {
+    try {
+      final draftId = 'comment_${widget.issueId}';
+      final hasDraft = await DraftService().hasDraft(draftId);
+      if (hasDraft) {
+        final draft = await DraftService().restoreDraft(draftId);
+        if (draft != null && mounted) {
+          setState(() {
+            _savedCommentDraft = draft;
+            _showCommentDraftPrompt = true;
+          });
+          _expand();
+        }
+      }
+    } catch (e) {
+      LogService.e('检查评论草稿失败', e);
+    }
+  }
+
+  void _restoreCommentDraft() {
+    if (_savedCommentDraft == null) return;
+    if (_savedCommentDraft!.content.isNotEmpty) {
+      try {
+        final document = QuillDeltaCodec.decode(_savedCommentDraft!.content);
+        _commentController.document = document;
+      } catch (e) {
+        LogService.e('解码评论草稿失败', e);
+      }
+    }
+    setState(() {
+      _commentImageUrls = _savedCommentDraft!.imageUrls;
+      _showCommentDraftPrompt = false;
+      _savedCommentDraft = null;
+    });
+    ToastUtils.showSuccess(context, '草稿已恢复');
+  }
+
+  void _ignoreCommentDraft() {
+    DraftService().deleteDraft('comment_${widget.issueId}');
+    setState(() {
+      _showCommentDraftPrompt = false;
+      _savedCommentDraft = null;
+    });
+  }
+
+  Future<void> _saveCommentDraft() async {
+    final plainText = _commentController.document.toPlainText().trim();
+    if (plainText.isEmpty) {
+      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
+      return;
+    }
+    try {
+      final content = QuillDeltaCodec.encode(_commentController.document);
+      await DraftService().saveDraft(
+        draftId: 'comment_${widget.issueId}',
+        content: content,
+        imageUrls: _commentImageUrls,
+      );
+      if (mounted) ToastUtils.showSuccess(context, '草稿已保存');
+    } catch (e) {
+      LogService.e('保存草稿失败', e);
+      if (mounted) ToastUtils.showError(context, '保存草稿失败');
+    }
+  }
+
+  void _expand() {
+    if (!_isLoggedIn()) {
+      ToastUtils.showInfo(context, '登录后才能参与评论');
+      return;
+    }
+    if (_expanded) return;
+    setState(() => _expanded = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _commentEditorKey.currentState?.focus();
+      }
+    });
+  }
+
+  void _collapse() {
+    if (!_expanded) return;
+    setState(() => _expanded = false);
+    _commentEditorKey.currentState?.unfocus();
+  }
+
+  void _handleCancel() {
+    _commentController.clear();
+    _commentEditorKey.currentState?.clearImages();
+    _commentImageUrls = const [];
+    widget.onCancelReply?.call();
+    _collapse();
+  }
+
+  void _submitComment() {
+    if (!_isLoggedIn()) {
+      ToastUtils.showInfo(context, '登录后才能参与评论');
+      return;
+    }
+    final plainText = _commentController.document.toPlainText().trim();
+    if (plainText.isEmpty) {
+      ToastUtils.showWarning(context, '请输入评论内容');
+      return;
+    }
+    final content = QuillDeltaCodec.encode(_commentController.document);
+    final target = widget.replyTarget;
+    
+    final authState = context.read<AuthBloc>().state;
+    context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
+    context.read<IssueDetailBloc>().add(
+      IssueDetailAddComment(
+        content,
+        images: _commentImageUrls,
+        replyToId: target?.id,
+      ),
+    );
+    
+    DraftService().deleteDraft('comment_${widget.issueId}');
+  }
+
+  void _onPostingDone() {
+    _commentController.clear();
+    _commentEditorKey.currentState?.clearImages();
+    setState(() => _commentImageUrls = const []);
+    widget.onCancelReply?.call();
+    _collapse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<IssueDetailBloc, IssueDetailState>(
+      listenWhen: (prev, curr) => prev.isSubmitting && !curr.isSubmitting && curr.error == null,
+      listener: (context, state) => _onPostingDone(),
+      child: _buildContainer(context),
+    );
+  }
+
+  Widget _buildContainer(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.slate900.withValues(alpha: 0.96) : Colors.white.withValues(alpha: 0.97),
+          border: Border(
+            top: BorderSide(
+              color: isDark ? Colors.white.withValues(alpha: 0.06) : AppColors.gray200,
+              width: 1,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.bottomCenter,
+          child: _expanded ? _buildExpanded(context) : _buildCollapsed(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsed(BuildContext context) {
+    final isLoggedIn = _isLoggedIn();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hint = widget.replyTarget != null
+        ? '回复 @${widget.replyTarget!.authorName}...'
+        : (isLoggedIn ? '写下你的评论...' : '登录后参与评论');
+    
+    return Padding(
+      key: const ValueKey('collapsed'),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
+            backgroundImage: isLoggedIn && _avatarUrl() != null ? NetworkImage(_avatarUrl()!) : null,
+            child: (!isLoggedIn || _avatarUrl() == null) ? Text(_displayName()[0].toUpperCase(), style: const TextStyle(fontSize: 14)) : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _expand,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.slate800 : AppColors.gray100,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: isDark ? AppColors.slate700 : AppColors.gray200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 16, color: isDark ? Colors.white38 : AppColors.gray400),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          hint,
+                          style: TextStyle(color: isDark ? Colors.white54 : AppColors.gray500, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (widget.replyTarget != null && widget.onCancelReply != null)
+                        IconButton(
+                          tooltip: '取消回复',
+                          padding: EdgeInsets.zero,
+                          iconSize: 16,
+                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                          onPressed: widget.onCancelReply,
+                          icon: Icon(Icons.close, color: isDark ? Colors.white38 : AppColors.gray400),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: _expand,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              minimumSize: const Size(0, 44),
+            ),
+            child: Text(widget.replyTarget != null ? '回复' : '发送', style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpanded(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Padding(
+      key: const ValueKey('expanded'),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
+                backgroundImage: _avatarUrl() != null ? NetworkImage(_avatarUrl()!) : null,
+                child: _avatarUrl() == null ? Text(_displayName()[0].toUpperCase(), style: const TextStyle(fontSize: 14)) : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: widget.replyTarget != null
+                    ? Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.reply_rounded, size: 14, color: AppColors.primary),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '回复 @${widget.replyTarget!.authorName}',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
+                                const SizedBox(width: 6),
+                                GestureDetector(
+                                  onTap: widget.onCancelReply,
+                                  child: const Icon(Icons.close, size: 14, color: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        _displayName(),
+                        style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.gray800),
+                      ),
+              ),
+              IconButton(
+                tooltip: '收起',
+                onPressed: _handleCancel,
+                icon: Icon(Icons.expand_more, color: isDark ? Colors.white54 : AppColors.gray500),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_showCommentDraftPrompt) _buildCommentDraftPrompt(isDark),
+          SizedBox(
+            height: 280,
+            child: RichTextEditor(
+              key: _commentEditorKey,
+              controller: _commentController,
+              hintText: widget.replyTarget != null ? '回复 @${widget.replyTarget!.authorName}...' : '写下你的评论...',
+              compactMode: true,
+              maxLength: 500,
+              maxImages: 5,
+              imageMode: ImageMode.attachment,
+              toolbarIconSize: 20,
+              toolbarButtonSize: 36,
+              onImagesChanged: (urls) => _commentImageUrls = urls,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Spacer(),
+              TextButton(
+                onPressed: _saveCommentDraft,
+                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                child: const Text('保存草稿'),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _handleCancel,
+                style: TextButton.styleFrom(foregroundColor: isDark ? Colors.white54 : AppColors.gray500),
+                child: const Text('取消'),
+              ),
+              const SizedBox(width: 8),
+              BlocBuilder<IssueDetailBloc, IssueDetailState>(
+                buildWhen: (prev, curr) => prev.isSubmitting != curr.isSubmitting,
+                builder: (context, state) {
+                  final loading = state.isSubmitting;
+                  return ElevatedButton(
+                    onPressed: loading ? null : _submitComment,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      minimumSize: const Size(0, 44),
+                    ),
+                    child: loading 
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(widget.replyTarget != null ? '回复' : '发送', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentDraftPrompt(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.primary.withValues(alpha: 0.1) : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.restore_rounded, size: 16, color: AppColors.primary),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '发现未保存的评论草稿',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.gray800),
+            ),
+          ),
+          TextButton(
+            onPressed: _ignoreCommentDraft,
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            ),
+            child: const Text('忽略', style: TextStyle(fontSize: 13)),
+          ),
+          const SizedBox(width: 4),
+          ElevatedButton(
+            onPressed: _restoreCommentDraft,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            child: const Text('恢复', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
