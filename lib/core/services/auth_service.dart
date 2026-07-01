@@ -18,20 +18,17 @@ class AuthService {
 
   AuthService._();
 
-  final List<LoginStateChangedCallback> _loginStateListeners = [];
-
-  void addLoginStateListener(LoginStateChangedCallback listener) {
-    _loginStateListeners.add(listener);
-  }
-
-  void removeLoginStateListener(LoginStateChangedCallback listener) {
-    _loginStateListeners.remove(listener);
-  }
-
   bool get isLoggedIn => false;
   UserInfo? get userInfo => null;
 
-  Future<LoginResult> login(String username, String password, {String? captchaToken}) async {
+  void addLoginStateListener(LoginStateChangedCallback listener) {}
+  void removeLoginStateListener(LoginStateChangedCallback listener) {}
+
+  Future<LoginResult> login(
+    String username,
+    String password, {
+    String? captchaToken,
+  }) async {
     throw UnimplementedError('Stub');
   }
 
@@ -80,6 +77,10 @@ class AuthService {
   Future<CheckInStatusResult> checkCheckInStatus() async {
     throw UnimplementedError('Stub');
   }
+
+  Future<String?> getBoundSteamId() async {
+    throw UnimplementedError('Stub');
+  }
 }
 
 class Cookie {
@@ -126,8 +127,15 @@ class ShakeStatusResult {
   final bool alreadyShaked;
   final String message;
   final int? rewardAmount;
+  final String? shakeTime;
 
-  ShakeStatusResult({required this.canShake, this.alreadyShaked = false, required this.message, this.rewardAmount});
+  ShakeStatusResult({
+    required this.canShake,
+    this.alreadyShaked = false,
+    required this.message,
+    this.rewardAmount,
+    this.shakeTime,
+  });
 }
 
 class ShakeResult {
@@ -135,8 +143,15 @@ class ShakeResult {
   final String message;
   final bool alreadyShaked;
   final int? rewardAmount;
+  final String? shakeTime;
 
-  ShakeResult({required this.success, required this.message, this.alreadyShaked = false, this.rewardAmount});
+  ShakeResult({
+    required this.success,
+    required this.message,
+    this.alreadyShaked = false,
+    this.rewardAmount,
+    this.shakeTime,
+  });
 }
 
 class CheckInStatusResult {

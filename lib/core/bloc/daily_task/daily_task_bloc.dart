@@ -16,6 +16,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
   static const String _keyCheckInRewardDate = 'daily_task_checkin_reward_date';
   static const String _keyShakeReward = 'daily_task_shake_reward';
   static const String _keyShakeRewardDate = 'daily_task_shake_reward_date';
+  static const String _keyShakeTime = 'daily_task_shake_time';
+  static const String _keyShakeTimeDate = 'daily_task_shake_time_date';
 
   DailyTaskBloc() : super(const DailyTaskState()) {
     on<DailyTaskCheckStatusRequested>(_onCheckStatusRequested);
@@ -37,6 +39,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     await StorageUtils.remove(_keyCheckInRewardDate);
     await StorageUtils.remove(_keyShakeReward);
     await StorageUtils.remove(_keyShakeRewardDate);
+    await StorageUtils.remove(_keyShakeTime);
+    await StorageUtils.remove(_keyShakeTimeDate);
     LogService.d('[DailyTask] 已清除本地缓存');
   }
 
@@ -70,6 +74,23 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     final todayDate = _getTodayDate();
     if (rewardDate == todayDate) {
       return StorageUtils.getInt(_keyShakeReward);
+    }
+    return null;
+  }
+
+  /// 保存摇一摇时间
+  Future<void> _saveShakeTime(String time) async {
+    final todayDate = _getTodayDate();
+    await StorageUtils.setString(_keyShakeTime, time);
+    await StorageUtils.setString(_keyShakeTimeDate, todayDate);
+  }
+
+  /// 获取今日摇一摇时间（如果是今天摇的）
+  Future<String?> _getTodayShakeTime() async {
+    final timeDate = StorageUtils.getString(_keyShakeTimeDate);
+    final todayDate = _getTodayDate();
+    if (timeDate == todayDate) {
+      return StorageUtils.getString(_keyShakeTime);
     }
     return null;
   }
@@ -130,9 +151,10 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       // 读取今日奖励缓存
       final checkInReward = await _getTodayCheckInReward();
       final shakeReward = await _getTodayShakeReward();
+      final shakeTime = await _getTodayShakeTime();
 
       LogService.d(
-        '[DailyTask] 本地缓存：checkInReward=$checkInReward, shakeReward=$shakeReward',
+        '[DailyTask] 本地缓存：checkInReward=$checkInReward, shakeReward=$shakeReward, shakeTime=$shakeTime',
       );
 
       // 摇一摇奖励逻辑：
@@ -149,6 +171,15 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         LogService.d('[DailyTask] 已摇过但无缓存，保存服务器返回的奖励：$finalShakeReward');
       }
 
+      String? finalShakeTime = shakeTime;
+      if (shakeTime == null &&
+          shakeResult.alreadyShaked &&
+          shakeResult.shakeTime != null) {
+        finalShakeTime = shakeResult.shakeTime;
+        await _saveShakeTime(finalShakeTime!);
+        LogService.d('[DailyTask] 已摇过但无缓存，保存服务器返回的时间：$finalShakeTime');
+      }
+
       emit(
         state.copyWith(
           isCheckingStatus: false,
@@ -159,6 +190,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
           hasShaked: shakeResult.alreadyShaked,
           shakeRewardAmount: finalShakeReward,
           clearShakeReward: finalShakeReward == null,
+          shakeTime: finalShakeTime,
+          clearShakeTime: finalShakeTime == null,
         ),
       );
 
@@ -240,12 +273,18 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       if (event.rewardAmount != null) {
         await _saveShakeReward(event.rewardAmount!);
       }
+      
+      // 保存摇一摇时间
+      final now = DateTime.now();
+      final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+      await _saveShakeTime(timeStr);
 
       emit(
         state.copyWith(
           canShake: false,
           hasShaked: true,
           shakeRewardAmount: event.rewardAmount,
+          shakeTime: timeStr,
         ),
       );
 
@@ -263,6 +302,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     await StorageUtils.remove(_keyCheckInRewardDate);
     await StorageUtils.remove(_keyShakeReward);
     await StorageUtils.remove(_keyShakeRewardDate);
+    await StorageUtils.remove(_keyShakeTime);
+    await StorageUtils.remove(_keyShakeTimeDate);
 
     emit(const DailyTaskState());
     LogService.d('[DailyTask] 已重置每日任务状态');

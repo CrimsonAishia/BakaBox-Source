@@ -23,6 +23,9 @@ class DailyTaskState extends Equatable {
   /// 摇一摇获得的奖励金额
   final int? shakeRewardAmount;
 
+  /// 摇一摇的时间
+  final String? shakeTime;
+
   const DailyTaskState({
     this.isCheckingStatus = false,
     this.isCheckingIn = false,
@@ -31,6 +34,7 @@ class DailyTaskState extends Equatable {
     this.canShake,
     this.hasShaked = false,
     this.shakeRewardAmount,
+    this.shakeTime,
   });
 
   DailyTaskState copyWith({
@@ -43,6 +47,8 @@ class DailyTaskState extends Equatable {
     bool? hasShaked,
     int? shakeRewardAmount,
     bool clearShakeReward = false,
+    String? shakeTime,
+    bool clearShakeTime = false,
   }) {
     return DailyTaskState(
       isCheckingStatus: isCheckingStatus ?? this.isCheckingStatus,
@@ -56,6 +62,7 @@ class DailyTaskState extends Equatable {
       shakeRewardAmount: clearShakeReward
           ? null
           : (shakeRewardAmount ?? this.shakeRewardAmount),
+      shakeTime: clearShakeTime ? null : (shakeTime ?? this.shakeTime),
     );
   }
 
@@ -68,5 +75,6 @@ class DailyTaskState extends Equatable {
     canShake,
     hasShaked,
     shakeRewardAmount,
+    shakeTime,
   ];
 }
