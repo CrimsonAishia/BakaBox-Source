@@ -152,6 +152,16 @@ class RichTextEditorState extends State<RichTextEditor> {
     return _countResizableImages(widget.controller.document);
   }
 
+  /// 请求焦点
+  void focus() {
+    _focusNode.requestFocus();
+  }
+
+  /// 取消焦点
+  void unfocus() {
+    _focusNode.unfocus();
+  }
+
   @override
   void initState() {
     super.initState();

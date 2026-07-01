@@ -103,15 +103,18 @@ class GuideBottomCommentComposerState
     }
     if (_expanded) return;
     setState(() => _expanded = true);
+    // 延迟一帧等编辑器组件挂载
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focusNode.requestFocus();
+      if (mounted) {
+        _editorKey.currentState?.focus();
+      }
     });
   }
 
   void _collapse() {
     if (!_expanded) return;
     setState(() => _expanded = false);
-    _focusNode.unfocus();
+    _editorKey.currentState?.unfocus();
   }
 
   void _handleCancel() {
