@@ -1,3 +1,6 @@
+import 'package:flutter_quill/flutter_quill.dart';
+import '../../../core/services/quill_delta_codec.dart';
+import '../../../core/widgets/rich_text_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/models/character_models.dart';
@@ -65,7 +68,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
     return double.tryParse(text);
   }
 
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
   late TextEditingController _costController;
@@ -83,8 +86,11 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
   @override
   void initState() {
     super.initState();
-    _descriptionController = TextEditingController(
-      text: widget.existingEdit?.description ?? widget.skill.description,
+    _descriptionController = QuillController(
+      document: QuillDeltaCodec.decode(
+        widget.existingEdit?.description ?? widget.skill.description,
+      ),
+      selection: const TextSelection.collapsed(offset: 0),
     );
     _cooldownController = TextEditingController(
       text:
@@ -209,11 +215,32 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildTextField(
-                            '效果描述',
-                            _descriptionController,
-                            '描述技能的效果...',
-                            maxLines: 3,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '效果描述',
+                                style: TextStyle(
+                                  color: CharacterGalleryTheme.getScrollBrown(
+                                    context,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 180,
+                                child: RichTextEditor(
+                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  imageMode: ImageMode.inline,
+
+                                  controller: _descriptionController,
+                                  compactMode: true,
+                                  hintText: '描述技能的效果...',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -593,7 +620,9 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
             onPressed: () {
               widget.onSave(
                 ZombieSkillEditData(
-                  description: _descriptionController.text,
+                  description: QuillDeltaCodec.encode(
+                    _descriptionController.document,
+                  ),
                   damage: _damageController.text.isNotEmpty
                       ? _damageController.text
                       : null,
@@ -642,7 +671,7 @@ class ZombieSkillCreateSubDialog extends StatefulWidget {
 class _ZombieSkillCreateSubDialogState
     extends State<ZombieSkillCreateSubDialog> {
   late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
   late TextEditingController _costController;
@@ -662,7 +691,10 @@ class _ZombieSkillCreateSubDialogState
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _descriptionController = TextEditingController();
+    _descriptionController = QuillController(
+      document: QuillDeltaCodec.decode(''),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
     _cooldownController = TextEditingController();
     _damageController = TextEditingController();
     _costController = TextEditingController();
@@ -760,11 +792,32 @@ class _ZombieSkillCreateSubDialogState
                           const SizedBox(height: 16),
                           _buildTypeSelector(),
                           const SizedBox(height: 16),
-                          _buildTextField(
-                            '效果描述 *',
-                            _descriptionController,
-                            '描述技能的效果...',
-                            maxLines: 3,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '效果描述',
+                                style: TextStyle(
+                                  color: CharacterGalleryTheme.getScrollBrown(
+                                    context,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 180,
+                                child: RichTextEditor(
+                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  imageMode: ImageMode.inline,
+
+                                  controller: _descriptionController,
+                                  compactMode: true,
+                                  hintText: '描述技能的效果...',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -1196,7 +1249,7 @@ class _ZombieSkillCreateSubDialogState
       ToastUtils.showWarning(context, '请填写技能名称');
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.document.toPlainText().trim().isEmpty) {
       ToastUtils.showWarning(context, '请填写效果描述');
       return;
     }
@@ -1205,7 +1258,7 @@ class _ZombieSkillCreateSubDialogState
       ZombieSkillCreateData(
         name: _nameController.text,
         type: _selectedType,
-        description: _descriptionController.text,
+        description: QuillDeltaCodec.encode(_descriptionController.document),
         damage: _damageController.text.isNotEmpty
             ? _damageController.text
             : null,
@@ -1248,7 +1301,7 @@ class NewZombieSkillEditSubDialog extends StatefulWidget {
 class _NewZombieSkillEditSubDialogState
     extends State<NewZombieSkillEditSubDialog> {
   late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
   late TextEditingController _costController;
@@ -1268,8 +1321,9 @@ class _NewZombieSkillEditSubDialogState
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.data.name);
-    _descriptionController = TextEditingController(
-      text: widget.data.description ?? '',
+    _descriptionController = QuillController(
+      document: QuillDeltaCodec.decode(widget.data.description ?? ''),
+      selection: const TextSelection.collapsed(offset: 0),
     );
     _cooldownController = TextEditingController(
       text: widget.data.cooldown?.toString() ?? '',
@@ -1391,11 +1445,32 @@ class _NewZombieSkillEditSubDialogState
                           const SizedBox(height: 16),
                           _buildTypeSelector(),
                           const SizedBox(height: 16),
-                          _buildTextField(
-                            '效果描述 *',
-                            _descriptionController,
-                            '描述技能的效果...',
-                            maxLines: 3,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '效果描述',
+                                style: TextStyle(
+                                  color: CharacterGalleryTheme.getScrollBrown(
+                                    context,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 180,
+                                child: RichTextEditor(
+                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  imageMode: ImageMode.inline,
+
+                                  controller: _descriptionController,
+                                  compactMode: true,
+                                  hintText: '描述技能的效果...',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -1830,7 +1905,7 @@ class _NewZombieSkillEditSubDialogState
       ToastUtils.showWarning(context, '请填写技能名称');
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.document.toPlainText().trim().isEmpty) {
       ToastUtils.showWarning(context, '请填写效果描述');
       return;
     }
@@ -1839,7 +1914,7 @@ class _NewZombieSkillEditSubDialogState
       ZombieSkillCreateData(
         name: _nameController.text,
         type: _selectedType,
-        description: _descriptionController.text,
+        description: QuillDeltaCodec.encode(_descriptionController.document),
         damage: _damageController.text.isNotEmpty
             ? _damageController.text
             : null,

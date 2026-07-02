@@ -1473,11 +1473,13 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               // 角色介绍（优先使用子模型介绍，兜底使用角色介绍）
               SectionDivider(title: '角色介绍'),
               const SizedBox(height: 12),
-              Text(
-                (state.currentSubModel?.description?.isNotEmpty ?? false)
+              RichTextViewer(
+                content:
+                    (state.currentSubModel?.description?.isNotEmpty ?? false)
                     ? state.currentSubModel!.description!
                     : character.description,
-                style: TextStyle(
+                compact: true,
+                textStyle: TextStyle(
                   color: inkColor.withValues(alpha: 0.8),
                   fontSize: 14,
                   height: 1.8,
@@ -1781,9 +1783,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     ),
 
                     // 描述
-                    Text(
-                      card.description,
-                      style: TextStyle(
+                    RichTextViewer(
+                      content: card.description,
+                      compact: true,
+                      textStyle: TextStyle(
                         color: inkColor,
                         fontSize: 13,
                         height: 1.4,
@@ -2238,9 +2241,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     ),
 
                     // 描述
-                    Text(
-                      skill.description,
-                      style: TextStyle(
+                    RichTextViewer(
+                      content: skill.description,
+                      compact: true,
+                      textStyle: TextStyle(
                         color: inkColor,
                         fontSize: 13,
                         height: 1.4,

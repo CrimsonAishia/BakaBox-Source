@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/character_models.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/rich_text_viewer.dart';
 
 /// 移动端符卡卡片组件 - 与桌面端完全一致的设计
 ///
@@ -217,9 +218,9 @@ class SpellCardMobile extends StatelessWidget {
 
   /// 构建描述文本（与桌面端一致的阴影）
   Widget _buildDescription(BuildContext context, Color inkColor, bool isDark) {
-    return Text(
-      spellCard.description,
-      style: TextStyle(
+    return RichTextViewer(
+      content: spellCard.description,
+      textStyle: TextStyle(
         color: inkColor,
         fontSize: 13,
         height: 1.4,

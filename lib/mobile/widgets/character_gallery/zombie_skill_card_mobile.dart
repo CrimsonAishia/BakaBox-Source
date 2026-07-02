@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/models/character_models.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/rich_text_viewer.dart';
 
 /// 移动端僵尸技能卡片组件 - 与桌面端完全一致的设计
 ///
@@ -170,9 +171,9 @@ class ZombieSkillCardMobile extends StatelessWidget {
 
   /// 构建描述文本（与桌面端一致的阴影）
   Widget _buildDescription(BuildContext context, Color inkColor, bool isDark) {
-    return Text(
-      skill.description,
-      style: TextStyle(
+    return RichTextViewer(
+      content: skill.description,
+      textStyle: TextStyle(
         color: inkColor,
         fontSize: 13,
         height: 1.4,

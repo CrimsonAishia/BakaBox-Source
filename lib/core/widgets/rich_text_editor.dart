@@ -90,6 +90,9 @@ class RichTextEditor extends StatefulWidget {
   /// 是否显示工具栏
   final bool showToolbar;
 
+  /// 自定义工具栏组件（如传入则替代内置工具栏）
+  final Widget? customToolbar;
+
   const RichTextEditor({
     super.key,
     required this.controller,
@@ -110,6 +113,7 @@ class RichTextEditor extends StatefulWidget {
     this.toolbarIconSize = 16,
     this.toolbarButtonSize = 32,
     this.showToolbar = true,
+    this.customToolbar,
   });
 
   @override
@@ -240,7 +244,8 @@ class RichTextEditorState extends State<RichTextEditor> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (widget.showToolbar) _buildToolbar(context),
+              if (widget.showToolbar)
+                widget.customToolbar ?? _buildToolbar(context),
               Expanded(child: _buildEditor(context)),
               if (showBottomBar) _buildBottomBar(context, isDark),
             ],
@@ -252,7 +257,8 @@ class RichTextEditorState extends State<RichTextEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.showToolbar) _buildToolbar(context),
+        if (widget.showToolbar)
+          widget.customToolbar ?? _buildToolbar(context),
         // 编辑器区域 - 填充剩余空间
         Expanded(child: _buildEditor(context)),
         // 底部栏（包含附件和状态信息）
@@ -586,7 +592,7 @@ class RichTextEditorState extends State<RichTextEditor> {
         attribute: Attribute.ol,
         isDark: isDark,
       ),
-      // 攻略专属：任务列表、缩进、对齐
+      // 攻略专属：任务列表、缩进
       if (advanced) ...[
         QuillToolbarToggleCheckListButton(
           controller: widget.controller,
@@ -621,6 +627,8 @@ class RichTextEditorState extends State<RichTextEditor> {
             iconTheme: _getIconTheme(isDark),
           ),
         ),
+      ],
+      if (advanced) ...[
         _buildDivider(isDark),
         QuillToolbarToggleStyleButton(
           controller: widget.controller,
@@ -671,6 +679,8 @@ class RichTextEditorState extends State<RichTextEditor> {
           attribute: Attribute.codeBlock,
           isDark: isDark,
         ),
+      ],
+      if (!widget.compactMode) ...[
         _buildDivider(isDark),
         QuillToolbarLinkStyleButton(
           controller: widget.controller,
@@ -680,6 +690,8 @@ class RichTextEditorState extends State<RichTextEditor> {
             iconTheme: _getIconTheme(isDark),
           ),
         ),
+      ],
+      if (!widget.compactMode) ...[
         if (advanced) ...[
           DividerInsertButton(controller: widget.controller),
           QuillToolbarClearFormatButton(
@@ -1761,5 +1773,175 @@ class _HeadingToggleButton extends StatelessWidget {
       default:
         return Icons.looks_one_rounded;
     }
+  }
+}
+
+/// 对话框场景专用工具栏组件
+///
+/// 包含：粗体、斜体、下划线、删除线 | 文字色、背景色 | 列表 | 对齐 | 链接
+/// 适用于弹窗内嵌入的紧凑富文本编辑场景。
+///
+/// 用法：
+/// ```dart
+/// RichTextEditor(
+///   controller: _controller,
+///   customToolbar: RichTextDialogToolbar(controller: _controller),
+/// )
+/// ```
+class RichTextDialogToolbar extends StatelessWidget {
+  final QuillController controller;
+  final double iconSize;
+  final double buttonSize;
+
+  const RichTextDialogToolbar({
+    super.key,
+    required this.controller,
+    this.iconSize = 16,
+    this.buttonSize = 32,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final items = <Widget>[
+      // ─── 基础格式 ───
+      _btn(Icons.format_bold_rounded, '粗体', Attribute.bold, isDark),
+      _btn(Icons.format_italic_rounded, '斜体', Attribute.italic, isDark),
+      _btn(Icons.format_underline_rounded, '下划线', Attribute.underline, isDark),
+      _btn(
+        Icons.format_strikethrough_rounded,
+        '删除线',
+        Attribute.strikeThrough,
+        isDark,
+      ),
+      // ─── 颜色 ───
+      _divider(isDark),
+      ColorPickerButton(controller: controller, isBackground: false),
+      ColorPickerButton(controller: controller, isBackground: true),
+      // ─── 列表 ───
+      _divider(isDark),
+      _btn(Icons.format_list_bulleted_rounded, '无序列表', Attribute.ul, isDark),
+      _btn(Icons.format_list_numbered_rounded, '有序列表', Attribute.ol, isDark),
+      // ─── 对齐 ───
+      _divider(isDark),
+      _btn(
+        Icons.format_align_left_rounded,
+        '左对齐',
+        Attribute.leftAlignment,
+        isDark,
+      ),
+      _btn(
+        Icons.format_align_center_rounded,
+        '居中',
+        Attribute.centerAlignment,
+        isDark,
+      ),
+      _btn(
+        Icons.format_align_right_rounded,
+        '右对齐',
+        Attribute.rightAlignment,
+        isDark,
+      ),
+      // ─── 链接 ───
+      _divider(isDark),
+      QuillToolbarLinkStyleButton(
+        controller: controller,
+        options: QuillToolbarLinkStyleButtonOptions(
+          iconSize: iconSize,
+          iconButtonFactor: 1.0,
+          iconTheme: _iconTheme(isDark),
+        ),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.slate800 : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : AppColors.gray200,
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: items),
+      ),
+    );
+  }
+
+  Widget _btn(IconData icon, String tooltip, Attribute attr, bool isDark) {
+    return QuillToolbarToggleStyleButton(
+      controller: controller,
+      attribute: attr,
+      options: QuillToolbarToggleStyleButtonOptions(
+        iconData: icon,
+        tooltip: tooltip,
+        iconSize: iconSize,
+        iconTheme: _iconTheme(isDark),
+        iconButtonFactor: 1.0,
+      ),
+    );
+  }
+
+  Widget _divider(bool isDark) {
+    return Container(
+      width: 1,
+      height: 18,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.gray200,
+    );
+  }
+
+  QuillIconTheme _iconTheme(bool isDark) {
+    final constraints = BoxConstraints(
+      minWidth: buttonSize,
+      maxWidth: buttonSize,
+      minHeight: buttonSize,
+      maxHeight: buttonSize,
+    );
+    final compactStyle = ButtonStyle(
+      padding: WidgetStateProperty.all(EdgeInsets.zero),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+      overlayColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.hovered)) {
+          return isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFEFF6FF);
+        }
+        return null;
+      }),
+    );
+    return QuillIconTheme(
+      iconButtonUnselectedData: IconButtonData(
+        color: isDark ? AppColors.slate400 : AppColors.slate500,
+        padding: EdgeInsets.zero,
+        constraints: constraints,
+        visualDensity: VisualDensity.compact,
+        style: compactStyle,
+      ),
+      iconButtonSelectedData: IconButtonData(
+        color: Colors.white,
+        padding: EdgeInsets.zero,
+        constraints: constraints,
+        visualDensity: VisualDensity.compact,
+        style: ButtonStyle(
+          padding: WidgetStateProperty.all(EdgeInsets.zero),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+          backgroundColor: WidgetStateProperty.all(AppColors.primary),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          ),
+        ),
+      ),
+    );
   }
 }

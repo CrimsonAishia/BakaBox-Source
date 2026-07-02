@@ -868,9 +868,9 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                     // 描述
                     if (spellCard.description != null &&
                         spellCard.description!.isNotEmpty)
-                      Text(
-                        spellCard.description!,
-                        style: TextStyle(
+                      RichTextViewer(
+                        content: spellCard.description!,
+                        textStyle: TextStyle(
                           color: inkColor,
                           fontSize: 13,
                           height: 1.4,
@@ -892,8 +892,6 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                                   ),
                                 ],
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     // 属性行
                     if (spellCard.cooldown != null ||

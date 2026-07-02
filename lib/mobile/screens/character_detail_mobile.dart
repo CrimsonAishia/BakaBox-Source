@@ -466,9 +466,9 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                     color: theme.dividerColor.withValues(alpha: 0.15),
                   ),
                 ),
-                child: Text(
-                  description,
-                  style: TextStyle(
+                child: RichTextViewer(
+                  content: description,
+                  textStyle: TextStyle(
                     fontSize: 14,
                     height: 1.7,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.85),

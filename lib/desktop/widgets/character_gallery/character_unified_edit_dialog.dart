@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/rich_text_editor.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import '../../../core/services/quill_delta_codec.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/bloc/character_gallery/character_gallery_bloc.dart';
@@ -44,7 +47,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   late TextEditingController _editReasonController;
 
   // 角色介绍
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   bool _descriptionChanged = false;
 
   // 获取来源
@@ -109,10 +112,36 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         ? widget.subModel.description!
         : widget.character.description;
     if (pendingDescription != null) {
-      _descriptionController = TextEditingController(text: pendingDescription);
+      final initialDoc = QuillDeltaCodec.decode(pendingDescription);
+      _descriptionController = QuillController(
+        document: initialDoc,
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+      _descriptionController.document.changes.listen((_) {
+        setState(() {
+          final cd = widget.isEditMode
+              ? widget.subModel.description!
+              : widget.character.description;
+          _descriptionChanged =
+              QuillDeltaCodec.encode(_descriptionController.document) != cd;
+        });
+      });
       _descriptionChanged = true; // 标记为已修改
     } else {
-      _descriptionController = TextEditingController(text: currentDescription);
+      final initialDoc = QuillDeltaCodec.decode(currentDescription);
+      _descriptionController = QuillController(
+        document: initialDoc,
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+      _descriptionController.document.changes.listen((_) {
+        setState(() {
+          final cd = widget.isEditMode
+              ? widget.subModel.description!
+              : widget.character.description;
+          _descriptionChanged =
+              QuillDeltaCodec.encode(_descriptionController.document) != cd;
+        });
+      });
     }
 
     // 获取来源：优先使用待审核申请中的数据
@@ -508,8 +537,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   }
 
   Widget _buildBasicInfoTab() {
-    final inkColor = CharacterGalleryTheme.getInkColor(context);
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -548,21 +575,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           ],
           _buildSectionTitle('角色介绍', Icons.description_outlined),
           const SizedBox(height: 12),
-          TextField(
-            controller: _descriptionController,
-            maxLines: 8,
-            onChanged: (value) {
-              setState(() {
-                // 与当前子模型介绍比较，兜底与角色介绍比较
-                final currentDescription =
-                    (widget.subModel.description?.isNotEmpty ?? false)
-                    ? widget.subModel.description!
-                    : widget.character.description;
-                _descriptionChanged = value != currentDescription;
-              });
-            },
-            style: TextStyle(color: inkColor, fontSize: 15, height: 1.7),
-            decoration: _buildInputDecoration('描述角色的背景、特点等...'),
+          SizedBox(
+            height: 250,
+            child: RichTextEditor(
+              customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+              imageMode: ImageMode.inline,
+              controller: _descriptionController,
+              hintText: '描述角色的背景、特点等...',
+              // compactMode: true,
+            ),
           ),
           if (_descriptionChanged) ...[
             const SizedBox(height: 8),
@@ -3412,7 +3433,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
 
     // 构建通用的编辑数据
     final description = _descriptionChanged
-        ? _descriptionController.text
+        ? QuillDeltaCodec.encode(_descriptionController.document)
         : null;
     // 获取途径/来源说明：如果类型是 unknown，则传 null（表示清除），否则传具体数据
     // 注意：僵尸角色也可以提交来源说明

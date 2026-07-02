@@ -5,8 +5,10 @@ import '../../api/map_contribution_api.dart';
 import '../../models/character_models.dart';
 import '../../models/map_contribution_models.dart';
 import '../../utils/log_service.dart';
+
 import '../disk_cached_image.dart';
 import '../map_background.dart';
+import '../rich_text_viewer.dart';
 import 'hover_info_block_embed.dart';
 import '../../constants/app_colors.dart';
 
@@ -303,15 +305,14 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
               if (description != null && description.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Flexible(
-                  child: Text(
-                    description,
-                    style: TextStyle(
+                  child: RichTextViewer(
+                    content: description,
+                    compact: true,
+                    textStyle: TextStyle(
                       fontSize: 12,
                       height: 1.4,
                       color: subColor,
                     ),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -378,11 +379,10 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
         if (description != null && description.isNotEmpty) ...[
           const SizedBox(height: 4),
           Flexible(
-            child: Text(
-              description,
-              style: TextStyle(fontSize: 12, height: 1.4, color: subColor),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            child: RichTextViewer(
+              content: description,
+              compact: true,
+              textStyle: TextStyle(fontSize: 12, height: 1.4, color: subColor),
             ),
           ),
         ],
@@ -446,11 +446,10 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
         if (description != null && description.isNotEmpty) ...[
           const SizedBox(height: 4),
           Flexible(
-            child: Text(
-              description,
-              style: TextStyle(fontSize: 12, height: 1.4, color: subColor),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            child: RichTextViewer(
+              content: description,
+              compact: true,
+              textStyle: TextStyle(fontSize: 12, height: 1.4, color: subColor),
             ),
           ),
         ],
@@ -536,11 +535,10 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
         if (card.description != null && card.description!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Flexible(
-            child: Text(
-              card.description!,
-              style: TextStyle(fontSize: 12, height: 1.4, color: subColor),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            child: RichTextViewer(
+              content: card.description!,
+              compact: true,
+              textStyle: TextStyle(fontSize: 12, height: 1.4, color: subColor),
             ),
           ),
         ],

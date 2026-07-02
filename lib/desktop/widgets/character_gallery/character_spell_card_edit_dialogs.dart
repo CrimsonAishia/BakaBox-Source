@@ -1,3 +1,6 @@
+import 'package:flutter_quill/flutter_quill.dart';
+import '../../../core/services/quill_delta_codec.dart';
+import '../../../core/widgets/rich_text_editor.dart';
 import 'package:flutter/material.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/utils/toast_utils.dart';
@@ -25,7 +28,7 @@ class SpellCardEditSubDialog extends StatefulWidget {
 }
 
 class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
   late TextEditingController _costController;
@@ -45,8 +48,11 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
   @override
   void initState() {
     super.initState();
-    _descriptionController = TextEditingController(
-      text: widget.existingEdit?.description ?? widget.card.description,
+    _descriptionController = QuillController(
+      document: QuillDeltaCodec.decode(
+        widget.existingEdit?.description ?? widget.card.description,
+      ),
+      selection: const TextSelection.collapsed(offset: 0),
     );
     _cooldownController = TextEditingController(
       text:
@@ -171,11 +177,32 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                                 setState(() => _selectedTier = value),
                           ),
                           const SizedBox(height: 16),
-                          SpellCardTextField(
-                            label: '效果描述',
-                            controller: _descriptionController,
-                            hint: '描述符卡的效果...',
-                            maxLines: 3,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '效果描述',
+                                style: TextStyle(
+                                  color: CharacterGalleryTheme.getScrollBrown(
+                                    context,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 200,
+                                child: RichTextEditor(
+                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  imageMode: ImageMode.inline,
+
+                                  controller: _descriptionController,
+                                  compactMode: true,
+                                  hintText: '描述符卡的效果...',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -253,7 +280,7 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
   void _onSave() {
     widget.onSave(
       SpellCardEditData(
-        description: _descriptionController.text,
+        description: QuillDeltaCodec.encode(_descriptionController.document),
         damage: _damageController.text.isNotEmpty
             ? _damageController.text
             : null,
@@ -291,7 +318,7 @@ class SpellCardCreateSubDialog extends StatefulWidget {
 
 class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
   late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
   late TextEditingController _costController;
@@ -313,7 +340,10 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _descriptionController = TextEditingController();
+    _descriptionController = QuillController(
+      document: QuillDeltaCodec.decode(''),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
     _cooldownController = TextEditingController();
     _damageController = TextEditingController();
     _costController = TextEditingController();
@@ -416,11 +446,32 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                                 setState(() => _selectedTier = value),
                           ),
                           const SizedBox(height: 16),
-                          SpellCardTextField(
-                            label: '效果描述 *',
-                            controller: _descriptionController,
-                            hint: '描述符卡的效果...',
-                            maxLines: 3,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '效果描述',
+                                style: TextStyle(
+                                  color: CharacterGalleryTheme.getScrollBrown(
+                                    context,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 200,
+                                child: RichTextEditor(
+                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  imageMode: ImageMode.inline,
+
+                                  controller: _descriptionController,
+                                  compactMode: true,
+                                  hintText: '描述符卡的效果...',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -492,7 +543,7 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
       ToastUtils.showWarning(context, '请填写符卡名称');
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.document.toPlainText().trim().isEmpty) {
       ToastUtils.showWarning(context, '请填写效果描述');
       return;
     }
@@ -501,7 +552,7 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
       SpellCardCreateData(
         name: _nameController.text,
         type: _selectedType,
-        description: _descriptionController.text,
+        description: QuillDeltaCodec.encode(_descriptionController.document),
         damage: _damageController.text.isNotEmpty
             ? _damageController.text
             : null,
@@ -544,7 +595,7 @@ class NewSpellCardEditSubDialog extends StatefulWidget {
 
 class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
   late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
+  late QuillController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
   late TextEditingController _costController;
@@ -566,8 +617,9 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.data.name);
-    _descriptionController = TextEditingController(
-      text: widget.data.description ?? '',
+    _descriptionController = QuillController(
+      document: QuillDeltaCodec.decode(widget.data.description ?? ''),
+      selection: const TextSelection.collapsed(offset: 0),
     );
     _cooldownController = TextEditingController(
       text: widget.data.cooldown?.toString() ?? '',
@@ -696,11 +748,32 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                                 setState(() => _selectedTier = value),
                           ),
                           const SizedBox(height: 16),
-                          SpellCardTextField(
-                            label: '效果描述 *',
-                            controller: _descriptionController,
-                            hint: '描述符卡的效果...',
-                            maxLines: 3,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '效果描述',
+                                style: TextStyle(
+                                  color: CharacterGalleryTheme.getScrollBrown(
+                                    context,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                height: 200,
+                                child: RichTextEditor(
+                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  imageMode: ImageMode.inline,
+
+                                  controller: _descriptionController,
+                                  compactMode: true,
+                                  hintText: '描述符卡的效果...',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -774,7 +847,7 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
       ToastUtils.showWarning(context, '请填写符卡名称');
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.document.toPlainText().trim().isEmpty) {
       ToastUtils.showWarning(context, '请填写效果描述');
       return;
     }
@@ -783,7 +856,7 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
       SpellCardCreateData(
         name: _nameController.text,
         type: _selectedType,
-        description: _descriptionController.text,
+        description: QuillDeltaCodec.encode(_descriptionController.document),
         damage: _damageController.text.isNotEmpty
             ? _damageController.text
             : null,
