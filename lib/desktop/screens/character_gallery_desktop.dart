@@ -2264,8 +2264,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     // 属性行
                     if (skill.cooldown != null ||
                         skill.damage != null ||
-                        skill.range != null ||
-                        skill.special != null) ...[
+                        skill.cost != null ||
+                        skill.speed != null ||
+                        skill.count != null ||
+                        skill.angle != null ||
+                        skill.puncture != null ||
+                        skill.bounce != null ||
+                        skill.explode != null ||
+                        skill.holdTime != null ||
+                        skill.trackSpeed != null ||
+                        skill.customCd != null) ...[
                       const SizedBox(height: 10),
                       _buildZombieSkillStats(skill, borderColor),
                     ],
@@ -2279,7 +2287,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  /// 僵尸技能属性行
+  /// 僵尸技能属性行（字段与符卡对齐，cost 显示为"能量"，不分类型）
   Widget _buildZombieSkillStats(ZombieSkill skill, Color accentColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statItems = <Widget>[];
@@ -2308,25 +2316,121 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       );
     }
 
-    if (skill.range != null) {
+    if (skill.cost != null) {
       statItems.add(
         _buildStatItem(
-          Icons.radar,
-          '范围',
-          skill.range!,
-          CharacterGalleryTheme.getRangeColor(context),
+          Icons.local_fire_department,
+          '能量',
+          _formatNumber(skill.cost!),
+          CharacterGalleryTheme.getBCostColor(context),
           isDark,
         ),
       );
     }
 
-    if (skill.special != null) {
+    if (skill.speed != null) {
       statItems.add(
         _buildStatItem(
-          Icons.auto_awesome,
-          '特殊',
-          skill.special!,
-          CharacterGalleryTheme.getSpecialColor(context),
+          MdiIcons.speedometer,
+          '弹幕初速',
+          _formatNumber(skill.speed!),
+          CharacterGalleryTheme.getSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.count != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.counter,
+          '弹幕数量',
+          _formatNumber(skill.count!),
+          CharacterGalleryTheme.getCountColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.angle != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.angleAcute,
+          '散射角度',
+          '${_formatNumber(skill.angle!)}°',
+          CharacterGalleryTheme.getAngleColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.puncture != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowExpandHorizontal,
+          '穿刺次数',
+          _formatNumber(skill.puncture!),
+          CharacterGalleryTheme.getPunctureColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.bounce != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowUDownLeft,
+          '反弹次数',
+          _formatNumber(skill.bounce!),
+          CharacterGalleryTheme.getBounceColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.explode != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.weatherSunny,
+          '影响范围',
+          _formatNumber(skill.explode!),
+          CharacterGalleryTheme.getExplodeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.holdTime != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.timerSand,
+          '持续时间',
+          '${_formatNumber(skill.holdTime!)}s',
+          CharacterGalleryTheme.getHoldTimeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.trackSpeed != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.crosshairs,
+          '追踪转向',
+          _formatNumber(skill.trackSpeed!),
+          CharacterGalleryTheme.getTrackSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.customCd != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.cog,
+          '内置CD',
+          '${_formatNumber(skill.customCd!)}s',
+          CharacterGalleryTheme.getCustomCdColor(context),
           isDark,
         ),
       );

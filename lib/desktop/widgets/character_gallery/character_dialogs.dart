@@ -700,9 +700,7 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                 controller: _costController,
                 hint: widget.type == 'ultimate' ? '100' : '50',
                 keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               // TODO: 视频上传功能暂时隐藏，等待服务器端转换方案
@@ -933,13 +931,7 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
             damage: _damageController.text.isNotEmpty
                 ? _damageController.text
                 : null,
-            range: _rangeController.text.isNotEmpty
-                ? _rangeController.text
-                : null,
             cooldown: double.tryParse(_cooldownController.text),
-            special: _specialController.text.isNotEmpty
-                ? _specialController.text
-                : null,
           ),
         ],
       ),
@@ -1302,9 +1294,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                 controller: _costController,
                 hint: _selectedType == 'ultimate' ? '100' : '50',
                 keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               EditReasonSelector(
@@ -1648,12 +1638,6 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
                 ? _damageController.text
                 : null,
             cooldown: double.tryParse(_cooldownController.text),
-            range: _rangeController.text.isNotEmpty
-                ? _rangeController.text
-                : null,
-            special: _specialController.text.isNotEmpty
-                ? _specialController.text
-                : null,
           ),
         ],
       ),

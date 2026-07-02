@@ -246,8 +246,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           description: update.description,
           damage: update.damage,
           cooldown: update.cooldown,
-          range: update.range,
-          special: update.special,
+          cost: update.cost,
+          speed: update.speed,
+          count: update.count,
+          angle: update.angle,
+          customCd: update.customCd,
+          puncture: update.puncture,
+          bounce: update.bounce,
+          explode: update.explode,
+          holdTime: update.holdTime,
+          trackSpeed: update.trackSpeed,
           previewType: update.previewType,
           previewFileId: update.previewFileId,
           previewVideoUrl: update.previewVideoUrl,
@@ -265,8 +273,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             description: create.description,
             damage: create.damage,
             cooldown: create.cooldown,
-            range: create.range,
-            special: create.special,
+            cost: create.cost,
+            speed: create.speed,
+            count: create.count,
+            angle: create.angle,
+            customCd: create.customCd,
+            puncture: create.puncture,
+            bounce: create.bounce,
+            explode: create.explode,
+            holdTime: create.holdTime,
+            trackSpeed: create.trackSpeed,
             previewType: create.previewType,
             previewFileId: create.previewFileId,
             previewVideoUrl: create.previewVideoUrl,
@@ -2152,13 +2168,30 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                     )
                   else if ((editData?.cooldown ?? skill.cooldown) != null ||
                       (editData?.damage ?? skill.damage) != null ||
-                      (editData?.range ?? skill.range) != null ||
-                      (editData?.special ?? skill.special) != null)
-                    _buildZombieSkillStatsRow(
+                      (editData?.cost ?? skill.cost) != null ||
+                      (editData?.speed ?? skill.speed) != null ||
+                      (editData?.count ?? skill.count) != null ||
+                      (editData?.angle ?? skill.angle) != null ||
+                      (editData?.customCd ?? skill.customCd) != null ||
+                      (editData?.puncture ?? skill.puncture) != null ||
+                      (editData?.bounce ?? skill.bounce) != null ||
+                      (editData?.explode ?? skill.explode) != null ||
+                      (editData?.holdTime ?? skill.holdTime) != null ||
+                      (editData?.trackSpeed ?? skill.trackSpeed) != null)
+                    _buildSpellCardStatsRow(
                       cooldown: editData?.cooldown ?? skill.cooldown,
                       damage: editData?.damage ?? skill.damage,
-                      range: editData?.range ?? skill.range,
-                      special: editData?.special ?? skill.special,
+                      cost: editData?.cost ?? skill.cost,
+                      speed: editData?.speed ?? skill.speed,
+                      count: editData?.count ?? skill.count,
+                      angle: editData?.angle ?? skill.angle,
+                      customCd: editData?.customCd ?? skill.customCd,
+                      puncture: editData?.puncture ?? skill.puncture,
+                      bounce: editData?.bounce ?? skill.bounce,
+                      explode: editData?.explode ?? skill.explode,
+                      holdTime: editData?.holdTime ?? skill.holdTime,
+                      trackSpeed: editData?.trackSpeed ?? skill.trackSpeed,
+                      type: 'active',
                       accentColor: borderColor,
                     ),
                 ],
@@ -2399,14 +2432,31 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   // 属性行
                   if (data.cooldown != null ||
                       data.damage != null ||
-                      data.range != null ||
-                      data.special != null) ...[
+                      data.cost != null ||
+                      data.speed != null ||
+                      data.count != null ||
+                      data.angle != null ||
+                      data.customCd != null ||
+                      data.puncture != null ||
+                      data.bounce != null ||
+                      data.explode != null ||
+                      data.holdTime != null ||
+                      data.trackSpeed != null) ...[
                     const SizedBox(height: 10),
-                    _buildZombieSkillStatsRow(
+                    _buildSpellCardStatsRow(
                       cooldown: data.cooldown,
                       damage: data.damage,
-                      range: data.range,
-                      special: data.special,
+                      cost: data.cost,
+                      speed: data.speed,
+                      count: data.count,
+                      angle: data.angle,
+                      customCd: data.customCd,
+                      puncture: data.puncture,
+                      bounce: data.bounce,
+                      explode: data.explode,
+                      holdTime: data.holdTime,
+                      trackSpeed: data.trackSpeed,
+                      type: 'active',
                       accentColor: borderColor,
                     ),
                   ],
@@ -2957,75 +3007,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     );
   }
 
-  /// 僵尸技能属性行（东方风格，带阴影）
-  Widget _buildZombieSkillStatsRow({
-    double? cooldown,
-    String? damage,
-    String? range,
-    String? special,
-    required Color accentColor,
-  }) {
-    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlayColor = CharacterGalleryTheme.getOverlayColor(
-      context,
-      alpha: isDark ? 0.6 : 0.8,
-    );
-    final statItems = <Widget>[];
-
-    if (cooldown != null) {
-      statItems.add(
-        _buildStatItemWithShadow(
-          Icons.timer_outlined,
-          '冷却',
-          '${cooldown % 1 == 0 ? cooldown.toInt() : cooldown}s',
-          CharacterGalleryTheme.getCooldownColor(context),
-          overlayColor,
-        ),
-      );
-    }
-
-    if (damage != null && damage.isNotEmpty) {
-      statItems.add(
-        _buildStatItemWithShadow(
-          Icons.flash_on,
-          '伤害',
-          damage,
-          CharacterGalleryTheme.getDamageColor(context),
-          overlayColor,
-        ),
-      );
-    }
-
-    if (range != null && range.isNotEmpty) {
-      statItems.add(
-        _buildStatItemWithShadow(
-          Icons.radar,
-          '范围',
-          range,
-          scrollBrown,
-          overlayColor,
-        ),
-      );
-    }
-
-    if (special != null && special.isNotEmpty) {
-      statItems.add(
-        _buildStatItemWithShadow(
-          Icons.auto_awesome,
-          '特殊',
-          special,
-          CharacterGalleryTheme.getSpecialColor(context),
-          overlayColor,
-        ),
-      );
-    }
-
-    if (statItems.isEmpty) return const SizedBox.shrink();
-
-    return Wrap(spacing: 12, runSpacing: 6, children: statItems);
-  }
-
 
   void _checkAcquisitionChanged() {
     final original =
@@ -3304,16 +3285,12 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       _zombieTempCooldownController?.text ?? '',
     );
     final newDamage = _zombieTempDamageController?.text;
-    final newRange = _zombieTempRangeController?.text;
-    final newSpecial = _zombieTempSpecialController?.text;
 
     setState(() {
       _zombieSkillEdits[skill.id] = ZombieSkillEditData(
         description: newDescription,
         cooldown: newCooldown,
         damage: newDamage?.isNotEmpty == true ? newDamage : null,
-        range: newRange?.isNotEmpty == true ? newRange : null,
-        special: newSpecial?.isNotEmpty == true ? newSpecial : null,
       );
       _editingZombieSkillId = null;
     });
@@ -3515,8 +3492,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   description: e.description,
                   damage: e.damage,
                   cooldown: e.cooldown,
-                  range: e.range,
-                  special: e.special,
+                  cost: e.cost,
+                  speed: e.speed,
+                  count: e.count,
+                  angle: e.angle,
+                  customCd: e.customCd,
+                  puncture: e.puncture,
+                  bounce: e.bounce,
+                  explode: e.explode,
+                  holdTime: e.holdTime,
+                  trackSpeed: e.trackSpeed,
                   previewType: e.previewType,
                   previewFileId: e.previewFileId,
                   previewVideoUrl: e.previewVideoUrl,
@@ -3532,8 +3517,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   description: e.value.description,
                   damage: e.value.damage,
                   cooldown: e.value.cooldown,
-                  range: e.value.range,
-                  special: e.value.special,
+                  cost: e.value.cost,
+                  speed: e.value.speed,
+                  count: e.value.count,
+                  angle: e.value.angle,
+                  customCd: e.value.customCd,
+                  puncture: e.value.puncture,
+                  bounce: e.value.bounce,
+                  explode: e.value.explode,
+                  holdTime: e.value.holdTime,
+                  trackSpeed: e.value.trackSpeed,
                   previewType: e.value.previewType,
                   previewFileId: e.value.previewFileId,
                   previewVideoUrl: e.value.previewVideoUrl,

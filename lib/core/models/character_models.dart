@@ -287,11 +287,21 @@ class ZombieSkill extends Equatable {
   final String? previewVideoOrigin; // 原始视频地址（B站直链解析前的地址，用于获取封面）
   @JsonKey(unknownEnumValue: VideoUrlSource.original)
   final VideoUrlSource? videoUrlSource; // 视频URL来源类型，仅当previewType为video_url时有值
+  final int? cost; // 消耗能量
   final double? cooldown;
   final String? damage;
-  final String? range;
-  final String? special;
   final List<String>? tips;
+
+  // 核心数值字段（与符卡对齐）
+  final double? speed; // 基础速度（弹幕初速）
+  final int? count; // 弹幕数量
+  final double? angle; // 散射角度
+  final double? customCd; // 自定义/内置 CD 数值
+  final int? puncture; // 穿刺次数
+  final int? bounce; // 反弹次数
+  final double? explode; // 影响范围 / 爆炸半径
+  final double? holdTime; // 持续时间（秒）
+  final double? trackSpeed; // 追踪加速 / 转向
 
   const ZombieSkill({
     required this.id,
@@ -304,11 +314,19 @@ class ZombieSkill extends Equatable {
     this.previewVideoUrl,
     this.previewVideoOrigin,
     this.videoUrlSource,
+    this.cost,
     this.cooldown,
     this.damage,
-    this.range,
-    this.special,
     this.tips,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory ZombieSkill.fromJson(Map<String, dynamic> json) =>
@@ -327,11 +345,19 @@ class ZombieSkill extends Equatable {
     previewVideoUrl,
     previewVideoOrigin,
     videoUrlSource,
+    cost,
     cooldown,
     damage,
-    range,
-    special,
     tips,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 
@@ -591,11 +617,20 @@ class CreateZombieSkillRequest extends Equatable {
   final ZombieSkillType type;
   final String description;
   final String? iconUrl;
+  final int? cost;
   final double? cooldown;
   final String? damage;
-  final String? range;
-  final String? special;
   final List<String>? tips;
+
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
 
   const CreateZombieSkillRequest({
     required this.characterId,
@@ -603,11 +638,19 @@ class CreateZombieSkillRequest extends Equatable {
     required this.type,
     required this.description,
     this.iconUrl,
+    this.cost,
     this.cooldown,
     this.damage,
-    this.range,
-    this.special,
     this.tips,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory CreateZombieSkillRequest.fromJson(Map<String, dynamic> json) =>
@@ -621,11 +664,19 @@ class CreateZombieSkillRequest extends Equatable {
     type,
     description,
     iconUrl,
+    cost,
     cooldown,
     damage,
-    range,
-    special,
     tips,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 
@@ -687,21 +738,38 @@ class EditZombieSkillRequest extends Equatable {
   final int id;
   final String? description;
   final String? damage;
-  final String? range;
+  final int? cost;
   final double? cooldown;
-  final String? special;
   final List<String>? tips;
   final String? editReason;
+
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
 
   const EditZombieSkillRequest({
     required this.id,
     this.description,
     this.damage,
-    this.range,
+    this.cost,
     this.cooldown,
-    this.special,
     this.tips,
     this.editReason,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory EditZombieSkillRequest.fromJson(Map<String, dynamic> json) =>
@@ -713,11 +781,19 @@ class EditZombieSkillRequest extends Equatable {
     id,
     description,
     damage,
-    range,
+    cost,
     cooldown,
-    special,
     tips,
     editReason,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 
@@ -1033,25 +1109,43 @@ class ZombieSkillEditItem extends Equatable {
   final int id;
   final String? description;
   final String? damage;
-  final String? range;
+  final int? cost;
   final double? cooldown;
-  final String? special;
   final List<String>? tips;
   final String? previewType;
   final int? previewFileId;
   final String? previewVideoUrl;
 
+  // 核心数值字段（与符卡对齐）
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
+
   const ZombieSkillEditItem({
     required this.id,
     this.description,
     this.damage,
-    this.range,
+    this.cost,
     this.cooldown,
-    this.special,
     this.tips,
     this.previewType,
     this.previewFileId,
     this.previewVideoUrl,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory ZombieSkillEditItem.fromJson(Map<String, dynamic> json) =>
@@ -1063,13 +1157,21 @@ class ZombieSkillEditItem extends Equatable {
     id,
     description,
     damage,
-    range,
+    cost,
     cooldown,
-    special,
     tips,
     previewType,
     previewFileId,
     previewVideoUrl,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 
@@ -1080,28 +1182,46 @@ class ZombieSkillCreateItem extends Equatable {
   final String type; // active/passive
   final String? description;
   final String? iconUrl;
+  final int? cost;
   final double? cooldown;
   final String? damage;
-  final String? range;
-  final String? special;
   final List<String>? tips;
   final String? previewType;
   final int? previewFileId;
   final String? previewVideoUrl;
+
+  // 核心数值字段（与符卡对齐）
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
 
   const ZombieSkillCreateItem({
     required this.name,
     required this.type,
     this.description,
     this.iconUrl,
+    this.cost,
     this.cooldown,
     this.damage,
-    this.range,
-    this.special,
     this.tips,
     this.previewType,
     this.previewFileId,
     this.previewVideoUrl,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory ZombieSkillCreateItem.fromJson(Map<String, dynamic> json) =>
@@ -1114,14 +1234,22 @@ class ZombieSkillCreateItem extends Equatable {
     type,
     description,
     iconUrl,
+    cost,
     cooldown,
     damage,
-    range,
-    special,
     tips,
     previewType,
     previewFileId,
     previewVideoUrl,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 

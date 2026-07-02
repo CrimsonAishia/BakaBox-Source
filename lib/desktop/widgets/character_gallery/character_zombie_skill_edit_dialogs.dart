@@ -48,11 +48,36 @@ class ZombieSkillEditSubDialog extends StatefulWidget {
 }
 
 class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
+  String _numToText(num? value) {
+    if (value == null) return '';
+    return (value % 1 == 0) ? value.toInt().toString() : value.toString();
+  }
+
+  int? _parseInt(TextEditingController c) {
+    final text = c.text.trim();
+    if (text.isEmpty) return null;
+    return int.tryParse(text);
+  }
+
+  double? _parseDouble(TextEditingController c) {
+    final text = c.text.trim();
+    if (text.isEmpty) return null;
+    return double.tryParse(text);
+  }
+
   late TextEditingController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
-  late TextEditingController _rangeController;
-  late TextEditingController _specialController;
+  late TextEditingController _costController;
+  late TextEditingController _speedController;
+  late TextEditingController _countController;
+  late TextEditingController _angleController;
+  late TextEditingController _customCdController;
+  late TextEditingController _punctureController;
+  late TextEditingController _bounceController;
+  late TextEditingController _explodeController;
+  late TextEditingController _holdTimeController;
+  late TextEditingController _trackSpeedController;
   PreviewMediaData? _previewData;
 
   @override
@@ -70,11 +95,37 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
     _damageController = TextEditingController(
       text: widget.existingEdit?.damage ?? widget.skill.damage ?? '',
     );
-    _rangeController = TextEditingController(
-      text: widget.existingEdit?.range ?? widget.skill.range ?? '',
+    _costController = TextEditingController(
+      text: _numToText(widget.existingEdit?.cost ?? widget.skill.cost),
     );
-    _specialController = TextEditingController(
-      text: widget.existingEdit?.special ?? widget.skill.special ?? '',
+    _speedController = TextEditingController(
+      text: _numToText(widget.existingEdit?.speed ?? widget.skill.speed),
+    );
+    _countController = TextEditingController(
+      text: _numToText(widget.existingEdit?.count ?? widget.skill.count),
+    );
+    _angleController = TextEditingController(
+      text: _numToText(widget.existingEdit?.angle ?? widget.skill.angle),
+    );
+    _customCdController = TextEditingController(
+      text: _numToText(widget.existingEdit?.customCd ?? widget.skill.customCd),
+    );
+    _punctureController = TextEditingController(
+      text: _numToText(widget.existingEdit?.puncture ?? widget.skill.puncture),
+    );
+    _bounceController = TextEditingController(
+      text: _numToText(widget.existingEdit?.bounce ?? widget.skill.bounce),
+    );
+    _explodeController = TextEditingController(
+      text: _numToText(widget.existingEdit?.explode ?? widget.skill.explode),
+    );
+    _holdTimeController = TextEditingController(
+      text: _numToText(widget.existingEdit?.holdTime ?? widget.skill.holdTime),
+    );
+    _trackSpeedController = TextEditingController(
+      text: _numToText(
+        widget.existingEdit?.trackSpeed ?? widget.skill.trackSpeed,
+      ),
     );
   }
 
@@ -83,8 +134,16 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
     _descriptionController.dispose();
     _cooldownController.dispose();
     _damageController.dispose();
-    _rangeController.dispose();
-    _specialController.dispose();
+    _costController.dispose();
+    _speedController.dispose();
+    _countController.dispose();
+    _angleController.dispose();
+    _customCdController.dispose();
+    _punctureController.dispose();
+    _bounceController.dispose();
+    _explodeController.dispose();
+    _holdTimeController.dispose();
+    _trackSpeedController.dispose();
     super.dispose();
   }
 
@@ -179,25 +238,14 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  '作用范围',
-                                  _rangeController,
-                                  '中距离',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildTextField(
-                                  '特殊效果',
-                                  _specialController,
-                                  '减速50%',
-                                ),
-                              ),
-                            ],
+                          _buildTextField(
+                            '消耗能量',
+                            _costController,
+                            '50',
+                            fieldType: ZombieFieldType.number,
                           ),
+                          const SizedBox(height: 16),
+                          _buildAdvancedFields(),
                           const SizedBox(height: 16),
                           PreviewTypeSelector(
                             initialType:
@@ -322,6 +370,132 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
     );
   }
 
+  Widget _buildAdvancedFields() {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 3, height: 14, color: scrollBrown),
+            const SizedBox(width: 8),
+            Text(
+              '高级参数（可选）',
+              style: TextStyle(
+                color: scrollBrown,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '留空表示不变更/未设置。',
+          style: TextStyle(
+            color: inkColor.withValues(alpha: 0.55),
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '基础速度',
+                _speedController,
+                '800',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '弹幕数量',
+                _countController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '散射角度',
+                _angleController,
+                '3',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '穿刺次数',
+                _punctureController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '反弹次数',
+                _bounceController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '爆炸范围',
+                _explodeController,
+                '300',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '持续时间(秒)',
+                _holdTimeController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '追踪加速',
+                _trackSpeedController,
+                '600',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '内置CD',
+                _customCdController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildTextField(
     String label,
     TextEditingController controller,
@@ -424,15 +598,19 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                       ? _damageController.text
                       : null,
                   cooldown: double.tryParse(_cooldownController.text),
-                  range: _rangeController.text.isNotEmpty
-                      ? _rangeController.text
-                      : null,
-                  special: _specialController.text.isNotEmpty
-                      ? _specialController.text
-                      : null,
+                  cost: _parseInt(_costController),
                   previewType: _previewData?.previewType,
                   previewFileId: _previewData?.previewFileId,
                   previewVideoUrl: _previewData?.previewVideoUrl,
+                  speed: _parseDouble(_speedController),
+                  count: _parseInt(_countController),
+                  angle: _parseDouble(_angleController),
+                  customCd: _parseDouble(_customCdController),
+                  puncture: _parseInt(_punctureController),
+                  bounce: _parseInt(_bounceController),
+                  explode: _parseDouble(_explodeController),
+                  holdTime: _parseDouble(_holdTimeController),
+                  trackSpeed: _parseDouble(_trackSpeedController),
                 ),
               );
               Navigator.pop(context);
@@ -467,8 +645,16 @@ class _ZombieSkillCreateSubDialogState
   late TextEditingController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
-  late TextEditingController _rangeController;
-  late TextEditingController _specialController;
+  late TextEditingController _costController;
+  late TextEditingController _speedController;
+  late TextEditingController _countController;
+  late TextEditingController _angleController;
+  late TextEditingController _customCdController;
+  late TextEditingController _punctureController;
+  late TextEditingController _bounceController;
+  late TextEditingController _explodeController;
+  late TextEditingController _holdTimeController;
+  late TextEditingController _trackSpeedController;
   String _selectedType = 'active';
   PreviewMediaData? _previewData;
 
@@ -479,8 +665,16 @@ class _ZombieSkillCreateSubDialogState
     _descriptionController = TextEditingController();
     _cooldownController = TextEditingController();
     _damageController = TextEditingController();
-    _rangeController = TextEditingController();
-    _specialController = TextEditingController();
+    _costController = TextEditingController();
+    _speedController = TextEditingController();
+    _countController = TextEditingController();
+    _angleController = TextEditingController();
+    _customCdController = TextEditingController();
+    _punctureController = TextEditingController();
+    _bounceController = TextEditingController();
+    _explodeController = TextEditingController();
+    _holdTimeController = TextEditingController();
+    _trackSpeedController = TextEditingController();
   }
 
   @override
@@ -489,8 +683,16 @@ class _ZombieSkillCreateSubDialogState
     _descriptionController.dispose();
     _cooldownController.dispose();
     _damageController.dispose();
-    _rangeController.dispose();
-    _specialController.dispose();
+    _costController.dispose();
+    _speedController.dispose();
+    _countController.dispose();
+    _angleController.dispose();
+    _customCdController.dispose();
+    _punctureController.dispose();
+    _bounceController.dispose();
+    _explodeController.dispose();
+    _holdTimeController.dispose();
+    _trackSpeedController.dispose();
     super.dispose();
   }
 
@@ -587,25 +789,14 @@ class _ZombieSkillCreateSubDialogState
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  '作用范围',
-                                  _rangeController,
-                                  '中距离',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildTextField(
-                                  '特殊效果',
-                                  _specialController,
-                                  '减速50%',
-                                ),
-                              ),
-                            ],
+                          _buildTextField(
+                            '消耗能量',
+                            _costController,
+                            '50',
+                            fieldType: ZombieFieldType.number,
                           ),
+                          const SizedBox(height: 16),
+                          _buildAdvancedFields(),
                           const SizedBox(height: 16),
                           PreviewTypeSelector(
                             onChanged: (data) => _previewData = data,
@@ -705,6 +896,132 @@ class _ZombieSkillCreateSubDialogState
           stops: const [0, 0.2, 0.8, 1],
         ),
       ),
+    );
+  }
+
+  Widget _buildAdvancedFields() {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 3, height: 14, color: scrollBrown),
+            const SizedBox(width: 8),
+            Text(
+              '高级参数（可选）',
+              style: TextStyle(
+                color: scrollBrown,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '留空表示不变更/未设置。',
+          style: TextStyle(
+            color: inkColor.withValues(alpha: 0.55),
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '基础速度',
+                _speedController,
+                '800',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '弹幕数量',
+                _countController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '散射角度',
+                _angleController,
+                '3',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '穿刺次数',
+                _punctureController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '反弹次数',
+                _bounceController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '爆炸范围',
+                _explodeController,
+                '300',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '持续时间(秒)',
+                _holdTimeController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '追踪加速',
+                _trackSpeedController,
+                '600',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '内置CD',
+                _customCdController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -893,13 +1210,19 @@ class _ZombieSkillCreateSubDialogState
             ? _damageController.text
             : null,
         cooldown: double.tryParse(_cooldownController.text),
-        range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-        special: _specialController.text.isNotEmpty
-            ? _specialController.text
-            : null,
+        cost: _parseInt(_costController),
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
         previewVideoUrl: _previewData?.previewVideoUrl,
+        speed: _parseDouble(_speedController),
+        count: _parseInt(_countController),
+        angle: _parseDouble(_angleController),
+        customCd: _parseDouble(_customCdController),
+        puncture: _parseInt(_punctureController),
+        bounce: _parseInt(_bounceController),
+        explode: _parseDouble(_explodeController),
+        holdTime: _parseDouble(_holdTimeController),
+        trackSpeed: _parseDouble(_trackSpeedController),
       ),
     );
     Navigator.pop(context);
@@ -928,8 +1251,16 @@ class _NewZombieSkillEditSubDialogState
   late TextEditingController _descriptionController;
   late TextEditingController _cooldownController;
   late TextEditingController _damageController;
-  late TextEditingController _rangeController;
-  late TextEditingController _specialController;
+  late TextEditingController _costController;
+  late TextEditingController _speedController;
+  late TextEditingController _countController;
+  late TextEditingController _angleController;
+  late TextEditingController _customCdController;
+  late TextEditingController _punctureController;
+  late TextEditingController _bounceController;
+  late TextEditingController _explodeController;
+  late TextEditingController _holdTimeController;
+  late TextEditingController _trackSpeedController;
   late String _selectedType;
   PreviewMediaData? _previewData;
 
@@ -944,8 +1275,36 @@ class _NewZombieSkillEditSubDialogState
       text: widget.data.cooldown?.toString() ?? '',
     );
     _damageController = TextEditingController(text: widget.data.damage ?? '');
-    _rangeController = TextEditingController(text: widget.data.range ?? '');
-    _specialController = TextEditingController(text: widget.data.special ?? '');
+    _costController = TextEditingController(
+      text: widget.data.cost?.toString() ?? '',
+    );
+    _speedController = TextEditingController(
+      text: widget.data.speed?.toString() ?? '',
+    );
+    _countController = TextEditingController(
+      text: widget.data.count?.toString() ?? '',
+    );
+    _angleController = TextEditingController(
+      text: widget.data.angle?.toString() ?? '',
+    );
+    _customCdController = TextEditingController(
+      text: widget.data.customCd?.toString() ?? '',
+    );
+    _punctureController = TextEditingController(
+      text: widget.data.puncture?.toString() ?? '',
+    );
+    _bounceController = TextEditingController(
+      text: widget.data.bounce?.toString() ?? '',
+    );
+    _explodeController = TextEditingController(
+      text: widget.data.explode?.toString() ?? '',
+    );
+    _holdTimeController = TextEditingController(
+      text: widget.data.holdTime?.toString() ?? '',
+    );
+    _trackSpeedController = TextEditingController(
+      text: widget.data.trackSpeed?.toString() ?? '',
+    );
     _selectedType = widget.data.type;
   }
 
@@ -955,8 +1314,16 @@ class _NewZombieSkillEditSubDialogState
     _descriptionController.dispose();
     _cooldownController.dispose();
     _damageController.dispose();
-    _rangeController.dispose();
-    _specialController.dispose();
+    _costController.dispose();
+    _speedController.dispose();
+    _countController.dispose();
+    _angleController.dispose();
+    _customCdController.dispose();
+    _punctureController.dispose();
+    _bounceController.dispose();
+    _explodeController.dispose();
+    _holdTimeController.dispose();
+    _trackSpeedController.dispose();
     super.dispose();
   }
 
@@ -1053,25 +1420,14 @@ class _NewZombieSkillEditSubDialogState
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  '作用范围',
-                                  _rangeController,
-                                  '中距离',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildTextField(
-                                  '特殊效果',
-                                  _specialController,
-                                  '减速50%',
-                                ),
-                              ),
-                            ],
+                          _buildTextField(
+                            '消耗能量',
+                            _costController,
+                            '例: 50',
+                            fieldType: ZombieFieldType.number,
                           ),
+                          const SizedBox(height: 16),
+                          _buildAdvancedFields(),
                           const SizedBox(height: 16),
                           PreviewTypeSelector(
                             initialType: widget.data.previewType ?? 'none',
@@ -1174,6 +1530,132 @@ class _NewZombieSkillEditSubDialogState
           stops: const [0, 0.2, 0.8, 1],
         ),
       ),
+    );
+  }
+
+  Widget _buildAdvancedFields() {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 3, height: 14, color: scrollBrown),
+            const SizedBox(width: 8),
+            Text(
+              '高级参数（可选）',
+              style: TextStyle(
+                color: scrollBrown,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '留空表示不变更/未设置。',
+          style: TextStyle(
+            color: inkColor.withValues(alpha: 0.55),
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '基础速度',
+                _speedController,
+                '800',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '弹幕数量',
+                _countController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '散射角度',
+                _angleController,
+                '3',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '穿刺次数',
+                _punctureController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '反弹次数',
+                _bounceController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '爆炸范围',
+                _explodeController,
+                '300',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                '持续时间(秒)',
+                _holdTimeController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '追踪加速',
+                _trackSpeedController,
+                '600',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                '内置CD',
+                _customCdController,
+                '5',
+                fieldType: ZombieFieldType.number,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1362,10 +1844,16 @@ class _NewZombieSkillEditSubDialogState
             ? _damageController.text
             : null,
         cooldown: double.tryParse(_cooldownController.text),
-        range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-        special: _specialController.text.isNotEmpty
-            ? _specialController.text
-            : null,
+        cost: _parseInt(_costController),
+        speed: _parseDouble(_speedController),
+        count: _parseInt(_countController),
+        angle: _parseDouble(_angleController),
+        customCd: _parseDouble(_customCdController),
+        puncture: _parseInt(_punctureController),
+        bounce: _parseInt(_bounceController),
+        explode: _parseDouble(_explodeController),
+        holdTime: _parseDouble(_holdTimeController),
+        trackSpeed: _parseDouble(_trackSpeedController),
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
         previewVideoUrl: _previewData?.previewVideoUrl,
@@ -1383,4 +1871,16 @@ String _previewTypeToString(PreviewType type) {
     PreviewType.video => 'video',
     PreviewType.videoUrl => 'video_url',
   };
+}
+
+int? _parseInt(TextEditingController c) {
+  final text = c.text.trim();
+  if (text.isEmpty) return null;
+  return int.tryParse(text);
+}
+
+double? _parseDouble(TextEditingController c) {
+  final text = c.text.trim();
+  if (text.isEmpty) return null;
+  return double.tryParse(text);
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/models/character_models.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
@@ -197,16 +198,23 @@ class ZombieSkillCardMobile extends StatelessWidget {
   bool get _hasAttributes =>
       skill.cooldown != null ||
       skill.damage != null ||
-      skill.range != null ||
-      skill.special != null;
+      skill.cost != null ||
+      skill.speed != null ||
+      skill.count != null ||
+      skill.angle != null ||
+      skill.puncture != null ||
+      skill.bounce != null ||
+      skill.explode != null ||
+      skill.holdTime != null ||
+      skill.trackSpeed != null ||
+      skill.customCd != null;
 
-  /// 构建属性区域（与桌面端完全一致）
+  /// 构建属性区域（与桌面端完全一致，字段与符卡对齐，cost 显示为"能量"）
   Widget _buildAttributes(
     BuildContext context,
     Color accentColor,
     bool isDark,
   ) {
-    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final statItems = <Widget>[];
 
     if (skill.cooldown != null) {
@@ -233,19 +241,121 @@ class ZombieSkillCardMobile extends StatelessWidget {
       );
     }
 
-    if (skill.range != null && skill.range!.isNotEmpty) {
+    if (skill.cost != null) {
       statItems.add(
-        _buildStatItem(Icons.radar, '范围', skill.range!, scrollBrown, isDark),
+        _buildStatItem(
+          Icons.local_fire_department,
+          '能量',
+          _formatNumber(skill.cost!),
+          CharacterGalleryTheme.getBCostColor(context),
+          isDark,
+        ),
       );
     }
 
-    if (skill.special != null && skill.special!.isNotEmpty) {
+    if (skill.speed != null) {
       statItems.add(
         _buildStatItem(
-          Icons.auto_awesome,
-          '特殊',
-          skill.special!,
-          CharacterGalleryTheme.getSpecialColor(context),
+          MdiIcons.speedometer,
+          '弹幕初速',
+          _formatNumber(skill.speed!),
+          CharacterGalleryTheme.getSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.count != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.counter,
+          '弹幕数量',
+          _formatNumber(skill.count!),
+          CharacterGalleryTheme.getCountColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.angle != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.angleAcute,
+          '散射角度',
+          '${_formatNumber(skill.angle!)}°',
+          CharacterGalleryTheme.getAngleColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.puncture != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowExpandHorizontal,
+          '穿刺次数',
+          _formatNumber(skill.puncture!),
+          CharacterGalleryTheme.getPunctureColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.bounce != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowUDownLeft,
+          '反弹次数',
+          _formatNumber(skill.bounce!),
+          CharacterGalleryTheme.getBounceColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.explode != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.weatherSunny,
+          '影响范围',
+          _formatNumber(skill.explode!),
+          CharacterGalleryTheme.getExplodeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.holdTime != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.timerSand,
+          '持续时间',
+          '${_formatNumber(skill.holdTime!)}s',
+          CharacterGalleryTheme.getHoldTimeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.trackSpeed != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.crosshairs,
+          '追踪转向',
+          _formatNumber(skill.trackSpeed!),
+          CharacterGalleryTheme.getTrackSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (skill.customCd != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.cog,
+          '内置CD',
+          '${_formatNumber(skill.customCd!)}s',
+          CharacterGalleryTheme.getCustomCdColor(context),
           isDark,
         ),
       );

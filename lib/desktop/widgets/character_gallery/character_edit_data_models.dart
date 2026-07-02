@@ -93,21 +93,39 @@ class ZombieSkillEditData {
   final String? description;
   final String? damage;
   final double? cooldown;
-  final String? range;
-  final String? special;
+  final int? cost;
   final String? previewType; // none/image/video_url
   final int? previewFileId;
   final String? previewVideoUrl;
+
+  // 核心数值字段（与符卡对齐）
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
 
   ZombieSkillEditData({
     this.description,
     this.damage,
     this.cooldown,
-    this.range,
-    this.special,
+    this.cost,
     this.previewType,
     this.previewFileId,
     this.previewVideoUrl,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 }
 
@@ -118,11 +136,21 @@ class ZombieSkillCreateData {
   final String? description;
   final String? damage;
   final double? cooldown;
-  final String? range;
-  final String? special;
+  final int? cost;
   final String? previewType; // none/image/video_url
   final int? previewFileId;
   final String? previewVideoUrl;
+
+  // 核心数值字段（与符卡对齐）
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
 
   ZombieSkillCreateData({
     required this.name,
@@ -130,10 +158,18 @@ class ZombieSkillCreateData {
     this.description,
     this.damage,
     this.cooldown,
-    this.range,
-    this.special,
+    this.cost,
     this.previewType,
     this.previewFileId,
     this.previewVideoUrl,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 }
