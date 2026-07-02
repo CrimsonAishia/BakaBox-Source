@@ -445,6 +445,15 @@ class _RichTextViewerState extends State<RichTextViewer> {
         null,
         null,
       ),
+      // leading 控制列表符号（• / 1.）的文字样式，
+      // 必须与 lists 的 height 保持一致才能垂直对齐
+      leading: DefaultTextBlockStyle(
+        baseTextStyle,
+        HorizontalSpacing.zero,
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
+        null,
+      ),
       link: TextStyle(
         color: AppColors.primary,
         decoration: TextDecoration.underline,

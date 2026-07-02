@@ -257,8 +257,7 @@ class RichTextEditorState extends State<RichTextEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.showToolbar)
-          widget.customToolbar ?? _buildToolbar(context),
+        if (widget.showToolbar) widget.customToolbar ?? _buildToolbar(context),
         // 编辑器区域 - 填充剩余空间
         Expanded(child: _buildEditor(context)),
         // 底部栏（包含附件和状态信息）
@@ -1066,6 +1065,19 @@ class RichTextEditorState extends State<RichTextEditor> {
                 const VerticalSpacing(4, 4),
                 VerticalSpacing.zero,
                 null,
+                null,
+              ),
+              // leading 控制列表符号（• / 1.）的文字样式，
+              // 必须与 lists 的 height 保持一致才能垂直对齐
+              leading: DefaultTextBlockStyle(
+                TextStyle(
+                  fontSize: 15,
+                  height: 1.7,
+                  color: isDark ? AppColors.slate200 : AppColors.gray700,
+                ),
+                HorizontalSpacing.zero,
+                VerticalSpacing.zero,
+                VerticalSpacing.zero,
                 null,
               ),
               link: TextStyle(
