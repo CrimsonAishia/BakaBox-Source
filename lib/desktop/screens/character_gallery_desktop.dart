@@ -2114,7 +2114,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         : (
             vermillion,
             vermillion.withValues(alpha: isDark ? 0.12 : 0.06),
-            '✧',
+            '◈',
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           );
 
@@ -2145,6 +2145,17 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
                 ),
               ),
+
+              // 渐变蒙版
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration:
+                      CharacterGalleryTheme.getCardBottomGradientDecoration(
+                        context,
+                      ),
+                ),
+              ),
+
               // 内容层
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -2216,8 +2227,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                           gradient: LinearGradient(
                             colors: [
                               borderColor.withValues(alpha: 0),
-                              borderColor.withValues(alpha: 0.4),
-                              borderColor.withValues(alpha: 0.4),
+                              borderColor.withValues(alpha: 0.5),
+                              borderColor.withValues(alpha: 0.5),
                               borderColor.withValues(alpha: 0),
                             ],
                             stops: const [0, 0.2, 0.8, 1],
@@ -2271,7 +2282,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   /// 僵尸技能属性行
   Widget _buildZombieSkillStats(ZombieSkill skill, Color accentColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final statItems = <Widget>[];
 
     if (skill.cooldown != null) {
@@ -2300,7 +2310,13 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
     if (skill.range != null) {
       statItems.add(
-        _buildStatItem(Icons.radar, '范围', skill.range!, scrollBrown, isDark),
+        _buildStatItem(
+          Icons.radar,
+          '范围',
+          skill.range!,
+          CharacterGalleryTheme.getRangeColor(context),
+          isDark,
+        ),
       );
     }
 
