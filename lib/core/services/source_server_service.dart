@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:source_server/source_server.dart';
 import '../utils/log_service.dart';
 
@@ -75,66 +76,78 @@ class SourceServerService {
     int port, {
     int? timeout,
   }) async {
-    SourceServer? server;
     final stopwatch = Stopwatch()..start();
+    final completer = Completer<SourceServerInfo?>();
 
-    try {
-      server = await SourceServer.connect(
-        ip,
-        port,
-        timeout: Duration(milliseconds: timeout ?? defaultTimeout),
-      );
-      final info = await server.getInfo();
-      stopwatch.stop();
+    runZonedGuarded(() async {
+      SourceServer? server;
+      try {
+        server = await SourceServer.connect(
+          ip,
+          port,
+          timeout: Duration(milliseconds: timeout ?? defaultTimeout),
+        );
+        final info = await server.getInfo();
+        stopwatch.stop();
 
-      String osName = 'unknown';
-      if (info.os.toString().contains('windows')) {
-        osName = 'windows';
-      } else if (info.os.toString().contains('linux')) {
-        osName = 'linux';
+        String osName = 'unknown';
+        if (info.os.toString().contains('windows')) {
+          osName = 'windows';
+        } else if (info.os.toString().contains('linux')) {
+          osName = 'linux';
+        }
+
+        bool vacEnabled = info.vac.toString().contains('secured');
+        bool hasPassword = info.visibility.toString().contains('private');
+
+        String gameType = 'Unknown';
+        // info.id 为服务器上报的 Steam AppID，作为游戏类型判断的权威依据
+        final int appId = info.id;
+        if (appId == 4465480) {
+          // 独立版 CSGO
+          gameType = 'CSGO';
+        } else if (appId == 240) {
+          // Counter-Strike: Source
+          gameType = 'CSS';
+        } else if (info.game.toLowerCase().contains('counter-strike 2')) {
+          gameType = 'CS2';
+        } else if (info.game.toLowerCase().contains('source')) {
+          gameType = 'CSS';
+        } else if (info.game.toLowerCase().contains('counter-strike')) {
+          gameType = 'CSGO';
+        }
+
+        if (!completer.isCompleted) {
+          completer.complete(SourceServerInfo(
+            name: info.name,
+            map: info.map,
+            players: info.players,
+            maxPlayers: info.maxPlayers,
+            bots: info.bots,
+            game: info.game,
+            version: info.version,
+            vac: vacEnabled,
+            passwordProtected: hasPassword,
+            os: osName,
+            ping: stopwatch.elapsedMilliseconds,
+            gameType: gameType,
+            appId: appId,
+          ));
+        }
+      } catch (e) {
+        if (!completer.isCompleted) {
+          completer.complete(null);
+        }
+      } finally {
+        server?.close();
       }
-
-      bool vacEnabled = info.vac.toString().contains('secured');
-      bool hasPassword = info.visibility.toString().contains('private');
-
-      String gameType = 'Unknown';
-      // info.id 为服务器上报的 Steam AppID，作为游戏类型判断的权威依据
-      final int appId = info.id;
-      if (appId == 4465480) {
-        // 独立版 CSGO
-        gameType = 'CSGO';
-      } else if (appId == 240) {
-        // Counter-Strike: Source
-        gameType = 'CSS';
-      } else if (info.game.toLowerCase().contains('counter-strike 2')) {
-        gameType = 'CS2';
-      } else if (info.game.toLowerCase().contains('source')) {
-        gameType = 'CSS';
-      } else if (info.game.toLowerCase().contains('counter-strike')) {
-        gameType = 'CSGO';
+    }, (error, stack) {
+      if (!completer.isCompleted) {
+        completer.complete(null);
       }
+    });
 
-      return SourceServerInfo(
-        name: info.name,
-        map: info.map,
-        players: info.players,
-        maxPlayers: info.maxPlayers,
-        bots: info.bots,
-        game: info.game,
-        version: info.version,
-        vac: vacEnabled,
-        passwordProtected: hasPassword,
-        os: osName,
-        ping: stopwatch.elapsedMilliseconds,
-        gameType: gameType,
-        appId: appId,
-      );
-    } catch (e) {
-      // LogService.d('获取服务器信息失败 ($ip:$port): $e', e);
-      return null;
-    } finally {
-      server?.close();
-    }
+    return completer.future;
   }
 
   static Future<List<SourceServerPlayer>> getServerPlayers(
@@ -142,29 +155,46 @@ class SourceServerService {
     int port, {
     int? timeout,
   }) async {
-    SourceServer? server;
-    try {
-      server = await SourceServer.connect(
-        ip,
-        port,
-        timeout: Duration(milliseconds: timeout ?? defaultTimeout),
-      );
-      final players = await server.getPlayers();
-      return players
-          .map(
-            (p) => SourceServerPlayer(
-              name: p.name,
-              score: p.score,
-              duration: p.duration,
-            ),
-          )
-          .toList();
-    } catch (e) {
-      LogService.e('获取玩家列表失败 ($ip:$port): $e', e);
-      return [];
-    } finally {
-      server?.close();
-    }
+    final completer = Completer<List<SourceServerPlayer>>();
+
+    runZonedGuarded(() async {
+      SourceServer? server;
+      try {
+        server = await SourceServer.connect(
+          ip,
+          port,
+          timeout: Duration(milliseconds: timeout ?? defaultTimeout),
+        );
+        final players = await server.getPlayers();
+        if (!completer.isCompleted) {
+          completer.complete(
+            players
+                .map(
+                  (p) => SourceServerPlayer(
+                    name: p.name,
+                    score: p.score,
+                    duration: p.duration,
+                  ),
+                )
+                .toList(),
+          );
+        }
+      } catch (e) {
+        LogService.e('获取玩家列表失败 ($ip:$port): $e', e);
+        if (!completer.isCompleted) {
+          completer.complete([]);
+        }
+      } finally {
+        server?.close();
+      }
+    }, (error, stack) {
+      LogService.e('获取玩家列表时捕获到未处理的异常 ($ip:$port): $error', error);
+      if (!completer.isCompleted) {
+        completer.complete([]);
+      }
+    });
+
+    return completer.future;
   }
 
   static Future<bool> isServerOnline(
