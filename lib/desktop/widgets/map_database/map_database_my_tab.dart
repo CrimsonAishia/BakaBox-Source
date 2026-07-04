@@ -5,7 +5,7 @@ import '../../../core/bloc/auth/auth_bloc.dart';
 import '../../../core/bloc/auth/auth_state.dart';
 import '../../../core/bloc/map_contribution/map_contribution_bloc.dart';
 import '../../../core/bloc/map_contribution/map_contribution_state.dart';
-import '../../../core/widgets/map_contribution_dialog.dart';
+import '../server/server_detail_dialog.dart';
 import 'map_group_card.dart';
 import 'pagination_bar.dart';
 
@@ -80,7 +80,7 @@ class MapDatabaseMyTab extends StatelessWidget {
                                 group: group,
                                 showAuditStatus: true,
                                 onTap: () {
-                                  MapContributionDialog.show(
+                                  ServerDetailDialog.showMapEdit(
                                     context,
                                     mapName: group.mapInfo.mapName,
                                     mapLabel: group.mapInfo.mapLabel,

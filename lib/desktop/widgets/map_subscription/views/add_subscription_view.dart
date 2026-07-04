@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
-import '../../../../core/widgets/map_contribution_dialog.dart';
+import '../../server/server_detail_dialog.dart';
 import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -405,7 +405,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           message: '编辑地图信息',
           child: IconButton(
             onPressed: () {
-              MapContributionDialog.show(
+              ServerDetailDialog.showMapEdit(
                 context,
                 mapName: result.mapName,
                 mapLabel: result.mapLabel,
@@ -450,7 +450,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           message: '编辑地图信息',
           child: IconButton(
             onPressed: () {
-              MapContributionDialog.show(
+              ServerDetailDialog.showMapEdit(
                 context,
                 mapName: result.mapName,
                 mapLabel: result.mapLabel,

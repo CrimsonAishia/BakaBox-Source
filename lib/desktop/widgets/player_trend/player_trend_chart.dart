@@ -142,50 +142,52 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       builder: (context) => Positioned(
         left: tooltipX,
         top: tooltipY,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.slate700 : Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : AppColors.slate200,
+        child: IgnorePointer(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.slate700 : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : AppColors.slate200,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _formatFullTime(info.createdAt),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : AppColors.slate500,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _formatFullTime(info.createdAt),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : AppColors.slate500,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '在线人数: ${info.playerCount}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.slate800,
+                  const SizedBox(height: 2),
+                  Text(
+                    '在线人数: ${info.playerCount}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : AppColors.slate800,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -263,31 +265,28 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       key: _chartKey,
       width: widget.width,
       height: widget.height,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: LineChart(
-          key: ValueKey(Theme.of(context).brightness),
-          LineChartData(
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: yAxisMax / 4,
-              getDrawingHorizontalLine: (value) => FlLine(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : AppColors.slate100,
-                strokeWidth: 1,
-              ),
+      child: LineChart(
+        key: ValueKey(Theme.of(context).brightness),
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: yAxisMax / 4,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : AppColors.slate100,
+              strokeWidth: 1,
             ),
-            titlesData: _buildTitlesData(data, isMultiDay, yAxisMax),
-            borderData: FlBorderData(show: false),
-            minX: 0,
-            maxX: (data.length - 1).toDouble(),
-            minY: 0,
-            maxY: yAxisMax,
-            lineTouchData: _buildLineTouchData(data),
-            lineBarsData: [_buildLineChartBarData(data)],
           ),
+          titlesData: _buildTitlesData(data, isMultiDay, yAxisMax),
+          borderData: FlBorderData(show: false),
+          minX: 0,
+          maxX: (data.length - 1).toDouble(),
+          minY: 0,
+          maxY: yAxisMax * 1.2, // 故意调高 maxY 以留出内部顶部留白，防止标签和高点被截断
+          lineTouchData: _buildLineTouchData(data),
+          lineBarsData: [_buildLineChartBarData(data)],
         ),
       ),
     );
@@ -400,7 +399,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
           }
         }
       },
-      handleBuiltInTouches: true,
+      handleBuiltInTouches: false,
     );
   }
 

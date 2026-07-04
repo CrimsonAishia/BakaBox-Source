@@ -1,13 +1,23 @@
-part of '../map_contribution_dialog.dart';
+import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/models/map_tag_models.dart';
+import '../../../../core/services/token_service.dart';
+import '../../../../core/widgets/common_report_dialog.dart';
+import '../../../../core/api/map_tag_api.dart';
+import '../../../../core/widgets/disk_cached_image.dart';
+import '../../../../core/models/report_models.dart';
 
 /// 地图所有标签投票记录对话框
-class _MapAllVotersDialog extends StatefulWidget {
+class MapAllVotersDialog extends StatefulWidget {
   final String mapName;
   final String? mapLabel;
   final bool isDifficultySeparated;
   final String? serverAddress;
 
-  const _MapAllVotersDialog({
+  const MapAllVotersDialog({
+    super.key,
     required this.mapName,
     this.mapLabel,
     this.isDifficultySeparated = false,
@@ -15,10 +25,10 @@ class _MapAllVotersDialog extends StatefulWidget {
   });
 
   @override
-  State<_MapAllVotersDialog> createState() => _MapAllVotersDialogState();
+  State<MapAllVotersDialog> createState() => _MapAllVotersDialogState();
 }
 
-class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
+class _MapAllVotersDialogState extends State<MapAllVotersDialog> {
   bool _isLoading = true;
   String? _error;
   MapAllTagVotesResponse? _data;
@@ -517,13 +527,14 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
 }
 
 /// 标签投票用户对话框
-class _TagVotersDialog extends StatefulWidget {
+class TagVotersDialog extends StatefulWidget {
   final String mapName;
   final MapTag tag;
   final bool isDifficultySeparated;
   final String? serverAddress;
 
-  const _TagVotersDialog({
+  const TagVotersDialog({
+    super.key,
     required this.mapName,
     required this.tag,
     this.isDifficultySeparated = false,
@@ -531,10 +542,10 @@ class _TagVotersDialog extends StatefulWidget {
   });
 
   @override
-  State<_TagVotersDialog> createState() => _TagVotersDialogState();
+  State<TagVotersDialog> createState() => _TagVotersDialogState();
 }
 
-class _TagVotersDialogState extends State<_TagVotersDialog> {
+class _TagVotersDialogState extends State<TagVotersDialog> {
   bool _isLoading = true;
   String? _error;
   TagUserVotesResponse? _data;

@@ -7,11 +7,11 @@ import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/utils/time_utils.dart';
 import '../../../core/widgets/map_background.dart';
-import '../player_trend/player_trend_chart.dart';
+import '../../../core/widgets/dashed_line.dart';
 import '../../../core/constants/app_colors.dart';
+import 'server_history_card.dart';
 
-/// 服务器历史记录弹窗
-/// 显示服务器地图变更历史时间线
+/// 服务器历史记录组件 (作为 Tab 内容)
 class ServerHistoryDialog extends StatefulWidget {
   final ExtendedServerItem server;
 
@@ -39,13 +39,13 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   bool _hasMoreData = true;
   String _searchQuery = '';
 
-  // 滚动指示器状态
-  bool _canScrollUp = false;
-  bool _canScrollDown = false;
-
   // 地图信息缓存
   final Map<String, MapData> _mapInfoCache = {};
   final Set<String> _loadingMaps = {};
+
+  // 滚动指示器状态
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
 
   // 分页配置
   static const int _pageSize = 10;
@@ -57,8 +57,20 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     _fetchServerHistory();
   }
 
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollIndicators);
+    _searchDebounceTimer?.cancel();
+    _scrollController.dispose();
+    _searchController.dispose();
+    _mapInfoCache.clear();
+    _loadingMaps.clear();
+    _historyData.clear();
+    super.dispose();
+  }
+
   void _updateScrollIndicators() {
-    if (!_scrollController.hasClients) return;
+    if (!mounted || !_scrollController.hasClients) return;
     final position = _scrollController.position;
     final canUp = position.pixels > 0;
     final canDown = position.pixels < position.maxScrollExtent;
@@ -68,20 +80,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         _canScrollDown = canDown;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    _searchDebounceTimer?.cancel();
-    _scrollController.removeListener(_updateScrollIndicators);
-    _scrollController.dispose();
-    _searchController.dispose();
-    // 清理地图缓存，释放内存
-    _mapInfoCache.clear();
-    _loadingMaps.clear();
-    // 清理历史数据列表
-    _historyData.clear();
-    super.dispose();
   }
 
   /// 获取服务器历史数据
@@ -139,14 +137,11 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
           _currentPage = 1;
         }
 
-        // 检查是否还有更多数据
         final totalLoaded = _currentPage * _pageSize;
         _hasMoreData = totalLoaded < _totalRecords;
 
-        // 异步加载地图信息
         _loadMapInfosForCurrentData();
       } else {
-        // 无数据
         if (!isLoadMore) {
           _historyData = [];
           _totalRecords = 0;
@@ -175,9 +170,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         .where((name) => name.isNotEmpty)
         .toSet();
 
-    // 收集需要加载的地图
     final mapsToLoadInfo = <String>[];
-
     for (final mapName in uniqueMapNames) {
       if (!_mapInfoCache.containsKey(mapName) &&
           !_loadingMaps.contains(mapName)) {
@@ -186,15 +179,11 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       }
     }
 
-    // 并行加载所有数据
     final futures = <Future>[];
-
-    // 加载地图信息
     for (final mapName in mapsToLoadInfo) {
       futures.add(_loadMapInfoSilent(mapName));
     }
 
-    // 等待所有加载完成后统一刷新
     if (futures.isNotEmpty) {
       await Future.wait(futures);
       if (mounted) {
@@ -203,7 +192,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     }
   }
 
-  /// 静默加载地图信息（不触发 setState）
   Future<void> _loadMapInfoSilent(String mapName) async {
     try {
       final mapInfo = await _serverApi.getMapInfo(mapName);
@@ -217,7 +205,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     }
   }
 
-  /// 处理搜索
   void _handleSearch() {
     final query = _searchController.text.trim().toLowerCase();
     if (query != _searchQuery) {
@@ -226,77 +213,54 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     }
   }
 
-  /// 清空搜索
   void _clearSearch() {
     _searchController.clear();
     if (_searchQuery.isNotEmpty) {
       _searchQuery = '';
       _fetchServerHistory(resetData: true);
     } else {
-      // 如果搜索条件本来就没有，不刷新但更新UI
       setState(() {});
     }
   }
 
-  /// 搜索输入变化（实时搜索，带防抖）
   void _onSearchChanged(String value) {
-    // 取消之前的定时器
     _searchDebounceTimer?.cancel();
-
-    // 立即更新UI显示清空按钮
     setState(() {});
-
-    // 500ms 后执行搜索
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       _handleSearch();
     });
   }
 
-  /// 加载更多
   void _loadMore() {
     if (!_isLoadingMore && _hasMoreData) {
       _fetchServerHistory(isLoadMore: true);
     }
   }
 
-  /// 获取格式化的地图名称
   String _getFormattedMapName(ServerSnapshot snapshot) {
-    // 使用地图信息
     final mapInfo = _mapInfoCache[snapshot.mapName];
     final mapLabel = mapInfo?.mapLabel;
-    // 确保中文名不为空字符串
     final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
-    // 显示格式：有中文名时 "中文名 (英文名)"，否则只显示英文名
     if (chineseName != null) {
       return '$chineseName (${snapshot.mapName})';
     }
     return snapshot.mapName.isNotEmpty ? snapshot.mapName : '未知地图';
   }
 
-  /// 获取地图背景URL
   String? _getMapBackgroundUrl(ServerSnapshot snapshot) {
-    // 使用地图背景
     final mapInfo = _mapInfoCache[snapshot.mapName];
     return MapUtils.getMapImageUrl(snapshot.mapName, mapUrl: mapInfo?.mapUrl);
   }
 
-  /// 格式化时间
   String _formatDateTime(String dateStr) {
     return TimeUtils.formatWithWeekday(dateStr);
   }
 
-  /// 计算地图游玩时长
   String _getMapPlayDuration(ServerSnapshot snapshot) {
     final infos = snapshot.infos;
-    if (infos == null || infos.isEmpty) {
-      return '无数据';
-    }
+    if (infos == null || infos.isEmpty) return '无数据';
+    if (infos.length == 1) return '< 1分钟';
 
-    if (infos.length == 1) {
-      return '< 1分钟';
-    }
-
-    // 按时间排序
     final sortedInfos = List<PlayerTrendInfo>.from(infos)
       ..sort((a, b) {
         final dateA = TimeUtils.parseServerTime(a.createdAt);
@@ -315,114 +279,43 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: 420,
-          height: 600,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-          ),
-          child: Column(
-            children: [
-              _buildHeader(context),
-              _buildSearchBar(),
-              Expanded(child: _buildContent()),
-            ],
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      children: [
+        _buildSearchBar(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: DashedLine(color: isDark ? Colors.white24 : Colors.black12),
         ),
-      ),
+        Expanded(child: _buildContent()),
+      ],
     );
   }
 
-  /// 构建头部
-  Widget _buildHeader(BuildContext context) {
-    final serverInfo = widget.server.serverData;
-    final hostName = serverInfo?.hostName ?? '未知服务器';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.slate800,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: Row(
-        children: [
-          Icon(MdiIcons.history, color: Colors.white, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '地图变更历史',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  hostName,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          // 刷新按钮
-          IconButton(
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _isLoading
-                ? null
-                : () => _fetchServerHistory(resetData: true),
-            tooltip: '刷新',
-          ),
-          // 关闭按钮
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-            tooltip: '关闭',
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建搜索栏
   Widget _buildSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.gray800;
+    final hintColor = isDark ? Colors.white38 : AppColors.gray400;
+    final inputBgColor = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.black.withValues(alpha: 0.04);
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+      margin: const EdgeInsets.only(bottom: 5),
       child: Column(
         children: [
+          const SizedBox(height: 5),
           Row(
             children: [
               Icon(MdiIcons.calendarClock, color: AppColors.primary, size: 18),
               const SizedBox(width: 8),
               Text(
                 '已加载 ${_historyData.length} / $_totalRecords 条',
-                style: const TextStyle(fontSize: 13, color: AppColors.gray500),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white70 : AppColors.gray500,
+                ),
               ),
             ],
           ),
@@ -431,32 +324,44 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 36,
+                  height: 40,
                   child: TextField(
                     controller: _searchController,
+                    style: TextStyle(color: textColor, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: '搜索地图名称...',
-                      prefixIcon: const Icon(Icons.search, size: 18),
+                      hintStyle: TextStyle(color: hintColor),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: 18,
+                        color: hintColor,
+                      ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
+                              icon: Icon(
+                                Icons.clear,
+                                size: 18,
+                                color: hintColor,
+                              ),
                               onPressed: _clearSearch,
                             )
                           : null,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
+                        horizontal: 16,
                       ),
+                      filled: true,
+                      fillColor: inputBgColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                        ),
+                        borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                        ),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: AppColors.primary),
                       ),
                     ),
                     onChanged: _onSearchChanged,
@@ -464,19 +369,25 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: _handleSearch,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 20,
+                    vertical: 0,
                   ),
-                  minimumSize: const Size(0, 36),
+                  minimumSize: const Size(0, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-                child: const Text('搜索'),
+                child: const Text(
+                  '搜索',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
@@ -485,7 +396,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     );
   }
 
-  /// 构建内容区域
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
@@ -551,43 +461,95 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       );
     }
 
-    return _buildTimeline();
+    return _buildZigZagTimeline();
   }
 
-  /// 构建时间线
-  Widget _buildTimeline() {
-    // 延迟检查滚动状态
+  Widget _buildZigZagTimeline() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateScrollIndicators();
     });
+
+    final int totalItems = _historyData.length;
+    final int rowCount = (totalItems / 2).ceil();
 
     return Stack(
       children: [
         ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          // 性能优化：禁用自动保持活跃，减少内存占用
-          addAutomaticKeepAlives: false,
-          // 性能优化：每个 item 自动添加 RepaintBoundary
-          addRepaintBoundaries: true,
-          itemCount:
-              _historyData.length + (_hasMoreData || _isLoadingMore ? 1 : 1),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          itemCount: rowCount + 1, // +1 for loading/no-more indicator
           itemBuilder: (context, index) {
-            if (index < _historyData.length) {
-              return _buildTimelineItem(_historyData[index], index);
-            }
+        if (index == rowCount) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: _isLoadingMore
+                ? _buildLoadingMore()
+                : (_hasMoreData ? _buildLoadMoreButton() : _buildNoMoreData()),
+          );
+        }
 
-            // 底部加载更多或已加载全部
-            if (_isLoadingMore) {
-              return _buildLoadingMore();
-            } else if (_hasMoreData) {
-              return _buildLoadMoreButton();
-            } else {
-              return _buildNoMoreData();
-            }
-          },
+        final leftIndex = index * 2;
+        final rightIndex = index * 2 + 1;
+        final hasRight = rightIndex < totalItems;
+
+        final leftSnapshot = _historyData[leftIndex];
+        final rightSnapshot = hasRight ? _historyData[rightIndex] : null;
+
+        // 错位布局的关键：右侧卡片整体向下偏移 64 像素，左侧卡片底部增加 64 像素间距
+        return Stack(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 左侧列
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8, bottom: 64),
+                    child: _buildTimelineItem(
+                      leftSnapshot,
+                      leftIndex,
+                      isLatest: leftIndex == 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 96), // 中央轴宽度
+                // 右侧列
+                Expanded(
+                  child: hasRight
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 8, top: 64),
+                          child: _buildTimelineItem(
+                            rightSnapshot!,
+                            rightIndex,
+                            isLatest:
+                                rightIndex == 0, // 右侧永远不可能是最新(index 0)，但以防万一
+                          ),
+                        )
+                      : const SizedBox(),
+                ),
+              ],
+            ),
+            // 中央时间线轴（每行负责画出左右两张卡片的连接点）
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Align(
+                alignment: Alignment.center,
+                child: _buildTimelineCenterAxisPaired(
+                  leftIndex: leftIndex,
+                  hasRight: hasRight,
+                  isFirstRow: index == 0,
+                  isLastRow: index == rowCount - 1,
+                  hasMoreData: _hasMoreData,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
         ),
-        // 顶部滚动指示器
         if (_canScrollUp)
           Positioned(
             top: 0,
@@ -595,7 +557,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             right: 0,
             child: _buildScrollIndicator(isTop: true),
           ),
-        // 底部滚动指示器
         if (_canScrollDown)
           Positioned(
             bottom: 0,
@@ -607,163 +568,232 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     );
   }
 
-  /// 构建滚动指示器
-  Widget _buildScrollIndicator({required bool isTop}) {
-    return IgnorePointer(
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
-            end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-              Theme.of(context).colorScheme.surface.withValues(alpha: 0),
-            ],
-            stops: const [0.0, 0.5, 1.0],
+  Widget _buildTimelineCenterAxisPaired({
+    required int leftIndex,
+    required bool hasRight,
+    required bool isFirstRow,
+    required bool isLastRow,
+    required bool hasMoreData,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lineColor = isDark ? Colors.white24 : Colors.black12;
+
+    // 左侧永远有节点
+    final isLeftLatest = leftIndex == 0;
+    // 右侧如果有节点，永远不可能是 index 0
+
+    return SizedBox(
+      width: 96,
+      height: double.infinity,
+      child: Stack(
+        children: [
+          // 贯穿上下的垂直线
+          Positioned(
+            top: isFirstRow ? 20 : 0, // 第一项从中心点开始往下
+            bottom: isLastRow && !hasMoreData ? null : 0,
+            // 如果是最后一行且没有更多数据，线只需画到最后一个节点即可
+            height: isLastRow && !hasMoreData
+                ? (hasRight ? 84 + 32.0 : 20 + 32.0)
+                : null,
+            left: 0,
+            right: 0,
+            child: Align(
+              alignment: Alignment.center,
+              child: Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: lineColor,
+                  borderRadius: BorderRadius.circular(1.5),
+                ),
+              ),
+            ),
           ),
-        ),
-        alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
-        padding: EdgeInsets.only(top: isTop ? 2 : 0, bottom: isTop ? 0 : 2),
-        child: Icon(
-          isTop ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: AppColors.gray500,
-          size: 24,
-        ),
+          // 左侧节点 (对应 leftIndex)
+          Positioned(
+            top: 20, // 左侧卡片没有 top padding
+            left: 0,
+            right: 0,
+            child: _buildTimelineNode(
+              isLatest: isLeftLatest,
+              isEven: true,
+              lineColor: lineColor,
+            ),
+          ),
+          // 右侧节点 (对应 rightIndex)
+          if (hasRight)
+            Positioned(
+              top: 20 + 64, // 右侧卡片有 64 的 top padding，节点随之下移
+              left: 0,
+              right: 0,
+              child: _buildTimelineNode(
+                isLatest: false,
+                isEven: false,
+                lineColor: lineColor,
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  /// 构建时间线项
-  Widget _buildTimelineItem(ServerSnapshot snapshot, int index) {
-    final isLatest = index == 0;
+  Widget _buildTimelineNode({
+    required bool isLatest,
+    required bool isEven,
+    required Color lineColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final connectorColor = isLatest ? AppColors.amber500 : lineColor;
+    final dotColor = isLatest
+        ? AppColors.amber500
+        : (isDark ? Colors.white38 : Colors.black26);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // 指向左侧卡片
+        if (isEven) ...[
+          Icon(Icons.arrow_left, color: connectorColor, size: 24),
+          Container(width: 16, height: 2, color: connectorColor),
+        ] else ...[
+          const SizedBox(width: 40),
+        ],
+
+        // 中心点
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: isLatest
+                ? AppColors.amber500
+                : (isDark ? AppColors.slate800 : Colors.white),
+            shape: BoxShape.circle,
+            border: Border.all(color: dotColor, width: isLatest ? 0 : 3),
+            boxShadow: isLatest
+                ? [
+                    BoxShadow(
+                      color: AppColors.amber500.withValues(alpha: 0.6),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
+          ),
+        ),
+
+        // 指向右侧卡片
+        if (!isEven) ...[
+          Container(width: 16, height: 2, color: connectorColor),
+          Icon(Icons.arrow_right, color: connectorColor, size: 24),
+        ] else ...[
+          const SizedBox(width: 40),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTimelineItem(
+    ServerSnapshot snapshot,
+    int index, {
+    required bool isLatest,
+  }) {
     final mapUrl = _getMapBackgroundUrl(snapshot);
     final hasTrendData = snapshot.infos != null && snapshot.infos!.isNotEmpty;
     final trendDataCount = snapshot.infos?.length ?? 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        children: [
-          // 时间头部
-          _buildTimeHeader(snapshot, index, isLatest),
-          // 地图卡片（不传递 snapshot，只传递必要数据）
-          _HistoryCard(
-            key: ValueKey('history_card_${snapshot.id}'),
-            isLatest: isLatest,
-            mapUrl: mapUrl,
-            mapName: snapshot.mapName,
-            hasTrendData: hasTrendData,
-            trendDataCount: trendDataCount,
-            formattedMapName: _getFormattedMapName(snapshot),
-            mapPlayDuration: _getMapPlayDuration(snapshot),
-            // 懒加载趋势图数据
-            getTrendData: hasTrendData ? () => snapshot.infos! : null,
-            maxPlayers: snapshot.maxPlayers,
-            buildMapBackground: _buildMapBackground,
-            buildStatChip: _buildStatChip,
-            finalCtScore: snapshot.finalCtScore,
-            finalTScore: snapshot.finalTScore,
-          ),
-          // 连接线
-          if (index < _historyData.length - 1)
-            Container(
-              width: 2,
-              height: 16,
-              margin: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-        ],
-      ),
+    return ServerHistoryCard(
+      key: ValueKey('history_card_${snapshot.id}'),
+      isLatest: isLatest,
+      mapUrl: mapUrl,
+      mapName: snapshot.mapName,
+      hasTrendData: hasTrendData,
+      trendDataCount: trendDataCount,
+      formattedMapName: _getFormattedMapName(snapshot),
+      mapPlayDuration: _getMapPlayDuration(snapshot),
+      trendData: hasTrendData ? snapshot.infos! : null,
+      maxPlayers: snapshot.maxPlayers,
+      buildMapBackground: _buildMapBackground,
+      buildStatChip: _buildStatChip,
+      finalCtScore: snapshot.finalCtScore,
+      finalTScore: snapshot.finalTScore,
+      timeHeader: _buildTimeHeader(snapshot, index, isLatest),
     );
   }
 
-  /// 构建时间头部
   Widget _buildTimeHeader(ServerSnapshot snapshot, int index, bool isLatest) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          // 序号
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isLatest ? AppColors.amber500 : AppColors.slate500,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '#${index + 1}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final timeColor = isDark ? Colors.white70 : AppColors.gray500;
+
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: isLatest ? AppColors.amber500 : AppColors.slate500,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              '#${index + 1}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          // 时间
-          Expanded(
-            child: Row(
-              children: [
-                Icon(
-                  isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
-                  size: 16,
-                  color: isLatest ? AppColors.amber500 : AppColors.slate500,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _formatDateTime(snapshot.createdAt),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isLatest ? AppColors.amber500 : AppColors.slate500,
-                    fontWeight: isLatest ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 最新标识
-          if (isLatest)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.amber500,
-                borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(
+                isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
+                size: 14,
+                color: isLatest ? AppColors.amber500 : timeColor,
               ),
-              child: const Text(
-                '最新',
+              const SizedBox(width: 4),
+              Text(
+                _formatDateTime(snapshot.createdAt),
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: isLatest ? AppColors.amber500 : timeColor,
+                  fontWeight: isLatest ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
+            ],
+          ),
+        ),
+        if (isLatest)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.amber500,
+              borderRadius: BorderRadius.circular(4),
             ),
-        ],
-      ),
+            child: const Text(
+              '最新',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
-  /// 构建地图背景
   Widget _buildMapBackground(String? mapUrl, String mapName) {
-    // 历史卡片高度 140，宽度约 388
-    // 使用 2 倍分辨率保证清晰度，同时限制解码尺寸节省内存
     return MapBackground(
       mapName: mapName,
       imageUrl: mapUrl,
-      cacheWidth: 776, // 2x 显示宽度
-      cacheHeight: 280, // 2x 显示高度
+      cacheWidth: 560, // 280 * 2
+      cacheHeight: 240, // 120 * 2
     );
   }
 
-  /// 构建统计标签
   Widget _buildStatChip(IconData icon, String text, {Color? color}) {
     final chipColor = color ?? Colors.white70;
     return Row(
@@ -776,7 +806,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     );
   }
 
-  /// 构建加载更多中
   Widget _buildLoadingMore() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -798,7 +827,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     );
   }
 
-  /// 构建加载更多按钮
   Widget _buildLoadMoreButton() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -817,7 +845,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     );
   }
 
-  /// 构建无更多数据提示
   Widget _buildNoMoreData() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -836,419 +863,35 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       ),
     );
   }
-}
 
-/// 历史卡片组件（优化版：懒加载趋势数据）
-class _HistoryCard extends StatefulWidget {
-  final bool isLatest;
-  final String? mapUrl;
-  final String mapName;
-  final bool hasTrendData;
-  final int trendDataCount;
-  final String formattedMapName;
-  final String mapPlayDuration;
-  final List<PlayerTrendInfo> Function()? getTrendData;
-  final int maxPlayers;
-  final Widget Function(String?, String) buildMapBackground;
-  final Widget Function(IconData, String, {Color? color}) buildStatChip;
-  final int? finalCtScore;
-  final int? finalTScore;
-
-  const _HistoryCard({
-    super.key,
-    required this.isLatest,
-    required this.mapUrl,
-    required this.mapName,
-    required this.hasTrendData,
-    required this.trendDataCount,
-    required this.formattedMapName,
-    required this.mapPlayDuration,
-    required this.getTrendData,
-    required this.maxPlayers,
-    required this.buildMapBackground,
-    required this.buildStatChip,
-    this.finalCtScore,
-    this.finalTScore,
-  });
-
-  bool get hasFinalScore => finalCtScore != null && finalTScore != null;
-
-  @override
-  State<_HistoryCard> createState() => _HistoryCardState();
-}
-
-class _HistoryCardState extends State<_HistoryCard> {
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-  bool _isCardHovered = false;
-  bool _isOverlayHovered = false;
-  // 延迟显示 overlay，避免快速滑过时频繁创建
-  bool _overlayActivated = false;
-
-  // 延迟任务的取消令牌
-  Timer? _hoverStartTimer;
-  Timer? _hoverEndTimer;
-
-  bool get _shouldShowOverlay => _isCardHovered || _isOverlayHovered;
-
-  void _updateOverlay() {
-    if (_shouldShowOverlay && widget.hasTrendData && _overlayActivated) {
-      _showOverlay();
-    } else if (!_shouldShowOverlay) {
-      _hideOverlay();
-      _overlayActivated = false;
-    }
-  }
-
-  void _onHoverStart() {
-    setState(() => _isCardHovered = true);
-    // 取消之前的定时器
-    _hoverStartTimer?.cancel();
-    _hoverEndTimer?.cancel();
-
-    // 延迟 200ms 后才显示 overlay，避免快速滑过
-    if (!_overlayActivated) {
-      _hoverStartTimer = Timer(const Duration(milliseconds: 200), () {
-        if (mounted && _isCardHovered && !_overlayActivated) {
-          _overlayActivated = true;
-          _updateOverlay();
-        }
-        _hoverStartTimer = null;
-      });
-    }
-  }
-
-  void _onHoverEnd() {
-    setState(() => _isCardHovered = false);
-    // 取消之前的定时器
-    _hoverStartTimer?.cancel();
-    _hoverEndTimer?.cancel();
-
-    // 延迟检查，给鼠标移动到 overlay 的时间
-    _hoverEndTimer = Timer(const Duration(milliseconds: 50), () {
-      if (mounted) _updateOverlay();
-      _hoverEndTimer = null;
-    });
-  }
-
-  void _showOverlay() {
-    if (_overlayEntry != null) return;
-    if (!mounted) return;
-    if (widget.getTrendData == null) return;
-
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
-
-    // 懒加载趋势数据
-    final trendData = widget.getTrendData!();
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: 340,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          targetAnchor: Alignment.centerRight,
-          followerAnchor: Alignment.centerLeft,
-          offset: const Offset(12, 0),
-          child: MouseRegion(
-            onEnter: (_) {
-              _isOverlayHovered = true;
-              _updateOverlay();
-            },
-            onExit: (_) {
-              _isOverlayHovered = false;
-              _updateOverlay();
-            },
-            child: Material(
-              color: Colors.transparent,
-              child: Builder(
-                builder: (context) {
-                  final isDark =
-                      Theme.of(context).brightness == Brightness.dark;
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.slate800 : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: isDark
-                          ? null
-                          : Border.all(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                            ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: isDark ? 0.3 : 0.15,
-                          ),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              MdiIcons.chartLine,
-                              color: AppColors.amber400,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '玩家趋势',
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : AppColors.slate800,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 160,
-                          child: PlayerTrendChart(
-                            infos: trendData,
-                            maxPlayers: widget.maxPlayers,
-                            width: 316,
-                            height: 160,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+  Widget _buildScrollIndicator({required bool isTop}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
+    final iconColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3);
+    
+    return IgnorePointer(
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
+            end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
+            colors: [
+              bgColor,
+              bgColor.withValues(alpha: 0.8),
+              bgColor.withValues(alpha: 0),
+            ],
           ),
         ),
-      ),
-    );
-
-    // 再次检查 mounted 状态，防止在创建 OverlayEntry 期间 widget 被销毁
-    if (!mounted) {
-      _overlayEntry = null;
-      return;
-    }
-
-    overlay.insert(_overlayEntry!);
-  }
-
-  void _hideOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  @override
-  void dispose() {
-    // 取消所有定时器
-    _hoverStartTimer?.cancel();
-    _hoverEndTimer?.cancel();
-    _hideOverlay();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 预计算边框颜色
-    final borderColor = _isCardHovered
-        ? AppColors.primary
-        : widget.isLatest
-        ? AppColors.amber500
-        : Colors.grey.withValues(alpha: 0.3);
-
-    return RepaintBoundary(
-      child: CompositedTransformTarget(
-        link: _layerLink,
-        child: MouseRegion(
-          onEnter: (_) => _onHoverStart(),
-          onExit: (_) => _onHoverEnd(),
-          child: Container(
-            height: 140,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // 地图背景
-                  RepaintBoundary(
-                    child: widget.buildMapBackground(
-                      widget.mapUrl,
-                      widget.mapName,
-                    ),
-                  ),
-                  // 渐变遮罩
-                  const _GradientOverlay(),
-                  // 地图信息
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.formattedMapName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            widget.buildStatChip(
-                              MdiIcons.clockOutline,
-                              widget.mapPlayDuration,
-                            ),
-                            const SizedBox(width: 12),
-                            if (widget.hasTrendData)
-                              widget.buildStatChip(
-                                MdiIcons.chartLine,
-                                '${widget.trendDataCount}个数据点',
-                                color: AppColors.amber400,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 右上角：比分或趋势数据点
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: widget.hasFinalScore
-                        ? _buildScoreBadge(
-                            widget.finalCtScore!,
-                            widget.finalTScore!,
-                          )
-                        : (widget.hasTrendData
-                              ? const _StaticDot()
-                              : const SizedBox.shrink()),
-                  ),
-                ],
-              ),
-            ),
+        alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
+        child: Padding(
+          padding: EdgeInsets.only(top: isTop ? 4 : 0, bottom: isTop ? 0 : 4),
+          child: Icon(
+            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            color: iconColor,
+            size: 24,
           ),
         ),
-      ),
-    );
-  }
-
-  /// 构建比分徽章
-  Widget _buildScoreBadge(int ctScore, int tScore) {
-    // 判断是否为僵尸模式地图
-    final isZombieMap =
-        widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // CT/人类 比分
-          Text(
-            '$ctScore',
-            style: TextStyle(
-              color: isZombieMap
-                  ? const Color(0xFF4ADE80)
-                  : const Color(0xFF93C5FD), // 人类绿色 / CT蓝色
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              ':',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          // T/僵尸 比分
-          Text(
-            '$tScore',
-            style: TextStyle(
-              color: isZombieMap
-                  ? const Color(0xFFF87171)
-                  : const Color(0xFFFCD34D), // 僵尸红色 / T黄色
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 静态渐变遮罩（const 优化）
-class _GradientOverlay extends StatelessWidget {
-  const _GradientOverlay();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
-        ),
-      ),
-    );
-  }
-}
-
-/// 静态黄点（替代动画版本，提升性能）
-class _StaticDot extends StatelessWidget {
-  const _StaticDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.amber400,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.amber400.withValues(alpha: 0.5),
-            blurRadius: 6,
-            spreadRadius: 1,
-          ),
-        ],
       ),
     );
   }

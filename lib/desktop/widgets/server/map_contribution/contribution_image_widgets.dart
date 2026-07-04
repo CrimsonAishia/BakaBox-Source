@@ -1,16 +1,21 @@
-part of '../map_contribution_dialog.dart';
+import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../../../../core/services/image_url_service.dart';
+import '../../../../core/utils/log_service.dart';
+import '../../../../core/widgets/disk_cached_image.dart';
 
 /// Hover 缩放效果组件
-class _HoverScaleWidget extends StatefulWidget {
+class HoverScaleWidget extends StatefulWidget {
   final Widget child;
 
-  const _HoverScaleWidget({required this.child});
+  const HoverScaleWidget({
+    super.key,required this.child});
 
   @override
-  State<_HoverScaleWidget> createState() => _HoverScaleWidgetState();
+  State<HoverScaleWidget> createState() => _HoverScaleWidgetState();
 }
 
-class _HoverScaleWidgetState extends State<_HoverScaleWidget> {
+class _HoverScaleWidgetState extends State<HoverScaleWidget> {
   bool _isHovered = false;
 
   @override
@@ -28,16 +33,17 @@ class _HoverScaleWidgetState extends State<_HoverScaleWidget> {
 }
 
 /// Hover 遮罩组件
-class _HoverOverlay extends StatefulWidget {
+class HoverOverlay extends StatefulWidget {
   final Widget child;
 
-  const _HoverOverlay({required this.child});
+  const HoverOverlay({
+    super.key,required this.child});
 
   @override
-  State<_HoverOverlay> createState() => _HoverOverlayState();
+  State<HoverOverlay> createState() => _HoverOverlayState();
 }
 
-class _HoverOverlayState extends State<_HoverOverlay> {
+class _HoverOverlayState extends State<HoverOverlay> {
   bool _isHovered = false;
 
   @override
@@ -58,17 +64,18 @@ class _HoverOverlayState extends State<_HoverOverlay> {
 ///
 /// 支持 fileId 引用格式（file:xxx）和普通 URL
 /// 自动获取签名 URL 并缓存
-class _ContributionImage extends StatefulWidget {
+class ContributionImage extends StatefulWidget {
   final String imageRef;
   final BoxFit fit;
 
-  const _ContributionImage({required this.imageRef, this.fit = BoxFit.cover});
+  const ContributionImage({
+    super.key,required this.imageRef, this.fit = BoxFit.cover});
 
   @override
-  State<_ContributionImage> createState() => _ContributionImageState();
+  State<ContributionImage> createState() => _ContributionImageState();
 }
 
-class _ContributionImageState extends State<_ContributionImage> {
+class _ContributionImageState extends State<ContributionImage> {
   String? _signedUrl;
   bool _isLoading = true;
   bool _hasError = false;
@@ -81,7 +88,7 @@ class _ContributionImageState extends State<_ContributionImage> {
   }
 
   @override
-  void didUpdateWidget(_ContributionImage oldWidget) {
+  void didUpdateWidget(ContributionImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageRef != widget.imageRef) {
       _loadSignedUrl();

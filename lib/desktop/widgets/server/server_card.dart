@@ -17,11 +17,9 @@ import '../../../core/services/map_change_monitor_service.dart';
 import '../../../core/widgets/map_background.dart';
 import '../../../core/widgets/csgo_legacy_install_dialog.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';
-import 'server_history_dialog.dart';
 import 'server_card_skeleton.dart';
 import '../queue/queue_window.dart';
 import '../warmup/warmup_window.dart';
-import '../../../core/widgets/map_contribution_dialog.dart';
 import '../edit_server_dialog.dart';
 import '../../../core/constants/app_colors.dart';
 import 'server_card_components/server_card_marquee_text.dart';
@@ -251,7 +249,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final sortedTags = MapTagUtils.prepareTags(widget.server.mapInfo?.tags.toList() ?? []);
+    final sortedTags = MapTagUtils.prepareTags(
+      widget.server.mapInfo?.tags.toList() ?? [],
+    );
 
     return HoverTagPopover(
       tags: sortedTags,
@@ -267,14 +267,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           if (!mounted) return;
           setState(() => _isHovered = false);
         },
-          child: _rgbController != null
-              ? AnimatedBuilder(
-                  animation: _rgbController!,
-                  builder: (context, child) =>
-                      _buildCardContent(_getRgbColor(_rgbController!.value)),
-                )
-              : _buildCardContent(AppColors.primary),
-        ),
+        child: _rgbController != null
+            ? AnimatedBuilder(
+                animation: _rgbController!,
+                builder: (context, child) =>
+                    _buildCardContent(_getRgbColor(_rgbController!.value)),
+              )
+            : _buildCardContent(AppColors.primary),
+      ),
     );
   }
 
@@ -595,7 +595,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         // 地图标签（非 hover 时显示，hover 时隐藏，让位给底部操作层）
         if (!_isHovered) ...[
           SizedBox(height: verticalSpacing),
-          _buildMapTagRow(MapTagUtils.prepareTags(widget.server.mapInfo?.tags.toList() ?? [])),
+          _buildMapTagRow(
+            MapTagUtils.prepareTags(widget.server.mapInfo?.tags.toList() ?? []),
+          ),
         ],
       ],
     );
@@ -723,13 +725,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// Hover 时的操作工具栏
   Widget _buildHoverActionOverlay() {
     if (!_isHovered) return const SizedBox.shrink();
-
-    final data = widget.server.serverData;
     // 离线状态下也允许点击连接和挤服按钮（用户可能想重试连接）
     // 只在加载中时禁用连接和挤服
     final isLoading = widget.server.isLoading;
-    // 需要服务器数据的按钮使用这个判断
-    final needsServerData = data == null;
     final address =
         widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress;
@@ -880,22 +878,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                   spacing: 6,
                   children: [
                     _buildSecondaryBtn(
-                      icon: Icons.people_outline_rounded,
-                      tooltip: '玩家列表',
+                      icon: Icons.info_outline_rounded,
+                      tooltip: '服务器详情',
                       color: AppColors.emerald500,
-                      // 需要服务器数据
-                      onPressed: needsServerData || isLoading
-                          ? null
-                          : widget.onTap,
+                      onPressed: widget.onTap,
                     ),
-                    if (!isCustomServer)
-                      _buildSecondaryBtn(
-                        icon: Icons.history_rounded,
-                        tooltip: '历史记录',
-                        color: AppColors.amber500,
-                        // 历史记录不需要服务器数据
-                        onPressed: () => _showHistoryDialog(context),
-                      ),
                     if (isCustomServer)
                       _buildSecondaryBtn(
                         icon: MdiIcons.pencilOutline,
@@ -905,16 +892,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                             : '编辑服务器',
                         color: const Color(0xFF0EA5E9),
                         onPressed: () => _showEditIpDialog(context),
-                      )
-                    else
-                      _buildSecondaryBtn(
-                        icon: MdiIcons.imageEditOutline,
-                        tooltip: '编辑地图',
-                        color: AppColors.violet500,
-                        // 需要服务器数据
-                        onPressed: needsServerData || isLoading
-                            ? null
-                            : () => _showContributionDialog(context),
                       ),
                     _buildSecondaryBtn(
                       icon: MdiIcons.refresh,
@@ -1683,13 +1660,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     ToastUtils.showSuccess(context, '已复制连接命令');
   }
 
-  void _showHistoryDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => ServerHistoryDialog(server: widget.server),
-    );
-  }
-
   void _showQueueWindow(BuildContext context) async {
     final address =
         widget.server.serverItem.address ??
@@ -1793,27 +1763,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           onClose: () => Navigator.of(context).pop(),
         ),
       ),
-    );
-  }
-
-  /// 显示地图贡献对话框
-  void _showContributionDialog(BuildContext context) {
-    if (!mounted) return;
-
-    final mapName = widget.server.serverData?.map;
-    if (mapName == null) return;
-
-    final mapLabel = widget.server.mapInfo?.mapLabel;
-    final isDifficultySeparated =
-        widget.server.serverItem.isDifficultySeparated;
-    final serverAddress = widget.server.serverItem.address;
-
-    MapContributionDialog.show(
-      context,
-      mapName: mapName,
-      mapLabel: mapLabel,
-      isDifficultySeparated: isDifficultySeparated,
-      serverAddress: serverAddress,
     );
   }
 }

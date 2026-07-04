@@ -106,6 +106,7 @@ export 'constants/operation_colors.dart';
 
 // Widgets
 export 'services/app_exit_service.dart';
+export 'widgets/dashed_line.dart';
 export 'widgets/page_view_with_listener.dart';
 export 'widgets/navigation/app_navigation.dart';
 export 'widgets/update_dialog.dart';

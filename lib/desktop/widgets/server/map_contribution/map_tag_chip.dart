@@ -1,29 +1,43 @@
-part of '../map_contribution_dialog.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_portal/flutter_portal.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+import '../../../../core/bloc/map_tag/map_tag_state.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/models/map_tag_models.dart';
+import '../../../../core/services/token_service.dart';
+import 'tooltip_shape_border.dart';
 
 /// 标签网格组件
-class _TagGrid extends StatelessWidget {
+class TagGrid extends StatelessWidget {
   final List<MapTag> tags;
   final MapTagState state;
   final bool isDark;
   final bool isUserSection;
   final String mapName;
+  final void Function(MapTag, String) onVote;
+  final void Function(MapTag) onEdit;
+  final void Function(MapTag) onDelete;
+  final void Function(MapTag) onCancelChangeRequest;
+  final void Function(String, MapTag) onShowVoters;
 
-  const _TagGrid({
+  const TagGrid({
+    super.key,
     required this.tags,
     required this.state,
     required this.isDark,
     required this.isUserSection,
     required this.mapName,
+    required this.onVote,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onCancelChangeRequest,
+    required this.onShowVoters,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dialogState = context
-        .findAncestorStateOfType<_MapContributionDialogState>();
-    if (dialogState == null) {
-      return const SizedBox.shrink();
-    }
-
     // 获取后端用户 ID
     final currentUserId = TokenService.instance.userInfo?.id;
 
@@ -69,12 +83,11 @@ class _TagGrid extends StatelessWidget {
               hasDownvoted: mapVote?.hasDownvoted ?? false,
               hasPendingChangeRequest: state.hasPendingChangeRequest(tag.id),
               mapName: mapName,
-              onVote: (voteType) => dialogState.handleTagVote(tag, voteType),
-              onEdit: () => dialogState.showEditTagDialog(tag),
-              onDelete: () => dialogState.showDeleteTagDialog(tag),
-              onCancelChangeRequest: () =>
-                  dialogState.handleCancelChangeRequest(tag),
-              onShowVoters: () => dialogState.showTagVotersDialog(mapName, tag),
+              onVote: (voteType) => onVote(tag, voteType),
+              onEdit: () => onEdit(tag),
+              onDelete: () => onDelete(tag),
+              onCancelChangeRequest: () => onCancelChangeRequest(tag),
+              onShowVoters: () => onShowVoters(mapName, tag),
             ),
           );
         }).toList(),
@@ -577,7 +590,7 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
                       },
               ),
               const SizedBox(width: 4),
-              // 反对按钮
+              // 反打按钮
               _buildTagVoteButton(
                 icon: hasDownvoted
                     ? MdiIcons.thumbDown
@@ -702,6 +715,165 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(icon, size: 18, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 底部悬浮的已投票标签面板
+class VotedTagsFloatingPanel extends StatefulWidget {
+  final List<MapTag> votedTags;
+  final MapTagState state;
+  final bool isDark;
+  final String mapName;
+  final void Function(MapTag, String) onVote;
+  final void Function(MapTag) onEdit;
+  final void Function(MapTag) onDelete;
+  final void Function(MapTag) onCancelChangeRequest;
+  final void Function(String, MapTag) onShowVoters;
+
+  const VotedTagsFloatingPanel({
+    super.key,
+    required this.votedTags,
+    required this.state,
+    required this.isDark,
+    required this.mapName,
+    required this.onVote,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onCancelChangeRequest,
+    required this.onShowVoters,
+  });
+
+  @override
+  State<VotedTagsFloatingPanel> createState() => _VotedTagsFloatingPanelState();
+}
+
+class _VotedTagsFloatingPanelState extends State<VotedTagsFloatingPanel> {
+  bool _isExpanded = false;
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = widget.isDark ? AppColors.slate700 : Colors.white;
+    final borderColor = widget.isDark ? Colors.white24 : Colors.black12;
+    final textColor = widget.isDark ? Colors.white : AppColors.gray800;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isHovered
+                ? AppColors.primary.withValues(alpha: 0.5)
+                : borderColor,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.15),
+              blurRadius: _isHovered ? 16 : 10,
+              offset: Offset(0, _isHovered ? 6 : 4),
+            ),
+          ],
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          alignment: Alignment.bottomRight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SizedBox(
+                width: _isExpanded ? 480 : null,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  },
+                  borderRadius: _isExpanded
+                      ? const BorderRadius.vertical(top: Radius.circular(12))
+                      : BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              MdiIcons.checkCircleOutline,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '已投票(${widget.votedTags.length})',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Icon(
+                            _isExpanded
+                                ? MdiIcons.chevronDown
+                                : MdiIcons.chevronUp,
+                            size: 20,
+                            color: widget.isDark
+                                ? Colors.white54
+                                : AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (_isExpanded)
+                Container(
+                  width: 480,
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: borderColor)),
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    shrinkWrap: true,
+                    children: [
+                      TagGrid(
+                        tags: widget.votedTags,
+                        state: widget.state,
+                        isDark: widget.isDark,
+                        isUserSection: false,
+                        mapName: widget.mapName,
+                        onVote: widget.onVote,
+                        onEdit: widget.onEdit,
+                        onDelete: widget.onDelete,
+                        onCancelChangeRequest: widget.onCancelChangeRequest,
+                        onShowVoters: widget.onShowVoters,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ),

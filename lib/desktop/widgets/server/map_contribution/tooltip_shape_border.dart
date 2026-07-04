@@ -1,4 +1,4 @@
-part of '../map_contribution_dialog.dart';
+import 'package:flutter/material.dart';
 
 /// 自定义带有向下箭头的气泡边框
 class TooltipShapeBorder extends ShapeBorder {

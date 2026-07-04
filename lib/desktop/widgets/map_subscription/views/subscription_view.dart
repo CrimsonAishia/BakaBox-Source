@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/models/map_subscription_models.dart';
-import '../../../../core/widgets/map_contribution_dialog.dart';
+import '../../server/server_detail_dialog.dart';
 import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
 import '../../cd_badge.dart';
@@ -332,7 +332,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       mapBackground: sub.mapBackground,
       isSubscribed: true,
       onEdit: () {
-        MapContributionDialog.show(
+        ServerDetailDialog.showMapEdit(
           context,
           mapName: sub.mapName,
           mapLabel: sub.mapLabel,
