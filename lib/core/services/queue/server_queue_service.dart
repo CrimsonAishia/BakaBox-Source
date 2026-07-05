@@ -98,6 +98,7 @@ class ServerQueueService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+    _lastMapName = null;
 
     _notifyState();
     _scheduleNextFetch();
@@ -216,8 +217,10 @@ class ServerQueueService {
         );
 
         MapData? mapInfo = _lastMapInfo;
+        bool isMapChanged = false;
 
         if (sourceInfo.map != _lastMapName) {
+          isMapChanged = _lastMapName != null;
           try {
             mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: _targetServer);
           } catch (e) {
@@ -235,8 +238,11 @@ class ServerQueueService {
 
         _notifyState();
 
-        if (serverInfo.players! <= _config.targetPlayers) {
+        if (isMapChanged || serverInfo.players! <= _config.targetPlayers) {
           // Found slot!
+          if (isMapChanged) {
+            LogService.i('[ServerQueueService] 检测到换图，立即尝试加入服务器');
+          }
           _isQueueRunning = false;
           _isThreadsRunning = false;
           _activeThreadIds.clear();

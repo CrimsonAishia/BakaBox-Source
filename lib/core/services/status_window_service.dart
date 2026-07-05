@@ -1005,6 +1005,7 @@ class StatusWindowService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+    _lastMapName = null;
     _outcomeFinalized = false;
     _isObservingConnect = false; // 防御：上一周期若被异常打断，避免观察期标志残留
 
@@ -1339,6 +1340,7 @@ class StatusWindowService {
     _isTriggeredConnection = false;
     _isFetching = false;
     _activeThreadIds.clear();
+    _lastMapName = null;
     _consoleLogService.cancelConnectionMonitor();
 
     // 卸载守护进程
@@ -1379,6 +1381,7 @@ class StatusWindowService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+    _lastMapName = null;
     _outcomeFinalized = false;
     _isObservingConnect = false;
 
@@ -1702,8 +1705,10 @@ class StatusWindowService {
 
         // 获取地图信息
         MapData? mapInfo = _state.mapInfo;
+        bool isMapChanged = false;
 
         if (sourceInfo.map != _lastMapName) {
+          isMapChanged = _lastMapName != null;
           // 地图变化时，重新获取地图信息
           try {
             mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: serverAddress);
@@ -1738,7 +1743,7 @@ class StatusWindowService {
         }
 
         // 检查挤服条件
-        _checkQueueCondition(serverAddress);
+        _checkQueueCondition(serverAddress, isMapChanged: isMapChanged);
       }
     } catch (e) {
       LogService.e('[StatusWindowService] 获取服务器信息失败', e);
@@ -1756,7 +1761,7 @@ class StatusWindowService {
   }
 
   /// 检查挤服条件
-  void _checkQueueCondition(String serverAddress) {
+  void _checkQueueCondition(String serverAddress, {bool isMapChanged = false}) {
     if (!_isQueueRunning || _state.serverInfo == null) return;
     if (_outcomeFinalized) return;
 
@@ -1778,7 +1783,10 @@ class StatusWindowService {
     final players = _state.serverInfo!.players ?? 0;
     final targetPlayers = _state.queueConfig.targetPlayers;
 
-    if (players <= targetPlayers) {
+    if (isMapChanged || players <= targetPlayers) {
+      if (isMapChanged) {
+        LogService.i('[StatusWindowService] 检测到换图，立即尝试加入服务器');
+      }
       _connectForQueue(serverAddress);
     }
   }
