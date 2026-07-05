@@ -11,6 +11,9 @@ import '../models/update_models.dart';
 import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 import '../utils/log_service.dart';
+import '../utils/version_utils.dart';
+import 'floating_window_service.dart';
+import 'notification_window_service.dart';
 
 /// 更新异常
 class UpdateException implements AppException {
@@ -46,12 +49,17 @@ class UpdateService {
     }
   }
 
-  /// 检查并上报安装成功（应用启动时调用）
+  /// 检查并上报安装结果（应用启动时调用）
   ///
   /// 原理：
-  /// 1. 安装前记录待安装版本号
-  /// 2. 新版本启动时检测版本号变化
-  /// 3. 如果匹配，说明安装成功，上报统计
+  /// 1. 安装前记录待安装版本号（[_keyPendingInstallVersion]）
+  /// 2. 新版本启动时对比当前版本与待安装版本
+  ///    - 相等：安装成功，上报 `install_success`
+  ///    - 当前版本仍低于待安装版本：静默安装未生效
+  ///      （通常是 DLL 被子窗口进程锁定、UAC 拒绝、7z 覆盖失败等），
+  ///      上报 `install_verify_failed`，方便后端统计"更新丢失"用户
+  ///    - 当前版本高于待安装版本：用户已通过其他方式装了更新版，忽略
+  /// 3. 无论哪种情况都清除待安装标记，避免下次启动重复上报
   Future<void> checkAndReportInstallSuccess() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -61,23 +69,54 @@ class UpdateService {
       final pendingVersion = StorageUtils.getString(_keyPendingInstallVersion);
       final fromVersion = StorageUtils.getString(_keyPendingInstallFromVersion);
 
-      if (pendingVersion != null && pendingVersion == currentVersion) {
+      if (pendingVersion == null) return;
+
+      final platform = PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile';
+      final os = Platform.operatingSystem;
+
+      if (pendingVersion == currentVersion) {
         // 版本匹配，说明安装成功
-        // 上报安装成功
         await _updateApi.reportUpdateResult(
           UpdateReportRequest(
-            platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
-            os: Platform.operatingSystem,
+            platform: platform,
+            os: os,
             fromVersion: fromVersion ?? 'unknown',
             toVersion: currentVersion,
             status: 'install_success',
             errorMessage: null,
           ),
         );
-
-        // 清除待安装标记
-        await _clearPendingInstallMarkers();
+      } else {
+        // 版本不匹配，判断是"安装未生效"还是"用户装了更新版"
+        int cmp;
+        try {
+          cmp = VersionUtils.compareVersion(currentVersion, pendingVersion);
+        } catch (_) {
+          cmp = 0;
+        }
+        if (cmp < 0) {
+          // 当前版本比待安装版本低：静默安装文件替换失败，属于"更新丢失"
+          LogService.w(
+            '[UpdateService] 检测到更新未生效: '
+            '待安装 $pendingVersion，当前仍是 $currentVersion',
+          );
+          await _updateApi.reportUpdateResult(
+            UpdateReportRequest(
+              platform: platform,
+              os: os,
+              fromVersion: fromVersion ?? currentVersion,
+              toVersion: pendingVersion,
+              status: 'install_verify_failed',
+              errorMessage:
+                  'Pending version $pendingVersion, but current is $currentVersion',
+            ),
+          );
+        }
+        // cmp >= 0：用户已经手动装了同版本/更高版本，静默丢弃
       }
+
+      // 无论成功、失败还是被用户覆盖，都清除待安装标记
+      await _clearPendingInstallMarkers();
     } catch (e) {
       // 失败不影响应用启动，静默处理
     }
@@ -544,42 +583,146 @@ class UpdateService {
     }
   }
 
-  /// 安装 Windows EXE（静默模式）
+  /// 安装 Windows EXE（静默模式，强制走 UAC 提权）
   ///
-  /// 直接启动安装程序，NSIS 脚本会等待本程序退出后再继续安装
+  /// 为什么必须显式提权：
+  /// - BakaBox 主 exe 的 manifest 是 asInvoker（普通权限运行）
+  /// - NSIS 安装器 manifest 是 requireAdministrator
+  /// - 从普通权限进程直接 Process.start 一个 requireAdministrator 的 exe，
+  ///   底层 CreateProcess 会返回 ERROR_ELEVATION_REQUIRED (740)
+  /// - 之前依赖 cmd /c start 的 ShellExecute 隐式提权在部分环境下（企业 GPO、
+  ///   某些 AV、精简版 Windows）会静默失败：既不弹 UAC 也没错误
+  /// - PowerShell 的 Start-Process -Verb RunAs 底层是 ShellExecuteEx，
+  ///   会显式触发 UAC 交互，可靠性高
+  ///
+  /// 流程：
+  /// 1. PowerShell 显式触发 UAC，await 等用户交互结果
+  /// 2. 用户点"是" → 提权安装器启动 → 关闭子窗口 → exit(0)
+  /// 3. 用户点"否"/超时 → 抛清晰错误，子窗口保持完好
+  /// 4. 兜底：如果 PowerShell 不可用（罕见），退回直接 Process.start
   Future<void> _installWindowsExe(String exePath) async {
+    // 优先：PowerShell RunAs（可靠的 UAC 提权）
+    final elevated = await _tryStartInstallerElevated(exePath);
+    if (elevated) {
+      await _finalizeExitForInstaller();
+      return;
+    }
+
+    // PowerShell 路径失败：可能是用户拒绝 UAC，也可能是极端环境（无 PowerShell、
+    // 被组策略禁用、超时等）。尝试直接 Process.start 作为兜底 —— 只有当
+    // BakaBox 本身以管理员身份运行时才能成功。这样已提权用户不会被完全挡住。
     try {
       await Process.start(exePath, ['/S'], mode: ProcessStartMode.detached);
-
-      // 立即退出，安装程序会等待本进程退出
-      exit(0);
+      await _finalizeExitForInstaller();
+      return;
     } catch (e) {
-      LogService.e('启动安装程序失败', e);
-
-      // 备用方案：通过 start 命令启动（/b 表示不打开新窗口）
-      try {
-        await Process.start('cmd', [
-          '/c',
-          'start',
-          '/b',
-          '',
-          exePath,
-          '/S',
-        ], mode: ProcessStartMode.detached);
-        exit(0);
-      } catch (e2) {
-        LogService.e('cmd 方式启动也失败', e2);
-
-        // 最后尝试直接打开（非静默）
-        final uri = Uri.file(exePath);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
-          exit(0);
-        } else {
-          throw const UpdateException('无法启动安装程序，请手动运行');
-        }
-      }
+      LogService.w('[UpdateService] 直接启动 installer 也失败: $e');
     }
+
+    // 所有自动路径都失败：给用户一个明确的错误提示。
+    // 不再尝试 launchUrl —— 它同样需要 UAC，用户很可能刚拒绝过。
+    throw const UpdateException('管理员授权被取消或启动失败，请重试');
+  }
+
+  /// 通过 PowerShell 的 Start-Process -Verb RunAs 触发 UAC 提权启动安装器。
+  ///
+  /// 阻塞等待 UAC 交互结果：
+  /// - 用户点"是" → 返回 true，安装器已 spawn 为独立提权进程
+  /// - 用户点"否" → 返回 false
+  /// - PowerShell 不可用/被禁用/超时 → 返回 false
+  ///
+  /// 关键：**不使用 detached 模式**，await PowerShell 的 exit code
+  /// 来判断结果。这样如果用户拒绝 UAC，我们能立即知道并抛错，不会误关
+  /// 用户的子窗口，也不会在桌面上留一个孤儿 UAC 弹窗（主窗口已关）。
+  Future<bool> _tryStartInstallerElevated(String exePath) async {
+    Process process;
+    try {
+      // 转义 exePath 中的单引号，防止破坏 PowerShell 单引号字符串语法
+      // （getTemporaryDirectory 返回的路径通常不含单引号，但以防万一）
+      final escaped = exePath.replaceAll("'", "''");
+      // -Verb RunAs 触发 UAC
+      // -WindowStyle Hidden 让安装器不弹自己的窗口
+      // -ErrorAction Stop 让 UAC 拒绝的错误能被 catch 捕获
+      // try/catch 让 UAC 拒绝或其他错误以退出码 1 结束
+      final psCommand =
+          "try { "
+          "Start-Process -FilePath '$escaped' -ArgumentList '/S' "
+          "-Verb RunAs -WindowStyle Hidden -ErrorAction Stop; "
+          "exit 0 "
+          "} catch { exit 1 }";
+
+      process = await Process.start('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        psCommand,
+      ]);
+    } catch (e) {
+      // PowerShell 本身启动失败（极端环境：Windows Nano Server、
+      // 组策略禁止 PowerShell、系统损坏等）
+      LogService.w('[UpdateService] PowerShell 启动失败: $e');
+      return false;
+    }
+
+    // 等待 PowerShell 结束。UAC 交互期间会一直阻塞在这里。
+    // 5 分钟兜底：极端情况下 UAC 弹窗被其他窗口遮挡/用户临时离开，
+    // 避免我们无限期挂起
+    final exitCode = await process.exitCode.timeout(
+      const Duration(minutes: 5),
+      onTimeout: () {
+        LogService.w('[UpdateService] PowerShell RunAs 超时（5 分钟未响应）');
+        process.kill();
+        return -1;
+      },
+    );
+
+    if (exitCode == 0) {
+      LogService.i('[UpdateService] 安装器已通过 UAC 提权启动');
+      return true;
+    }
+    LogService.w(
+      '[UpdateService] PowerShell 以退出码 $exitCode 结束（用户可能拒绝了 UAC）',
+    );
+    return false;
+  }
+
+  /// 安装器已在独立进程启动后的收尾：关闭所有子窗口进程 → 等文件锁释放 → exit(0)。
+  ///
+  /// 背景：desktop_multi_window 的每个子窗口都是独立的 bakabox_app.exe 进程。
+  /// 如果只 exit(0) 主进程，剩下的子窗口进程仍持有 exe/DLL 的文件锁，
+  /// NSIS 静默模式 nsis7zU::Extract 无法覆盖被锁的文件且不会报错，
+  /// 表现为「更新已完成但版本没变」——正是部分用户反馈的现象。
+  ///
+  /// 每一步都用 try/catch + 超时包裹，任何一步卡住或失败都不能阻断退出流程
+  /// （NSIS 侧仍有兜底的杀进程循环，只是不那么可靠）。
+  ///
+  /// 只应在 Process.start 成功之后调用。若安装器启动失败就调用本方法，
+  /// 会误关用户的子窗口。
+  Future<void> _finalizeExitForInstaller() async {
+    const closeTimeout = Duration(seconds: 2);
+
+    try {
+      // 关闭挤服/暖服/启动/连接等所有浮窗
+      await FloatingWindowService().closeAllWindows().timeout(closeTimeout);
+    } catch (e) {
+      LogService.w('[UpdateService] closeAllWindows before exit failed: $e');
+    }
+    try {
+      // 关闭热身/换图/更新日志/广播等所有通知窗口
+      await NotificationWindowService().dismissAll().timeout(closeTimeout);
+    } catch (e) {
+      LogService.w('[UpdateService] dismissAll before exit failed: $e');
+    }
+
+    // 子窗口从收到 IPC 到进程真正退出、Windows 释放 DLL 句柄需要一点时间：
+    // - windowManager.close() → 销毁 HWND → PostQuitMessage → 消息循环退出
+    // - Flutter engine teardown → 进程退出
+    // - Windows 内核延迟释放 DLL 引用计数
+    // 经验值 1500ms 足以覆盖大部分场景，且不会让用户明显感知卡顿。
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    // exit(0) 是同步的且不返回。放在最后确保上面的清理都完成。
+    exit(0);
   }
 
   /// 安装Android APK
