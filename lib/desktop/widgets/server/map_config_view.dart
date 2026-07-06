@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../core/api/map_config_api.dart';
 import '../../../core/models/map_config_models.dart';
 import '../../../core/api/guide_api.dart';
 import '../../../core/models/guide_models.dart';
 import '../../../core/models/map_tag_models.dart' show MapTagSimple;
-import '../../../core/widgets/guide/guide_article_card.dart';
+import '../guide/community_guide/community_guide_card.dart';
 import '../guide/guide_detail_view.dart';
 import 'server_card_components/server_card_tag_chip.dart';
 
@@ -131,6 +132,7 @@ class _MapConfigViewState extends State<MapConfigView> {
                 _buildSectionTitle('地图配置参数', Icons.tune_rounded),
                 const SizedBox(height: 16),
                 _buildConfigContent(),
+                const SizedBox(height: 16),
                 _buildSectionTitle('地图攻略', Icons.menu_book_rounded),
                 const SizedBox(height: 16),
                 _buildGuidePlaceholder(),
@@ -224,18 +226,38 @@ class _MapConfigViewState extends State<MapConfigView> {
     }
 
     if (_configResponse == null || _configResponse!.categories.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(
+        text: '当前地图采用默认配置',
+        icon: Icons.check_circle_outline_rounded,
+      );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: _configResponse!.categories.map((category) {
-        return _buildCategoryCard(category);
-      }).toList(),
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: widget.isDark ? 0.2 : 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: _borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _configResponse!.categories.asMap().entries.map((entry) {
+          final index = entry.key;
+          final category = entry.value;
+          final isLast = index == _configResponse!.categories.length - 1;
+          return _buildCategorySection(category, isLast);
+        }).toList(),
+      ),
     );
   }
 
-  Widget _buildCategoryCard(MapConfigCategory category) {
+  Widget _buildCategorySection(MapConfigCategory category, bool isLast) {
     IconData iconData = Icons.category_rounded;
     String? categoryColor;
 
@@ -256,67 +278,65 @@ class _MapConfigViewState extends State<MapConfigView> {
       iconData = Icons.settings_applications_rounded;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: widget.isDark ? 0.2 : 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    Color iconColor = categoryColor != null
+        ? Color(int.parse(categoryColor.replaceFirst('#', '0xFF')))
+        : _accentColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.only(
+            left: 16,
+            top: 16,
+            right: 16,
+            bottom: 12,
           ),
-        ],
-        border: Border.all(color: _borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: _borderColor)),
-              color: widget.isDark
-                  ? Colors.white.withValues(alpha: 0.02)
-                  : const Color(0xFFFAFAFA),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  iconData,
-                  size: 20,
-                  color: _textColor.withValues(alpha: 0.8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Text(
+                child: Icon(iconData, size: 16, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   category.category,
                   style: TextStyle(
                     color: _textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Properties
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: category.properties
-                  .map((prop) => _buildPropertyItem(prop, categoryColor))
-                  .toList(),
-            ),
+        ),
+        // Properties
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: category.properties
+                .map((prop) => _buildPropertyItem(prop, categoryColor))
+                .toList(),
           ),
-        ],
-      ),
+        ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: _borderColor,
+            indent: 16,
+            endIndent: 16,
+          ),
+      ],
     );
   }
 
@@ -354,42 +374,28 @@ class _MapConfigViewState extends State<MapConfigView> {
         final crossAxisCount = constraints.maxWidth > 800
             ? 3
             : (constraints.maxWidth > 500 ? 2 : 1);
-        final cardWidth =
-            (constraints.maxWidth - (crossAxisCount - 1) * 20) / crossAxisCount;
 
-        return Wrap(
-          spacing: 20,
-          runSpacing: 20,
-          children: _guides.map((item) {
-            return SizedBox(
-              width: cardWidth,
-              child: GuideArticleCard(
-                title: item.title,
-                summary: item.summary,
-                coverUrl: item.coverUrl,
-                categoryName: item.categoryName,
-                categoryColorHex: item.categoryColorHex,
-                tags: item.tags,
-                authorName: item.authorName,
-                authorAvatar: item.authorAvatar,
-                viewCount: item.viewCount,
-                likeCount: item.likeCount,
-                commentCount: item.commentCount,
-                mapName: item.mapName,
-                mapLabel: item.mapLabel,
-                mapBackground: item.mapBackground,
-                hasVideo: item.hasVideo,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => GuideDetailView(id: item.id),
-                    ),
-                  );
-                },
-              ),
+        return MasonryGridView.count(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _guides.length,
+          itemBuilder: (context, index) {
+            final item = _guides[index];
+            return CommunityGuideCard(
+              item: item,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GuideDetailView(id: item.id),
+                  ),
+                );
+              },
             );
-          }).toList(),
+          },
         );
       },
     );
@@ -456,7 +462,10 @@ class _MapConfigViewState extends State<MapConfigView> {
     );
   }
 
-  Widget _buildEmptyState({String text = '暂无地图配置数据'}) {
+  Widget _buildEmptyState({
+    String text = '暂无地图配置数据',
+    IconData icon = Icons.inbox_rounded,
+  }) {
     return Container(
       height: 150,
       width: double.infinity,
@@ -469,11 +478,7 @@ class _MapConfigViewState extends State<MapConfigView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inbox_rounded,
-              color: _subTextColor.withValues(alpha: 0.5),
-              size: 48,
-            ),
+            Icon(icon, color: _subTextColor.withValues(alpha: 0.5), size: 48),
             const SizedBox(height: 16),
             Text(text, style: TextStyle(color: _subTextColor, fontSize: 16)),
           ],
