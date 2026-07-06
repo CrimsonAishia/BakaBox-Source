@@ -335,36 +335,40 @@ class LogService {
     _writeToFile(LogLevel.fatal, 'General', message, error, stackTrace);
   }
 
+  /// 记录一条 API 日志（使用 [API] 作为 tag，便于过滤）。
+  ///
+  /// 建议由 API 拦截器统一格式化后调用，避免各处自造格式。
+  /// - [level] 控制控制台与文件的记录级别（debug 仅在 kDebugMode 下写文件）
+  /// - [error] / [stackTrace] 仅在 warning 及以上级别附带
   static void api(
-    String method,
-    String url, {
-    int? statusCode,
-    String? requestData,
-    String? responseData,
+    String message, {
+    LogLevel level = LogLevel.debug,
     dynamic error,
-    Duration? duration,
+    StackTrace? stackTrace,
   }) {
-    final buffer = StringBuffer();
-    buffer.write('[$method] $url');
-    if (statusCode != null) buffer.write(' -> $statusCode');
-    if (duration != null) buffer.write(' (${duration.inMilliseconds}ms)');
-    if (requestData != null && kDebugMode) {
-      buffer.write('\n📤 Request: $requestData');
-    }
-    if (responseData != null && kDebugMode) {
-      buffer.write('\n📥 Response: $responseData');
-    }
-
-    final msg = buffer.toString();
-    if (error != null) {
-      _log.e(msg, error: error);
-      _writeToFile(LogLevel.error, 'API', msg, error);
-    } else if (statusCode != null && statusCode >= 400) {
-      _log.w(msg);
-      _writeToFile(LogLevel.warning, 'API', msg);
-    } else {
-      _log.i(msg);
-      _writeToFile(LogLevel.info, 'API', msg);
+    switch (level) {
+      case LogLevel.debug:
+        _log.d(message);
+        if (kDebugMode) {
+          _writeToFile(LogLevel.debug, 'API', message);
+        }
+        break;
+      case LogLevel.info:
+        _log.i(message);
+        _writeToFile(LogLevel.info, 'API', message);
+        break;
+      case LogLevel.warning:
+        _log.w(message, error: error, stackTrace: stackTrace);
+        _writeToFile(LogLevel.warning, 'API', message, error, stackTrace);
+        break;
+      case LogLevel.error:
+        _log.e(message, error: error, stackTrace: stackTrace);
+        _writeToFile(LogLevel.error, 'API', message, error, stackTrace);
+        break;
+      case LogLevel.fatal:
+        _log.f(message, error: error, stackTrace: stackTrace);
+        _writeToFile(LogLevel.fatal, 'API', message, error, stackTrace);
+        break;
     }
   }
 
