@@ -307,6 +307,21 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
 
     final subTextColor = isDark ? Colors.white54 : Colors.black54;
 
+    if (_isLoadingPlayers && _players.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+            const SizedBox(height: 16),
+            Text('正在获取玩家列表...', style: TextStyle(color: subTextColor)),
+          ],
+        ),
+      );
+    }
+
     if (_playerError != null && _players.isEmpty) {
       return Center(
         child: Column(
