@@ -333,14 +333,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // service 层已进入大厅（_hasEnteredLobby=true）时，由 service._onAuthStateChanged 处理大厅内 login
     // 避免 bloc 层与 service 层重复发送
     if (_service.hasEnteredLobby) {
-      LogService.d(
-        '[LobbyBloc] service 层已进入大厅，跳过 _waitAndLogin（由 service._onAuthStateChanged 处理）',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[LobbyBloc] service 层已进入大厅，跳过 _waitAndLogin（由 service._onAuthStateChanged 处理）',
+        );
+      }
       return;
     }
     // service 层已在等待 login 响应（前厅内 login 已发），不重复发送
     if (_service.isLoginPending) {
-      LogService.d('[LobbyBloc] service 层 login 已在进行中，跳过 _waitAndLogin');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyBloc] service 层 login 已在进行中，跳过 _waitAndLogin');
+      }
       return;
     }
     _authAttemptedAfterConnect = true;
@@ -472,13 +476,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             _authAttemptedAfterConnect = true;
             unawaited(_service.login());
           } else {
-            LogService.d('[LobbyBloc] 用户已登录且 token 就绪（前厅中，login 已在进行中），跳过重复发送');
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d(
+                '[LobbyBloc] 用户已登录且 token 就绪（前厅中，login 已在进行中），跳过重复发送',
+              );
+            }
             _authAttemptedAfterConnect = true;
           }
         } else {
           // 已进入大厅：service 层 join.success 已处理过 login，无需重复
           // 但需要标记 _authAttemptedAfterConnect 防止 _waitAndLogin 重复触发
-          LogService.d('[LobbyBloc] 用户已登录且已进入大厅，跳过重复 login（service 层已处理）');
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d('[LobbyBloc] 用户已登录且已进入大厅，跳过重复 login（service 层已处理）');
+          }
           _authAttemptedAfterConnect = true;
         }
       } else if (!_service.hasValidToken) {
@@ -505,7 +515,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
       }
     } else {
-      LogService.d('[LobbyBloc] 当前未加入 Match（排队中），跳过 assets/snapshot 请求');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyBloc] 当前未加入 Match（排队中），跳过 assets/snapshot 请求');
+      }
     }
   }
 
@@ -559,9 +571,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     if (!handled && _service.hasAssetsReceived) {
       final cachedAssetsResponse = _service.getLastAssetsPayload();
       if (cachedAssetsResponse != null) {
-        LogService.d(
-          '[LobbyBloc] _requestAssetsAndSnapshot: 使用缓存 assets payload',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyBloc] _requestAssetsAndSnapshot: 使用缓存 assets payload',
+          );
+        }
         // 构造 LobbyServerEvent 时需要包装为 pb.LobbyEnvelope
         final cachedEnvelope = pb.LobbyEnvelope()
           ..type = 'assets'
@@ -697,7 +711,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       // 直接将磁盘缓存预热到内存
       // 新图片的下载由 _cacheAssets（收到 assets 时用带鉴权的 URL）处理
       await LobbyImageCacheService.instance.warmupMemoryCache();
-      LogService.d('[LobbyBloc] 预加载磁盘缓存图片到内存完成');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyBloc] 预加载磁盘缓存图片到内存完成');
+      }
     } catch (e) {
       LogService.e('[LobbyBloc] 预加载图片失败', e);
     }
@@ -1273,7 +1289,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     if (newStatusText == _lastSentStatusText) return;
     _lastSentStatusText = newStatusText;
 
-    LogService.d('[StatusText] 更新状态文字: $newStatusText');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[StatusText] 更新状态文字: $newStatusText');
+    }
 
     // UI 立即更新（本地用户看到的状态不延迟）
     emit(
@@ -1446,7 +1464,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       // steamId 是 STEAM_x:x:xxxxxxx 格式，需要转换为 Steam64 ID
       final rawSteamId = userInfo.steamId;
       if (rawSteamId == null || rawSteamId.isEmpty) {
-        LogService.d('[LobbyBloc] 用户未绑定 Steam，跳过 steam bind');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyBloc] 用户未绑定 Steam，跳过 steam bind');
+        }
         return;
       }
 
@@ -1560,7 +1580,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       case LobbyConnectionEvent(:final status, :final error):
         _handleConnectionEvent(status, error, emit);
       case LobbyServerEvent(:final type, :final envelope):
-        LogService.d('[LobbyBloc] _onWsEventReceived: type=$type');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyBloc] _onWsEventReceived: type=$type');
+        }
         // 排队开始事件（由 service 层构造的虚拟事件，携带 queue 字段）
         if (type == 'queue.started') {
           final serverEvent = wsEvent;
@@ -1680,11 +1702,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 不再自动请求 snapshot，客户端需主动请求
         final loginUserId = envelope.loginSuccessResponse.userId;
         final loginNickname = envelope.loginSuccessResponse.nickname;
-        LogService.d(
-          '[LobbyBloc] login.success: userId=$loginUserId nickname=$loginNickname '
-          '_selfServerUserId=$_selfServerUserId '
-          'state.users=${state.users.map((u) => '${u.userId}:${u.nickname}:isSelf=${u.isSelf}').toList()}',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyBloc] login.success: userId=$loginUserId nickname=$loginNickname '
+            '_selfServerUserId=$_selfServerUserId '
+            'state.users=${state.users.map((u) => '${u.userId}:${u.nickname}:isSelf=${u.isSelf}').toList()}',
+          );
+        }
 
         // 标记已完成登录，防止 snapshot 补发逻辑重复触发
         _authAttemptedAfterConnect = true;
@@ -1721,7 +1745,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           final before = migratedUsers;
           migratedUsers = migrateSelf(migratedUsers);
           if (!identical(before, migratedUsers)) {
-            LogService.d('[LobbyBloc] login.success 迁移匿名自己 -> 登录用户');
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d('[LobbyBloc] login.success 迁移匿名自己 -> 登录用户');
+            }
           }
           // 面板列表同步迁移，避免残留旧 serverUserId 的自己
           if (migratedAllOnline.isNotEmpty) {
@@ -1828,9 +1854,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           final userId = joinResp.user.userId;
           if (userId.isNotEmpty) {
             _selfServerUserId = userId;
-            LogService.d(
-              '[LobbyBloc] join.success 设置 _selfServerUserId=$userId',
-            );
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d(
+                '[LobbyBloc] join.success 设置 _selfServerUserId=$userId',
+              );
+            }
           }
 
           // 服务端因设备 UUID 关联了账号，把连接识别为已登录（isAnonymous=false），
@@ -1847,13 +1875,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final mapId = joinResp.mapId;
         if (mapId.isNotEmpty) {
           _selfMapId = mapId;
-          LogService.d('[LobbyBloc] join.success 设置 _selfMapId=$mapId');
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d('[LobbyBloc] join.success 设置 _selfMapId=$mapId');
+          }
         }
         // 从 join.success 中获取在线人数，直接更新面板按钮徽章
         if (joinResp.onlineCount > 0) {
-          LogService.d(
-            '[LobbyBloc] join.success 在线人数: ${joinResp.onlineCount}',
-          );
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d(
+              '[LobbyBloc] join.success 在线人数: ${joinResp.onlineCount}',
+            );
+          }
           emit(state.copyWith(serverOnlineCount: joinResp.onlineCount));
         }
         // 不在这里请求 assets，等到进入大厅页面再请求（避免 URL token 过期）
@@ -1905,15 +1937,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           LobbyAssets updatedAssets = state.assets;
           bool mapChanged = false;
           final wasTeleporting = state.isTeleporting;
-          LogService.d(
-            '[LobbyBloc] snapshot 处理: wasTeleporting=$wasTeleporting, current pageStatus=${state.pageStatus}',
-          );
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d(
+              '[LobbyBloc] snapshot 处理: wasTeleporting=$wasTeleporting, current pageStatus=${state.pageStatus}',
+            );
+          }
           if (snapshotState.mapConfig != null) {
             final newMapConfig = snapshotState.mapConfig!;
             mapChanged = state.assets.mapConfig?.mapId != newMapConfig.mapId;
-            LogService.d(
-              '[LobbyBloc] snapshot: mapChanged=$mapChanged, oldMapId=${state.assets.mapConfig?.mapId}, newMapId=${newMapConfig.mapId}',
-            );
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d(
+                '[LobbyBloc] snapshot: mapChanged=$mapChanged, oldMapId=${state.assets.mapConfig?.mapId}, newMapId=${newMapConfig.mapId}',
+              );
+            }
             // 将新地图合并到 assets.maps 中（去重）
             final existingMapIds = updatedAssets.maps
                 .map((m) => m.mapId)
@@ -1926,9 +1962,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               maps: [...updatedAssets.maps, ...additionalMaps],
               sprites: updatedAssets.sprites,
             );
-            LogService.d(
-              '[LobbyBloc] snapshot 应用地图配置: mapId=${newMapConfig.mapId}',
-            );
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d(
+                '[LobbyBloc] snapshot 应用地图配置: mapId=${newMapConfig.mapId}',
+              );
+            }
           }
 
           final upgradedFromAnonymous =
@@ -2042,7 +2080,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // 如果地图发生变化且正在传送中，等待地图加载完成后完成传送
           if (mapChanged && wasTeleporting && snapshotState.mapConfig != null) {
             final newMapId = snapshotState.mapConfig!.mapId;
-            LogService.d('[LobbyBloc] 传送中，地图切换到 $newMapId，等待地图加载完成');
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d('[LobbyBloc] 传送中，地图切换到 $newMapId，等待地图加载完成');
+            }
 
             // 预加载新地图
             unawaited(
@@ -2057,9 +2097,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               final loaded = await LobbyMapLoaderService.instance
                   .waitForMapReady(newMapId);
               if (loaded) {
-                LogService.d('[LobbyBloc] 地图 $newMapId 加载完成，触发传送完成');
+                if (LogService.enableLobbyDebugLog) {
+                  LogService.d('[LobbyBloc] 地图 $newMapId 加载完成，触发传送完成');
+                }
               } else {
-                LogService.w('[LobbyBloc] 地图 $newMapId 加载超时，但仍触发传送完成');
+                if (LogService.enableLobbyDebugLog) {
+                  LogService.d('[LobbyBloc] 地图 $newMapId 加载超时，但仍触发传送完成');
+                }
               }
               add(LobbyTeleportCompleted());
             });
@@ -2080,10 +2124,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final isSelfUser =
             rawUserId.isNotEmpty && _selfServerUserId == rawUserId;
         final isCrossMap = presenceJoinResp.isCrossMapNotification;
-        LogService.d(
-          '[LobbyBloc] presence.join: rawUserId=$rawUserId _selfServerUserId=$_selfServerUserId '
-          'isSelfUser=$isSelfUser isCrossMap=$isCrossMap users=${state.users.map((u) => '${u.userId}:serverId=${u.serverUserId}:${u.nickname}').toList()}',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyBloc] presence.join: rawUserId=$rawUserId _selfServerUserId=$_selfServerUserId '
+            'isSelfUser=$isSelfUser isCrossMap=$isCrossMap users=${state.users.map((u) => '${u.userId}:serverId=${u.serverUserId}:${u.nickname}').toList()}',
+          );
+        }
 
         if (isCrossMap) {
           // 跨地图通知：只显示"XX 上线了"，不渲染角色，坐标字段无效
@@ -2207,9 +2253,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // 该用户不在本地图场景中 → 跨地图离线通知，只显示提示
           // 尝试用 serverUserId 作为显示名（无法获取昵称时降级显示 ID）
           // 实际上跨地图用户不在 users 列表中，所以只能显示简单提示
-          LogService.d(
-            '[LobbyBloc] presence.leave: 跨地图离线通知 serverUserId=$serverUserId',
-          );
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d(
+              '[LobbyBloc] presence.leave: 跨地图离线通知 serverUserId=$serverUserId',
+            );
+          }
           // 跨地图用户虽然不在场景中，但可能在 allOnlineUsers 中，需要同步移除
           if (state.allOnlineUsers.isNotEmpty) {
             final crossMapUpdatedAll = state.allOnlineUsers
@@ -2289,10 +2337,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final identityIsAnonymous = identityResp.isAnonymous;
         final identityBusinessUserId = identityResp.businessUserId;
 
-        LogService.d(
-          '[LobbyBloc] identity.changed: oldUserId=$oldUserId newUserId=$newUserId '
-          'nickname=$identityNickname isAnonymous=$identityIsAnonymous businessUserId=$identityBusinessUserId',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyBloc] identity.changed: oldUserId=$oldUserId newUserId=$newUserId '
+            'nickname=$identityNickname isAnonymous=$identityIsAnonymous businessUserId=$identityBusinessUserId',
+          );
+        }
 
         if (oldUserId.isEmpty && newUserId.isEmpty) break;
 
@@ -2364,9 +2414,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
       case 'chat.message':
         final nextState = _applyChatMessage(envelope.chatMessageResponse);
-        LogService.d(
-          '[LobbyBloc] chat.message: users=${nextState.users.map((u) => '${u.userId}:lastMsg=${u.lastMessage != null ? '"${u.lastMessage}"' : null}').toList()}',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyBloc] chat.message: users=${nextState.users.map((u) => '${u.userId}:lastMsg=${u.lastMessage != null ? '"${u.lastMessage}"' : null}').toList()}',
+          );
+        }
 
         emit(
           state.copyWith(users: nextState.users, messages: nextState.messages),
@@ -2616,12 +2668,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // 尝试从已有的 maps 中找到目标地图并预加载
           final targetMapConfig = state.assets.getMapById(targetMapId);
           if (targetMapConfig != null) {
-            LogService.d('[LobbyBloc] portal.teleport: 预加载目标地图 $targetMapId');
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d('[LobbyBloc] portal.teleport: 预加载目标地图 $targetMapId');
+            }
             unawaited(
               LobbyMapLoaderService.instance.preloadMap(targetMapConfig),
             );
           } else {
-            LogService.d('[LobbyBloc] portal.teleport: 目标地图配置尚未加载，等待 snapshot');
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d(
+                '[LobbyBloc] portal.teleport: 目标地图配置尚未加载，等待 snapshot',
+              );
+            }
           }
           // snapshot 由 join.success 触发后自动请求，不在此处主动发送
         }
@@ -2839,15 +2897,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             final localSelf = state.selfUser;
             if (localSelf != null && localSelf.isOnline) {
               parsedUsers.insert(0, localSelf);
-              LogService.d(
-                '[LobbyBloc] online.stats: self not found in server list, injected from local state',
-              );
+              if (LogService.enableLobbyDebugLog) {
+                LogService.d(
+                  '[LobbyBloc] online.stats: self not found in server list, injected from local state',
+                );
+              }
             }
           }
 
-          LogService.d(
-            '[LobbyBloc] online.stats: total=$total, users=${parsedUsers.length}, selfFound=$selfFound',
-          );
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d(
+              '[LobbyBloc] online.stats: total=$total, users=${parsedUsers.length}, selfFound=$selfFound',
+            );
+          }
 
           emit(
             state.copyWith(
@@ -3050,10 +3112,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     } else {
       currentMap = parsedMaps.isNotEmpty ? parsedMaps.first : null;
     }
-    LogService.d(
-      '[LobbyBloc] _parseAssets: currentMapId=$currentMapId resolved=${currentMap?.mapId} '
-      'availableMaps=${parsedMaps.map((m) => m.mapId).toList()}',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[LobbyBloc] _parseAssets: currentMapId=$currentMapId resolved=${currentMap?.mapId} '
+        'availableMaps=${parsedMaps.map((m) => m.mapId).toList()}',
+      );
+    }
 
     final sprites = <LobbySprite>[];
     for (final pbSprite in pbAssets.sprites) {
@@ -3459,9 +3523,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final mapConfig = pbSnapshot.hasMapConfig()
         ? _parseMapConfig(pbSnapshot.mapConfig)
         : null;
-    LogService.d(
-      '[LobbyBloc] _applySnapshot: parsed mapConfig.mapId=${mapConfig?.mapId}',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[LobbyBloc] _applySnapshot: parsed mapConfig.mapId=${mapConfig?.mapId}',
+      );
+    }
 
     return _SnapshotState(
       users: users,
@@ -3706,7 +3772,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     final targetMapConfig = state.assets.getMapById(targetMapId);
     if (targetMapConfig != null) {
-      LogService.d('[LobbyBloc] 预加载传送门目标地图: $targetMapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyBloc] 预加载传送门目标地图: $targetMapId');
+      }
       unawaited(LobbyMapLoaderService.instance.preloadMap(targetMapConfig));
     }
   }
@@ -4042,7 +4110,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbySnapshotRefreshRequested event,
     Emitter<LobbyState> emit,
   ) async {
-    LogService.d('[LobbyBloc] 从后台恢复，重新请求 snapshot');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[LobbyBloc] 从后台恢复，重新请求 snapshot');
+    }
     // 只请求 snapshot，不请求 assets（assets 一般不会变化）
     await _service.requestSnapshot();
   }
@@ -4059,14 +4129,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     // 排队中：立即轮询一次确认状态（ticket 30 秒未轮询会过期）
     if (_queueTicket != null) {
-      LogService.d('[LobbyBloc] 从后台恢复，立即确认排队状态');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyBloc] 从后台恢复，立即确认排队状态');
+      }
       await _pollQueueStatus();
       return;
     }
 
     // 大厅已 ready：请求 snapshot 对齐（覆盖后台期间可能丢失的 delta 帧）
     if (state.pageStatus == LobbyPageStatus.ready) {
-      LogService.d('[LobbyBloc] 从后台恢复，请求 snapshot 对齐');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyBloc] 从后台恢复，请求 snapshot 对齐');
+      }
       await _service.requestSnapshot();
     }
   }

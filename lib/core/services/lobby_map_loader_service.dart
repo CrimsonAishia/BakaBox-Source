@@ -121,13 +121,13 @@ class LobbyMapLoaderService {
 
     // 如果已加载，跳过
     if (isMapReady(mapId)) {
-      LogService.d('[LobbyMapLoader] 地图已就绪: $mapId');
+      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyMapLoader] 地图已就绪: $mapId');
       return true;
     }
 
     // 如果正在加载，等待完成
     if (_loadingMaps.contains(mapId)) {
-      LogService.d('[LobbyMapLoader] 地图正在加载中: $mapId，等待完成');
+      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyMapLoader] 地图正在加载中: $mapId，等待完成');
       return await waitForMapReady(mapId)
           .then((_) => true)
           .timeout(
@@ -153,9 +153,11 @@ class LobbyMapLoaderService {
     );
 
     try {
-      LogService.d(
-        '[LobbyMapLoader] 开始加载地图: $mapId, backgroundUrl: $backgroundUrl',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[LobbyMapLoader] 开始加载地图: $mapId, backgroundUrl: $backgroundUrl',
+        );
+      }
 
       // 如果没有背景 URL，认为地图配置有效但无需加载图片
       if (backgroundUrl == null || backgroundUrl.isEmpty) {
@@ -166,7 +168,7 @@ class LobbyMapLoaderService {
             progress: 1.0,
           ),
         );
-        LogService.d('[LobbyMapLoader] 地图无背景图，标记为已加载: $mapId');
+        if (LogService.enableLobbyDebugLog) LogService.d('[LobbyMapLoader] 地图无背景图，标记为已加载: $mapId');
         return true;
       }
 
@@ -204,9 +206,11 @@ class LobbyMapLoaderService {
           ),
         );
 
-        LogService.d(
-          '[LobbyMapLoader] 地图加载成功: $mapId, size: ${bytes.length} bytes',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyMapLoader] 地图加载成功: $mapId, size: ${bytes.length} bytes',
+          );
+        }
         return true;
       } else {
         // 下载失败但仍标记为已加载（允许显示默认背景）

@@ -149,7 +149,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
     // 排队中：无论后台多久都立即确认状态（ticket 30 秒未轮询会过期）
     if (_lobbyBloc.state.isQueueing) {
-      LogService.d('[LobbyPageMobile] 从后台恢复，排队中，立即确认排队状态');
+      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyPageMobile] 从后台恢复，排队中，立即确认排队状态');
       _lobbyBloc.add(const LobbyAppResumed());
       return;
     }
@@ -160,9 +160,11 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     }
 
     // 后台时间超过阈值，刷新 snapshot 确保数据最新
-    LogService.d(
-      '[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，刷新 snapshot',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，刷新 snapshot',
+      );
+    }
     _lobbyBloc.add(const LobbyAppResumed());
   }
 

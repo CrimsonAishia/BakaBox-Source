@@ -130,9 +130,11 @@ class LobbyGame extends FlameGame
 
       if (image != null) {
         _preloadedSpriteImages[spriteId] = image;
-        LogService.d(
-          '[LobbyGame] 贴图预加载完成: $spriteId, 通知 ${_waitingForSprite[spriteId]?.length ?? 0} 个玩家',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyGame] 贴图预加载完成: $spriteId, 通知 ${_waitingForSprite[spriteId]?.length ?? 0} 个玩家',
+          );
+        }
 
         // 通知所有等待该 spriteId 的玩家组件
         final waiters = _waitingForSprite.remove(spriteId);
@@ -327,9 +329,11 @@ class LobbyGame extends FlameGame
       await _addPlayerComponent(user);
     }
 
-    LogService.d(
-      '[LobbyGame] onLoad 完成: playersAdded=${_initialUsers.length} worldChildren=${_world.children.length}',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[LobbyGame] onLoad 完成: playersAdded=${_initialUsers.length} worldChildren=${_world.children.length}',
+      );
+    }
 
     // 初始相机跟随当前玩家（如果有）
     _followCurrentPlayer();
@@ -665,7 +669,6 @@ class LobbyGame extends FlameGame
     _bloc.add(LobbyPlayerArrived(userId, arrivedPosition));
   }
 
-  // ========== 关注用户管理 ==========
 
   static const String _followedUsersKey = 'lobby_followed_user_ids';
 
@@ -764,7 +767,6 @@ class LobbyGame extends FlameGame
     _applyFollowStates();
   }
 
-  // ========== 玩家交互菜单 ==========
 
   /// 为目标玩家显示交互菜单（左键靠近时触发）
   void _showContextMenuForPlayer(
@@ -1205,13 +1207,13 @@ class BackgroundComponent extends PositionComponent
       url,
     );
     if (cachedImage != null) {
-      LogService.d('[BackgroundComponent] 从本地缓存加载背景: $url');
+      if (LogService.enableLobbyDebugLog) LogService.d('[BackgroundComponent] 从本地缓存加载背景: $url');
       return cachedImage;
     }
 
     // 本地没有，尝试网络下载
     if (_disposed) return null;
-    LogService.d('[BackgroundComponent] 本地缓存未命中，下载背景: $url');
+    if (LogService.enableLobbyDebugLog) LogService.d('[BackgroundComponent] 本地缓存未命中，下载背景: $url');
     return _loadNetworkImage(url);
   }
 

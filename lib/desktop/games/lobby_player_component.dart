@@ -431,7 +431,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
       await add(animComponent);
       _animComponent = animComponent;
-      LogService.d('[LobbyPlayerComponent] 图集动画加载成功: ${_sprite.id}');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyPlayerComponent] 图集动画加载成功: ${_sprite.id}');
+      }
     } catch (e, stack) {
       LogService.e('[LobbyPlayerComponent] 图集加载失败: ${_sprite.id}', e, stack);
       // 回退到单张图片
@@ -489,13 +491,11 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       url,
     );
     if (cachedImage != null) {
-      debugPrint('[LobbyPlayerComponent] 从本地缓存加载角色贴图: $url');
       return cachedImage;
     }
 
     // 本地没有，尝试网络下载
     if (_disposed) return null;
-    debugPrint('[LobbyPlayerComponent] 本地缓存未命中，下载角色贴图: $url');
     return _loadNetworkImage(url);
   }
 
@@ -557,9 +557,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     final spriteIdChanged =
         newSpriteId.isNotEmpty && effectiveSpriteId != newSpriteId;
     if (spriteIdChanged) {
-      debugPrint(
-        '[LobbyPlayerComponent] 检测到模型切换: $effectiveSpriteId -> $newSpriteId',
-      );
       // 查找新模型的配置
       LobbySprite newSprite = _sprite;
       if (availableSprites != null) {
@@ -585,12 +582,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     if (prevLastMessage != user.lastMessage ||
         prevLastMessageAt != user.lastMessageAt) {
-      debugPrint(
-        '[LobbyPlayerComponent] updateUser 消息变化: ${user.userId} '
-        'lastMessage="${user.lastMessage}" '
-        'lastMessageAt=${user.lastMessageAt} '
-        'hasVisibleMessage=${_user.hasVisibleMessage}',
-      );
       // 新消息到来
       if (_user.hasVisibleMessage) {
         final newMsg = _user.lastMessage ?? '';
@@ -642,10 +633,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         case FlipState.idleLeft:
           // 空闲状态：若服务器朝向与当前不一致，触发动画切换
           if (_flipState != targetFacing) {
-            final dir = _flipState == FlipState.idleLeft ? '右边' : '左边';
-            debugPrint(
-              '[LobbyPlayerComponent] 服务器朝向变化，开始转向$dir: ${_user.userId}',
-            );
             _flipState = (targetFacing == FlipState.idleRight)
                 ? FlipState.turningToRight
                 : FlipState.turningToLeft;
@@ -654,18 +641,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         case FlipState.turningToLeft:
           // 正在转向左边：若服务器要求朝右，立即反转
           if (targetFacing == FlipState.idleRight) {
-            debugPrint(
-              '[LobbyPlayerComponent] 服务器朝向变化，立即转向右边: ${_user.userId}',
-            );
             _flipState = FlipState.turningToRight;
           }
           break;
         case FlipState.turningToRight:
           // 正在转向右边：若服务器要求朝左，立即反转
           if (targetFacing == FlipState.idleLeft) {
-            debugPrint(
-              '[LobbyPlayerComponent] 服务器朝向变化，立即转向左边: ${_user.userId}',
-            );
             _flipState = FlipState.turningToLeft;
           }
           break;
@@ -677,7 +658,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   void _triggerSpriteSwitch(String newSpriteId, LobbySprite newSprite) {
     // 如果正在切换中，将请求排队（覆盖之前的排队请求，只保留最新的）
     if (_spriteSwitchState != SpriteSwitchState.idle) {
-      debugPrint('[LobbyPlayerComponent] 模型切换中，排入队列: $newSpriteId');
       _queuedSpriteSwitch = _PendingSpriteSwitch(
         spriteId: newSpriteId,
         sprite: newSprite,
@@ -733,9 +713,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _accumulatedMoveDistance = 0.0;
       // 不再清空 statusText，让它保持 BLoC 中的值（由 GameStatusService 驱动）
       _user = _user.copyWith(isMoving: false);
-      debugPrint(
-        '[LobbyPlayerComponent] 到达目标: ${_user.userId} isMoving=${_user.isMoving} statusText=${_user.statusText}',
-      );
       // 通知 LobbyGame 更新 Bloc 状态，避免其他角色误判为仍在移动
       _onArrived(_user.userId, arrivedPosition);
     } else {
@@ -1110,7 +1087,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         if (_spriteOpacity >= 1.0) {
           _spriteOpacity = 1.0;
           _spriteSwitchState = SpriteSwitchState.idle;
-          debugPrint('[LobbyPlayerComponent] 模型切换完成: ${_user.spriteId}');
 
           // 检查是否有排队的切换请求，如果有则立即处理
           if (_queuedSpriteSwitch != null) {
@@ -1118,11 +1094,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
             _queuedSpriteSwitch = null;
             // 如果排队的 spriteId 与刚加载完成的一致，跳过冗余切换
             if (queued.spriteId == _currentSpriteId) {
-              debugPrint(
-                '[LobbyPlayerComponent] 排队的切换与当前一致，跳过: ${queued.spriteId}',
-              );
             } else {
-              debugPrint('[LobbyPlayerComponent] 处理排队的切换: ${queued.spriteId}');
               _triggerSpriteSwitch(queued.spriteId, queued.sprite);
             }
           }
@@ -1179,7 +1151,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         if (_flipValue <= 0.0) {
           _flipValue = 0.0;
           _flipState = FlipState.idleLeft;
-          debugPrint('[LobbyPlayerComponent] 转向完成: left ${_user.userId}');
         }
         scale = Vector2(1.0 - 2.0 * _flipValue, 1.0);
         break;
@@ -1190,7 +1161,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         if (_flipValue >= 1.0) {
           _flipValue = 1.0;
           _flipState = FlipState.idleRight;
-          debugPrint('[LobbyPlayerComponent] 转向完成: right ${_user.userId}');
         }
         scale = Vector2(1.0 - 2.0 * _flipValue, 1.0);
         break;

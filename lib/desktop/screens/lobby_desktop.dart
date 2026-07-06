@@ -229,7 +229,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       // 首次检测，根据当前状态初始化
       _lastTeleportingState = state.isTeleporting;
       if (state.isTeleporting) {
-        LogService.d('[LobbyDesktop] _syncTeleportAnimation: 首次检测到传送中，启动动画');
         _showTeleportOverlay = true;
         _teleportHideTimer?.cancel();
         _targetMapConfig = _findTargetMapConfig(state);
@@ -240,7 +239,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
     if (state.isTeleporting && !_lastTeleportingState!) {
       // 开始传送 — 立即显示动画（阶段1：缓慢推进到 70%）
-      LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送开始，启动动画');
       _showTeleportOverlay = true;
       _teleportHideTimer?.cancel();
       _minDurationTimer?.cancel();
@@ -251,7 +249,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     } else if (!state.isTeleporting && _lastTeleportingState!) {
       // 传送数据就绪（正常完成）或传送被取消/拒绝
       // 统一走 _onTeleportDataReady()：满足最小时间后快速完成动画再隐藏
-      LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送结束');
       _lastTeleportingState = false;
       _onTeleportDataReady();
     }
@@ -259,9 +256,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
   /// 启动传送动画（阶段1：缓慢推进到 70%）
   void _startTeleportAnimation() {
-    LogService.d(
-      '[LobbyDesktop] _startTeleportAnimation: 开始阶段1动画, controller=$_teleportController',
-    );
     _teleportStartTime = DateTime.now();
     _teleportDataReady = false;
 
@@ -274,9 +268,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     _teleportController?.addStatusListener(_onTeleportAnimationStatus);
     _teleportController?.value = 0;
     _teleportController?.animateTo(_phase1TargetProgress);
-    LogService.d(
-      '[LobbyDesktop] _startTeleportAnimation: 阶段1开始，目标 ${(_phase1TargetProgress * 100).toInt()}%',
-    );
   }
 
   /// 传送数据就绪时调用
@@ -293,15 +284,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
     if (remaining <= 0) {
       // 已满足最小动画时间，立即进入阶段2
-      LogService.d(
-        '[LobbyDesktop] _onTeleportDataReady: 已满足最小时间(${elapsed}ms)，进入阶段2',
-      );
       _startPhase2();
     } else {
       // 未满足最小动画时间，等待剩余时间后再进入阶段2
-      LogService.d(
-        '[LobbyDesktop] _onTeleportDataReady: 未满足最小时间(${elapsed}ms)，等待${remaining}ms',
-      );
       _teleportDataReady = true;
       _minDurationTimer?.cancel();
       _minDurationTimer = Timer(Duration(milliseconds: remaining), () {
@@ -314,9 +299,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
   /// 启动阶段2动画（快速推进到 100%）
   void _startPhase2() {
-    LogService.d(
-      '[LobbyDesktop] _startPhase2: 从 ${_teleportController?.value ?? 0} 快速推进到 100%',
-    );
     _teleportDataReady = false;
     _minDurationTimer?.cancel();
 
@@ -339,8 +321,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   void _scheduleHideOverlay() {
     _teleportHideTimer?.cancel();
 
-    LogService.d('[LobbyDesktop] 计划 ${_holdDurationMs}ms 后隐藏覆盖层');
-
     _teleportHideTimer = Timer(Duration(milliseconds: _holdDurationMs), () {
       if (mounted) {
         _showTeleportOverlay = false;
@@ -359,13 +339,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       final value = _teleportController?.value ?? 0.0;
       if (value >= 1.0) {
         // 阶段2完成（进度到达 100%），调度隐藏
-        LogService.d('[LobbyDesktop] 传送动画播放完成（100%），调度隐藏');
         _scheduleHideOverlay();
       } else {
         // 阶段1完成（停在 70%），等待传送数据就绪
-        LogService.d(
-          '[LobbyDesktop] 阶段1动画完成（${(value * 100).toInt()}%），等待传送数据',
-        );
         // 如果数据已经就绪（在阶段1动画期间到达），立即进入阶段2
         if (_teleportDataReady) {
           _startPhase2();
@@ -2530,7 +2506,7 @@ class _MosaicMapPreviewState extends State<_MosaicMapPreview> {
           _cachedImageBytes = bytes;
           _imageLoaded = true;
         });
-        LogService.d('[MosaicMapPreview] 从 LobbyImageCacheService 加载图片成功');
+        if (LogService.enableLobbyDebugLog) LogService.d('[MosaicMapPreview] 从 LobbyImageCacheService 加载图片成功');
       } else if (mounted) {
         // 缓存中没有，尝试用 Image.network 加载
         setState(() {

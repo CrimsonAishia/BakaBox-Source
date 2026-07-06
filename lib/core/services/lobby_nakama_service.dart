@@ -43,9 +43,11 @@ class _NakamaClientManager {
       grpcPort: config.grpcPort,
       ssl: config.ssl,
     );
-    LogService.d(
-      '[NakamaClientManager] 客户端已初始化: ${config.host}:${config.port}',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[NakamaClientManager] 客户端已初始化: ${config.host}:${config.port}',
+      );
+    }
   }
 
   /// 认证
@@ -69,10 +71,12 @@ class _NakamaClientManager {
 
     // 统一使用设备 ID 认证（无论是否有 JWT token）
     // JWT token 会在连接成功后通过 login 消息发送给服务器
-    LogService.d(
-      '[NakamaClientManager] 使用设备ID认证 (authenticateDevice), '
-      'hasJwt=${jwtToken != null && jwtToken.isNotEmpty}',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[NakamaClientManager] 使用设备ID认证 (authenticateDevice), '
+        'hasJwt=${jwtToken != null && jwtToken.isNotEmpty}',
+      );
+    }
     _session = await client.authenticateDevice(
       deviceId: deviceId,
       create: true,
@@ -105,7 +109,9 @@ class _NakamaClientManager {
     }
 
     try {
-      LogService.d('[NakamaClientManager] 尝试刷新 Session...');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[NakamaClientManager] 尝试刷新 Session...');
+      }
       _session = await client.sessionRefresh(session: currentSession);
       LogService.i('[NakamaClientManager] Session 刷新成功');
       return _session!;
@@ -130,11 +136,15 @@ class _NakamaClientManager {
 
     // 预检：Session 即将过期则提前刷新
     if (_isSessionExpiringSoon()) {
-      LogService.d('[NakamaClientManager] Session 即将过期，RPC 调用前主动刷新: $id');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[NakamaClientManager] Session 即将过期，RPC 调用前主动刷新: $id');
+      }
       await _ensureSessionFresh();
     }
 
-    LogService.d('[NakamaClientManager] RPC 调用: $id');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[NakamaClientManager] RPC 调用: $id');
+    }
     try {
       return await client.rpc(session: _session!, id: id, payload: payload);
     } catch (e) {
@@ -266,9 +276,11 @@ class _NakamaSocketManager {
     // 使用唯一 key 避免缓存问题（NakamaWebsocketClient.init 按 key 缓存）
     final key = 'lobby_${DateTime.now().millisecondsSinceEpoch}';
 
-    LogService.d(
-      '[NakamaSocketManager] 建立 WebSocket 连接: $host:$port (key=$key)',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[NakamaSocketManager] 建立 WebSocket 连接: $host:$port (key=$key)',
+      );
+    }
 
     _socket = NakamaWebsocketClient.init(
       key: key,
@@ -300,10 +312,12 @@ class _NakamaSocketManager {
     await _matchPresenceSubscription?.cancel();
     _matchPresenceSubscription = _socket!.onMatchPresence.listen(
       (event) {
-        LogService.d(
-          '[NakamaSocketManager] 收到 MatchPresence: '
-          'joins=${event.joins.length}, leaves=${event.leaves.length}',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[NakamaSocketManager] 收到 MatchPresence: '
+            'joins=${event.joins.length}, leaves=${event.leaves.length}',
+          );
+        }
       },
       onError: (error) {
         LogService.e('[NakamaSocketManager] onMatchPresence 错误: $error');
@@ -315,7 +329,9 @@ class _NakamaSocketManager {
 
   /// 断开 WebSocket 连接
   Future<void> disconnect() async {
-    LogService.d('[NakamaSocketManager] 断开 WebSocket 连接');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[NakamaSocketManager] 断开 WebSocket 连接');
+    }
     _isConnected = false;
     _stopAppHeartbeat(); // C4：停止心跳
     await _matchDataSubscription?.cancel();
@@ -343,7 +359,9 @@ class _NakamaSocketManager {
       throw StateError('[NakamaSocketManager] WebSocket 未连接');
     }
 
-    LogService.d('[NakamaSocketManager] 加入 Match: $matchId');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[NakamaSocketManager] 加入 Match: $matchId');
+    }
     final match = await socket.joinMatch(matchId);
     _currentMatchId = matchId;
     // C4：加入 Match 后启动应用层心跳，维持链路活性
@@ -360,7 +378,9 @@ class _NakamaSocketManager {
     final matchId = _currentMatchId;
     if (socket == null || matchId == null) return;
 
-    LogService.d('[NakamaSocketManager] 离开 Match: $matchId');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[NakamaSocketManager] 离开 Match: $matchId');
+    }
     try {
       await socket.leaveMatch(matchId);
     } catch (e) {
@@ -383,12 +403,13 @@ class _NakamaSocketManager {
 
     try {
       final bytes = envelope.writeToBuffer();
-      LogService.d(
-        '[NakamaSocketManager] 发送消息: ${envelope.type}, '
-        'matchId=$matchId, bytes=${bytes.length}',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[NakamaSocketManager] 发送消息: ${envelope.type}, '
+          'matchId=$matchId, bytes=${bytes.length}',
+        );
+      }
       socket.sendMatchData(matchId: matchId, opCode: 1, data: bytes);
-      LogService.d('[NakamaSocketManager] 已发送消息: ${envelope.type}');
     } catch (e) {
       LogService.e('[NakamaSocketManager] 发送消息失败: ${envelope.type}', e);
     }
@@ -415,13 +436,15 @@ class _NakamaSocketManager {
     // LogService.d 内部丢弃日志，参数仍被 eager 求值——200 人高峰每秒几十条消息，
     // 这是主 isolate 的隐性开销之一。仅在 debug 模式下构造昂贵日志。
     if (kDebugMode) {
-      LogService.d(
-        '[NakamaSocketManager][RAW] 收到 MatchData: '
-        'opCode=${matchData.opCode}, '
-        'matchId=${matchData.matchId}, '
-        'presence=${matchData.presence?.userId}, '
-        'dataLength=${rawBytes?.length ?? 0}',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[NakamaSocketManager][RAW] 收到 MatchData: '
+          'opCode=${matchData.opCode}, '
+          'matchId=${matchData.matchId}, '
+          'presence=${matchData.presence?.userId}, '
+          'dataLength=${rawBytes?.length ?? 0}',
+        );
+      }
     }
 
     // 仅处理 OpCode 1
@@ -445,9 +468,6 @@ class _NakamaSocketManager {
       return;
     }
 
-    if (kDebugMode) {
-      LogService.d('[NakamaSocketManager] 收到消息: ${wsEvent.type}');
-    }
     _matchEventController.add(wsEvent);
   }
 
@@ -657,9 +677,11 @@ class LobbyNakamaService {
         );
         unawaited(login());
       } else {
-        LogService.d(
-          '[LobbyNakamaService] 检测到用户登录（已连接，前厅中），等待 join.success 流程处理',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyNakamaService] 检测到用户登录（已连接，前厅中），等待 join.success 流程处理',
+          );
+        }
       }
     }
   }
@@ -760,7 +782,9 @@ class LobbyNakamaService {
   /// 等待 token 有效（最多 30 秒）
   Future<void> _waitForTokenReady() async {
     if (!AuthService.instance.isLoggedIn) {
-      LogService.d('[LobbyNakamaService] 用户未登录，将以匿名身份连接');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyNakamaService] 用户未登录，将以匿名身份连接');
+      }
       return;
     }
 
@@ -777,7 +801,9 @@ class LobbyNakamaService {
     }
 
     if (TokenService.instance.isTokenValid) {
-      LogService.d('[LobbyNakamaService] Token 已就绪');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyNakamaService] Token 已就绪');
+      }
     }
   }
 
@@ -787,7 +813,9 @@ class LobbyNakamaService {
 
     try {
       _deviceId = await DeviceIdHelper.getDeviceId();
-      LogService.d('[LobbyNakamaService] deviceId 已就绪');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyNakamaService] deviceId 已就绪');
+      }
     } catch (e) {
       LogService.e('[LobbyNakamaService] 获取 deviceId 失败: $e');
       _deviceId ??= const Uuid().v4();
@@ -945,7 +973,9 @@ class LobbyNakamaService {
 
     // 已经在某个 Match 中：无需重新 join，避免重复加入
     if (_socketManager.currentMatchId != null) {
-      LogService.d('[LobbyNakamaService] rejoinLobby: 已在 Match 中，跳过重新 join');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyNakamaService] rejoinLobby: 已在 Match 中，跳过重新 join');
+      }
       return;
     }
 
@@ -990,8 +1020,6 @@ class LobbyNakamaService {
     // 只处理 LobbyServerEvent（由 _NakamaSocketManager 通过 envelope.toLobbyServerEvent() 构造）
     if (wsEvent is! LobbyServerEvent) return;
 
-    LogService.d('[LobbyNakamaService] 收到消息: ${wsEvent.type}');
-
     // 收到 join.success 后按两阶段进入协议处理：
     // - 传送到达：服务端已跳过前厅，直接发送 snapshot.request
     // - 普通进入：[可选 login] → enter → snapshot.request
@@ -1004,24 +1032,34 @@ class LobbyNakamaService {
         // 传送到达：服务端自动跳过前厅，无需发送 enter
         _isTeleportArrival = false;
         _hasEnteredLobby = true; // 视为已进入大厅
-        LogService.d('[LobbyNakamaService] 传送到达，跳过 enter，直接请求 snapshot');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyNakamaService] 传送到达，跳过 enter，直接请求 snapshot');
+        }
         unawaited(requestSnapshot());
         // 文档约束：传送走直连流程不经过 enter，新地图会话默认非弱网。
         // 若本地仍处于弱网模式，需在新地图主动补发 mode.change 重新进入弱网。
         if (NetworkModeService.instance.weakNetwork) {
-          LogService.d('[LobbyNakamaService] 传送到达且处于弱网模式，补发 mode.change(true)');
+          if (LogService.enableLobbyDebugLog) {
+            LogService.d(
+              '[LobbyNakamaService] 传送到达且处于弱网模式，补发 mode.change(true)',
+            );
+          }
           unawaited(sendModeChange(true));
         }
       } else if (AuthService.instance.isLoggedIn && hasValidToken) {
         // 已登录：先发 login（携带匿名标志），等待 login.success 后再发 enter + snapshot.request
-        LogService.d(
-          '[LobbyNakamaService] 用户已登录，发送 login（匿名=${loadAnonymousMode()}），等待 login.success 后发 enter',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyNakamaService] 用户已登录，发送 login（匿名=${loadAnonymousMode()}），等待 login.success 后发 enter',
+          );
+        }
         _isLoginPending = true;
         unawaited(login());
       } else {
         // 匿名用户或未登录：直接发 enter，然后请求 snapshot
-        LogService.d('[LobbyNakamaService] 匿名用户，发送 enter 进入大厅');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyNakamaService] 匿名用户，发送 enter 进入大厅');
+        }
         unawaited(sendEnter());
         unawaited(requestSnapshot());
       }
@@ -1159,7 +1197,9 @@ class LobbyNakamaService {
 
       // 重连时检查 Session 是否过期，过期则先刷新
       if (_clientManager.session != null && _clientManager.session!.isExpired) {
-        LogService.d('[LobbyNakamaService] Session 已过期，先刷新再重连');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyNakamaService] Session 已过期，先刷新再重连');
+        }
         try {
           final jwtToken =
               (AuthService.instance.isLoggedIn &&
@@ -1226,10 +1266,12 @@ class LobbyNakamaService {
       remainingSeconds - 10,
     );
 
-    LogService.d(
-      '[LobbyNakamaService] Session 剩余 ${remainingSeconds}s，'
-      '将在 ${refreshAfterSeconds}s 后主动刷新',
-    );
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d(
+        '[LobbyNakamaService] Session 剩余 ${remainingSeconds}s，'
+        '将在 ${refreshAfterSeconds}s 后主动刷新',
+      );
+    }
 
     _sessionRefreshTimer = Timer(Duration(seconds: refreshAfterSeconds), () {
       if (_isDisposed || !_isConnected) return;
@@ -1244,7 +1286,9 @@ class LobbyNakamaService {
     if (deviceId == null) return;
 
     try {
-      LogService.d('[LobbyNakamaService] 主动刷新 Session...');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyNakamaService] 主动刷新 Session...');
+      }
       await _clientManager.refreshSession(deviceId: deviceId);
       LogService.i('[LobbyNakamaService] Session 主动刷新成功');
       // 刷新成功后重新调度下一次刷新
@@ -1293,9 +1337,11 @@ class LobbyNakamaService {
     for (var i = 0; i < maxRetries; i++) {
       try {
         final result = await _clientManager.rpc('lobby_join', payload: payload);
-        LogService.d(
-          '[LobbyNakamaService] RPC lobby_join 返回: (length=${result?.length}, isNull=${result == null}, isEmpty=${result?.isEmpty})',
-        );
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d(
+            '[LobbyNakamaService] RPC lobby_join 返回: (length=${result?.length}, isNull=${result == null}, isEmpty=${result?.isEmpty})',
+          );
+        }
 
         if (result != null && result.isNotEmpty) {
           try {
@@ -1304,9 +1350,11 @@ class LobbyNakamaService {
             final matchId = response.matchId;
             final mapId = response.mapId;
             final ticket = response.ticket;
-            LogService.d(
-              '[LobbyNakamaService] Protobuf 解析成功: matchId="$matchId", mapId="$mapId", ticket="$ticket"',
-            );
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d(
+                '[LobbyNakamaService] Protobuf 解析成功: matchId="$matchId", mapId="$mapId", ticket="$ticket"',
+              );
+            }
             if (matchId.isNotEmpty || ticket.isNotEmpty) {
               return response;
             } else {
@@ -1427,9 +1475,11 @@ class LobbyNakamaService {
   void _onWeakNetworkChanged(bool weakNetwork) {
     if (_isDisposed) return;
     if (!_isConnected || !_hasEnteredLobby) {
-      LogService.d(
-        '[LobbyNakamaService] 弱网切换为 $weakNetwork，但尚未进入大厅，跳过 mode.change（由 enter 携带）',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[LobbyNakamaService] 弱网切换为 $weakNetwork，但尚未进入大厅，跳过 mode.change（由 enter 携带）',
+        );
+      }
       return;
     }
     unawaited(sendModeChange(weakNetwork));
@@ -1457,9 +1507,11 @@ class LobbyNakamaService {
     final last = _lastModeChangeSentAt;
     if (last != null && now.difference(last) < _modeChangeMinInterval) {
       final wait = _modeChangeMinInterval - now.difference(last);
-      LogService.d(
-        '[LobbyNakamaService] mode.change 限流，${wait.inMilliseconds}ms 后重发',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[LobbyNakamaService] mode.change 限流，${wait.inMilliseconds}ms 后重发',
+        );
+      }
       await Future.delayed(wait);
       if (_isDisposed || !_isConnected || !_hasEnteredLobby) return;
     }
@@ -1703,9 +1755,11 @@ class LobbyNakamaService {
     String nakamaUserId,
   ) async {
     try {
-      LogService.d(
-        '[LobbyNakamaService] RPC steam_user_info: userId=$nakamaUserId',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[LobbyNakamaService] RPC steam_user_info: userId=$nakamaUserId',
+        );
+      }
       final reqBytes = (pb.SteamUserInfoRequest()..userId = nakamaUserId)
           .writeToBuffer();
       // 服务端期望原始 Protobuf 二进制字节转成字符串（与 lobby_join 一致）
@@ -1734,9 +1788,11 @@ class LobbyNakamaService {
     String nakamaUserId,
   ) async {
     try {
-      LogService.d(
-        '[LobbyNakamaService] RPC inventory_stats: userId=$nakamaUserId',
-      );
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d(
+          '[LobbyNakamaService] RPC inventory_stats: userId=$nakamaUserId',
+        );
+      }
       final reqBytes = (pb.InventoryStatsRequest()..userId = nakamaUserId)
           .writeToBuffer();
       final payload = String.fromCharCodes(reqBytes);

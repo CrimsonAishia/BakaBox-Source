@@ -36,6 +36,9 @@ class LogService {
   /// 文件写入是否可用
   static bool _fileLoggingEnabled = true;
 
+  /// 大厅模块调试日志开关
+  static bool enableLobbyDebugLog = false;
+
   /// 获取 logger 实例，如果未初始化则创建一个简单的 logger
   static Logger get _log {
     _logger ??= Logger(
