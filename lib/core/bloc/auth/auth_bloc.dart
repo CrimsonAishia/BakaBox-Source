@@ -19,6 +19,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SchedulerService _scheduler = SchedulerService();
   StreamSubscription<RealtimeForceLogoutPayload>? _forceLogoutSubscription;
   StreamSubscription<bool>? _networkModeSubscription;
+  late final LoginStateChangedCallback _authStateListener;
+
+  /// 是否正在处理 [AuthSessionExpired]。
+  ///
+  /// 该 handler 内部会调用 [AuthService.forceLogout]，从而触发 [_authStateListener]。
+  /// 此时事件已在处理中，无需再排一次 [AuthSessionExpired] 造成重复 emit / forceLogout。
+  bool _handlingSessionExpired = false;
 
   static const _taskIdSessionValidation = 'auth_session_validation';
   static const _taskIdStatsRefresh = 'auth_stats_refresh';
@@ -42,6 +49,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       add(const AuthSessionExpired());
     });
+
+    // 监听 AuthService 登录态变化：ApiClient 等外部调用者在 Token 失效等场景
+    // 会直接调用 AuthService.forceLogout()，此时 AuthBloc 若不同步就会停留在
+    // authenticated 状态，UI 无法自动跳回登录页。这里做兜底同步。
+    _authStateListener = (isLoggedIn) {
+      // 只在「外部触发」且当前仍处于已登录态时兜底同步；
+      // AuthSessionExpired 自己触发的 notify 会命中 _handlingSessionExpired，
+      // 主动登出流程调用 notify 时 state.status 已是 loading。
+      if (isLoggedIn ||
+          _handlingSessionExpired ||
+          state.status != AuthStatus.authenticated) {
+        return;
+      }
+      LogService.w('[AuthBloc] 检测到外部强制登出，同步会话状态');
+      add(const AuthSessionExpired());
+    };
+    _authService.addLoginStateListener(_authStateListener);
 
     // 监听弱网模式切换：开启时停掉统计刷新定时器，关闭时按需恢复
     _networkModeSubscription = NetworkModeService.instance.changes.listen((
@@ -256,15 +280,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthSessionExpired event,
     Emitter<AuthState> emit,
   ) async {
-    _stopTimers();
-    await _authService.forceLogout();
+    _handlingSessionExpired = true;
+    try {
+      _stopTimers();
+      // ApiClient 等外部调用者可能已经先调用过 forceLogout，此时 isLoggedIn 已为 false，
+      // 无需重复调用；即便调用了，listener 也会被 _handlingSessionExpired 短路。
+      if (_authService.isLoggedIn) {
+        await _authService.forceLogout();
+      }
 
-    emit(
-      const AuthState(
-        status: AuthStatus.unauthenticated,
-        errorMessage: '账号已过期，请重新关联',
-      ),
-    );
+      emit(
+        const AuthState(
+          status: AuthStatus.unauthenticated,
+          errorMessage: '账号已过期，请重新关联',
+        ),
+      );
+    } finally {
+      _handlingSessionExpired = false;
+    }
   }
 
   void _startTimers() {
@@ -310,6 +343,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     _stopTimers();
     _forceLogoutSubscription?.cancel();
     _networkModeSubscription?.cancel();
+    _authService.removeLoginStateListener(_authStateListener);
     return super.close();
   }
 }
