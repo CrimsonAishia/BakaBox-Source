@@ -404,10 +404,18 @@ class _NakamaSocketManager {
     try {
       final bytes = envelope.writeToBuffer();
       if (LogService.enableLobbyDebugLog) {
-        LogService.d(
-          '[NakamaSocketManager] 发送消息: ${envelope.type}, '
-          'matchId=$matchId, bytes=${bytes.length}',
-        );
+        // 弱网模式下心跳（type=online.stats 且无 traceId）跳过日志，
+        // 避免每 12s 刷屏。心跳本身仍照常发送，只是不打印。
+        final isHeartbeat =
+            envelope.type == 'online.stats' && envelope.traceId.isEmpty;
+        final suppressLog =
+            isHeartbeat && NetworkModeService.instance.weakNetwork;
+        if (!suppressLog) {
+          LogService.d(
+            '[NakamaSocketManager] 发送消息: ${envelope.type}, '
+            'matchId=$matchId, bytes=${bytes.length}',
+          );
+        }
       }
       socket.sendMatchData(matchId: matchId, opCode: 1, data: bytes);
     } catch (e) {
