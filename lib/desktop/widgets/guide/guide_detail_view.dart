@@ -206,13 +206,18 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   }
 
   Widget _buildBody(BuildContext context, GuideDetailState state) {
-    return switch (state.status) {
+    final body = switch (state.status) {
       DetailStatus.loading => _buildLoading(context),
       DetailStatus.success => _buildContent(context, state),
       DetailStatus.notFound => _buildNotFound(context),
       DetailStatus.blocked => _buildBlocked(context),
       DetailStatus.failure => _buildError(context, state),
     };
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: body,
+    );
   }
 
   // ─── 加载态 ─────────────────────────────────────────────────────────────

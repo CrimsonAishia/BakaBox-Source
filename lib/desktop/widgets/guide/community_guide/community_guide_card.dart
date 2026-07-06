@@ -41,7 +41,6 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
         duration: const Duration(milliseconds: 180),
         transform: Matrix4.translationValues(0, _hovering ? -3.0 : 0.0, 0),
         decoration: BoxDecoration(
-          color: colors.cardBg,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -54,7 +53,9 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
           ],
         ),
         child: Material(
-          color: Colors.transparent,
+          color: colors.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: widget.onTap,

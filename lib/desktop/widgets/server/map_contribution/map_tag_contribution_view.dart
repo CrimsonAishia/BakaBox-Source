@@ -830,8 +830,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
       ...userGlobalTags,
     ].where((t) => seen.add(t.id)).toList();
 
-    List<MapTag> filteredUserTags = allUserTags;
-    List<MapTag> filteredTagList = otherGlobalTags;
+    List<MapTag> filteredUserTags = allUserTags.toList();
+    List<MapTag> filteredTagList = otherGlobalTags.toList();
     if (query.isNotEmpty) {
       filteredUserTags = allUserTags.where((t) => t.name.toLowerCase().contains(query)).toList();
       filteredTagList = otherGlobalTags.where((t) => t.name.toLowerCase().contains(query)).toList();

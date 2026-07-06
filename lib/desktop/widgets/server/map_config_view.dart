@@ -6,6 +6,9 @@ import '../../../core/api/guide_api.dart';
 import '../../../core/models/guide_models.dart';
 import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../guide/community_guide/community_guide_card.dart';
+import '../guide/community_guide/community_guide_format.dart';
+import '../guide/community_guide/community_guide_theme.dart';
+import '../guide/community_guide/community_guide_close_button.dart';
 import '../guide/guide_detail_view.dart';
 import 'server_card_components/server_card_tag_chip.dart';
 
@@ -119,7 +122,7 @@ class _MapConfigViewState extends State<MapConfigView> {
       _updateScrollIndicators();
     });
 
-    return Container(
+    return Material(
       color: _bgColor,
       child: Stack(
         children: [
@@ -371,9 +374,7 @@ class _MapConfigViewState extends State<MapConfigView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 800
-            ? 3
-            : (constraints.maxWidth > 500 ? 2 : 1);
+        final crossAxisCount = guideCrossAxisCount(MediaQuery.of(context).size.width);
 
         return MasonryGridView.count(
           crossAxisCount: crossAxisCount,
@@ -387,11 +388,51 @@ class _MapConfigViewState extends State<MapConfigView> {
             return CommunityGuideCard(
               item: item,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => GuideDetailView(id: item.id),
-                  ),
+                final colors = CommunityGuideColors.of(context);
+                showDialog(
+                  context: context,
+                  barrierColor: colors.scrim,
+                  builder: (context) {
+                    final size = MediaQuery.of(context).size;
+                    return Dialog(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      insetPadding: EdgeInsets.zero,
+                      child: Container(
+                        width: size.width * 0.9,
+                        height: size.height * 0.92,
+                        decoration: BoxDecoration(
+                          color: colors.detailOverlayBg,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              blurRadius: 32,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: GuideDetailView(
+                                key: ValueKey(item.id),
+                                id: item.id,
+                              ),
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: CommunityGuideCloseButton(
+                                onTap: () => Navigator.of(context).pop(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             );

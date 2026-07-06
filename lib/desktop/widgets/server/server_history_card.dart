@@ -115,13 +115,9 @@ class _ServerHistoryCardState extends State<ServerHistoryCard> {
                 ),
                 if (hasFinalScore)
                   Positioned(
-                    top: 8,
+                    top: 12,
                     right: 12,
-                    child: widget.buildStatChip(
-                      MdiIcons.flagCheckered,
-                      '${widget.finalCtScore} : ${widget.finalTScore}',
-                      color: AppColors.primary,
-                    ),
+                    child: _buildScoreBadge(widget.finalCtScore!, widget.finalTScore!),
                   ),
               ],
             ),
@@ -215,6 +211,58 @@ class _ServerHistoryCardState extends State<ServerHistoryCard> {
           ] else ...[
             const SizedBox(height: 12),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建比分徽章
+  Widget _buildScoreBadge(int ctScore, int tScore) {
+    // 判断是否为僵尸模式地图
+    final isZombieMap = widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // CT/人类 比分
+          Text(
+            '$ctScore',
+            style: TextStyle(
+              color: isZombieMap ? const Color(0xFF4ADE80) : const Color(0xFF93C5FD), // 人类绿色 / CT蓝色
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              ':',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          // T/僵尸 比分
+          Text(
+            '$tScore',
+            style: TextStyle(
+              color: isZombieMap ? const Color(0xFFF87171) : const Color(0xFFFCD34D), // 僵尸红色 / T黄色
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
