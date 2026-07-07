@@ -39,6 +39,7 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
   int _pageIndex = 1;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  int _totalRecords = 0;
   static const int _pageSize = 50;
 
   static final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
@@ -81,14 +82,18 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
       final request = MapHistoryRequest(
         serverGroupId: _currentServerGroupId,
         date: _dateFormat.format(_selectedDate),
-        pagination: PaginationParams(pageIndex: _pageIndex, pageSize: _pageSize),
+        pagination: PaginationParams(
+          pageIndex: _pageIndex,
+          pageSize: _pageSize,
+        ),
       );
       final response = await _serverApi.getMapHistory(request);
 
       if (mounted) {
         setState(() {
           _records = response?.data ?? [];
-          _hasMore = _records.length >= _pageSize;
+          _totalRecords = response?.total ?? 0;
+          _hasMore = _records.length < _totalRecords;
           _isLoading = false;
         });
         _loadMapInfosForCurrentData();
@@ -114,7 +119,10 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
       final request = MapHistoryRequest(
         serverGroupId: _currentServerGroupId,
         date: _dateFormat.format(_selectedDate),
-        pagination: PaginationParams(pageIndex: _pageIndex + 1, pageSize: _pageSize),
+        pagination: PaginationParams(
+          pageIndex: _pageIndex + 1,
+          pageSize: _pageSize,
+        ),
       );
       final response = await _serverApi.getMapHistory(request);
 
@@ -126,7 +134,8 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
           } else {
             _records.addAll(newRecords);
             _pageIndex++;
-            _hasMore = newRecords.length >= _pageSize;
+            _totalRecords = response?.total ?? _totalRecords;
+            _hasMore = _records.length < _totalRecords;
           }
           _isLoadingMore = false;
         });
@@ -157,15 +166,15 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
       }
     }
 
-    final futures = <Future>[];
-    for (final mapName in mapsToLoadInfo) {
-      futures.add(_loadMapInfoSilent(mapName));
-    }
-
-    if (futures.isNotEmpty) {
-      await Future.wait(futures);
-      if (mounted) {
-        setState(() {});
+    if (mapsToLoadInfo.isNotEmpty) {
+      for (final mapName in mapsToLoadInfo) {
+        // 逐个加载以减少并发请求压力
+        await _loadMapInfoSilent(mapName);
+        if (mounted) {
+          setState(() {}); // 加载完一个就刷新一次 UI，实现渐进式显示
+          // 加入极短的延迟，让 Flutter 引擎有喘息时间处理渲染，防止瞬间连续 setState 导致掉帧卡顿
+          await Future.delayed(const Duration(milliseconds: 30));
+        }
       }
     }
   }
@@ -308,6 +317,107 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
     );
   }
 
+  Widget _buildCategorySelector(bool isDark) {
+    final currentCategory = widget.categories
+        .where((c) => c.id == _currentServerGroupId)
+        .firstOrNull;
+    final currentName = currentCategory?.modelName ?? '未知分类';
+
+    return PopupMenuButton<int>(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+      ),
+      color: isDark ? AppColors.slate800 : Colors.white,
+      elevation: 8,
+      clipBehavior: Clip.antiAlias,
+      offset: const Offset(0, 48),
+      tooltip: '选择服务器分类',
+      onSelected: (int newValue) {
+        if (newValue != _currentServerGroupId) {
+          setState(() {
+            _currentServerGroupId = newValue;
+          });
+          _fetchHistory();
+        }
+      },
+      itemBuilder: (context) {
+        return widget.categories.map((category) {
+          final isSelected = category.id == _currentServerGroupId;
+          return PopupMenuItem<int>(
+            value: category.id,
+            padding: EdgeInsets.zero,
+            child: Container(
+              width: 160,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? (isDark
+                          ? Colors.white10
+                          : AppColors.primary.withValues(alpha: 0.1))
+                    : Colors.transparent,
+                border: Border(
+                  left: BorderSide(
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                    width: 3,
+                  ),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      category.modelName ?? '未知分类',
+                      style: TextStyle(
+                        color: isSelected
+                            ? AppColors.primary
+                            : (isDark ? Colors.white70 : Colors.black87),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (isSelected)
+                    Icon(Icons.check, size: 18, color: AppColors.primary),
+                ],
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.black26 : Colors.black12,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(MdiIcons.serverNetwork, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              currentName,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.unfold_more_rounded,
+              size: 18,
+              color: isDark ? Colors.white54 : Colors.black54,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -339,93 +449,100 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  if (widget.categories.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.black26 : Colors.white24,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: _currentServerGroupId,
-                          dropdownColor: isDark
-                              ? AppColors.slate800
-                              : Colors.white,
-                          icon: Icon(
-                            Icons.arrow_drop_down,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          onChanged: (int? newValue) {
-                            if (newValue != null &&
-                                newValue != _currentServerGroupId) {
-                              setState(() {
-                                _currentServerGroupId = newValue;
-                              });
-                              _fetchHistory();
-                            }
-                          },
-                          items: widget.categories.map((category) {
-                            return DropdownMenuItem<int>(
-                              value: category.id,
-                              child: Text(category.modelName ?? '未知分类'),
-                            );
-                          }).toList(),
+                  const SizedBox(width: 24),
+                  if (widget.categories.isNotEmpty) ...[
+                    _buildCategorySelector(isDark),
+                    const SizedBox(width: 12),
+                  ],
+                  SizedBox(
+                    height: 42,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDark ? Colors.white : Colors.black87,
+                        backgroundColor: isDark
+                            ? Colors.black26
+                            : Colors.black12,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                    ),
-                  const SizedBox(width: 12),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      foregroundColor: isDark ? Colors.white : Colors.black87,
-                      backgroundColor: isDark ? Colors.black26 : Colors.black12,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      onPressed: () async {
+                        final DateTime now = DateTime.now();
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: now.subtract(const Duration(days: 30)),
+                          lastDate: now,
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: isDark
+                                    ? const ColorScheme.dark(
+                                        primary: AppColors.primary,
+                                      )
+                                    : const ColorScheme.light(
+                                        primary: AppColors.primary,
+                                      ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null && picked != _selectedDate) {
+                          setState(() {
+                            _selectedDate = picked;
+                          });
+                          _fetchHistory();
+                        }
+                      },
+                      icon: Icon(
+                        MdiIcons.calendarToday,
+                        size: 18,
+                        color: AppColors.primary,
                       ),
-                    ),
-                    onPressed: () async {
-                      final DateTime now = DateTime.now();
-                      final DateTime? picked = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate,
-                        firstDate: now.subtract(const Duration(days: 30)),
-                        lastDate: now,
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: isDark
-                                  ? const ColorScheme.dark(primary: AppColors.primary)
-                                  : const ColorScheme.light(primary: AppColors.primary),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
-                      if (picked != null && picked != _selectedDate) {
-                        setState(() {
-                          _selectedDate = picked;
-                        });
-                        _fetchHistory();
-                      }
-                    },
-                    icon: Icon(
-                      MdiIcons.calendarToday,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    label: Text(
-                      _dateFormat.format(_selectedDate),
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      label: Text(
+                        _dateFormat.format(_selectedDate),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ),
                   const Spacer(),
+                  if (_totalRecords > 0)
+                    Container(
+                      height: 32,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.primary.withValues(alpha: 0.15)
+                            : AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.list_alt_rounded,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '共 $_totalRecords 张',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(width: 16),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: Icon(
@@ -447,20 +564,54 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            '加载失败: $_error',
-                            style: const TextStyle(color: Colors.red),
+                          Icon(
+                            MdiIcons.alertCircleOutline,
+                            size: 48,
+                            color: Colors.redAccent.withValues(alpha: 0.8),
                           ),
                           const SizedBox(height: 16),
-                          ElevatedButton(
+                          Text(
+                            '加载失败: $_error',
+                            style: TextStyle(
+                              color: Colors.redAccent.withValues(alpha: 0.9),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
                             onPressed: _fetchHistory,
-                            child: const Text('重试'),
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('重试'),
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     )
                   : _records.isEmpty
-                  ? const Center(child: Text('暂无历史记录'))
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            MdiIcons.textSearch,
+                            size: 48,
+                            color: isDark ? Colors.white24 : Colors.black26,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '暂无地图历史记录',
+                            style: TextStyle(
+                              color: isDark ? Colors.white54 : Colors.black54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   : _buildSnakeTimeline(),
             ),
           ],
@@ -473,7 +624,7 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cardWidth = 280.0;
-        final spacing = 40.0;
+        final spacing = 60.0;
         // Calculate max items per row
         int itemsPerRow =
             (constraints.maxWidth + spacing) ~/ (cardWidth + spacing);
@@ -496,14 +647,25 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
           itemCount: (_records.length / itemsPerRow).ceil() + 1,
           itemBuilder: (context, rowIndex) {
             final int totalRows = (_records.length / itemsPerRow).ceil();
-            
+
             if (rowIndex >= totalRows) {
-              return _isLoadingMore
-                  ? const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32.0),
+                child: Center(
+                  child: _isLoadingMore
+                      ? const CircularProgressIndicator()
+                      : Text(
+                          '没有更多数据了',
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white38
+                                : Colors.black38,
+                            fontSize: 13,
+                          ),
+                        ),
+                ),
+              );
             }
 
             final int startIndex = rowIndex * itemsPerRow;
@@ -558,13 +720,13 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
                 children.add(
                   SizedBox(
                     width: spacing,
-                    height: 4,
+                    height: 8,
                     child: Center(
                       child: FlowingLine(
                         direction: Axis.horizontal,
                         reverse: !isLeftToRight,
                         color: AppColors.primary,
-                        thickness: 6,
+                        thickness: 8,
                       ),
                     ),
                   ),
@@ -598,17 +760,18 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
                     child: Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal:
-                            (cardWidth / 2) - 12, // offset for 24px width
+                            (cardWidth / 2) -
+                            30, // (cardWidth / 2) - (line_width / 2)
                       ),
                       child: SizedBox(
-                        width: 40,
-                        height: 40,
+                        width: 60,
+                        height: 60,
                         child: Center(
                           child: FlowingLine(
                             direction: Axis.vertical,
                             reverse: false, // always downward
                             color: AppColors.primary,
-                            thickness: 6,
+                            thickness: 8,
                           ),
                         ),
                       ),
@@ -634,7 +797,7 @@ class FlowingLine extends StatefulWidget {
     required this.direction,
     required this.reverse,
     required this.color,
-    this.thickness = 6,
+    this.thickness = 8,
   });
 
   @override
@@ -650,7 +813,7 @@ class _FlowingLineState extends State<FlowingLine>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 500),
     )..repeat();
   }
 
@@ -728,7 +891,7 @@ class _FlowPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final length = direction == Axis.horizontal ? size.width : size.height;
-    final highlightLength = 40.0; // Fixed length for the glowing pulse
+    final highlightLength = 80.0; // Fixed length for the glowing pulse
     final startPos =
         -highlightLength + progress * (length + highlightLength * 2);
 
