@@ -36,6 +36,11 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
   late int _currentServerGroupId;
   DateTime _selectedDate = DateUtils.dateOnly(DateTime.now());
 
+  int _pageIndex = 1;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  static const int _pageSize = 50;
+
   static final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
   // 地图信息缓存
@@ -46,11 +51,20 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
   void initState() {
     super.initState();
     _currentServerGroupId = widget.initialServerGroupId;
+    _scrollController.addListener(_onScroll);
     _fetchHistory();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -59,19 +73,22 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _pageIndex = 1;
+      _hasMore = true;
     });
 
     try {
       final request = MapHistoryRequest(
         serverGroupId: _currentServerGroupId,
         date: _dateFormat.format(_selectedDate),
-        pagination: const PaginationParams(pageSize: 50),
+        pagination: PaginationParams(pageIndex: _pageIndex, pageSize: _pageSize),
       );
       final response = await _serverApi.getMapHistory(request);
 
       if (mounted) {
         setState(() {
           _records = response?.data ?? [];
+          _hasMore = _records.length >= _pageSize;
           _isLoading = false;
         });
         _loadMapInfosForCurrentData();
@@ -81,6 +98,44 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
         setState(() {
           _error = e.toString();
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final request = MapHistoryRequest(
+        serverGroupId: _currentServerGroupId,
+        date: _dateFormat.format(_selectedDate),
+        pagination: PaginationParams(pageIndex: _pageIndex + 1, pageSize: _pageSize),
+      );
+      final response = await _serverApi.getMapHistory(request);
+
+      if (mounted) {
+        setState(() {
+          final newRecords = response?.data ?? [];
+          if (newRecords.isEmpty) {
+            _hasMore = false;
+          } else {
+            _records.addAll(newRecords);
+            _pageIndex++;
+            _hasMore = newRecords.length >= _pageSize;
+          }
+          _isLoadingMore = false;
+        });
+        _loadMapInfosForCurrentData();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
         });
       }
     }
@@ -438,8 +493,19 @@ class _CategoryTimelineDialogState extends State<CategoryTimelineDialog> {
             top: 16,
             bottom: 30,
           ),
-          itemCount: (_records.length / itemsPerRow).ceil(),
+          itemCount: (_records.length / itemsPerRow).ceil() + 1,
           itemBuilder: (context, rowIndex) {
+            final int totalRows = (_records.length / itemsPerRow).ceil();
+            
+            if (rowIndex >= totalRows) {
+              return _isLoadingMore
+                  ? const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : const SizedBox.shrink();
+            }
+
             final int startIndex = rowIndex * itemsPerRow;
             int endIndex = startIndex + itemsPerRow;
             if (endIndex > _records.length) endIndex = _records.length;
