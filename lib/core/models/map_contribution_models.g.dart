@@ -303,7 +303,9 @@ Map<String, dynamic> _$MapHistoryResponseToJson(MapHistoryResponse instance) =>
 
 MapHistoryRequest _$MapHistoryRequestFromJson(Map<String, dynamic> json) =>
     MapHistoryRequest(
-      mapName: json['mapName'] as String,
+      mapName: json['mapName'] as String?,
+      serverGroupId: (json['serverGroupId'] as num?)?.toInt(),
+      date: json['date'] as String?,
       pagination: PaginationParams.fromJson(
         json['pagination'] as Map<String, dynamic>,
       ),
@@ -312,5 +314,7 @@ MapHistoryRequest _$MapHistoryRequestFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$MapHistoryRequestToJson(MapHistoryRequest instance) =>
     <String, dynamic>{
       'mapName': instance.mapName,
+      'serverGroupId': instance.serverGroupId,
+      'date': instance.date,
       'pagination': instance.pagination,
     };

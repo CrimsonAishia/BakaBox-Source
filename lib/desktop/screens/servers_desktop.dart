@@ -18,6 +18,7 @@ import '../widgets/add_server_dialog.dart';
 import '../widgets/map_subscription/map_subscription_dialog.dart';
 import '../widgets/api_provider_list_dialog.dart';
 import '../widgets/api_server_selection_dialog.dart';
+import '../widgets/server/category_timeline_dialog.dart';
 
 
 /// 自动刷新间隔（秒）
@@ -889,6 +890,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
       builder: (context, state) {
         final canAddServer = state.selectedCategory?.isCustom == true;
         final categoryName = state.selectedCategory?.modelName ?? '';
+        final int? serverGroupId = state.selectedCategory?.id;
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 5),
@@ -980,6 +982,39 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 ),
               ),
               const SizedBox(width: 8),
+              // 地图历史时间线按钮
+              if (serverGroupId != null) ...[
+                Tooltip(
+                  message: '地图历史时间线',
+                  child: InkWell(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => CategoryTimelineDialog(
+                          initialServerGroupId: serverGroupId,
+                          categories: state.serverCategories.where((c) => c.id != null && !c.isCustom).toList(),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        MdiIcons.timelineTextOutline,
+                        size: 20,
+                        color: isDark ? Colors.white70 : AppColors.gray500,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               // 沉浸式模式按钮
               Tooltip(
                 message: '沉浸模式',

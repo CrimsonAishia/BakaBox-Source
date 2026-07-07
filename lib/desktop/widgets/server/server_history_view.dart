@@ -237,14 +237,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     }
   }
 
-  String _getFormattedMapName(ServerSnapshot snapshot) {
+  String? _getTranslatedMapName(ServerSnapshot snapshot) {
     final mapInfo = _mapInfoCache[snapshot.mapName];
     final mapLabel = mapInfo?.mapLabel;
-    final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
-    if (chineseName != null) {
-      return '$chineseName (${snapshot.mapName})';
-    }
-    return snapshot.mapName.isNotEmpty ? snapshot.mapName : '未知地图';
+    return (mapLabel?.isNotEmpty == true) ? mapLabel : null;
   }
 
   String? _getMapBackgroundUrl(ServerSnapshot snapshot) {
@@ -708,7 +704,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       mapName: snapshot.mapName,
       hasTrendData: hasTrendData,
       trendDataCount: trendDataCount,
-      formattedMapName: _getFormattedMapName(snapshot),
+      translatedMapName: _getTranslatedMapName(snapshot),
       mapPlayDuration: _getMapPlayDuration(snapshot),
       trendData: hasTrendData ? snapshot.infos! : null,
       maxPlayers: snapshot.maxPlayers,

@@ -3,7 +3,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/models/server_models.dart';
 import '../../../core/widgets/map_background.dart';
 import '../../../core/constants/app_colors.dart';
-import 'server_history_dialog.dart';
+import 'server_history_view.dart';
 import 'map_contribution/map_general_contribution_view.dart';
 import 'map_contribution/map_tag_contribution_view.dart';
 import '../../../core/models/map_contribution_models.dart';
@@ -396,7 +396,6 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       isDark: isDark,
     );
   }
-
 
   Widget _buildHistoryTab(bool isDark) {
     return ServerHistoryDialog(server: widget.server);

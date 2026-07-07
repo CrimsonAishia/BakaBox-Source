@@ -617,15 +617,22 @@ class MapHistoryResponse extends Equatable {
 /// 地图历史记录请求参数
 @JsonSerializable()
 class MapHistoryRequest extends Equatable {
-  final String mapName;
+  final String? mapName;
+  final int? serverGroupId;
+  final String? date;
   final PaginationParams pagination;
 
-  const MapHistoryRequest({required this.mapName, required this.pagination});
+  const MapHistoryRequest({
+    this.mapName,
+    this.serverGroupId,
+    this.date,
+    required this.pagination,
+  });
 
   factory MapHistoryRequest.fromJson(Map<String, dynamic> json) =>
       _$MapHistoryRequestFromJson(json);
   Map<String, dynamic> toJson() => _$MapHistoryRequestToJson(this);
 
   @override
-  List<Object?> get props => [mapName, pagination];
+  List<Object?> get props => [mapName, serverGroupId, date, pagination];
 }

@@ -8,6 +8,7 @@ part of 'server_models.dart';
 
 ServerCategory _$ServerCategoryFromJson(Map<String, dynamic> json) =>
     ServerCategory(
+      id: (json['id'] as num?)?.toInt(),
       modelName: json['modelName'] as String?,
       category: json['category'] as String?,
       serverList: (json['serverList'] as List<dynamic>)
@@ -22,6 +23,7 @@ ServerCategory _$ServerCategoryFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'modelName': instance.modelName,
       'category': instance.category,
       'serverList': instance.serverList,

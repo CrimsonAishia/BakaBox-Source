@@ -29,6 +29,7 @@ class ServerUsersCount extends Equatable {
 
 @JsonSerializable()
 class ServerCategory extends Equatable {
+  final int? id;
   final String? modelName;
   final String? category;
   final List<ServerItem> serverList;
@@ -42,6 +43,7 @@ class ServerCategory extends Equatable {
   final String? sourceApiCategoryName; // 第三方接口的原始分类键名（用于找回数据源，防改名失效）
 
   const ServerCategory({
+    this.id,
     this.modelName,
     this.category,
     required this.serverList,
@@ -57,6 +59,7 @@ class ServerCategory extends Equatable {
   Map<String, dynamic> toJson() => _$ServerCategoryToJson(this);
 
   ServerCategory copyWith({
+    int? id,
     String? modelName,
     String? category,
     List<ServerItem>? serverList,
@@ -67,6 +70,7 @@ class ServerCategory extends Equatable {
     String? sourceApiCategoryName,
   }) {
     return ServerCategory(
+      id: id ?? this.id,
       modelName: modelName ?? this.modelName,
       category: category ?? this.category,
       serverList: serverList ?? this.serverList,
@@ -81,6 +85,7 @@ class ServerCategory extends Equatable {
 
   @override
   List<Object?> get props => [
+    id,
     modelName,
     category,
     serverList,
