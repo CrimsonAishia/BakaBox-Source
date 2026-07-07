@@ -25,11 +25,13 @@ class MapConfigProperty {
   final String key;
   final String value;
   final String? originalValue;
+  final String? description;
 
   MapConfigProperty({
     required this.key,
     required this.value,
     this.originalValue,
+    this.description,
   });
 
   factory MapConfigProperty.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class MapConfigProperty {
       key: json['key'] as String? ?? '',
       value: json['value'] as String? ?? '',
       originalValue: json['originalValue'] as String?,
+      description: json['description'] as String?,
     );
   }
 }

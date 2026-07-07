@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api/map_config_api.dart';
 import '../../../core/models/map_config_models.dart';
 import '../../../core/api/guide_api.dart';
@@ -35,10 +38,15 @@ class _MapConfigViewState extends State<MapConfigView> {
   bool _canScrollUp = false;
   bool _canScrollDown = false;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  final Map<String, GlobalKey> _propertyKeys = {};
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_updateScrollIndicators);
+    _searchController.addListener(_onSearchChanged);
     _fetchConfigs();
     _fetchGuide();
   }
@@ -47,7 +55,40 @@ class _MapConfigViewState extends State<MapConfigView> {
   void dispose() {
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase().trim();
+    if (query != _searchQuery) {
+      setState(() {
+        _searchQuery = query;
+      });
+      _scrollToFirstMatch(query);
+    }
+  }
+
+  void _scrollToFirstMatch(String query) {
+    if (query.isEmpty || _configResponse == null) return;
+    for (final category in _configResponse!.categories) {
+      for (final prop in category.properties) {
+        if (prop.key.toLowerCase().contains(query) || 
+            prop.value.toLowerCase().contains(query)) {
+          final key = _propertyKeys['${category.category}_${prop.key}'];
+          if (key != null && key.currentContext != null) {
+            Scrollable.ensureVisible(
+              key.currentContext!,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              alignment: 0.1, // slightly below top
+            );
+          }
+          return; // only scroll to the first match
+        }
+      }
+    }
   }
 
   void _updateScrollIndicators() {
@@ -132,7 +173,13 @@ class _MapConfigViewState extends State<MapConfigView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionTitle('地图配置参数', Icons.tune_rounded),
+                Row(
+                  children: [
+                    _buildSectionTitle('地图配置参数', Icons.tune_rounded),
+                    const Spacer(),
+                    _buildSearchBar(),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 _buildConfigContent(),
                 const SizedBox(height: 16),
@@ -189,6 +236,41 @@ class _MapConfigViewState extends State<MapConfigView> {
             color: iconColor,
             size: 24,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      width: 200,
+      height: 36,
+      decoration: BoxDecoration(
+        color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _borderColor),
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: TextStyle(color: _textColor, fontSize: 13),
+        decoration: InputDecoration(
+          hintText: '搜索属性...',
+          hintStyle: TextStyle(color: _subTextColor, fontSize: 13),
+          prefixIcon: Icon(Icons.search_rounded, size: 16, color: _subTextColor),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.close_rounded, size: 14, color: _subTextColor),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          isDense: true,
+          border: InputBorder.none,
         ),
       ),
     );
@@ -327,7 +409,7 @@ class _MapConfigViewState extends State<MapConfigView> {
             spacing: 8,
             runSpacing: 8,
             children: category.properties
-                .map((prop) => _buildPropertyItem(prop, categoryColor))
+                .map((prop) => _buildPropertyItem(prop, category, categoryColor))
                 .toList(),
           ),
         ),
@@ -343,7 +425,7 @@ class _MapConfigViewState extends State<MapConfigView> {
     );
   }
 
-  Widget _buildPropertyItem(MapConfigProperty prop, String? categoryColor) {
+  Widget _buildPropertyItem(MapConfigProperty prop, MapConfigCategory category, String? categoryColor) {
     final hasChanged =
         prop.originalValue != null && prop.originalValue!.isNotEmpty;
 
@@ -353,10 +435,78 @@ class _MapConfigViewState extends State<MapConfigView> {
 
     final color = hasChanged ? '#27AE60' : (categoryColor ?? '#3498DB');
 
-    return ServerCardTagChip(
-      tag: MapTagSimple(name: text, color: color),
-      showPrefix: false,
+    final itemKeyId = '${category.category}_${prop.key}';
+    final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
+
+    bool isMatch = false;
+    if (_searchQuery.isNotEmpty) {
+      isMatch = prop.key.toLowerCase().contains(_searchQuery) ||
+          prop.value.toLowerCase().contains(_searchQuery);
+    }
+    final double opacity = (_searchQuery.isEmpty || isMatch) ? 1.0 : 0.3;
+
+    Widget chip = Container(
+      key: globalKey,
+      child: Opacity(
+        opacity: opacity,
+        child: ServerCardTagChip(
+          tag: MapTagSimple(name: text, color: color),
+          showPrefix: false,
+          useMarkdown: true,
+        ),
+      ),
     );
+
+    if (prop.description != null && prop.description!.isNotEmpty) {
+      return JustTheTooltip(
+        preferredDirection: AxisDirection.up,
+        backgroundColor: widget.isDark ? const Color(0xFF333333) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        elevation: 8,
+        tailLength: 8,
+        tailBaseWidth: 16,
+        margin: const EdgeInsets.all(16),
+        content: Container(
+          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 400),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: SingleChildScrollView(
+            child: MarkdownBody(
+              data: prop.description!,
+              selectable: true,
+              onTapLink: (text, href, title) {
+                if (href != null) {
+                  try {
+                    launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                  } catch (_) {}
+                }
+              },
+              styleSheet: MarkdownStyleSheet(
+                p: TextStyle(color: _textColor, fontSize: 13, height: 1.5),
+                h1: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.bold),
+                h2: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.bold),
+                h3: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.bold),
+                listBullet: TextStyle(color: _textColor),
+                code: TextStyle(
+                  color: _accentColor,
+                  backgroundColor: widget.isDark ? Colors.white10 : Colors.black12,
+                  fontFamily: 'monospace',
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: widget.isDark ? Colors.white10 : Colors.black12,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ),
+        ),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.help,
+          child: chip,
+        ),
+      );
+    }
+
+    return chip;
   }
 
   Widget _buildGuidePlaceholder() {

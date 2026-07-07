@@ -1,15 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../../../core/models/map_tag_models.dart';
 
 class ServerCardTagChip extends StatelessWidget {
   final MapTagSimple tag;
   final bool showPrefix;
+  final bool useMarkdown;
 
   const ServerCardTagChip({
     super.key, 
     required this.tag,
     this.showPrefix = true,
+    this.useMarkdown = false,
   });
+
+  Widget _buildText(String text, TextStyle style) {
+    if (useMarkdown) {
+      return MarkdownBody(
+        data: text,
+        styleSheet: MarkdownStyleSheet(
+          p: style,
+          pPadding: EdgeInsets.zero,
+          strong: style.copyWith(fontWeight: FontWeight.bold),
+          em: style.copyWith(fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+    return Text(text, style: style);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +85,9 @@ class ServerCardTagChip extends StatelessWidget {
               ),
             ],
           ),
-          child: Text(
+          child: _buildText(
             (showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name,
-            style: TextStyle(
+            TextStyle(
               color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -128,9 +146,9 @@ class ServerCardTagChip extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
+        child: _buildText(
           (showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name,
-          style: TextStyle(
+          TextStyle(
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -167,9 +185,9 @@ class ServerCardTagChip extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Text(
+      child: _buildText(
         (showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name,
-        style: TextStyle(
+        TextStyle(
           color: Colors.white.withValues(alpha: 0.9),
           fontSize: 12,
           fontWeight: FontWeight.w600,
