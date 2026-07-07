@@ -1378,7 +1378,6 @@ class _IssueDetailView extends StatefulWidget {
   final Widget? headerActions;
 
   const _IssueDetailView({
-    super.key,
     required this.issueId,
     required this.onBack,
     required this.title,
@@ -2320,9 +2319,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
   bool _isSubmitting = false;
   List<String> _imageUrls = [];
 
-  // 草稿相关
-  bool _showDraftPrompt = false;
-  DraftData? _savedDraft;
 
   // 实时验证状态
   String? _titleError;
@@ -2331,7 +2327,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
   @override
   void initState() {
     super.initState();
-    _checkDraftExists();
     // 监听标题输入，实时验证
     _titleController.addListener(_validateTitle);
     // 监听内容输入，实时验证
@@ -2395,72 +2390,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         alignment: 0.1,
       );
     }
-  }
-
-  /// 检查是否有草稿
-  Future<void> _checkDraftExists() async {
-    try {
-      final hasDraft = await DraftService().hasDraft('issue_create');
-      if (hasDraft) {
-        final draft = await DraftService().restoreDraft('issue_create');
-        if (draft != null && mounted) {
-          setState(() {
-            _savedDraft = draft;
-            _showDraftPrompt = true;
-          });
-        }
-      }
-    } catch (e) {
-      LogService.e('检查草稿失败', e);
-    }
-  }
-
-  /// 恢复草稿
-  void _restoreDraft() {
-    if (_savedDraft == null) return;
-
-    // 恢复标题
-    if (_savedDraft!.metadata?['title'] != null) {
-      _titleController.text = _savedDraft!.metadata!['title'] as String;
-    }
-
-    // 恢复类型
-    if (_savedDraft!.metadata?['type'] != null) {
-      final typeValue = _savedDraft!.metadata!['type'] as String;
-      _selectedType = IssueType.values.firstWhere(
-        (t) => t.value == typeValue,
-        orElse: () => IssueType.bug,
-      );
-    }
-
-    // 恢复内容
-    if (_savedDraft!.content.isNotEmpty) {
-      try {
-        final document = QuillDeltaCodec.decode(_savedDraft!.content);
-        _contentController.document = document;
-      } catch (e) {
-        LogService.e('解码草稿内容失败', e);
-      }
-    }
-
-    // 恢复图片
-    _imageUrls = _savedDraft!.imageUrls;
-
-    setState(() {
-      _showDraftPrompt = false;
-      _savedDraft = null;
-    });
-
-    ToastUtils.showSuccess(context, '草稿已恢复');
-  }
-
-  /// 忽略草稿
-  void _ignoreDraft() {
-    DraftService().deleteDraft('issue_create');
-    setState(() {
-      _showDraftPrompt = false;
-      _savedDraft = null;
-    });
   }
 
   DeviceInfo _collectDeviceInfo() {
@@ -2536,9 +2465,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
       );
       final response = await IssueApi().createIssue(request);
       if (response != null) {
-        // 提交成功后删除草稿
-        await DraftService().deleteDraft('issue_create');
-
         if (!mounted) return;
 
         ToastUtils.showSuccess(context, '反馈提交成功');
@@ -2579,8 +2505,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildDraftPrompt(),
-                const SizedBox(height: 16),
                 _buildTypeSelector(),
                 const SizedBox(height: 24),
                 _buildTitleField(),
@@ -2596,81 +2520,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDraftPrompt() {
-    if (!_showDraftPrompt) return const SizedBox.shrink();
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.restore_rounded,
-              size: 22,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '发现未保存的草稿',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.gray800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '是否恢复之前编辑的内容？',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white54 : AppColors.gray500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          TextButton(
-            onPressed: _ignoreDraft,
-            style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
-            ),
-            child: const Text('忽略'),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _restoreDraft,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: const Text('恢复'),
-          ),
-        ],
       ),
     );
   }
@@ -3013,17 +2862,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           child: const Text('取消'),
         ),
         const SizedBox(width: 12),
-        OutlinedButton.icon(
-          onPressed: _isSubmitting ? null : _saveDraft,
-          icon: const Icon(Icons.save_outlined, size: 18),
-          label: const Text('保存草稿'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            side: const BorderSide(color: AppColors.primary),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-        ),
-        const SizedBox(width: 12),
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           style: ElevatedButton.styleFrom(
@@ -3044,37 +2882,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         ),
       ],
     );
-  }
-
-  Future<void> _saveDraft() async {
-    final plainText = _contentController.document.toPlainText().trim();
-    if (plainText.isEmpty && _titleController.text.trim().isEmpty) {
-      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
-      return;
-    }
-
-    try {
-      final content = QuillDeltaCodec.encode(_contentController.document);
-
-      await DraftService().saveDraft(
-        draftId: 'issue_create',
-        content: content,
-        imageUrls: _imageUrls,
-        metadata: {
-          'title': _titleController.text.trim(),
-          'type': _selectedType.value,
-        },
-      );
-
-      if (mounted) {
-        ToastUtils.showSuccess(context, '草稿已保存');
-      }
-    } catch (e) {
-      LogService.e('保存草稿失败', e);
-      if (mounted) {
-        ToastUtils.showError(context, '保存草稿失败');
-      }
-    }
   }
 }
 
@@ -3100,14 +2907,10 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
 
   bool _expanded = false;
   List<String> _commentImageUrls = const [];
-  
-  bool _showCommentDraftPrompt = false;
-  DraftData? _savedCommentDraft;
 
   @override
   void initState() {
     super.initState();
-    _checkCommentDraftExists();
   }
 
   @override
@@ -3116,7 +2919,6 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
     if (widget.issueId != oldWidget.issueId) {
       _commentController.clear();
       _commentImageUrls = const [];
-      _checkCommentDraftExists();
     }
     if (widget.replyTarget != null && widget.replyTarget != oldWidget.replyTarget) {
       _expand();
@@ -3143,70 +2945,6 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
     return info?.username ?? '游客';
   }
 
-  Future<void> _checkCommentDraftExists() async {
-    try {
-      final draftId = 'comment_${widget.issueId}';
-      final hasDraft = await DraftService().hasDraft(draftId);
-      if (hasDraft) {
-        final draft = await DraftService().restoreDraft(draftId);
-        if (draft != null && mounted) {
-          setState(() {
-            _savedCommentDraft = draft;
-            _showCommentDraftPrompt = true;
-          });
-          _expand();
-        }
-      }
-    } catch (e) {
-      LogService.e('检查评论草稿失败', e);
-    }
-  }
-
-  void _restoreCommentDraft() {
-    if (_savedCommentDraft == null) return;
-    if (_savedCommentDraft!.content.isNotEmpty) {
-      try {
-        final document = QuillDeltaCodec.decode(_savedCommentDraft!.content);
-        _commentController.document = document;
-      } catch (e) {
-        LogService.e('解码评论草稿失败', e);
-      }
-    }
-    setState(() {
-      _commentImageUrls = _savedCommentDraft!.imageUrls;
-      _showCommentDraftPrompt = false;
-      _savedCommentDraft = null;
-    });
-    ToastUtils.showSuccess(context, '草稿已恢复');
-  }
-
-  void _ignoreCommentDraft() {
-    DraftService().deleteDraft('comment_${widget.issueId}');
-    setState(() {
-      _showCommentDraftPrompt = false;
-      _savedCommentDraft = null;
-    });
-  }
-
-  Future<void> _saveCommentDraft() async {
-    final plainText = _commentController.document.toPlainText().trim();
-    if (plainText.isEmpty) {
-      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
-      return;
-    }
-    try {
-      final content = QuillDeltaCodec.encode(_commentController.document);
-      await DraftService().saveDraft(
-        draftId: 'comment_${widget.issueId}',
-        content: content,
-        imageUrls: _commentImageUrls,
-      );
-      if (mounted) ToastUtils.showSuccess(context, '草稿已保存');
-    } catch (e) {
-      LogService.e('保存草稿失败', e);
-      if (mounted) ToastUtils.showError(context, '保存草稿失败');
-    }
-  }
 
   void _expand() {
     if (!_isLoggedIn()) {
@@ -3258,8 +2996,6 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
         replyToId: target?.id,
       ),
     );
-    
-    DraftService().deleteDraft('comment_${widget.issueId}');
   }
 
   void _onPostingDone() {
@@ -3451,14 +3187,13 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
             ],
           ),
           const SizedBox(height: 12),
-          if (_showCommentDraftPrompt) _buildCommentDraftPrompt(isDark),
           SizedBox(
             height: 280,
             child: RichTextEditor(
               key: _commentEditorKey,
               controller: _commentController,
               hintText: widget.replyTarget != null ? '回复 @${widget.replyTarget!.authorName}...' : '写下你的评论...',
-              compactMode: true,
+              compactMode: false,
               maxLength: 500,
               maxImages: 5,
               imageMode: ImageMode.attachment,
@@ -3471,12 +3206,6 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
           Row(
             children: [
               const Spacer(),
-              TextButton(
-                onPressed: _saveCommentDraft,
-                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                child: const Text('保存草稿'),
-              ),
-              const SizedBox(width: 8),
               TextButton(
                 onPressed: _handleCancel,
                 style: TextButton.styleFrom(foregroundColor: isDark ? Colors.white54 : AppColors.gray500),
@@ -3510,55 +3239,6 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
     );
   }
 
-  Widget _buildCommentDraftPrompt(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.primary.withValues(alpha: 0.1) : const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(Icons.restore_rounded, size: 16, color: AppColors.primary),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '发现未保存的评论草稿',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.gray800),
-            ),
-          ),
-          TextButton(
-            onPressed: _ignoreCommentDraft,
-            style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            ),
-            child: const Text('忽略', style: TextStyle(fontSize: 13)),
-          ),
-          const SizedBox(width: 4),
-          ElevatedButton(
-            onPressed: _restoreCommentDraft,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
-            child: const Text('恢复', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
+
 }
 
