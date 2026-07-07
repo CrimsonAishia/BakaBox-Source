@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/bloc/settings/settings_bloc.dart';
 import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
+import '../../../core/services/app_exit_service.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../selective_cache_dialog.dart';
 import 'settings_group_title.dart';
@@ -143,9 +143,12 @@ class CacheSettings extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              // 退出应用
+              // 退出应用：走 AppExitService，触发注册的桌面端退出处理器
+              // （main_window_launcher._exitDesktop），走干净的 destroy 路径，
+              // 而不是 exit(0) 硬退 —— 后者会跳过 CoUninitialize，在 WER
+              // 缺失的机器上表现为 "Unknown Hard Error" 弹窗。
               if (PlatformUtils.isDesktopPlatform) {
-                exit(0);
+                AppExitService.instance.exitApplication();
               }
             },
             style: ElevatedButton.styleFrom(

@@ -132,24 +132,89 @@ class MainWindowLauncher {
   }
 
   /// 桌面端完整退出流程
+  ///
+  /// 关键：不再用 `exit(0)` ，而是走 `windowManager.destroy()`
+  ///   → 原生 `PostQuitMessage(0)`
+  ///   → `wWinMain` 消息循环自然退出
+  ///   → `CoUninitialize()` 被调用
+  ///
+  /// `exit(0)` 直接跳过消息循环，`CoInitializeEx` 对应的 `CoUninitialize`
+  /// 永远不会执行。WebView2 / tray_manager / windows_notification / fvp 等
+  /// 大量依赖 COM 的原生插件在"COM 未反初始化"状态下被 DLL_PROCESS_DETACH
+  /// 卸载，会触发 SEH 异常。WER 正常的机器上表现为静默 werfault；
+  /// WER 被禁的机器上则弹出 "Unknown Hard Error" 系统级弹窗
+  /// （部分精简版 Windows、优化软件、组策略环境会禁 WER）。
+  ///
+  /// desktop_multi_window 的子窗口本身用 `windowManager.destroy()` 关闭，
+  /// 是干净的；崩点在主进程。所以只需要修主进程退出路径。
   static Future<void> _exitDesktop() async {
+    const closeTimeout = Duration(seconds: 2);
+
     // 1. 停止 OBS 服务
     final obsService = ObsServerService();
     if (obsService.isRunning) {
-      obsService.clearDisplay();
-      await obsService.stop();
+      try {
+        obsService.clearDisplay();
+        await obsService.stop().timeout(closeTimeout);
+      } catch (e) {
+        debugPrint('[Exit] stop OBS failed: $e');
+      }
     }
 
-    // 2. 关闭所有浮动窗口
-    await FloatingWindowService().closeAllWindows();
+    // 2. 先隐藏主窗口 —— 视觉上立即"退出"，后续清理在后台做
+    try {
+      await windowManager.hide();
+    } catch (e) {
+      debugPrint('[Exit] hide window failed: $e');
+    }
 
-    // 3. 隐藏主窗口
-    await windowManager.hide();
+    // 3. 关闭所有浮动窗口（挤服 / 暖服 / 连接 / 启动 等浮窗）
+    try {
+      await FloatingWindowService().closeAllWindows().timeout(closeTimeout);
+    } catch (e) {
+      debugPrint('[Exit] closeAllWindows failed: $e');
+    }
 
-    // 4. 销毁托盘图标
-    await TrayService.instance.dispose();
+    // 4. 关闭所有通知窗口（换图 / 更新日志 / 广播 等通知窗）
+    //    之前只关了浮窗，通知窗被孤儿化，是 crash 的一个次要来源
+    try {
+      await NotificationWindowService().dismissAll().timeout(closeTimeout);
+    } catch (e) {
+      debugPrint('[Exit] dismissAll notifications failed: $e');
+    }
 
-    // 5. 退出进程
+    // 5. 给子窗口进程 teardown 宽限期
+    //    子窗口是独立的 bakabox_app.exe 进程，从收到 IPC 到 Flutter engine
+    //    完成 teardown、Windows 释放 DLL 引用计数需要时间。1500ms 与
+    //    `update_service._finalizeExitForInstaller` 保持一致。
+    //    此时主窗口已经 hide，用户不会感知这段等待。
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    // 6. 销毁托盘图标
+    try {
+      await TrayService.instance.dispose();
+    } catch (e) {
+      debugPrint('[Exit] tray dispose failed: $e');
+    }
+
+    // 7. 解除 preventClose，然后 destroy 触发原生 PostQuitMessage(0)
+    //    → wWinMain 消息循环自然退出
+    //    → CoUninitialize() 执行
+    //    → 干净退出（原生插件的 COM 卸载走正常路径，不会 SEH crash）
+    try {
+      await windowManager.setPreventClose(false);
+    } catch (e) {
+      debugPrint('[Exit] setPreventClose(false) failed: $e');
+    }
+    try {
+      await windowManager.destroy();
+    } catch (e) {
+      debugPrint('[Exit] destroy failed: $e');
+    }
+
+    // 8. 兜底：正常路径下上面 destroy 后进程已终止，代码走不到这里。
+    //    极端情况（destroy 抛异常或消息循环卡住）10 秒后强退。
+    await Future.delayed(const Duration(seconds: 10));
     exit(0);
   }
 }
