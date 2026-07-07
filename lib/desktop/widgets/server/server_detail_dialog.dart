@@ -404,6 +404,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   Widget _buildNameContributionTab(bool isDark) {
     final mapName = widget.server.serverData?.map ?? '';
     return MapGeneralContributionView(
+      key: const ValueKey('contribution_name'),
       mapName: mapName,
       type: ContributionType.name,
     );
@@ -412,6 +413,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   Widget _buildBackgroundContributionTab(bool isDark) {
     final mapName = widget.server.serverData?.map ?? '';
     return MapGeneralContributionView(
+      key: const ValueKey('contribution_background'),
       mapName: mapName,
       type: ContributionType.background,
     );
