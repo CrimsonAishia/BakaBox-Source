@@ -19,6 +19,17 @@ import '../guide/guide_detail_view.dart';
 const String _kMapConfigKeyBgStorageKey = 'map_config_tag_key_bg';
 const String _kMapConfigValueBgStorageKey = 'map_config_tag_value_bg';
 
+/// 属性完全相同的启用实体集群
+class _EntityCluster {
+  _EntityCluster({required this.signature});
+
+  final String signature;
+  final List<MapConfigEntity> entities = <MapConfigEntity>[];
+
+  MapConfigEntity get primary => entities.first;
+  List<MapConfigProperty> get sharedAttributes => primary.attributes;
+}
+
 class MapConfigView extends StatefulWidget {
   final String mapName;
   final bool isDark;
@@ -105,19 +116,45 @@ class _MapConfigViewState extends State<MapConfigView> {
   void _scrollToFirstMatch(String query) {
     if (query.isEmpty || _configResponse == null) return;
     for (final category in _configResponse!.categories) {
-      for (final prop in category.properties) {
-        if (prop.key.toLowerCase().contains(query) || 
-            prop.value.toLowerCase().contains(query)) {
-          final key = _propertyKeys['${category.category}_${prop.key}'];
-          if (key != null && key.currentContext != null) {
-            Scrollable.ensureVisible(
-              key.currentContext!,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              alignment: 0.1, // slightly below top
-            );
+      for (final entity in category.entities) {
+        final entityMatched = entity.name.toLowerCase().contains(query);
+
+        // 找到第一个匹配的属性（若有）
+        MapConfigProperty? firstAttrMatch;
+        for (final a in entity.attributes) {
+          if (a.key.toLowerCase().contains(query) ||
+              a.value.toLowerCase().contains(query)) {
+            firstAttrMatch = a;
+            break;
           }
-          return; // only scroll to the first match
+        }
+
+        if (!entityMatched && firstAttrMatch == null) continue;
+
+        // 禁用实体：只在底部胶囊有 key（实体级）；无论是否有属性
+        // 启用实体：如果有属性匹配 → attr 级 key；否则退回第一个属性或匿名回退
+        final String candidateId;
+        if (!entity.enabled) {
+          candidateId = '${category.category}_${entity.name}_';
+        } else if (firstAttrMatch != null) {
+          candidateId =
+              '${category.category}_${entity.name}_${firstAttrMatch.key}';
+        } else if (entity.attributes.isNotEmpty) {
+          candidateId =
+              '${category.category}_${entity.name}_${entity.attributes.first.key}';
+        } else {
+          candidateId = '${category.category}_${entity.name}_';
+        }
+
+        final key = _propertyKeys[candidateId];
+        if (key != null && key.currentContext != null) {
+          Scrollable.ensureVisible(
+            key.currentContext!,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.1,
+          );
+          return;
         }
       }
     }
@@ -164,6 +201,8 @@ class _MapConfigViewState extends State<MapConfigView> {
         setState(() {
           _configResponse = response;
           _isLoading = false;
+          // 新数据到达，清理旧的 propertyKeys 与 cluster 别名
+          _propertyKeys.clear();
         });
       }
     } catch (e) {
@@ -441,16 +480,10 @@ class _MapConfigViewState extends State<MapConfigView> {
             ],
           ),
         ),
-        // Properties
+        // Entities
         Padding(
           padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: category.properties
-                .map((prop) => _buildPropertyItem(prop, category, categoryColor))
-                .toList(),
-          ),
+          child: _buildCategoryBody(category, categoryColor),
         ),
         if (!isLast)
           Divider(
@@ -461,6 +494,607 @@ class _MapConfigViewState extends State<MapConfigView> {
             endIndent: 16,
           ),
       ],
+    );
+  }
+
+  /// 分类内容体：拆分为「匿名属性 / 命名实体块 / 纯禁用实体条」三段
+  Widget _buildCategoryBody(MapConfigCategory category, String? categoryColor) {
+    if (category.entities.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final anonymousAttrs = <MapConfigProperty>[];
+    final enabledNamed = <MapConfigEntity>[];
+    final disabled = <MapConfigEntity>[];
+
+    for (final entity in category.entities) {
+      if (entity.isAnonymous) {
+        anonymousAttrs.addAll(entity.attributes);
+        continue;
+      }
+      if (!entity.enabled) {
+        disabled.add(entity);
+        continue;
+      }
+      enabledNamed.add(entity);
+    }
+
+    // 匿名段的载体也是一个 anonymous entity（enabled=true），用于复用 _buildPropertyItem
+    final MapConfigEntity anonymousEntity = MapConfigEntity(
+      name: '',
+      enabled: true,
+      attributes: anonymousAttrs,
+    );
+
+    final blocks = <Widget>[];
+
+    if (anonymousAttrs.isNotEmpty) {
+      blocks.add(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: anonymousAttrs
+              .map((p) => _buildPropertyItem(
+                    p,
+                    anonymousEntity,
+                    category,
+                    categoryColor,
+                  ))
+              .toList(),
+        ),
+      );
+    }
+
+    for (final cluster in _clusterEntities(enabledNamed)) {
+      if (cluster.entities.length == 1) {
+        blocks.add(_buildEntityBlock(cluster.primary, category, categoryColor));
+      } else {
+        blocks.add(_buildEntityCluster(cluster, category, categoryColor));
+      }
+    }
+
+    if (disabled.isNotEmpty) {
+      blocks.add(_buildDisabledEntityStrip(disabled, category));
+    }
+
+    // 每段之间留 12px 间距
+    final children = <Widget>[];
+    for (var i = 0; i < blocks.length; i++) {
+      if (i > 0) children.add(const SizedBox(height: 12));
+      children.add(blocks[i]);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  /// 属性签名：把实体的属性列表规范化后拼串，用于分桶
+  String _signatureOf(MapConfigEntity entity) {
+    final sorted = [...entity.attributes]..sort((a, b) => a.key.compareTo(b.key));
+    return sorted
+        .map((a) =>
+            '${a.key}\u0001${a.value}\u0002${a.unit ?? ''}\u0002${a.originalValue ?? ''}\u0002${a.description ?? ''}')
+        .join('\u0003');
+  }
+
+  /// 按签名把启用实体聚合为 cluster，保持首次出现顺序
+  List<_EntityCluster> _clusterEntities(List<MapConfigEntity> entities) {
+    final Map<String, _EntityCluster> byKey = <String, _EntityCluster>{};
+    for (final e in entities) {
+      final sig = _signatureOf(e);
+      byKey.putIfAbsent(sig, () => _EntityCluster(signature: sig)).entities.add(e);
+    }
+    return byKey.values.toList();
+  }
+
+  /// 多实体共享同一份属性时的渲染：name pill 列表 + 分隔线 + 共享 chip
+  Widget _buildEntityCluster(
+    _EntityCluster cluster,
+    MapConfigCategory category,
+    String? categoryColor,
+  ) {
+    final primary = cluster.primary;
+
+    // 注册别名：让搜索/滚动能通过任一 cluster 成员的名字定位到共享 chip
+    for (final e in cluster.entities.skip(1)) {
+      if (cluster.sharedAttributes.isEmpty) {
+        final aliasId = '${category.category}_${e.name}_';
+        final primaryId = '${category.category}_${primary.name}_';
+        _propertyKeys[aliasId] =
+            _propertyKeys.putIfAbsent(primaryId, () => GlobalKey());
+      } else {
+        for (final a in cluster.sharedAttributes) {
+          final aliasId = '${category.category}_${e.name}_${a.key}';
+          final primaryId = '${category.category}_${primary.name}_${a.key}';
+          _propertyKeys[aliasId] =
+              _propertyKeys.putIfAbsent(primaryId, () => GlobalKey());
+        }
+      }
+    }
+
+    // 整块命中判断
+    bool blockMatched = _searchQuery.isEmpty;
+    if (!blockMatched) {
+      for (final e in cluster.entities) {
+        if (e.name.toLowerCase().contains(_searchQuery)) {
+          blockMatched = true;
+          break;
+        }
+      }
+      if (!blockMatched) {
+        for (final a in cluster.sharedAttributes) {
+          if (a.key.toLowerCase().contains(_searchQuery) ||
+              a.value.toLowerCase().contains(_searchQuery)) {
+            blockMatched = true;
+            break;
+          }
+        }
+      }
+    }
+    final double blockOpacity = blockMatched ? 1.0 : 0.35;
+
+    return Opacity(
+      opacity: blockOpacity,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: (widget.isDark ? Colors.white : Colors.black)
+              .withValues(alpha: 0.02),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _borderColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 顶部标注：几个实体共享
+            Row(
+              children: [
+                Icon(Icons.copy_all_rounded, size: 12, color: _subTextColor),
+                const SizedBox(width: 6),
+                Text(
+                  '共 ${cluster.entities.length} 个实体使用相同配置',
+                  style: TextStyle(
+                    color: _subTextColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // 实体名 pill wrap
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: cluster.entities
+                  .map((e) => _buildClusterEntityPill(e))
+                  .toList(),
+            ),
+            if (cluster.sharedAttributes.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Divider(height: 1, color: _borderColor),
+              ),
+              // 共享属性 chip
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: cluster.sharedAttributes
+                    .map((p) =>
+                        _buildPropertyItem(p, primary, category, categoryColor))
+                    .toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClusterEntityPill(MapConfigEntity entity) {
+    final Color? userKeyBg = hexToColor(_keyBgHex);
+    final bool useCustom = userKeyBg != null;
+
+    final Color bg =
+        useCustom ? userKeyBg : _accentColor.withValues(alpha: 0.12);
+    final Color borderColor = useCustom
+        ? userKeyBg.withValues(alpha: 0.55)
+        : _accentColor.withValues(alpha: 0.35);
+    final Color textColor =
+        useCustom ? _contrastText(userKeyBg) : _accentColor;
+
+    final Widget label = useCustom
+        ? _buildStrokedText(
+            entity.name,
+            textColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          )
+        : Text(
+            entity.name,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          );
+
+    final isMatch = _searchQuery.isEmpty ||
+        entity.name.toLowerCase().contains(_searchQuery);
+
+    return Opacity(
+      opacity: isMatch ? 1.0 : 0.4,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: borderColor),
+        ),
+        child: label,
+      ),
+    );
+  }
+
+  /// 单个命名实体：实体名标签 + 属性 chip Wrap
+  Widget _buildEntityBlock(
+    MapConfigEntity entity,
+    MapConfigCategory category,
+    String? categoryColor,
+  ) {
+    final bool isDisabled = !entity.enabled;
+
+    // 搜索命中判断（用于整块透明度）
+    bool blockMatched = _searchQuery.isEmpty;
+    if (!blockMatched) {
+      if (entity.name.toLowerCase().contains(_searchQuery)) {
+        blockMatched = true;
+      } else {
+        for (final a in entity.attributes) {
+          if (a.key.toLowerCase().contains(_searchQuery) ||
+              a.value.toLowerCase().contains(_searchQuery)) {
+            blockMatched = true;
+            break;
+          }
+        }
+      }
+    }
+    final double blockOpacity = blockMatched ? 1.0 : 0.35;
+
+    return Opacity(
+      opacity: blockOpacity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6, left: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  entity.name,
+                  style: TextStyle(
+                    color: isDisabled ? _subTextColor : _textColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    decoration:
+                        isDisabled ? TextDecoration.lineThrough : null,
+                    decorationColor: _subTextColor,
+                    decorationThickness: 1.5,
+                  ),
+                ),
+                if (isDisabled) ...[
+                  const SizedBox(width: 8),
+                  _buildDisabledBadge(),
+                ],
+              ],
+            ),
+          ),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: entity.attributes
+                .map((p) => _buildPropertyItem(
+                      p,
+                      entity,
+                      category,
+                      categoryColor,
+                    ))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 「禁用」条：把仅禁用无属性的实体聚拢到底部一排小胶囊
+  Widget _buildDisabledEntityStrip(
+    List<MapConfigEntity> entities,
+    MapConfigCategory category,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: widget.isDark
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.block_rounded,
+                size: 13,
+                color: _subTextColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '已禁用（${entities.length}）',
+                style: TextStyle(
+                  color: _subTextColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: entities
+                .map((e) => _buildDisabledEntityPill(e, category))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDisabledEntityPill(
+    MapConfigEntity entity,
+    MapConfigCategory category,
+  ) {
+    final itemKeyId = '${category.category}_${entity.name}_';
+    final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
+
+    // 搜索也命中带属性的实体的 attr key/value
+    bool isMatch = _searchQuery.isEmpty ||
+        entity.name.toLowerCase().contains(_searchQuery);
+    if (!isMatch) {
+      for (final a in entity.attributes) {
+        if (a.key.toLowerCase().contains(_searchQuery) ||
+            a.value.toLowerCase().contains(_searchQuery)) {
+          isMatch = true;
+          break;
+        }
+      }
+    }
+    final double opacity = isMatch ? 1.0 : 0.3;
+
+    final hasAttrs = entity.attributes.isNotEmpty;
+
+    Widget pill = Container(
+      key: globalKey,
+      child: Opacity(
+        opacity: opacity,
+        child: Container(
+          padding: EdgeInsets.only(
+            left: 8,
+            right: hasAttrs ? 4 : 8,
+            top: 4,
+            bottom: 4,
+          ),
+          decoration: BoxDecoration(
+            color: widget.isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: _borderColor),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                entity.name,
+                style: TextStyle(
+                  color: _subTextColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: _subTextColor,
+                ),
+              ),
+              if (hasAttrs) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _accentColor.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${entity.attributes.length} 参数',
+                    style: TextStyle(
+                      color: _accentColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!hasAttrs) return pill;
+
+    // 带参数的禁用实体：hover 显示参数明细
+    return JustTheTooltip(
+      preferredDirection: AxisDirection.up,
+      backgroundColor: widget.isDark ? const Color(0xFF333333) : Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      elevation: 8,
+      tailLength: 8,
+      tailBaseWidth: 14,
+      margin: const EdgeInsets.all(16),
+      content: _buildDisabledEntityTooltip(entity),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.help,
+        child: pill,
+      ),
+    );
+  }
+
+  Widget _buildDisabledEntityTooltip(MapConfigEntity entity) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 320, maxHeight: 380),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.block_rounded, size: 12, color: _subTextColor),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    entity.name,
+                    style: TextStyle(
+                      color: _textColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: _subTextColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 2, left: 18),
+              child: Text(
+                '实体已禁用，以下参数不生效',
+                style: TextStyle(color: _subTextColor, fontSize: 10),
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final a in entity.attributes)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${a.key}: ',
+                          style: TextStyle(
+                              color: _subTextColor, fontSize: 12),
+                        ),
+                        Expanded(
+                          child: Text(
+                            _formatAttributeValue(a),
+                            style: TextStyle(
+                              color: _textColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (a.description != null && a.description!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3, left: 4),
+                        child: MarkdownBody(
+                          data: a.description!,
+                          selectable: true,
+                          onTapLink: (text, href, title) {
+                            if (href != null) {
+                              try {
+                                launchUrl(
+                                  Uri.parse(href),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } catch (_) {}
+                            }
+                          },
+                          styleSheet: MarkdownStyleSheet(
+                            p: TextStyle(
+                              color: _subTextColor,
+                              fontSize: 11,
+                              height: 1.4,
+                            ),
+                            code: TextStyle(
+                              color: _accentColor,
+                              backgroundColor: widget.isDark
+                                  ? Colors.white10
+                                  : Colors.black12,
+                              fontFamily: 'monospace',
+                              fontSize: 10,
+                            ),
+                            listBullet: TextStyle(
+                              color: _subTextColor,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatAttributeValue(MapConfigProperty a) {
+    final unit = (a.unit != null && a.unit!.isNotEmpty) ? ' ${a.unit}' : '';
+    final displayValue = '${a.value}$unit';
+    if (a.originalValue != null && a.originalValue!.isNotEmpty) {
+      return '${a.originalValue} -> $displayValue';
+    }
+    return displayValue;
+  }
+
+  Widget _buildDisabledBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: (widget.isDark ? Colors.white : Colors.black)
+            .withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.block_rounded, size: 10, color: _subTextColor),
+          const SizedBox(width: 3),
+          Text(
+            '禁用',
+            style: TextStyle(
+              color: _subTextColor,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -599,7 +1233,7 @@ class _MapConfigViewState extends State<MapConfigView> {
   Widget _buildPaletteButton() {
     final hasCustom = _keyBgHex != null || _valueBgHex != null;
     return Tooltip(
-      message: '自定义 Tag 颜色',
+      message: '修改标签颜色',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -680,7 +1314,7 @@ class _MapConfigViewState extends State<MapConfigView> {
                   Icon(Icons.palette_rounded, color: _accentColor, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    '自定义 Tag 颜色',
+                    '修改标签颜色',
                     style: TextStyle(
                       color: _textColor,
                       fontSize: 16,
@@ -780,27 +1414,44 @@ class _MapConfigViewState extends State<MapConfigView> {
     );
   }
 
-  Widget _buildPropertyItem(MapConfigProperty prop, MapConfigCategory category, String? categoryColor) {
+  Widget _buildPropertyItem(
+    MapConfigProperty prop,
+    MapConfigEntity entity,
+    MapConfigCategory category,
+    String? categoryColor,
+  ) {
     final hasChanged =
         prop.originalValue != null && prop.originalValue!.isNotEmpty;
 
-    final valueText = hasChanged ? '${prop.originalValue} -> ${prop.value}' : prop.value;
-    final colorStr = hasChanged ? '#27AE60' : (categoryColor ?? '#3498DB');
+    final displayValue = (prop.unit != null && prop.unit!.isNotEmpty)
+        ? '${prop.value} ${prop.unit}'
+        : prop.value;
+    final valueText = hasChanged
+        ? '${prop.originalValue} -> $displayValue'
+        : displayValue;
+
+    // 禁用实体：所有子属性用冷灰色，避免继续吸引注意力
+    final bool isDisabled = !entity.enabled;
+    final String colorStr = isDisabled
+        ? '#7F8C8D'
+        : (hasChanged ? '#27AE60' : (categoryColor ?? '#3498DB'));
     final baseColor = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
 
     final darkColor = Color.lerp(baseColor, Colors.black, 0.2)!;
     final lightColor = Color.lerp(baseColor, Colors.white, 0.6)!;
 
     // 用户自定义颜色（可能为 null，null 表示走默认样式）
-    final Color? userKeyBg = hexToColor(_keyBgHex);
-    final Color? userValueBg = hexToColor(_valueBgHex);
+    // 禁用实体不吃自定义色，避免视觉冲突
+    final Color? userKeyBg = isDisabled ? null : hexToColor(_keyBgHex);
+    final Color? userValueBg = isDisabled ? null : hexToColor(_valueBgHex);
 
-    final itemKeyId = '${category.category}_${prop.key}';
+    final itemKeyId = '${category.category}_${entity.name}_${prop.key}';
     final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
 
     bool isMatch = false;
     if (_searchQuery.isNotEmpty) {
-      isMatch = prop.key.toLowerCase().contains(_searchQuery) ||
+      isMatch = entity.name.toLowerCase().contains(_searchQuery) ||
+          prop.key.toLowerCase().contains(_searchQuery) ||
           prop.value.toLowerCase().contains(_searchQuery);
     }
     final double opacity = (_searchQuery.isEmpty || isMatch) ? 1.0 : 0.3;
@@ -811,7 +1462,7 @@ class _MapConfigViewState extends State<MapConfigView> {
     Widget chip = Container(
       key: globalKey,
       child: Opacity(
-        opacity: opacity,
+        opacity: opacity * (isDisabled ? 0.65 : 1.0),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
@@ -832,9 +1483,7 @@ class _MapConfigViewState extends State<MapConfigView> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Key part
                 _buildTagKeySegment(prop.key, userKeyBg),
-                // Value part
                 _buildTagValueSegment(
                   valueText,
                   userValueBg,
