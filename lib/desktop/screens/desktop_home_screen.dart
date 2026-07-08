@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_portal/flutter_portal.dart';
 
 import '../../core/core.dart';
 import '../widgets/exit_dialog.dart';
@@ -501,8 +502,9 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
             },
             child: Scaffold(
               backgroundColor: Colors.transparent,
-              body: Stack(
-                children: [
+              body: Portal(
+                child: Stack(
+                  children: [
                   Row(
                     children: [
                       DesktopNavigation(
@@ -580,6 +582,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                     ),
                 ],
               ),
+            ),
             ),
           ),
         ),

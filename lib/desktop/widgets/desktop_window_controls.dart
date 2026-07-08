@@ -1,10 +1,9 @@
 import 'dart:io';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/core.dart';
 import 'exit_dialog.dart';
@@ -26,6 +25,7 @@ class DesktopWindowControls extends StatefulWidget {
 class _DesktopWindowControlsState extends State<DesktopWindowControls> {
   final GlobalKey _bellKey = GlobalKey();
   OverlayEntry? _panelOverlay;
+  bool _isPanelOpen = false;
 
   /// 按当前设置处理关闭主窗口行为
   Future<void> _handleClose(BuildContext context) async {
@@ -71,11 +71,13 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
     );
 
     Overlay.of(context).insert(_panelOverlay!);
+    if (mounted) setState(() => _isPanelOpen = true);
   }
 
   void _hideNotificationPanel() {
     _panelOverlay?.remove();
     _panelOverlay = null;
+    if (mounted) setState(() => _isPanelOpen = false);
   }
 
   @override
@@ -128,6 +130,7 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
                     unreadCount: totalUnread,
                     onPressed: _showNotificationPanel,
                     isDark: isDark,
+                    panelIsOpen: _isPanelOpen,
                   );
                 },
               );
@@ -165,12 +168,14 @@ class _MessageCenterButton extends StatefulWidget {
   final int unreadCount;
   final VoidCallback onPressed;
   final bool isDark;
+  final bool panelIsOpen;
 
   const _MessageCenterButton({
     super.key,
     required this.unreadCount,
     required this.onPressed,
     required this.isDark,
+    this.panelIsOpen = false,
   });
 
   @override
@@ -184,8 +189,6 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   late Animation<double> _pulseAnimation;
   int _lastUnreadCount = 0;
   int _dismissedUnreadCount = 0;
-  
-  final JustTheController _tooltipController = JustTheController();
 
   bool get _hasUnread => widget.unreadCount > 0;
   bool get _shouldShowConstantly => _hasUnread && widget.unreadCount > _dismissedUnreadCount;
@@ -204,11 +207,6 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
     _lastUnreadCount = widget.unreadCount;
     if (widget.unreadCount > 0) {
       _pulseController.repeat(reverse: true);
-      if (_shouldShowConstantly) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _showTooltip();
-        });
-      }
     }
   }
 
@@ -218,122 +216,59 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
 
     if (widget.unreadCount > _lastUnreadCount) {
       _pulseController.repeat(reverse: true);
-      _dismissedUnreadCount = 0; // 重置忽略的未读数，有新消息重新显示
-      _showTooltip();
+      _dismissedUnreadCount = 0;
     } else if (widget.unreadCount == 0) {
       _dismissedUnreadCount = 0;
       if (_pulseController.isAnimating) {
         _pulseController.stop();
         _pulseController.reset();
       }
-      if (!_isHovered) _hideTooltip();
-    } else if (!_shouldShowConstantly && !_isHovered) {
-      _hideTooltip();
     }
     
     _lastUnreadCount = widget.unreadCount;
   }
   
-  void _showTooltip() {
-    try {
-      _tooltipController.showTooltip(immediately: false);
-    } catch (_) {}
-  }
-
-  void _hideTooltip() {
-    try {
-      _tooltipController.hideTooltip(immediately: false);
-    } catch (_) {}
-  }
-
   void _onCloseTooltip() {
     setState(() {
       _dismissedUnreadCount = widget.unreadCount;
     });
-    if (!_isHovered) {
-      _hideTooltip();
-    }
   }
 
   @override
   void dispose() {
-    _tooltipController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasUnread = widget.unreadCount > 0;
+    final hasUnread = _hasUnread;
+    // 面板打开时隐藏气泡，避免箭头从面板上方露出造成视觉冲突
+    final showBubble = (_shouldShowConstantly || _isHovered) && !widget.panelIsOpen;
 
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        _showTooltip();
-      },
-      onExit: (_) {
-        setState(() => _isHovered = false);
-        if (!_shouldShowConstantly) {
-          _hideTooltip();
-        }
-      },
-      child: JustTheTooltip(
-        controller: _tooltipController,
-        triggerMode: TooltipTriggerMode.manual,
-        preferredDirection: AxisDirection.down,
-        tailLength: 6,
-        tailBaseWidth: 10,
-        offset: 0,
-        borderRadius: BorderRadius.circular(10),
-        shadow: const Shadow(
-          color: Colors.black26,
-          blurRadius: 8,
-          offset: Offset(0, 4),
-        ),
-        backgroundColor: _hasUnread 
-            ? AppColors.primary
-            : (widget.isDark ? const Color(0xFF2D2D2D) : Colors.white),
-        content: Padding(
-          padding: EdgeInsets.only(
-            left: 12, 
-            right: _shouldShowConstantly ? 6 : 12, 
-            top: 8, 
-            bottom: 8,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_hasUnread) ...[
-                const Icon(Icons.mark_email_unread_rounded, size: 16, color: Colors.white)
-                    .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                    .moveY(begin: -1.5, end: 1.5, duration: 1000.ms, curve: Curves.easeInOut),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                _hasUnread ? '您有 ${widget.unreadCount} 条未读消息' : '消息中心',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: _hasUnread ? FontWeight.w600 : FontWeight.w500,
-                  color: _hasUnread 
-                      ? Colors.white 
-                      : (widget.isDark ? Colors.white : Colors.black87),
-                  letterSpacing: 0.2,
-                ),
-              ),
-              if (_shouldShowConstantly) ...[
-                const SizedBox(width: 8),
-                _TooltipCloseButton(onTap: _onCloseTooltip),
-              ],
-            ],
-          ),
-        ),
+    return PortalTarget(
+      visible: showBubble,
+      anchor: const Aligned(
+        follower: Alignment.topCenter,
+        target: Alignment.bottomCenter,
+      ),
+      portalFollower: Material(
+        color: Colors.transparent,
+        child: _buildBubble(),
+      ),
+      child: MouseRegion(
+        onEnter: (_) {
+          setState(() => _isHovered = true);
+        },
+        onExit: (_) {
+          setState(() => _isHovered = false);
+        },
         child: GestureDetector(
           onTap: () {
             if (_shouldShowConstantly) {
               setState(() {
                 _dismissedUnreadCount = widget.unreadCount;
               });
-              _hideTooltip();
             }
             widget.onPressed();
           },
@@ -439,6 +374,87 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
       ),
     );
   }
+
+  Widget _buildBubble() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        ClipPath(
+          clipper: _UpArrowClipper(),
+          child: Container(
+            width: 10,
+            height: 6,
+            color: _hasUnread 
+                ? AppColors.primary
+                : (widget.isDark ? const Color(0xFF2D2D2D) : Colors.white),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: _hasUnread 
+                ? AppColors.primary
+                : (widget.isDark ? const Color(0xFF2D2D2D) : Colors.white),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.only(
+            left: 12, 
+            right: _shouldShowConstantly ? 6 : 12, 
+            top: 8, 
+            bottom: 8,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_hasUnread) ...[
+                const Icon(Icons.mark_email_unread_rounded, size: 16, color: Colors.white)
+                    .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                    .moveY(begin: -1.5, end: 1.5, duration: 1000.ms, curve: Curves.easeInOut),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                _hasUnread ? '您有 ${widget.unreadCount} 条未读消息' : '消息中心',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: _hasUnread ? FontWeight.w600 : FontWeight.w500,
+                  color: _hasUnread 
+                      ? Colors.white 
+                      : (widget.isDark ? Colors.white : Colors.black87),
+                  letterSpacing: 0.2,
+                ),
+              ),
+              if (_shouldShowConstantly) ...[
+                const SizedBox(width: 8),
+                _TooltipCloseButton(onTap: _onCloseTooltip),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UpArrowClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(size.width / 2, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _TooltipCloseButton extends StatefulWidget {
