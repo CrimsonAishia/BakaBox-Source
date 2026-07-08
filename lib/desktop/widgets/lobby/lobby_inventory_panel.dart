@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/models/lobby_models.dart';
 import '../../../core/models/proto/lobby.pb.dart' as pb;
@@ -376,37 +377,37 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
       _InventoryItem(
         '已购买皮肤',
         stats.skinCount,
-        Icons.person_outline,
+        MdiIcons.tshirtCrew,
         AppColors.violet500,
       ),
       _InventoryItem(
         '已解锁符卡',
         stats.spellCount,
-        Icons.style_outlined,
+        MdiIcons.cards,
         AppColors.amber500,
       ),
       _InventoryItem(
         '已解锁弹幕',
         stats.danmakuCount,
-        Icons.local_fire_department,
+        MdiIcons.shuriken,
         const Color(0xFFF97316),
       ),
       _InventoryItem(
         '已解锁技能',
         stats.skillCount,
-        Icons.auto_awesome,
+        MdiIcons.lightningBolt,
         const Color(0xFFEAB308),
       ),
       _InventoryItem(
         '已购买刀模',
         stats.knifeCount,
-        Icons.content_cut,
+        MdiIcons.knifeMilitary,
         AppColors.slate400,
       ),
       _InventoryItem(
         '已购买枪模',
         stats.weaponCount,
-        Icons.gps_fixed,
+        MdiIcons.pistol,
         const Color(0xFF60A5FA),
       ),
       _InventoryItem(
