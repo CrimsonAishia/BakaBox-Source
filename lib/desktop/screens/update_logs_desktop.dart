@@ -543,21 +543,23 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             ),
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 头部：序号 + 时间 + 最新标签
-                _buildLogHeader(log, index, isLatest),
-                const SizedBox(height: 14),
-                // 分隔线
-                Container(
-                  height: 1,
-                  color: isDark ? AppColors.slate700 : AppColors.gray100,
-                ),
-                const SizedBox(height: 14),
-                // 内容
-                _buildLogContent(log),
-              ],
+            child: SelectionArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 头部：序号 + 时间 + 最新标签
+                  _buildLogHeader(log, index, isLatest),
+                  const SizedBox(height: 14),
+                  // 分隔线
+                  Container(
+                    height: 1,
+                    color: isDark ? AppColors.slate700 : AppColors.gray100,
+                  ),
+                  const SizedBox(height: 14),
+                  // 内容
+                  _buildLogContent(log),
+                ],
+              ),
             ),
           ),
         ],
