@@ -82,26 +82,11 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
       backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: PageLayout(
         title: '更新日志',
-        subtitle: '查看最新更新和改动',
-        headerActions: _buildHeaderActions(),
         child: _buildLogCard(),
       ),
     );
   }
 
-  /// 头部操作区域
-  Widget _buildHeaderActions() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildUpdateLogNotificationToggle(),
-        const SizedBox(width: 16),
-        _buildSearchBox(),
-        const SizedBox(width: 16),
-        _buildTotalCount(),
-      ],
-    );
-  }
 
   /// 搜索框
   Widget _buildSearchBox() {
@@ -279,7 +264,27 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
-      child: _buildLogsContent(),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                _buildUpdateLogNotificationToggle(),
+                const Spacer(),
+                _buildSearchBox(),
+                const SizedBox(width: 16),
+                _buildTotalCount(),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
+          ),
+          Expanded(child: _buildLogsContent()),
+        ],
+      ),
     );
   }
 

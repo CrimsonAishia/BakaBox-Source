@@ -113,7 +113,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
           // 页面内容
           PageLayout(
             title: '工具箱',
-            subtitle: 'CS2 游戏工具集合',
             child: _buildToolsGrid(context),
           ),
         ],
@@ -129,29 +128,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
       backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: PageLayout(
         title: tool.name,
-        subtitle: tool.description,
-        headerActions: _buildBackButton(),
+        onBack: () {
+          setState(() {
+            _openedToolId = null;
+          });
+        },
         child: _buildToolContent(),
       ),
     );
   }
 
-  Widget _buildBackButton() {
-    return OutlinedButton.icon(
-      onPressed: () {
-        setState(() {
-          _openedToolId = null;
-        });
-      },
-      icon: const Icon(Icons.arrow_back, size: 18),
-      label: const Text('返回工具箱'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.gray500,
-        side: const BorderSide(color: AppColors.gray200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      ),
-    );
-  }
 
   Widget _buildToolContent() {
     switch (_openedToolId) {

@@ -134,55 +134,21 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     };
   }
 
-  String _getSubtitle() {
-    return switch (_currentView) {
-      _IssueView.list => '反馈问题和功能建议',
-      _IssueView.detail => '查看详情',
-      _IssueView.create => '反馈问题或提出建议',
-    };
-  }
-
-  Widget _buildHeaderActions() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (_currentView != _IssueView.list) {
-      return TextButton.icon(
-        onPressed: _navigateToList,
-        icon: const Icon(Icons.arrow_back, size: 18),
-        label: const Text('返回列表'),
-        style: TextButton.styleFrom(
-          foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
-        ),
-      );
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildSearchBox(),
-        const SizedBox(width: 12),
-        _buildCreateButton(),
-      ],
-    );
-  }
 
   Widget _buildContent() {
     return switch (_currentView) {
       _IssueView.list => PageLayout(
           title: _getTitle(),
-          subtitle: _getSubtitle(),
-          headerActions: _buildHeaderActions(),
           child: _buildListView(),
         ),
       _IssueView.detail => _IssueDetailView(
           issueId: _selectedIssueId!,
           onBack: _navigateToList,
           title: _getTitle(),
-          subtitle: _getSubtitle(),
-          headerActions: _buildHeaderActions(),
         ),
       _IssueView.create => PageLayout(
           title: _getTitle(),
-          subtitle: _getSubtitle(),
-          headerActions: _buildHeaderActions(),
+          onBack: _navigateToList,
           child: _IssueCreateView(
             onBack: _navigateToList,
             onCreated: (id) {
@@ -347,6 +313,10 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 },
               ),
               const Spacer(),
+              _buildSearchBox(),
+              const SizedBox(width: 12),
+              _buildCreateButton(),
+              const SizedBox(width: 16),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -1374,15 +1344,11 @@ class _IssueDetailView extends StatefulWidget {
   final int issueId;
   final VoidCallback onBack;
   final String title;
-  final String subtitle;
-  final Widget? headerActions;
 
   const _IssueDetailView({
     required this.issueId,
     required this.onBack,
     required this.title,
-    required this.subtitle,
-    this.headerActions,
   });
 
   @override
@@ -1626,8 +1592,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
       children: [
         PageLayout(
           title: widget.title,
-          subtitle: widget.subtitle,
-          headerActions: widget.headerActions,
+          onBack: widget.onBack,
           child: Scrollbar(
             controller: _scrollController,
             thumbVisibility: true,

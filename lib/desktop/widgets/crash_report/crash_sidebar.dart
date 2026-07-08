@@ -6,7 +6,6 @@ import '../../../core/bloc/crash_report/crash_report_bloc.dart';
 import '../../../core/bloc/crash_report/crash_report_event.dart';
 import '../../../core/bloc/crash_report/crash_report_state.dart';
 import '../../../core/constants/app_colors.dart';
-import 'crash_category.dart';
 
 /// 工具页左侧栏：视图切换 + 搜索 + 过滤 + 统计 + 刷新
 ///
@@ -19,6 +18,7 @@ class CrashSidebar extends StatelessWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onSearchClear;
+  final VoidCallback onToggleSidebar;
 
   const CrashSidebar({
     super.key,
@@ -26,16 +26,18 @@ class CrashSidebar extends StatelessWidget {
     required this.searchController,
     required this.onSearchChanged,
     required this.onSearchClear,
+    required this.onToggleSidebar,
   });
 
   @override
   Widget build(BuildContext context) {
     return collapsed
-        ? const _CollapsedSidebar()
+        ? _CollapsedSidebar(onToggleSidebar: onToggleSidebar)
         : _ExpandedSidebar(
             searchController: searchController,
             onSearchChanged: onSearchChanged,
             onSearchClear: onSearchClear,
+            onToggleSidebar: onToggleSidebar,
           );
   }
 }
@@ -44,11 +46,13 @@ class _ExpandedSidebar extends StatelessWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onSearchClear;
+  final VoidCallback onToggleSidebar;
 
   const _ExpandedSidebar({
     required this.searchController,
     required this.onSearchChanged,
     required this.onSearchClear,
+    required this.onToggleSidebar,
   });
 
   @override
@@ -71,67 +75,62 @@ class _ExpandedSidebar extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _SectionLabel(text: '视图', isDark: isDark),
-              _ViewSwitch(
-                state: state,
-                isDark: isDark,
-                onSwitch: (mine) {
-                  if (searchController.text.isNotEmpty) onSearchClear();
-                  context.read<CrashReportBloc>().add(
-                    CrashReportSwitchView(mine),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              _SectionLabel(
-                text: '搜索',
-                isDark: isDark,
-                disabled: state.showMine,
-              ),
-              _SearchBox(
-                controller: searchController,
-                onChanged: onSearchChanged,
-                onClear: onSearchClear,
-                disabled: state.showMine,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-              _SectionLabel(
-                text: '严重度',
-                isDark: isDark,
-                disabled: state.showMine,
-              ),
-              _SeverityList(
-                value: state.currentSeverity,
-                disabled: state.showMine,
-                isDark: isDark,
-                onChanged: (v) => context.read<CrashReportBloc>().add(
-                  CrashReportFilterSeverity(v),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SectionLabel(text: '视图', isDark: isDark),
+                      _ViewSwitch(
+                        state: state,
+                        isDark: isDark,
+                        onSwitch: (mine) {
+                          if (searchController.text.isNotEmpty) onSearchClear();
+                          context.read<CrashReportBloc>().add(
+                            CrashReportSwitchView(mine),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _SectionLabel(
+                        text: '搜索',
+                        isDark: isDark,
+                        disabled: state.showMine,
+                      ),
+                      _SearchBox(
+                        controller: searchController,
+                        onChanged: onSearchChanged,
+                        onClear: onSearchClear,
+                        disabled: state.showMine,
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 16),
+                      _SectionLabel(
+                        text: '严重度',
+                        isDark: isDark,
+                        disabled: state.showMine,
+                      ),
+                      _SeverityList(
+                        value: state.currentSeverity,
+                        disabled: state.showMine,
+                        isDark: isDark,
+                        onChanged: (v) => context.read<CrashReportBloc>().add(
+                          CrashReportFilterSeverity(v),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      _StatsBlock(state: state, isDark: isDark),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              _SectionLabel(
-                text: '类别',
-                isDark: isDark,
-                disabled: state.showMine,
-              ),
-              _CategoryList(
-                value: state.currentCategory,
-                disabled: state.showMine,
-                isDark: isDark,
-                onChanged: (v) => context.read<CrashReportBloc>().add(
-                  CrashReportFilterCategory(v),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              _StatsBlock(state: state, isDark: isDark),
-              const Spacer(),
               _SidebarFooter(
                 onRefresh: () => context.read<CrashReportBloc>().add(
                   const CrashReportRefresh(),
                 ),
+                onToggleSidebar: onToggleSidebar,
                 isDark: isDark,
                 isRefreshing: state.showMine
                     ? state.isLoadingLocal
@@ -146,7 +145,9 @@ class _ExpandedSidebar extends StatelessWidget {
 }
 
 class _CollapsedSidebar extends StatelessWidget {
-  const _CollapsedSidebar();
+  final VoidCallback onToggleSidebar;
+
+  const _CollapsedSidebar({required this.onToggleSidebar});
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +201,13 @@ class _CollapsedSidebar extends StatelessWidget {
                     : () => context.read<CrashReportBloc>().add(
                         const CrashReportRefresh(),
                       ),
+              ),
+              const SizedBox(height: 8),
+              IconButton(
+                tooltip: '展开导航栏',
+                icon: Icon(Icons.keyboard_double_arrow_right, size: 20),
+                onPressed: onToggleSidebar,
+                color: isDark ? Colors.white70 : AppColors.gray500,
               ),
               const SizedBox(height: 12),
             ],
@@ -445,6 +453,7 @@ class _SearchBoxState extends State<_SearchBox> {
           child: TextField(
             controller: widget.controller,
             enabled: !widget.disabled,
+            textAlignVertical: TextAlignVertical.center,
             style: TextStyle(fontSize: 13, color: isDark ? Colors.white : null),
             decoration: InputDecoration(
               hintText: '模块 / 关键字...',
@@ -467,7 +476,10 @@ class _SearchBoxState extends State<_SearchBox> {
                     )
                   : null,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 6),
+              focusedBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
               isDense: true,
             ),
             onChanged: widget.onChanged,
@@ -525,54 +537,6 @@ class _SeverityList extends StatelessWidget {
   }
 }
 
-class _CategoryList extends StatelessWidget {
-  final String value;
-  final bool disabled;
-  final bool isDark;
-  final ValueChanged<String> onChanged;
-
-  const _CategoryList({
-    required this.value,
-    required this.disabled,
-    required this.isDark,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Opacity(
-        opacity: disabled ? 0.5 : 1,
-        child: AbsorbPointer(
-          absorbing: disabled,
-          child: Column(
-            children: [
-              _SidebarRow(
-                icon: MdiIcons.formatListBulleted,
-                label: '全部',
-                color: AppColors.gray500,
-                selected: value == 'all',
-                isDark: isDark,
-                onTap: () => onChanged('all'),
-              ),
-              ...CrashCategory.values.map((c) {
-                return _SidebarRow(
-                  icon: c.icon,
-                  label: c.label,
-                  color: AppColors.gray500,
-                  selected: value == c.key,
-                  isDark: isDark,
-                  onTap: () => onChanged(c.key),
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _SidebarRow extends StatelessWidget {
   final IconData icon;
@@ -814,11 +778,13 @@ class _CollapsedStat extends StatelessWidget {
 
 class _SidebarFooter extends StatelessWidget {
   final VoidCallback onRefresh;
+  final VoidCallback onToggleSidebar;
   final bool isDark;
   final bool isRefreshing;
 
   const _SidebarFooter({
     required this.onRefresh,
+    required this.onToggleSidebar,
     required this.isDark,
     this.isRefreshing = false,
   });
@@ -827,27 +793,49 @@ class _SidebarFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: SizedBox(
-        height: 34,
-        child: OutlinedButton.icon(
-          onPressed: isRefreshing ? null : onRefresh,
-          icon: _SpinningIcon(
-            icon: MdiIcons.refresh,
-            size: 14,
-            spinning: isRefreshing,
-          ),
-          label: Text(
-            isRefreshing ? '刷新中...' : '刷新',
-            style: const TextStyle(fontSize: 12.5),
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: isDark ? Colors.white70 : AppColors.gray700,
-            side: BorderSide(
-              color: isDark ? AppColors.slate600 : AppColors.gray300,
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 34,
+              child: OutlinedButton.icon(
+                onPressed: isRefreshing ? null : onRefresh,
+                icon: _SpinningIcon(
+                  icon: MdiIcons.refresh,
+                  size: 14,
+                  spinning: isRefreshing,
+                ),
+                label: Text(
+                  isRefreshing ? '刷新中...' : '刷新',
+                  style: const TextStyle(fontSize: 12.5),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white70 : AppColors.gray700,
+                  side: BorderSide(
+                    color: isDark ? AppColors.slate600 : AppColors.gray300,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
           ),
-        ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 34,
+            width: 34,
+            child: OutlinedButton(
+              onPressed: onToggleSidebar,
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                foregroundColor: isDark ? Colors.white70 : AppColors.gray700,
+                side: BorderSide(
+                  color: isDark ? AppColors.slate600 : AppColors.gray300,
+                ),
+              ),
+              child: const Icon(Icons.keyboard_double_arrow_left, size: 18),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -871,14 +859,15 @@ class _SpinningIcon extends StatefulWidget {
 
 class _SpinningIconState extends State<_SpinningIcon>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  );
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
     if (widget.spinning) _controller.repeat();
   }
 

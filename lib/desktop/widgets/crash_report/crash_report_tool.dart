@@ -47,6 +47,7 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
+  bool _isSidebarCollapsed = true;
 
   @override
   void initState() {
@@ -129,74 +130,82 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxWidth < 980;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CrashSidebar(
-                  collapsed: compact,
-                  onSearchChanged: _search,
-                  searchController: _searchController,
-                  onSearchClear: () {
-                    _searchController.clear();
-                    setState(() {});
-                    _search('');
-                  },
-                ),
-                Container(
-                  width: 1,
-                  color: isDark ? AppColors.slate700 : AppColors.gray200,
-                ),
-                Expanded(child: _buildMainArea(isDark)),
-              ],
-            );
-          },
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CrashSidebar(
+              collapsed: _isSidebarCollapsed,
+              onToggleSidebar: () {
+                setState(() {
+                  _isSidebarCollapsed = !_isSidebarCollapsed;
+                });
+              },
+              onSearchChanged: _search,
+              searchController: _searchController,
+              onSearchClear: () {
+                _searchController.clear();
+                setState(() {});
+                _search('');
+              },
+            ),
+            Container(
+              width: 1,
+              color: isDark ? AppColors.slate700 : AppColors.gray200,
+            ),
+            Expanded(child: _buildMainArea(isDark)),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildMainArea(bool isDark) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final twoColumn = constraints.maxWidth >= 820;
-        return BlocBuilder<CrashReportBloc, CrashReportState>(
-          buildWhen: (prev, curr) =>
-              prev.detail != curr.detail ||
-              prev.isLoadingDetail != curr.isLoadingDetail ||
-              prev.selectedId != curr.selectedId ||
-              prev.showMine != curr.showMine ||
-              prev.localDetail != curr.localDetail ||
-              prev.isLoadingLocalDetail != curr.isLoadingLocalDetail ||
-              prev.selectedLocalPath != curr.selectedLocalPath,
-          builder: (context, state) {
-            final hasDetail = state.showMine
-                ? (state.localDetail != null || state.isLoadingLocalDetail)
-                : (state.detail != null || state.isLoadingDetail);
-            if (!twoColumn) {
-              return hasDetail
-                  ? _buildDetailPane(state.showMine)
-                  : _buildListPane();
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(width: 360, child: _buildListPane()),
-                Container(
-                  width: 1,
-                  color: isDark ? AppColors.slate700 : AppColors.gray200,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: _buildDetailPane(state.showMine),
-                  ),
-                ),
-              ],
-            );
-          },
+    return BlocBuilder<CrashReportBloc, CrashReportState>(
+      buildWhen: (prev, curr) =>
+          prev.detail != curr.detail ||
+          prev.isLoadingDetail != curr.isLoadingDetail ||
+          prev.selectedId != curr.selectedId ||
+          prev.showMine != curr.showMine ||
+          prev.localDetail != curr.localDetail ||
+          prev.isLoadingLocalDetail != curr.isLoadingLocalDetail ||
+          prev.selectedLocalPath != curr.selectedLocalPath,
+      builder: (context, state) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(width: 360, child: _buildListPane()),
+            Container(
+              width: 1,
+              color: isDark ? AppColors.slate700 : AppColors.gray200,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: _isSidebarCollapsed
+                    ? _buildDetailPane(state.showMine)
+                    : Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.last_page,
+                              size: 48,
+                              color: isDark ? Colors.white24 : AppColors.gray300,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '请收起导航栏以查看详情',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? Colors.white38 : AppColors.gray400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+          ],
         );
       },
     );

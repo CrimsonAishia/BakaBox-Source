@@ -38,7 +38,6 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
         builder: (context, settingsState) {
           return PageLayout(
             title: '设置',
-            subtitle: '自定义您的应用体验',
             child: _buildSettingsContent(settingsState),
           );
         },

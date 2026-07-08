@@ -7,13 +7,11 @@ import '../../../core/api/map_config_api.dart';
 import '../../../core/models/map_config_models.dart';
 import '../../../core/api/guide_api.dart';
 import '../../../core/models/guide_models.dart';
-import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../guide/community_guide/community_guide_card.dart';
 import '../guide/community_guide/community_guide_format.dart';
 import '../guide/community_guide/community_guide_theme.dart';
 import '../guide/community_guide/community_guide_close_button.dart';
 import '../guide/guide_detail_view.dart';
-import 'server_card_components/server_card_tag_chip.dart';
 
 class MapConfigView extends StatefulWidget {
   final String mapName;
@@ -253,10 +251,12 @@ class _MapConfigViewState extends State<MapConfigView> {
       child: TextField(
         controller: _searchController,
         style: TextStyle(color: _textColor, fontSize: 13),
+        textAlignVertical: TextAlignVertical.center,
         decoration: InputDecoration(
           hintText: '搜索属性...',
-          hintStyle: TextStyle(color: _subTextColor, fontSize: 13),
+          hintStyle: TextStyle(color: _subTextColor, fontSize: 13, height: 1.0),
           prefixIcon: Icon(Icons.search_rounded, size: 16, color: _subTextColor),
+          prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.close_rounded, size: 14, color: _subTextColor),
@@ -265,10 +265,13 @@ class _MapConfigViewState extends State<MapConfigView> {
                     FocusScope.of(context).unfocus();
                   },
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 )
               : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          suffixIconConstraints: _searchQuery.isNotEmpty 
+              ? const BoxConstraints(minWidth: 36, minHeight: 36)
+              : const BoxConstraints(minWidth: 12, minHeight: 36), // Right padding when no icon
+          contentPadding: EdgeInsets.zero,
           isDense: true,
           border: InputBorder.none,
         ),
@@ -429,11 +432,17 @@ class _MapConfigViewState extends State<MapConfigView> {
     final hasChanged =
         prop.originalValue != null && prop.originalValue!.isNotEmpty;
 
-    final text = hasChanged
-        ? '${prop.key}: ${prop.originalValue} -> ${prop.value}'
-        : '${prop.key}: ${prop.value}';
+    final valueText = hasChanged ? '${prop.originalValue} -> ${prop.value}' : prop.value;
+    final colorStr = hasChanged ? '#27AE60' : (categoryColor ?? '#3498DB');
+    final baseColor = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
 
-    final color = hasChanged ? '#27AE60' : (categoryColor ?? '#3498DB');
+    final darkColor = Color.lerp(baseColor, Colors.black, 0.2)!;
+    final lightColor = Color.lerp(baseColor, Colors.white, 0.6)!;
+
+    final keyBgColor = widget.isDark 
+        ? Colors.white.withValues(alpha: 0.1) 
+        : Colors.black.withValues(alpha: 0.05);
+    final keyTextColor = widget.isDark ? Colors.white70 : Colors.black87;
 
     final itemKeyId = '${category.category}_${prop.key}';
     final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
@@ -449,10 +458,83 @@ class _MapConfigViewState extends State<MapConfigView> {
       key: globalKey,
       child: Opacity(
         opacity: opacity,
-        child: ServerCardTagChip(
-          tag: MapTagSimple(name: text, color: color),
-          showPrefix: false,
-          useMarkdown: true,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: baseColor.withValues(alpha: 0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: baseColor.withValues(alpha: 0.2),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Key part
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  color: keyBgColor,
+                  child: Text(
+                    prop.key,
+                    style: TextStyle(
+                      color: keyTextColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                // Value part
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        lightColor.withValues(alpha: 0.4),
+                        baseColor.withValues(alpha: 0.5),
+                        darkColor.withValues(alpha: 0.45),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
+                  child: Text(
+                    valueText,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      shadows: [
+                        Shadow(
+                          color: baseColor.withValues(alpha: 0.8),
+                          blurRadius: 2,
+                          offset: const Offset(0, 0),
+                        ),
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          blurRadius: 1,
+                          offset: const Offset(1, 1),
+                        ),
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          blurRadius: 1,
+                          offset: const Offset(-1, -1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

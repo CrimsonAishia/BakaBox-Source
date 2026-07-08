@@ -12,21 +12,17 @@ class PageLayout extends StatefulWidget {
   /// 页面标题
   final String title;
 
-  /// 页面副标题（可选）
-  final String? subtitle;
-
-  /// 头部右侧操作区域（可选）
-  final Widget? headerActions;
-
   /// 页面内容
   final Widget child;
+
+  /// 返回按钮的回调，如果提供，则会在标题旁边显示一个返回按钮
+  final VoidCallback? onBack;
 
   const PageLayout({
     super.key,
     required this.title,
-    this.subtitle,
-    this.headerActions,
     required this.child,
+    this.onBack,
   });
 
   @override
@@ -41,15 +37,17 @@ class _PageLayoutState extends State<PageLayout> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: const EdgeInsets.fromLTRB(15, 50, 15, 20),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 页面头部
           _buildHeader(),
-          const SizedBox(height: 15),
+          const SizedBox(height: 8),
           // 页面内容
-          Expanded(child: widget.child),
+          Expanded(
+            child: SizedBox(width: double.infinity, child: widget.child),
+          ),
         ],
       ),
     );
@@ -59,16 +57,7 @@ class _PageLayoutState extends State<PageLayout> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 标题区域
-          _buildTitleSection(),
-          // 操作区域
-          if (widget.headerActions != null) widget.headerActions!,
-        ],
-      ),
+      child: _buildTitleSection(),
     );
   }
 
@@ -84,19 +73,6 @@ class _PageLayoutState extends State<PageLayout> {
         children: [
           // 标题 + 下划线
           _buildTitle(isDark),
-          // 副标题
-          if (widget.subtitle != null && widget.subtitle!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                widget.subtitle!,
-                style: TextStyle(
-                  color: isDark ? Colors.white60 : const Color(0xFF4B5563),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -108,13 +84,46 @@ class _PageLayoutState extends State<PageLayout> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF111827),
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF111827),
+              ),
+            ),
+            if (widget.onBack != null) ...[
+              const SizedBox(width: 16),
+              SizedBox(
+                height: 34, // 强制高度与 28px 字体视觉高度一致
+                child: OutlinedButton.icon(
+                  onPressed: widget.onBack,
+                  icon: const Icon(Icons.arrow_back, size: 16),
+                  label: const Text(
+                    '返回',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDark
+                        ? Colors.white
+                        : const Color(0xFF374151),
+                    backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+                    side: BorderSide(
+                      color: isDark ? AppColors.slate600 : AppColors.gray300,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 4),
         // 动画下划线
