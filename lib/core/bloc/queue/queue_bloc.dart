@@ -188,7 +188,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       final sourceInfo = await SourceServerService.getServerInfo(
         ip,
         port,
-        timeout: 5000,
+        timeout: 2000,
       );
 
       if (sourceInfo != null) {
@@ -231,13 +231,29 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   }
 
   /// 开始挤服
+  ///
+  /// 流程：
+  /// 1. 先跑 `StatusWindowService.startQueue` 做前置校验（游戏运行、路径、
+  ///    是否有其他连接中操作等）。
+  /// 2. 校验通过、且服务未同步 finalize（例如"你已在目标服"）时，才连
+  ///    WebSocket 并 dispatch join，把自己送上竞技场。
+  ///    - startQueue 失败：错误消息用服务实际给出的原因，避免掩盖真实原因。
+  ///    - startQueue 同步成功：一般路径，派发 Connect + Join。
+  ///    - startQueue 同步 finalize（罕见）：跳过 Connect/Join，避免别人竞技场
+  ///      里出现幽灵入场。
   Future<void> _onStart(QueueStart event, Emitter<QueueBlocState> emit) async {
     LogService.d('[QueueBloc] 开始挤服');
+
+    final serverAddress = state.serverAddress ?? '';
+    if (serverAddress.isEmpty) {
+      emit(state.copyWith(error: '服务器地址无效'));
+      return;
+    }
 
     emit(state.copyWith(isCheckingGame: true));
 
     final success = await _statusService.startQueue(
-      serverAddress: state.serverAddress ?? '',
+      serverAddress: serverAddress,
       serverName: state.serverName,
       config: state.config,
       serverInfo: state.serverInfo,
@@ -247,15 +263,35 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     emit(state.copyWith(isCheckingGame: false));
 
     if (!success) {
-      // 挤服未能真正开始（游戏未运行 / 正在连接中等守卫拦截），
-      // 但此前 _startQueue 已经连上 WebSocket 并发了 join（人已进竞技场）。
-      // 这里必须主动断开，否则会一直卡在挤服竞技场里，关窗口也退不出来。
-      final usersBloc = QueueUsersBloc.instance;
-      usersBloc.add(const QueueUsersLeave());
-      usersBloc.add(const QueueUsersDisconnect());
-
-      emit(state.copyWith(error: '游戏未运行，请先启动游戏'));
+      // 用服务侧真实原因，避免硬编码"游戏未运行"把
+      //"请先在设置中配置游戏路径"/"此服务器需要 CSGO 客户端"等原因盖掉。
+      final serviceState = _statusService.state;
+      final actualError =
+          serviceState.error ??
+          serviceState.message ??
+          '游戏未运行，请先启动游戏';
+      emit(state.copyWith(error: actualError));
+      return;
     }
+
+    // 兜底：startQueue 内部可能已同步 finalize（例如"你已在目标服"由守护进程
+    // 同步判定）。此时不再派发 Connect/Join，避免 WebSocket 广播一次幽灵入场。
+    if (_statusService.state.type != OperationType.queueing) {
+      LogService.d('[QueueBloc] startQueue 已同步 finalize，跳过 Connect/Join');
+      return;
+    }
+
+    // 校验通过：现在才真正把自己送上竞技场
+    final usersBloc = QueueUsersBloc.instance;
+    if (!usersBloc.state.isConnected) {
+      usersBloc.add(QueueUsersConnect(serverAddress: serverAddress));
+    }
+    usersBloc.add(
+      QueueUsersJoin(
+        nickname: event.nickname,
+        avatarUrl: event.avatarUrl,
+      ),
+    );
   }
 
   /// 暂停挤服

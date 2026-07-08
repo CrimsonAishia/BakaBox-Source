@@ -133,6 +133,10 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
   final SteamUserService _steamUserService = SteamUserService();
   StreamSubscription<OperationState>? _stateSubscription;
 
+  // 关窗口幂等标志：成功场景下 Toast 500ms 与自己的飞入动画 300ms 都会触发关闭，
+  // 用它保证 QueueDispose + onClose 只走一次，避免多 pop 一次破坏路由。
+  bool _isClosing = false;
+
   // 活动日志与竞技场状态持久化在 QueueArenaSession 中（窗口重开后保持），
   // 且日志记录由 session 直接订阅 QueueUsersBloc 完成，
   // 因此即使窗口关闭、挤服在后台运行，日志也会持续记录、不丢失。
@@ -167,6 +171,13 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
   void _handleClose(BuildContext context, QueueBlocState state) {
     // 关闭对话框时不暂停挤服，让挤服在后台继续运行
     // 用户可以通过悬浮卡片查看状态或停止挤服
+    _closeOnce(context);
+  }
+
+  /// 幂等关窗口：只走一次 QueueDispose + onClose，防止 Navigator.pop 两次。
+  void _closeOnce(BuildContext context) {
+    if (_isClosing || !mounted) return;
+    _isClosing = true;
     context.read<QueueBloc>().add(const QueueDispose());
     widget.onClose?.call();
   }
@@ -234,8 +245,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
               // 延迟关闭窗口，让用户看到成功提示
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (context.mounted) {
-                  context.read<QueueBloc>().add(const QueueDispose());
-                  widget.onClose?.call();
+                  _closeOnce(context);
                 }
               });
               return;
@@ -291,8 +301,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 挤服中显示动画面板，否则显示设置面板
-          if (state.isQueueActive)
+          // 挤服中或刚成功时显示动画面板（成功状态保留短暂窗口让飞入动画完整播完），
+          // 其余状态显示设置面板。
+          if (state.shouldShowArena)
             _buildArenaPanel(context, state)
           else
             QueueSettings(
@@ -380,8 +391,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
                     // 自己成功进入，关闭窗口
                     Future.delayed(const Duration(milliseconds: 300), () {
                       if (context.mounted) {
-                        context.read<QueueBloc>().add(const QueueDispose());
-                        widget.onClose?.call();
+                        _closeOnce(context);
                       }
                     });
                   }
@@ -556,10 +566,12 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
   /// 开始挤服
   ///
   /// 获取用户昵称优先级：Steam 客户端 > GSI > 登录用户名 > null（匿名）
+  ///
+  /// 只 dispatch [QueueStart]：QueueBloc 会先跑校验，成功后才 dispatch
+  /// WebSocket 连接与 join。这样避免"校验失败但已经把自己发到别人竞技场里"。
   Future<void> _startQueue(BuildContext context) async {
     // 在任何 await 之前先取出依赖，避免 BuildContext 跨异步使用
     final authState = context.read<AuthBloc>().state;
-    final usersBloc = context.read<QueueUsersBloc>();
     final queueBloc = context.read<QueueBloc>();
 
     if (!mounted) return;
@@ -581,15 +593,8 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
 
     if (!mounted) return;
 
-    // 先连接 WebSocket（如果还没连接）
-    if (!usersBloc.state.isConnected) {
-      usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
-    }
-
-    // 构建 QueueUsersJoin 事件，包含当前用户信息
-    // 后端不返回当前用户，需要在客户端把自己加入列表
-    usersBloc.add(QueueUsersJoin(nickname: nickname, avatarUrl: avatarUrl));
-    queueBloc.add(const QueueStart());
+    // QueueBloc 负责校验通过后再连 WS + 发 join
+    queueBloc.add(QueueStart(nickname: nickname, avatarUrl: avatarUrl));
   }
 
   Widget _buildLaunchGameButton(BuildContext context, QueueBlocState state) {

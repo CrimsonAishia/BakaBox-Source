@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
 import '../api/server_api.dart';
 import '../bloc/queue_users/queue_users_bloc.dart';
@@ -250,7 +249,11 @@ class StatusWindowService {
   bool _isQueueRunning = false;
   bool _isThreadsRunning = false; // 防止重复启动线程
   bool _isTriggeredConnection = false; // 防止重复触发连接
-  bool _isFetching = false; // 防止并发请求
+  // 单调递增的 fetch 序号：每个 _fetchServerInfo 入口 ++_fetchSeq。
+  // 落 state 前比对 _lastAppliedFetchSeq，若本次 seq ≤ last，说明有更晚发起的
+  // fetch 抢先落地，本次结果已过期（慢包后到），直接丢弃避免用旧数据覆盖新状态。
+  int _fetchSeq = 0;
+  int _lastAppliedFetchSeq = 0;
   bool _isQueueWindowOpen = false; // 挤服窗口是否打开
   bool _isWarmupWindowOpen = false; // 暖服窗口是否打开
   bool _warmupFloatingWindowEnabled = true; // 暖服原生悬浮窗是否启用
@@ -258,13 +261,18 @@ class StatusWindowService {
   final Set<int> _activeThreadIds = {};
   String? _lastMapName;
   int _consecutiveFailures = 0;
-  double _backoffMultiplier = 1.0;
-  DateTime? _lastSuccessTime;
 
   // 挤服守护进程相关
   bool _outcomeFinalized = false; // 结局闸门：本周期是否已敲定终态
   bool _isObservingConnect = false; // 观察期独占标志
   StreamSubscription<QueueGuardEvent>? _queueGuardSub;
+
+  // in-flight observation 的取消协议：
+  // _connectForQueue 进入观察期前创建 completer，pauseQueue/cancel/reset/游戏关闭
+  // 时调用 _cancelObservation() 完成它，_observeConnection 内部监听该 future
+  // 并 resolve(ConnectionOutcome.cancelled)，_handleConnectionOutcome 遇到
+  // cancelled 直接 return，不改状态、不播音效。
+  Completer<void>? _observationCancel;
 
   // 游戏状态订阅
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
@@ -1000,12 +1008,11 @@ class StatusWindowService {
     _isQueueRunning = true;
     _isThreadsRunning = false;
     _isTriggeredConnection = false;
-    _isFetching = false;
     _activeThreadIds.clear();
     _consecutiveFailures = 0;
-    _backoffMultiplier = 1.0;
-    _lastSuccessTime = null;
     _lastMapName = null;
+    _fetchSeq = 0;
+    _lastAppliedFetchSeq = 0;
     _outcomeFinalized = false;
     _isObservingConnect = false; // 防御：上一周期若被异常打断，避免观察期标志残留
 
@@ -1057,13 +1064,13 @@ class StatusWindowService {
     _isQueueRunning = false;
     _isThreadsRunning = false;
     _isTriggeredConnection = false;
-    _isFetching = false;
     _activeThreadIds.clear();
+
+    // 取消 in-flight 的 observe（若正在观察连接结局）
+    _cancelObservation();
 
     // 重置退避状态
     _consecutiveFailures = 0;
-    _backoffMultiplier = 1.0;
-    _lastSuccessTime = null;
 
     // 卸载守护进程
     _detachQueueGuard();
@@ -1338,10 +1345,10 @@ class StatusWindowService {
     _isQueueRunning = false;
     _isThreadsRunning = false;
     _isTriggeredConnection = false;
-    _isFetching = false;
     _activeThreadIds.clear();
     _lastMapName = null;
     _consoleLogService.cancelConnectionMonitor();
+    _cancelObservation();
 
     // 卸载守护进程
     _detachQueueGuard();
@@ -1376,14 +1383,14 @@ class StatusWindowService {
     _isQueueRunning = false;
     _isThreadsRunning = false;
     _isTriggeredConnection = false;
-    _isFetching = false;
     _activeThreadIds.clear();
     _consecutiveFailures = 0;
-    _backoffMultiplier = 1.0;
-    _lastSuccessTime = null;
     _lastMapName = null;
+    _fetchSeq = 0;
+    _lastAppliedFetchSeq = 0;
     _outcomeFinalized = false;
     _isObservingConnect = false;
+    _cancelObservation();
 
     // 卸载守护进程
     _detachQueueGuard();
@@ -1446,6 +1453,19 @@ class StatusWindowService {
     _outcomeFinalized = true;
     action();
     return true;
+  }
+
+  /// 取消 in-flight 的连接观察（若有）。
+  ///
+  /// 由 pauseQueue / cancel / reset / 游戏关闭调用。幂等；不会 emit 状态，
+  /// 只是让 [_observeConnection] 收到 cancelled 结局并终止等待。
+  void _cancelObservation() {
+    final c = _observationCancel;
+    if (c == null) return;
+    _observationCancel = null;
+    if (!c.isCompleted) {
+      c.complete();
+    }
   }
 
   /// 挂载守护进程订阅 + 启动心跳
@@ -1549,8 +1569,8 @@ class StatusWindowService {
       _isQueueRunning = false;
       _isThreadsRunning = false;
       _isTriggeredConnection = false;
-      _isFetching = false;
       _activeThreadIds.clear();
+      _cancelObservation();
 
       // 卸载守护进程
       _detachQueueGuard();
@@ -1672,91 +1692,112 @@ class StatusWindowService {
   }
 
   /// 获取服务器信息
-  Future<void> _fetchServerInfo(String serverAddress) async {
-    // 防止并发请求
-    if (_isFetching) return;
+  ///
+  /// 返回值：
+  /// - `true` 本次成功查询到 A2S 数据（无论是否被采纳）
+  /// - `false` 参数无效 / 查询失败 / 超时
+  ///
+  /// 每次调用都会真正发起一次独立的 A2S 请求，不做进程内去重。
+  /// 多线程模式下的"避免并发"由 [_scheduleNextFetch] 的错峰调度保证——
+  /// N 线程按 `1000/N` ms 错开启动，同一线程 1000ms 周期，
+  /// 让查询自然分布在一秒内的不同时刻。
+  ///
+  /// **过期响应保护**：入口拿单调递增的 [_fetchSeq]。拿到响应后若发现已有
+  /// 更晚发起的 fetch 抢先落地（`mySeq <= _lastAppliedFetchSeq`），说明本次
+  /// 是慢包后到、数据已过期，直接丢弃——不写 state、不更新 `_lastMapName`、
+  /// 不触发 [_checkQueueCondition]，避免用旧数据覆盖新状态或据此触发一次
+  /// 无效的 connect。
+  Future<bool> _fetchServerInfo(String serverAddress) async {
+    final parts = serverAddress.split(':');
+    if (parts.length != 2) return false;
+
+    final ip = parts[0];
+    final port = int.tryParse(parts[1]);
+    if (port == null) return false;
+
+    // 同步递增序号：Dart 单 isolate 保证严格单调，反映实际发起顺序。
+    final mySeq = ++_fetchSeq;
 
     try {
-      _isFetching = true;
-
-      final parts = serverAddress.split(':');
-      if (parts.length != 2) return;
-
-      final ip = parts[0];
-      final port = int.tryParse(parts[1]);
-      if (port == null) return;
-
       final sourceInfo = await SourceServerService.getServerInfo(
         ip,
         port,
-        timeout: 5000,
+        timeout: 2000,
       );
 
-      if (sourceInfo != null) {
-        final serverInfo = ServerInfo(
-          hostName: sourceInfo.name,
-          map: sourceInfo.map,
-          players: sourceInfo.players,
-          maxPlayers: sourceInfo.maxPlayers,
-          pingLatency: sourceInfo.ping,
-          gameType: sourceInfo.gameType,
-          appId: sourceInfo.appId,
-        );
-
-        // 获取地图信息
-        MapData? mapInfo = _state.mapInfo;
-        bool isMapChanged = false;
-
-        if (sourceInfo.map != _lastMapName) {
-          isMapChanged = _lastMapName != null;
-          // 地图变化时，重新获取地图信息
-          try {
-            mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: serverAddress);
-          } catch (e) {
-            LogService.d('[StatusWindowService] 获取地图信息失败: $e');
-          }
-
-          _lastMapName = sourceInfo.map;
-        }
-
-        _consecutiveFailures = 0;
-        _backoffMultiplier = 1.0;
-        _lastSuccessTime = DateTime.now();
-
-        _updateState(
-          _state.copyWith(
-            serverInfo: serverInfo,
-            mapInfo: mapInfo,
-            serverName: serverInfo.hostName,
-            error: null,
-          ),
-        );
-
-        // 更新窗口
-        if (_windowId != null && _state.type == OperationType.queueing) {
-          await _updateWindow(
-            currentPlayers: serverInfo.players,
-            mapName: serverInfo.map,
-            mapNameCn: mapInfo?.mapLabel,
-            mapBackground: mapInfo?.mapUrl,
-          );
-        }
-
-        // 检查挤服条件
-        _checkQueueCondition(serverAddress, isMapChanged: isMapChanged);
+      if (sourceInfo == null) {
+        _consecutiveFailures++;
+        return false;
       }
+
+      // 过期检测：已有更晚发起的 fetch 抢先落地 → 丢弃本次结果
+      if (mySeq <= _lastAppliedFetchSeq) {
+        return true; // 真跑成了、UI 显示 success，只是数据被更新的抢先了
+      }
+      _lastAppliedFetchSeq = mySeq;
+
+      final serverInfo = ServerInfo(
+        hostName: sourceInfo.name,
+        map: sourceInfo.map,
+        players: sourceInfo.players,
+        maxPlayers: sourceInfo.maxPlayers,
+        pingLatency: sourceInfo.ping,
+        gameType: sourceInfo.gameType,
+        appId: sourceInfo.appId,
+      );
+
+      // 获取地图信息
+      MapData? mapInfo = _state.mapInfo;
+      bool isMapChanged = false;
+
+      if (sourceInfo.map != _lastMapName) {
+        isMapChanged = _lastMapName != null;
+        try {
+          mapInfo = await _serverApi.getMapInfo(
+            sourceInfo.map,
+            address: serverAddress,
+          );
+        } catch (e) {
+          LogService.d('[StatusWindowService] 获取地图信息失败: $e');
+        }
+        _lastMapName = sourceInfo.map;
+      }
+
+      _consecutiveFailures = 0;
+
+      _updateState(
+        _state.copyWith(
+          serverInfo: serverInfo,
+          mapInfo: mapInfo,
+          serverName: serverInfo.hostName,
+          error: null,
+        ),
+      );
+
+      // 更新窗口
+      if (_windowId != null && _state.type == OperationType.queueing) {
+        await _updateWindow(
+          currentPlayers: serverInfo.players,
+          mapName: serverInfo.map,
+          mapNameCn: mapInfo?.mapLabel,
+          mapBackground: mapInfo?.mapUrl,
+        );
+      }
+
+      // 检查挤服条件（多线程并发触发由 _connectForQueue 的原子锁保护）
+      _checkQueueCondition(serverAddress, isMapChanged: isMapChanged);
+
+      return true;
     } catch (e) {
       LogService.e('[StatusWindowService] 获取服务器信息失败', e);
       _consecutiveFailures++;
-      _backoffMultiplier = min(_backoffMultiplier * 1.5, 5.0);
 
       // 连续失败10次，暂停挤服
       if (_consecutiveFailures >= 10 && _isQueueRunning) {
         LogService.w('[StatusWindowService] ${_Messages.queueNetworkUnstable}');
         pauseQueue();
       }
-    } finally {
-      _isFetching = false;
+      return false;
     }
   }
 
@@ -1823,6 +1864,9 @@ class StatusWindowService {
 
     // 进入观察期独占
     _isObservingConnect = true;
+    // 建立取消 completer：pauseQueue/cancel/reset/游戏关闭时会 complete 它，
+    // _observeConnection 内部据此立即返回 cancelled 而不再等结局。
+    _observationCancel = Completer<void>();
     try {
       // 立刻清空刷信息线程，避免重复触发
       _activeThreadIds.clear();
@@ -1918,6 +1962,7 @@ class StatusWindowService {
       );
     } finally {
       _isObservingConnect = false;
+      _observationCancel = null;
       // 注意：_isTriggeredConnection 不在这里复位
       // 由 startQueue / _waitForMainMenuAndRetry 复位（保证一次挤服周期内只触发一次）
     }
@@ -1957,6 +2002,15 @@ class StatusWindowService {
       serverFullGraceTimer?.cancel();
       completer.complete(outcome);
     }
+
+    // 外部取消（用户暂停 / 游戏关闭 / reset）：立刻返回 cancelled，
+    // _handleConnectionOutcome 会跳过所有 UI/音效副作用。
+    _observationCancel?.future.then((_) {
+      if (!completer.isCompleted) {
+        LogService.d('[StatusWindowService] [Observe] 收到外部取消信号');
+        resolve(ConnectionOutcome.cancelled);
+      }
+    });
 
     void onSignal() {
       if (completer.isCompleted) return;
@@ -2104,6 +2158,15 @@ class StatusWindowService {
     String serverAddress,
     String? errorHint,
   ) {
+    // 兜底：如果本周期已不在挤服（用户暂停 / 游戏关闭），一律忽略结局，
+    // 避免把状态从 paused/none 又拉回 success/failed，触发多余 Toast/音效。
+    if (_state.type != OperationType.queueing) {
+      LogService.d(
+        '[StatusWindowService] _handleConnectionOutcome 忽略：当前 type=${_state.type}, outcome=$outcome',
+      );
+      return;
+    }
+
     switch (outcome) {
       case ConnectionOutcome.success:
         // QueueUsersSuccess / Disconnect 由 _handleAlreadyInGame 内部统一发送，
@@ -2123,6 +2186,12 @@ class StatusWindowService {
         // pending 在 _observeConnection 内部已转化为 refused/success，
         // 兜底当作 refused 处理
         _maybeRetry(_Messages.connectFailed, serverAddress);
+        break;
+
+      case ConnectionOutcome.cancelled:
+        // 外部取消：状态已经由 pauseQueue/cancel/reset 显式处理过，
+        // 这里不做任何副作用（不改 state、不 finalize、不播音效）。
+        LogService.d('[StatusWindowService] 连接观察被取消，跳过结局处理');
         break;
     }
   }
@@ -2491,7 +2560,17 @@ class StatusWindowService {
     return completer.future;
   }
 
+  // 挤服调度周期：每个线程 1 秒跑一次，N 个线程按 1000/N ms 错峰
+  static const int _threadPeriodMs = 1000;
+
   /// 调度下次获取
+  ///
+  /// N 线程按"1 秒内错峰采样"分布：
+  /// - 每线程周期固定 1000ms
+  /// - 线程 i 的初始延迟 = `i * (1000 / N)` ms
+  /// - 相邻查询间隔 = `1000 / N` ms，等价于总速率 N 次/秒
+  ///
+  /// 单线程模式（`multiThreadEnabled=false`）走用户设定的 1-6 秒固定间隔。
   void _scheduleNextFetch(String serverAddress) {
     if (!_isQueueRunning) return;
 
@@ -2502,28 +2581,37 @@ class StatusWindowService {
     _activeThreadIds.clear();
 
     final effectiveThreadCount = _state.queueConfig.effectiveThreadCount;
-    // 单线程模式下不需要错峰启动；多线程模式保留 500ms 错峰
-    final isSingleThread = !_state.queueConfig.multiThreadEnabled;
+    final periodMs = !_state.queueConfig.multiThreadEnabled
+        ? _state.queueConfig.requestIntervalSeconds.clamp(1, 6) * 1000
+        : _threadPeriodMs;
+    // 单线程模式无需错峰；多线程按 1000/N ms 均匀错开
+    final staggerMs = effectiveThreadCount > 1
+        ? (_threadPeriodMs / effectiveThreadCount).round()
+        : 0;
 
     for (int i = 0; i < effectiveThreadCount; i++) {
       final threadIndex = i;
       final threadId = DateTime.now().millisecondsSinceEpoch + i;
       _activeThreadIds.add(threadId);
-      final delay = isSingleThread ? 0 : i * 500;
+      final initialDelay = i * staggerMs;
 
-      Future.delayed(Duration(milliseconds: delay), () {
+      Future.delayed(Duration(milliseconds: initialDelay), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-          _startThreadWorkLoop(threadIndex, threadId, serverAddress);
+          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs);
         }
       });
     }
   }
 
   /// 线程工作循环
+  ///
+  /// 每次循环记录起始时间，查询完成后按 `max(period - elapsed, 0)` 睡眠，
+  /// 保证周期稳定不漂移（不因查询耗时累加导致间隔越拉越长）。
   Future<void> _startThreadWorkLoop(
     int threadIndex,
     int threadId,
     String serverAddress,
+    int periodMs,
   ) async {
     if (!_isQueueRunning ||
         _outcomeFinalized ||
@@ -2531,10 +2619,12 @@ class StatusWindowService {
       return;
     }
 
+    final iterationStart = DateTime.now().millisecondsSinceEpoch;
+
     try {
       _updateThreadStatus(threadIndex, ThreadStatus.requesting);
 
-      await _fetchServerInfo(serverAddress);
+      final ok = await _fetchServerInfo(serverAddress);
 
       // 在 await 期间可能已 finalize（成功/失败终态）或被暂停，
       // 此时不能再回写线程状态，否则会把已显示的"成功"回弹成"挤服中"。
@@ -2544,11 +2634,14 @@ class StatusWindowService {
         return;
       }
 
-      _updateThreadStatus(threadIndex, ThreadStatus.success);
+      _updateThreadStatus(
+        threadIndex,
+        ok ? ThreadStatus.success : ThreadStatus.failed,
+      );
 
       Future.delayed(const Duration(milliseconds: 300), () {
         if (_state.threadStatuses.length > threadIndex &&
-            _state.threadStatuses[threadIndex] == ThreadStatus.success) {
+            _state.threadStatuses[threadIndex] != ThreadStatus.requesting) {
           _updateThreadStatus(threadIndex, ThreadStatus.idle);
         }
       });
@@ -2569,12 +2662,14 @@ class StatusWindowService {
       });
     }
 
-    final nextInterval = _calculateNextInterval(threadIndex);
+    // 保持固定周期：无论本次查询耗时多久，下次触发点都是 iterationStart + periodMs
+    final elapsed = DateTime.now().millisecondsSinceEpoch - iterationStart;
+    final nextDelay = periodMs - elapsed;
 
     if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-      Future.delayed(Duration(milliseconds: nextInterval), () {
+      Future.delayed(Duration(milliseconds: nextDelay > 0 ? nextDelay : 0), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-          _startThreadWorkLoop(threadIndex, threadId, serverAddress);
+          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs);
         }
       });
     }
@@ -2599,35 +2694,6 @@ class StatusWindowService {
         _updateWindow(threadStatuses: newStatuses.map((s) => s.name).toList());
       }
     }
-  }
-
-  /// 计算下次请求间隔
-  int _calculateNextInterval(int threadIndex) {
-    // 单线程模式：使用用户设置的固定秒数（1-6 秒），并 clamp
-    if (!_state.queueConfig.multiThreadEnabled) {
-      final seconds = _state.queueConfig.requestIntervalSeconds.clamp(1, 6);
-      return seconds * 1000;
-    }
-
-    int baseInterval = max(600, 350);
-
-    if (_consecutiveFailures > 15) {
-      baseInterval = min((baseInterval * 1.6).toInt(), 1200);
-    } else if (_consecutiveFailures > 10) {
-      baseInterval = min((baseInterval * 1.3).toInt(), 1000);
-    } else if (_consecutiveFailures > 5) {
-      baseInterval = min((baseInterval * 1.1).toInt(), 800);
-    }
-
-    final threadOffset = threadIndex * 150;
-    baseInterval = max(baseInterval - threadOffset, 350);
-
-    if (_lastSuccessTime != null &&
-        DateTime.now().difference(_lastSuccessTime!).inMilliseconds < 10000) {
-      baseInterval = max((baseInterval * 0.8).toInt(), 350);
-    }
-
-    return max(min(baseInterval, 1200), 350);
   }
 
 
@@ -2722,6 +2788,7 @@ class StatusWindowService {
   Future<void> dispose() async {
     _isQueueRunning = false;
     _activeThreadIds.clear();
+    _cancelObservation();
 
     // 卸载守护进程
     _detachQueueGuard();

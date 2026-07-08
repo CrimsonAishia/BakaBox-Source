@@ -84,9 +84,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     });
   }
 
-  // ============================================================================
   // Public Event Handlers (UI triggered)
-  // ============================================================================
 
   /// 处理连接事件
   Future<void> _onConnect(
@@ -169,9 +167,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     _pendingJoin = null;
   }
 
-  // ============================================================================
   // Internal Event Handlers (from QueueUsersService)
-  // ============================================================================
 
   /// 处理全量同步事件
   /// 服务器会返回所有用户（包括自己，isSelf=true）
@@ -192,26 +188,32 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
 
     // 确定 joinedUserId：
     // 1. 自己加入时（isSelf=true）始终触发，无论是否首次同步
-    // 2. 只有一个新用户时触发（避免首次同步或批量同步时触发）
-    // 3. 如果 _onUserJoined 已经设置了 joinedUserId，不覆盖（保留已有值）
+    // 2. 单人加入 → 用该用户
+    // 3. 批量加入 → 挑一个代表（优先自己 → 否则第一位新用户）触发动画。
+    //    这样至少一个人有 fade-in 高亮，其余新用户会在 _syncUserList 里各自
+    //    通过 _animateFadeIn 单独淡入，视觉上不会"闪现"。
+    // 4. 首次 sync（state.users 空）不为普通新用户触发（避免开局全体闪一遍）。
     String? joinedUserId;
     final selfNewUser = newUsers.where((u) => u.isSelf).firstOrNull;
     if (selfNewUser != null) {
       joinedUserId = selfNewUser.uniqueId;
       LogService.d('[QueueUsersBloc] sync 检测到自己加入: $joinedUserId');
-    } else if (state.users.isNotEmpty && newUsers.length == 1) {
+    } else if (state.users.isNotEmpty && newUsers.isNotEmpty) {
       joinedUserId = newUsers.first.uniqueId;
-      LogService.d('[QueueUsersBloc] sync 检测到新用户加入: $joinedUserId');
+      LogService.d(
+        '[QueueUsersBloc] sync 检测到 ${newUsers.length} 个新用户，代表: $joinedUserId',
+      );
     }
 
-    // 如果 sync 里检测到有人离开（且当前没有正在处理的 leftUserId），触发离开动画
-    // 这处理了 leave 消息丢失但 sync 里已经没有该用户的情况
+    // 离开同理：优先自己（罕见）→ 否则第一位，保证至少有一次淡出动画触发。
     String? leftUserId;
     QueueUser? leftUser;
-    if (leftUsers.length == 1 && state.leftUserId == null) {
-      leftUser = leftUsers.first;
+    if (leftUsers.isNotEmpty && state.leftUserId == null) {
+      leftUser = leftUsers.where((u) => u.isSelf).firstOrNull ?? leftUsers.first;
       leftUserId = leftUser.uniqueId;
-      LogService.d('[QueueUsersBloc] sync 检测到用户离开: $leftUserId');
+      LogService.d(
+        '[QueueUsersBloc] sync 检测到 ${leftUsers.length} 个用户离开，代表: $leftUserId',
+      );
     }
 
     emit(
@@ -368,9 +370,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     );
   }
 
-  // ============================================================================
   // Helper Methods
-  // ============================================================================
 
   /// 清除动画触发标记
   ///

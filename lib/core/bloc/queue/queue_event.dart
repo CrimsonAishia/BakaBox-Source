@@ -43,11 +43,18 @@ class QueueInitialize extends QueueEvent {
 }
 
 /// 开始挤服
+///
+/// UI 侧只负责传昵称/头像；后端校验（游戏是否运行、路径等）通过后，
+/// 由 QueueBloc 主动 dispatch WebSocket 连接与 join，避免"校验失败但已在别人
+/// 竞技场里出现过一次"的幽灵用户问题。
 class QueueStart extends QueueEvent {
-  const QueueStart();
+  final String? nickname;
+  final String? avatarUrl;
+
+  const QueueStart({this.nickname, this.avatarUrl});
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [nickname, avatarUrl];
 }
 
 /// 暂停挤服

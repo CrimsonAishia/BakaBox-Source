@@ -105,6 +105,14 @@ class QueueBlocState extends Equatable {
   /// 是否正在挤服
   bool get isQueueActive => status == QueueStatus.running;
 
+  /// 竞技场面板是否应该显示
+  ///
+  /// 包含 [QueueStatus.success] 短暂窗口：让"自己飞入中心"的成功动画能完整
+  /// 播放（500ms），窗口在 Toast/动画回调里再关闭。若只按 [isQueueActive]
+  /// 决定，status 一变 success 面板立刻切回设置页，动画被强砍。
+  bool get shouldShowArena =>
+      status == QueueStatus.running || status == QueueStatus.success;
+
   /// 目标服务器对应的游戏客户端
   GameClient get gameClient => ServerItemUtils.resolveGameClient(
     appId: serverInfo?.appId,

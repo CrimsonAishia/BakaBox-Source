@@ -37,6 +37,9 @@ enum ConnectionOutcome {
 
   /// 命令已发出，但既未确认成功也未明确失败（典型场景：超时、网络抖动）
   pending,
+
+  /// 观察期被外部主动取消（用户暂停 / 游戏关闭 / reset 等）
+  cancelled,
 }
 
 /// 守护进程事件（每次 location 状态变化时 emit）

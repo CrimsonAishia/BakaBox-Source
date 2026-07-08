@@ -225,9 +225,29 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
   }
 
   /// 限制显示用户数
+  ///
+  /// 截断前把自己置顶：`isSelf=true` 的用户永远优先显示，避免用户挤到 21 位以后
+  /// 在竞技场里看不到自己头像。
   List<QueueUser> _limitDisplayUsers(List<QueueUser> users) {
     if (users.length <= _maxDisplayUsers) return users;
-    return users.sublist(0, _maxDisplayUsers);
+
+    QueueUser? self;
+    final others = <QueueUser>[];
+    for (final u in users) {
+      if (u.isSelf && self == null) {
+        self = u;
+      } else {
+        others.add(u);
+      }
+    }
+
+    if (self == null) {
+      return users.sublist(0, _maxDisplayUsers);
+    }
+    return [
+      self,
+      ...others.take(_maxDisplayUsers - 1),
+    ];
   }
 
   /// 随机生成头像大小
@@ -383,6 +403,11 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
 
   /// 淡入动画
   void _animateFadeIn(String userId, _UserAnimationState state) {
+    // 若已有旧 fade controller 未结束（例如淡入过程中又被 sync 覆盖），
+    // 先 dispose 再新建，避免泄漏和帧回调抖动。
+    state.fadeController?.dispose();
+    state.fadeController = null;
+
     final controller = AnimationController(
       vsync: this,
       duration: _fadeInDuration,
@@ -401,7 +426,10 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         controller.dispose();
-        state.fadeController = null;
+        // 只有当引用仍指向当前 controller 时才清空，避免误清后建的新 controller
+        if (identical(state.fadeController, controller)) {
+          state.fadeController = null;
+        }
       }
     });
 
@@ -410,6 +438,10 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
 
   /// 淡出动画
   void _animateFadeOut(String userId, _UserAnimationState state) {
+    // 淡出前先清掉可能残留的淡入 controller，防止两条动画同时驱动 opacity。
+    state.fadeController?.dispose();
+    state.fadeController = null;
+
     final controller = AnimationController(
       vsync: this,
       duration: _fadeOutDuration,
@@ -443,6 +475,13 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
 
   /// 飞入中心动画
   void _animateFlyToCenter(String userId, _UserAnimationState state) {
+    // 飞入前清掉可能存在的旧 fly / fade controller，避免两个 controller 同时
+    // 驱动 opacity / flyProgress，造成状态跳变。
+    state.flyController?.dispose();
+    state.flyController = null;
+    state.fadeController?.dispose();
+    state.fadeController = null;
+
     final controller = AnimationController(vsync: this, duration: _flyDuration);
 
     state.flyController = controller;
