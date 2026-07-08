@@ -120,6 +120,19 @@ class ConsoleLogState {
   /// 便捷方法：连接是否失败
   bool get isConnectionFailed =>
       state == GameState.failed || state == GameState.serverFull;
+
+  /// 语义等价（不含 [lastUpdate]，因为它每次都变，参与比较等于永不 dedup）。
+  ///
+  /// `_updateState` 会用它跳过与当前状态语义相同的 emit，
+  /// 避免下游（OBS / 热身 / 挤服守护 / 比分上传）反复处理无变化的事件。
+  bool sameStateAs(ConsoleLogState other) {
+    return available == other.available &&
+        state == other.state &&
+        serverAddress == other.serverAddress &&
+        mapName == other.mapName &&
+        errorMessage == other.errorMessage &&
+        condebugEnabled == other.condebugEnabled;
+  }
 }
 
 /// 默认日期时间（用于const构造函数）
@@ -212,6 +225,10 @@ class ConsoleLogService {
 
   // 状态管理
   ConsoleLogState _currentState = const ConsoleLogState();
+  // 最近一次真正 emit 出去的状态，用来做去重比较。
+  // 不能用 _currentState 本身：调用方通常已经先 `_currentState = copyWith(...)`
+  // 再调 _updateState，导致 prev 和 next 指向同一个对象。
+  ConsoleLogState _lastEmittedState = const ConsoleLogState();
   bool _isMonitoring = false;
   bool _isCancelled = false;
 
@@ -234,11 +251,25 @@ class ConsoleLogService {
   // 游戏路径检测缓存（避免重复检测）
   bool _gamePathDetectionAttempted = false;
   String? _cachedGamePath;
+  // 并发保护 —— 500ms 轮询期间可能有多个调用者同时进入
+  // detectGamePath，用共享 Future 让并发调用等在同一次异步检测上，避免重复
+  // 触发耗时的进程扫描。
+  Future<String?>? _pathDetectionFuture;
+
+  // 单块读取分片大小，防止一次性读取巨型 diff 导致 OOM
+  static const int _readChunkSize = 512 * 1024; // 512 KB
 
   // 连接目标追踪
   String _targetServer = '';
   bool _isLoopbackFallback = false;
   bool _isInLoopbackMode = false; // 是否处于 loopback 模式（主菜单背景服务器）
+
+  // condebug 状态刷新：
+  // - _checkLogFile 里不再硬编码 condebugEnabled=true。
+  // - 不再自己额外轮询 isCS2LaunchedWithCondebug()：GameStatusService 已经每
+  //   3s 检测一次并维护权威的 isMonitorable，只需在 _onGameStatusChanged
+  //   里镜像它即可。同时 startMonitoring 会先读取一次 GameStatusService
+  //   的当前值，覆盖启动瞬间还没 emit 事件的空窗期。
 
   // 事件历史
   final List<ConsoleLogEvent> _events = [];
@@ -246,7 +277,24 @@ class ConsoleLogService {
 
   // 定时器
   Timer? _monitorTimer;
-  Timer? _checkTimer;
+  // 500ms 轮询存在长尾（例如首次 attach + I/O 慢盘），加锁避免重入并发
+  bool _isCheckingLogFile = false;
+  // 轮询频率自适应。游戏运行时用高频（500ms）保证连接 / 断开
+  // 事件能及时抓到；游戏未运行时降到 2s，纯粹做"日志文件出现"探测，
+  // 避免笔记本每天数十万次 wakeup。切换通过 _applyPollInterval 完成。
+  Duration _currentPollInterval = const Duration(milliseconds: 500);
+  static const Duration _pollActive = Duration(milliseconds: 500);
+  static const Duration _pollIdle = Duration(seconds: 2);
+
+  // 把连接监控 completer / cleanup 提到实例上，
+  // 让 cancelConnectionMonitor() 能立即完成，不再依赖状态流下一次 emit。
+  Completer<ConnectionStatusResult>? _monitorCompleter;
+  void Function()? _monitorCleanup;
+
+  // 等待类操作（waitForMainMenu / waitForAvailable /
+  // waitForGameFullyLoaded）注册在此，cancelConnectionMonitor 会同步唤醒。
+  // 之前它们只在状态流触发时才检查 _isCancelled，会导致取消后仍要等到 maxWait。
+  final List<void Function()> _cancelListeners = [];
 
   // 游戏状态监听
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
@@ -286,16 +334,17 @@ class ConsoleLogService {
       if (_gamePathDetectionAttempted) {
         gamePath = _cachedGamePath;
       } else {
-        // 首次检测，记录日志并缓存结果
-        LogService.d('[ConsoleLog] 设置中未配置游戏路径，尝试自动检测');
-        gamePath = await _gameLauncher.detectGamePath();
-        _gamePathDetectionAttempted = true;
-        _cachedGamePath = gamePath;
+        // 使用共享 Future 避免并发调用重复触发耗时的进程扫描。
+        // 500ms 轮询里可能多个 tick 同时到达此处，如果各自都 await
+        // detectGamePath()，就会造成多个 wmic/nativeProcess 扫描并行执行。
+        _pathDetectionFuture ??= _detectGamePathOnce();
+        gamePath = await _pathDetectionFuture;
       }
     } else {
       // 设置中有配置，重置检测缓存（用户可能更新了设置）
       _gamePathDetectionAttempted = false;
       _cachedGamePath = null;
+      _pathDetectionFuture = null;
     }
 
     if (gamePath == null || gamePath.isEmpty) {
@@ -306,10 +355,39 @@ class ConsoleLogService {
     return '$gamePath${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}console.log';
   }
 
+  /// 单次检测游戏路径，检测完成后置位缓存与已尝试标志。
+  Future<String?> _detectGamePathOnce() async {
+    LogService.d('[ConsoleLog] 设置中未配置游戏路径，尝试自动检测');
+    try {
+      final path = await _gameLauncher.detectGamePath();
+      _cachedGamePath = path;
+      return path;
+    } catch (e) {
+      LogService.w('[ConsoleLog] 自动检测游戏路径失败: $e');
+      _cachedGamePath = null;
+      return null;
+    } finally {
+      _gamePathDetectionAttempted = true;
+      // 保留 _pathDetectionFuture 引用即可：后续调用会走
+      // _gamePathDetectionAttempted 的快速路径，不再触发检测。
+    }
+  }
+
   /// 重置游戏路径检测缓存（当用户更新设置时调用）
+  ///
+  /// 把已经被 [_checkLogFile] 缓存下来的 [_logFilePath] 也
+  /// 一并清掉，否则用户在设置里改了游戏路径后，仍然在监控旧路径下的
+  /// console.log，直到应用重启才生效。下一次 tick 会重新走
+  /// [getLogFilePath] 拿到最新路径。
   void resetGamePathCache() {
     _gamePathDetectionAttempted = false;
     _cachedGamePath = null;
+    _pathDetectionFuture = null;
+    _logFilePath = null;
+    // 换路径了，旧文件的读偏移已经没有意义
+    _lastFileSize = 0;
+    _lastReadPos = 0;
+    _pendingBytes.clear();
     LogService.d('[ConsoleLog] 游戏路径缓存已重置');
   }
 
@@ -350,8 +428,15 @@ class ConsoleLogService {
       };
     }
 
-    // 检测游戏是否带 -condebug 启动
-    final condebugEnabled = await _gameLauncher.isCS2LaunchedWithCondebug();
+    // 命令行扫描可能因权限 / 进程枚举失败抛异常。
+    // 之前未加保护会让整个 checkAvailability / startMonitoring 因这一处
+    // 崩溃而无法进入监控。这里降级为"未启用 condebug"继续走后续判断。
+    bool condebugEnabled = false;
+    try {
+      condebugEnabled = await _gameLauncher.isCS2LaunchedWithCondebug();
+    } catch (e) {
+      LogService.w('[ConsoleLog] 检测 -condebug 失败: $e');
+    }
 
     final logPath = await getLogFilePath();
     if (logPath == null) {
@@ -522,16 +607,25 @@ class ConsoleLogService {
   }
 
   /// 开始监控控制台日志
-  Future<void> startMonitoring() async {
+  ///
+  /// 返回是否成功进入监控循环。之前失败时静默返回 void，导致
+  /// [monitorConnection] 只能坐等 maxTimeout 才知道监控没起来。
+  Future<bool> startMonitoring() async {
     if (_isMonitoring) {
-      return;
+      return true;
+    }
+
+    // 非桌面平台直接跳过，避免在移动端也起 500ms 轮询。
+    if (!isDesktopPlatform) {
+      LogService.d('[ConsoleLog] 非桌面平台，跳过监控');
+      return false;
     }
 
     // 启动前先验证路径是否有效，避免因磁盘更换导致后续全部无响应
     final pathValidation = await GamePathService().verifyCurrentPaths();
     if (!pathValidation.isValid) {
       LogService.w('[ConsoleLog] 路径失效，停止监控并等待用户重新配置: ${pathValidation.error}');
-      return;
+      return false;
     }
 
     final availability = await checkAvailability();
@@ -548,15 +642,19 @@ class ConsoleLogService {
     _isLoopbackFallback = false;
     _isInLoopbackMode = false;
 
-    // 初始化状态
+    // 初始化状态。condebug 直接读 GameStatusService 权威值，
+    // 而不是自己扫描进程，两个 service 保持一致来源。
+    final bootCondebug = _readCondebugFromGameStatus(
+      fallback: availability['condebugEnabled'] == true,
+    );
     _currentState = ConsoleLogState(
       available: availability['available'] == true,
       state: GameState.mainMenu,
-      condebugEnabled: availability['condebugEnabled'] == true,
+      condebugEnabled: bootCondebug,
       lastUpdate: DateTime.now(),
     );
 
-    // 监听游戏状态变化（游戏退出时重置状态）
+    // 监听游戏状态变化（游戏退出时重置状态；游戏运行 / condebug 变化时同步）
     _gameStatusSubscription?.cancel();
     _gameStatusSubscription = GameStatusService().statusStream.listen(
       _onGameStatusChanged,
@@ -583,30 +681,86 @@ class ConsoleLogService {
 
     _updateState(_currentState);
 
-    // 启动监控循环
-    _monitorTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+    // 起始轮询频率根据当前游戏状态决定。
+    _currentPollInterval = _pickPollInterval();
+    _startPollingWithCurrentInterval();
+
+    LogService.d(
+      '[ConsoleLog] 控制台日志监控已启动 (轮询间隔 ${_currentPollInterval.inMilliseconds}ms)',
+    );
+    return true;
+  }
+
+  /// 根据 GameStatusService 的当前 isRunning 选择轮询间隔。
+  Duration _pickPollInterval() {
+    try {
+      return GameStatusService().isGameRunning ? _pollActive : _pollIdle;
+    } catch (_) {
+      return _pollActive; // 拿不到就保守用高频
+    }
+  }
+
+  /// 启动 / 重启 `_monitorTimer` 使用当前 [_currentPollInterval]
+  void _startPollingWithCurrentInterval() {
+    _monitorTimer?.cancel();
+    _monitorTimer = Timer.periodic(_currentPollInterval, (_) {
       _checkLogFile();
     });
+  }
 
-    LogService.d('[ConsoleLog] 控制台日志监控已启动');
-    return;
+  /// 若目标间隔和当前不一致则重启定时器
+  void _syncPollInterval() {
+    if (!_isMonitoring) return;
+    final target = _pickPollInterval();
+    if (target == _currentPollInterval) return;
+    _currentPollInterval = target;
+    _startPollingWithCurrentInterval();
+    LogService.d('[ConsoleLog] 轮询间隔切换为 ${target.inMilliseconds}ms');
+  }
+
+  /// 从 GameStatusService 读取 condebug 值（避免自己重复扫描进程）
+  bool _readCondebugFromGameStatus({required bool fallback}) {
+    try {
+      return GameStatusService().isMonitorable;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   /// 游戏状态变化处理
   void _onGameStatusChanged(GameStatusEvent event) {
+    // 游戏开 / 关时同步切换轮询频率
+    _syncPollInterval();
+
     if (!event.isRunning) {
-      // 游戏退出，重置状态
+      // 游戏退出，重置连接类状态。
+      //
+      // 不在这里改 `available`。文件是否可读由 [_checkLogFile]
+      // 根据文件真实存在情况维护——游戏退出时 console.log 通常仍在磁盘上，
+      // 之前把 `available` 置 false 会导致下一次 500ms tick 又被翻回 true，
+      // 让下游订阅者看到 false→true 的假抖动。
       LogService.d('[ConsoleLog] 游戏已退出，重置状态');
       _currentState = _currentState.copyWith(
         state: GameState.unknown,
         serverAddress: '',
         mapName: '',
-        available: false,
+        condebugEnabled: false,
       );
       _targetServer = '';
       _isLoopbackFallback = false;
       _isInLoopbackMode = false;
       _updateState(_currentState);
+      return;
+    }
+
+    // 游戏运行 / condebug 参数状态由 GameStatusService 权威维护，
+    // 这里镜像到 currentState，避免和进程扫描来源不一致造成的假死。
+    if (event.isMonitorable != _currentState.condebugEnabled) {
+      _currentState = _currentState.copyWith(
+        condebugEnabled: event.isMonitorable,
+      );
+      _updateState(_currentState);
+      LogService.d('[ConsoleLog] condebug 状态同步为: ${event.isMonitorable}');
     }
   }
 
@@ -618,11 +772,11 @@ class ConsoleLogService {
 
     _monitorTimer?.cancel();
     _monitorTimer = null;
-    _checkTimer?.cancel();
-    _checkTimer = null;
     _gameStatusSubscription?.cancel();
     _gameStatusSubscription = null;
     _isMonitoring = false;
+    _isCheckingLogFile = false;
+    _pendingBytes.clear();
 
     _updateState(_currentState);
 
@@ -649,10 +803,36 @@ class ConsoleLogService {
   }
 
   /// 取消当前的连接监控（不停止日志监控服务）
+  ///
+  /// 立即完成正在等待的 [monitorConnection] Completer，
+  /// 而不是让调用方被动等到 [maxTimeout] 才拿到 cancelled 结果。
+  ///
+  /// 同时唤醒所有注册在 [_cancelListeners] 上的等待类操作
+  /// （如 [waitForMainMenu] / [waitForAvailable]），避免它们只在下一次
+  /// 状态流事件时才注意到 _isCancelled。
   void cancelConnectionMonitor() {
     _isCancelled = true;
-    _checkTimer?.cancel();
-    _checkTimer = null;
+
+    // 先唤醒普通 wait 类操作
+    final listeners = List<void Function()>.from(_cancelListeners);
+    _cancelListeners.clear();
+    for (final cb in listeners) {
+      try {
+        cb();
+      } catch (e) {
+        LogService.w('[ConsoleLog] cancel listener 异常: $e');
+      }
+    }
+
+    // 再处理 monitorConnection
+    final cleanup = _monitorCleanup;
+    final completer = _monitorCompleter;
+    _monitorCleanup = null;
+    _monitorCompleter = null;
+    cleanup?.call();
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(ConnectionStatusResult.cancelled());
+    }
   }
 
   /// 监控连接状态
@@ -667,7 +847,29 @@ class ConsoleLogService {
   }) async {
     _isCancelled = false;
 
-    await startMonitoring();
+    // 监控启动失败（非桌面平台 / 路径失效）时立即返回失败，
+    // 不再让调用方傻等 maxTimeout。
+    final ok = await startMonitoring();
+    if (!ok) {
+      return ConnectionStatusResult.failed('监控服务未启动（游戏路径失效或不可用）');
+    }
+
+    // 把"取消上一次 monitorConnection"放在 await
+    // 之后。原本放在 await 之前，两个 monitorConnection 若在 startMonitoring
+    // 的 await 里交叠，后来者做取消检查时前一个还没把 completer 挂上，
+    // 结果两个 completer 都被登记，最先设置的那一个会被后者悄悄覆盖，成为
+    // 无法通过 cancelConnectionMonitor 唤醒的"孤儿"。
+    //
+    // 先把引用抓到本地再 cleanup，避免 cleanup 内的 identical
+    // 检查把 _monitorCompleter 置 null 后我们再取到 null。
+    final prevCleanup = _monitorCleanup;
+    final prevCompleter = _monitorCompleter;
+    _monitorCleanup = null;
+    _monitorCompleter = null;
+    prevCleanup?.call();
+    if (prevCompleter != null && !prevCompleter.isCompleted) {
+      prevCompleter.complete(ConnectionStatusResult.cancelled());
+    }
 
     final completer = Completer<ConnectionStatusResult>();
     StreamSubscription<ConsoleLogState>? subscription;
@@ -677,7 +879,14 @@ class ConsoleLogService {
     void cleanup() {
       subscription?.cancel();
       timeoutTimer?.cancel();
+      if (identical(_monitorCompleter, completer)) {
+        _monitorCompleter = null;
+        _monitorCleanup = null;
+      }
     }
+
+    _monitorCompleter = completer;
+    _monitorCleanup = cleanup;
 
     // 设置最大超时
     timeoutTimer = Timer(maxTimeout, () {
@@ -737,16 +946,6 @@ class ConsoleLogService {
       subscription = stateStream.listen((state) {
         checkState(state);
       });
-
-      // 我们不需要使用 _checkTimer 了，但保留对 _isCancelled 的依赖以便外部能够中止。
-      // 为保持向下兼容（如果其他函数在某处读取），这里设置一个空Timer
-      _checkTimer?.cancel();
-      _checkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-        if (_isCancelled || completer.isCompleted) {
-          timer.cancel();
-          cleanup();
-        }
-      });
     }
 
     return completer.future;
@@ -777,7 +976,7 @@ class ConsoleLogService {
   /// 用于挤服连接失败后，等待游戏确认已回到主菜单再进行重试
   /// [maxWait] 最大等待时间，默认30秒
   ///
-  /// 返回 true 表示已回到主菜单，false 表示超时
+  /// 返回 true 表示已回到主菜单，false 表示超时（或被取消）
   Future<bool> waitForMainMenu({
     Duration maxWait = const Duration(seconds: 30),
   }) async {
@@ -789,18 +988,30 @@ class ConsoleLogService {
       return true;
     }
 
-    final startTime = DateTime.now();
     LogService.d('[ConsoleLog] 开始等待回到主菜单...');
 
     // 使用 Completer 等待状态流中的 mainMenu 状态
     final completer = Completer<bool>();
     StreamSubscription<ConsoleLogState>? subscription;
     Timer? timeoutTimer;
+    // 注册到全局 cancel 列表，让 cancelConnectionMonitor 能
+    // 立即唤醒本 wait，而不是等到 maxWait 才返回。
+    late final void Function() onCancel;
 
     void cleanup() {
       subscription?.cancel();
       timeoutTimer?.cancel();
+      _cancelListeners.remove(onCancel);
     }
+
+    onCancel = () {
+      cleanup();
+      if (!completer.isCompleted) {
+        LogService.d('[ConsoleLog] waitForMainMenu 被取消');
+        completer.complete(false);
+      }
+    };
+    _cancelListeners.add(onCancel);
 
     // 超时处理
     timeoutTimer = Timer(maxWait, () {
@@ -814,19 +1025,7 @@ class ConsoleLogService {
     // 监听状态流，等待 mainMenu 状态
     subscription = stateStream.listen((state) {
       if (_isCancelled) {
-        cleanup();
-        if (!completer.isCompleted) {
-          completer.complete(false);
-        }
-        return;
-      }
-
-      // 检查是否到达最大等待时间
-      if (DateTime.now().difference(startTime) > maxWait) {
-        cleanup();
-        if (!completer.isCompleted) {
-          completer.complete(false);
-        }
+        onCancel();
         return;
       }
 
@@ -858,81 +1057,128 @@ class ConsoleLogService {
   }
 
   /// 清理资源
+  ///
+  /// 先把在飞的 monitorConnection / wait 类等待方以 cancelled
+  /// 唤醒，再停监控、关流。之前不 cancel 会导致这些 Future 只能等到自己的
+  /// maxTimeout 才结束（甚至永远吊着），期间它们回调里对 _stateController
+  /// 的操作也会命中 close 后 add 的异常。
   void dispose() {
+    cancelConnectionMonitor();
     stopMonitoring();
-    _stateController.close();
+    if (!_stateController.isClosed) {
+      _stateController.close();
+    }
   }
 
 
   /// 更新状态
+  ///
+  /// `dispose()` 之后仍可能有正在飞的异步任务（例如条件刷新
+  /// 或 raf.read）回调回来试图更新状态；此时 [_stateController] 已经 close
+  /// 会抛 StateError。在这里守一次，让 dispose 后的迟到调用变成静默 no-op。
+  ///
+  /// 语义等价的连续状态不再向下游广播。之前每 500ms tick 只要走过
+  /// "首次可用"分支就会 emit；解析新行时 [_updateConnectionState] 也总是 emit，
+  /// 大量重复事件让 OBS / 热身 / 挤服守护做无谓的 refresh。
   void _updateState(ConsoleLogState newState) {
     _currentState = newState;
-    _stateController.add(_currentState);
+    if (_stateController.isClosed) return;
+    if (_lastEmittedState.sameStateAs(newState)) return;
+    _lastEmittedState = newState;
+    _stateController.add(newState);
   }
 
   /// 检查日志文件变化
   Future<void> _checkLogFile() async {
-    if (_logFilePath == null) {
-      _logFilePath = await getLogFilePath();
-      if (_logFilePath == null) return;
-    }
-
-    final file = File(_logFilePath!);
-
-    if (!await file.exists()) {
-      if (_currentState.available) {
-        _currentState = _currentState.copyWith(
-          available: false,
-          condebugEnabled: false,
-        );
-        _updateState(_currentState);
-      }
-      // 文件不存在时重置读取位置
-      _lastFileSize = 0;
-      _lastReadPos = 0;
-      _pendingBytes.clear();
-      return;
-    }
-
+    // 重入保护：500ms 轮询在慢盘/多字节日志上可能超过一个 tick，
+    // 未加锁时会出现两次 read 指针错位。
+    if (_isCheckingLogFile) return;
+    _isCheckingLogFile = true;
     try {
-      final stat = await file.stat();
-
-      // 如果之前不可用，现在可用了
-      if (!_currentState.available) {
-        _currentState = _currentState.copyWith(
-          available: true,
-          condebugEnabled: true,
-        );
-        _updateState(_currentState);
-        LogService.d('[ConsoleLog] 检测到控制台日志文件，监控已激活');
+      if (_logFilePath == null) {
+        _logFilePath = await getLogFilePath();
+        if (_logFilePath == null) return;
       }
 
-      final currentSize = stat.size;
+      final file = File(_logFilePath!);
 
-      // 文件大小没变化
-      if (currentSize == _lastFileSize) return;
-
-      // 文件被截断（可能是游戏重启）
-      if (currentSize < _lastFileSize) {
-        LogService.d('[ConsoleLog] 检测到日志文件被截断（游戏可能重启），重置读取位置');
-        _lastReadPos = 0;
+      if (!await file.exists()) {
+        if (_currentState.available) {
+          _currentState = _currentState.copyWith(
+            available: false,
+            condebugEnabled: false,
+          );
+          _updateState(_currentState);
+        }
+        // 文件不存在时重置读取位置
         _lastFileSize = 0;
+        _lastReadPos = 0;
         _pendingBytes.clear();
-        // 重置连接追踪状态
-        _targetServer = '';
-        _isLoopbackFallback = false;
-        _isInLoopbackMode = false;
+        return;
       }
 
-      // 读取新内容
-      await _readNewContent(currentSize);
-      _lastFileSize = currentSize;
-    } catch (e) {
-      LogService.e('[ConsoleLog] 检查日志文件失败', e);
+      try {
+        final stat = await file.stat();
+
+        // 如果之前不可用，现在可用了
+        //
+        // 不再"文件存在即断言 condebug=true"。
+        // 真实的 -condebug 状态由 GameStatusService 权威维护，
+        // 通过 _onGameStatusChanged 事件流镜像到 currentState，
+        // 这里只更新 available 字段，避免残留旧文件让上层误以为实时监控在工作。
+        if (!_currentState.available) {
+          _currentState = _currentState.copyWith(
+            available: true,
+            // 首次激活时同步一次 GameStatusService 的当前值，
+            // 覆盖尚未 emit 首个事件的空窗期
+            condebugEnabled: _readCondebugFromGameStatus(
+              fallback: _currentState.condebugEnabled,
+            ),
+          );
+          _updateState(_currentState);
+          LogService.d('[ConsoleLog] 检测到控制台日志文件，监控已激活');
+        }
+
+        final currentSize = stat.size;
+
+        // 文件大小没变化
+        if (currentSize == _lastFileSize) return;
+
+        // 文件被截断（可能是游戏重启）
+        if (currentSize < _lastFileSize) {
+          LogService.d('[ConsoleLog] 检测到日志文件被截断（游戏可能重启），重置读取位置');
+          _lastReadPos = 0;
+          _lastFileSize = 0;
+          _pendingBytes.clear();
+          // 重置连接追踪状态
+          _targetServer = '';
+          _isLoopbackFallback = false;
+          _isInLoopbackMode = false;
+        }
+
+        // 读取新内容
+        await _readNewContent(currentSize);
+        // 用真实的读进度更新 lastFileSize：若发生短读（分块
+        // 读取里可能出现），下次轮询会继续从 _lastReadPos 追读剩余尾部。
+        _lastFileSize = _lastReadPos;
+      } catch (e) {
+        // stat / open 异常必须把 available 同步为 false，
+        // 否则会出现"上层判断可读、底层持续报错"的读取状态不一致。
+        LogService.e('[ConsoleLog] 检查日志文件失败', e);
+        if (_currentState.available) {
+          _currentState = _currentState.copyWith(available: false);
+          _updateState(_currentState);
+        }
+      }
+    } finally {
+      _isCheckingLogFile = false;
     }
   }
 
   /// 读取新增的日志内容
+  ///
+  /// 改为分块（512KB）读取，避免监控停顿后一次性 diff 过大
+  /// 触发内存峰值 / GC 卡顿。
   Future<void> _readNewContent(int currentSize) async {
     if (_logFilePath == null) return;
 
@@ -947,21 +1193,41 @@ class ConsoleLogService {
           await raf.setPosition(_lastReadPos);
         }
 
-        // 读取新内容（字节）
-        final newContent = await raf.read(currentSize - _lastReadPos);
+        int remaining = currentSize - _lastReadPos;
+        while (remaining > 0) {
+          final want = remaining > _readChunkSize ? _readChunkSize : remaining;
+          final chunk = await raf.read(want);
+          if (chunk.isEmpty) break; // 防御：读到 EOF 之前的意外空返回
 
-        // 交给字节缓冲处理：仅完整行（以 \n 结尾）会被解析，
-        // 不完整的尾部留到下次读取时拼接。
-        _processBytes(newContent);
+          _processBytes(chunk);
 
-        _lastReadPos = currentSize;
+          remaining -= chunk.length;
+          _lastReadPos += chunk.length;
+
+          if (chunk.length < want) {
+            // 短读：文件在被读取过程中被截断或读到当前末尾，安全退出
+            break;
+          }
+        }
+
       } finally {
         await raf.close();
       }
     } catch (e) {
+      // 读取失败时把 available 同步为 false。
+      // 之前仅重置读指针后继续保持 available=true，导致上层认为日志"可读"
+      // 却始终拿不到内容。condebugEnabled 由 GameStatusService 事件驱动，
+      // 这里保持不变即可。
       LogService.e('[ConsoleLog] 读取日志文件失败', e);
       _lastReadPos = 0;
       _pendingBytes.clear();
+      if (_currentState.available) {
+        _currentState = _currentState.copyWith(
+          available: false,
+          errorMessage: '日志文件读取失败: $e',
+        );
+        _updateState(_currentState);
+      }
     }
   }
 
@@ -986,7 +1252,14 @@ class ConsoleLogService {
         }
         final lineBytes = _pendingBytes.sublist(start, end);
         final line = utf8.decode(lineBytes, allowMalformed: true);
-        _parseLine(line);
+        // 单行解析失败必须就地降级，不能让异常冒到
+        // [_readNewContent] 的 catch。那里会把 _lastReadPos 归零，下一 tick
+        // 又会从头重读、再次撞到同一行、再次抛异常 —— 变成静默的死循环。
+        try {
+          _parseLine(line);
+        } catch (e) {
+          LogService.w('[ConsoleLog] 解析行失败，跳过: $e');
+        }
         start = i + 1;
       }
     }
@@ -1044,9 +1317,40 @@ class ConsoleLogService {
       final raf = await file.open(mode: FileMode.read);
       try {
         await raf.setPosition(startPos);
-        final content = await raf.read(fileSize - startPos);
-        // 用 utf8 解码（allowMalformed）避免多字节字符被 fromCharCodes 错误解码
-        final lines = utf8.decode(content, allowMalformed: true).split('\n');
+
+        // 分块（512KB）读取 + 分块 UTF-8 解码，避免 16MB 单缓冲
+        // 造成的 GC / OOM 尖峰。同 _readNewContent 的处理思路，也用字节缓冲
+        // 保证跨 chunk 的多字节 UTF-8 / 半行不会被错误解析。
+        final List<String> lines = [];
+        final buffer = <int>[];
+        int remaining = fileSize - startPos;
+        while (remaining > 0) {
+          final want = remaining > _readChunkSize ? _readChunkSize : remaining;
+          final chunk = await raf.read(want);
+          if (chunk.isEmpty) break;
+          remaining -= chunk.length;
+          buffer.addAll(chunk);
+
+          // 拆完整行
+          int lineStart = 0;
+          for (int i = 0; i < buffer.length; i++) {
+            if (buffer[i] == 0x0A) {
+              var end = i;
+              if (end > lineStart && buffer[end - 1] == 0x0D) end--;
+              lines.add(
+                utf8.decode(buffer.sublist(lineStart, end), allowMalformed: true),
+              );
+              lineStart = i + 1;
+            }
+          }
+          if (lineStart > 0) {
+            buffer.removeRange(0, lineStart);
+          }
+        }
+        // 处理最后一段没有换行符的尾部
+        if (buffer.isNotEmpty) {
+          lines.add(utf8.decode(buffer, allowMalformed: true));
+        }
 
         String? lastServerAddress;
         String? lastMapName;
@@ -1059,7 +1363,15 @@ class ConsoleLogService {
           final line = lines[i].trim();
           if (line.isEmpty) continue;
 
-          final event = CS2LogParser.parse(line);
+          // 单行解析失败不能让整个历史回溯崩掉，否则会走到
+          // 外层 catch 把整段 history 恢复能力都吃掉。
+          CS2EngineEvent? event;
+          try {
+            event = CS2LogParser.parse(line);
+          } catch (e) {
+            LogService.w('[ConsoleLog] 历史行解析失败，跳过: $e');
+            continue;
+          }
           if (event == null) continue;
 
           if (event is EvMainMenu || event is EvDisconnect) {
