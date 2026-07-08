@@ -109,8 +109,8 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                     );
                   }
 
-                  return RichText(
-                    text: TextSpan(
+                  return SelectableText.rich(
+                    TextSpan(
                       children: [
                         TextSpan(
                           text: '[${_formatTime(message.timestamp)}] ',
@@ -296,38 +296,57 @@ class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.campaign,
-                color: Color.lerp(
-                  const Color(0xFF7C3AED),
-                  AppColors.amber400,
-                  offsetValue,
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.campaign,
+                  color: Color.lerp(
+                    const Color(0xFF7C3AED),
+                    AppColors.amber400,
+                    offsetValue,
+                  ),
+                  size: 16,
                 ),
-                size: 16,
               ),
               const SizedBox(width: 6),
               Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SelectableText.rich(
                       TextSpan(
-                        text: '${widget.message.displayName}: ',
-                        style: const TextStyle(
-                          color: AppColors.amber400, // 黄色
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                        children: [
+                          TextSpan(
+                            text: '${widget.message.displayName}: ',
+                            style: const TextStyle(
+                              color: AppColors.amber400, // 黄色
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextSpan(
+                            text: widget.message.content,
+                            style: const TextStyle(
+                              color: AppColors.amber400, // 黄色
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        widget.formatTime(widget.message.timestamp),
+                        style: TextStyle(
+                          color: AppColors.amber400.withValues(alpha: 0.9),
+                          fontSize: 10,
                         ),
                       ),
-                      TextSpan(
-                        text: widget.message.content,
-                        style: const TextStyle(
-                          color: AppColors.amber400, // 黄色
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],

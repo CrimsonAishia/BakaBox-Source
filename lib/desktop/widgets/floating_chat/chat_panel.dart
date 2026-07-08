@@ -318,8 +318,8 @@ class _ChatPanelState extends State<ChatPanel>
     final isSystem = message.type == LobbyMessageType.system;
     final isAnonymous = message.isAnonymous;
 
-    return RichText(
-      text: TextSpan(
+    return SelectableText.rich(
+      TextSpan(
         children: [
           TextSpan(
             text: '[${_formatTime(message.timestamp)}] ',
@@ -526,30 +526,49 @@ class _BroadcastMessageWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.campaign, color: AppColors.amber400, size: 16),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.campaign, color: AppColors.amber400, size: 16),
+          ),
           const SizedBox(width: 6),
           Expanded(
-            child: RichText(
-              text: TextSpan(
-                children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SelectableText.rich(
                   TextSpan(
-                    text: '${message.displayName}: ',
-                    style: const TextStyle(
-                      color: AppColors.amber400,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                    children: [
+                      TextSpan(
+                        text: '${message.displayName}: ',
+                        style: const TextStyle(
+                          color: AppColors.amber400,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: message.content,
+                        style: const TextStyle(
+                          color: AppColors.amber400,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    formatTime(message.timestamp),
+                    style: TextStyle(
+                      color: AppColors.amber400.withValues(alpha: 0.9),
+                      fontSize: 10,
                     ),
                   ),
-                  TextSpan(
-                    text: message.content,
-                    style: const TextStyle(
-                      color: AppColors.amber400,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
