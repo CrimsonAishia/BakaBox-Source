@@ -396,6 +396,11 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
       ),
     );
 
-    widget.onColorSelected(colorToHex(result));
+    // showColorPickerDialog 在点击 close(X) 时返回初始颜色，
+    // 只有用户通过 OK 确认时返回的才是新选中的颜色。
+    // 当返回值等于初始颜色时，视为取消操作，不触发回调。
+    if (result.toARGB32() != pickerColor.toARGB32()) {
+      widget.onColorSelected(colorToHex(result));
+    }
   }
 }
