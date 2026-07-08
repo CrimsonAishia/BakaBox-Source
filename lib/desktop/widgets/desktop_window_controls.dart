@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/core.dart';
 import 'exit_dialog.dart';
 import 'notification/notification_panel.dart';
@@ -180,6 +183,12 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   int _lastUnreadCount = 0;
+  int _dismissedUnreadCount = 0;
+  
+  final JustTheController _tooltipController = JustTheController();
+
+  bool get _hasUnread => widget.unreadCount > 0;
+  bool get _shouldShowConstantly => _hasUnread && widget.unreadCount > _dismissedUnreadCount;
 
   @override
   void initState() {
@@ -195,6 +204,11 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
     _lastUnreadCount = widget.unreadCount;
     if (widget.unreadCount > 0) {
       _pulseController.repeat(reverse: true);
+      if (_shouldShowConstantly) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showTooltip();
+        });
+      }
     }
   }
 
@@ -202,18 +216,48 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   void didUpdateWidget(_MessageCenterButton oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // 未读数增加时触发动画
     if (widget.unreadCount > _lastUnreadCount) {
       _pulseController.repeat(reverse: true);
-    } else if (widget.unreadCount == 0 && _pulseController.isAnimating) {
-      _pulseController.stop();
-      _pulseController.reset();
+      _dismissedUnreadCount = 0; // 重置忽略的未读数，有新消息重新显示
+      _showTooltip();
+    } else if (widget.unreadCount == 0) {
+      _dismissedUnreadCount = 0;
+      if (_pulseController.isAnimating) {
+        _pulseController.stop();
+        _pulseController.reset();
+      }
+      if (!_isHovered) _hideTooltip();
+    } else if (!_shouldShowConstantly && !_isHovered) {
+      _hideTooltip();
     }
+    
     _lastUnreadCount = widget.unreadCount;
+  }
+  
+  void _showTooltip() {
+    try {
+      _tooltipController.showTooltip(immediately: false);
+    } catch (_) {}
+  }
+
+  void _hideTooltip() {
+    try {
+      _tooltipController.hideTooltip(immediately: false);
+    } catch (_) {}
+  }
+
+  void _onCloseTooltip() {
+    setState(() {
+      _dismissedUnreadCount = widget.unreadCount;
+    });
+    if (!_isHovered) {
+      _hideTooltip();
+    }
   }
 
   @override
   void dispose() {
+    _tooltipController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -222,13 +266,77 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   Widget build(BuildContext context) {
     final hasUnread = widget.unreadCount > 0;
 
-    return Tooltip(
-      message: hasUnread ? '${widget.unreadCount} 条未读消息' : '消息中心',
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        _showTooltip();
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+        if (!_shouldShowConstantly) {
+          _hideTooltip();
+        }
+      },
+      child: JustTheTooltip(
+        controller: _tooltipController,
+        triggerMode: TooltipTriggerMode.manual,
+        preferredDirection: AxisDirection.down,
+        tailLength: 6,
+        tailBaseWidth: 10,
+        offset: 0,
+        borderRadius: BorderRadius.circular(10),
+        shadow: const Shadow(
+          color: Colors.black26,
+          blurRadius: 8,
+          offset: Offset(0, 4),
+        ),
+        backgroundColor: _hasUnread 
+            ? AppColors.primary
+            : (widget.isDark ? const Color(0xFF2D2D2D) : Colors.white),
+        content: Padding(
+          padding: EdgeInsets.only(
+            left: 12, 
+            right: _shouldShowConstantly ? 6 : 12, 
+            top: 8, 
+            bottom: 8,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_hasUnread) ...[
+                const Icon(Icons.mark_email_unread_rounded, size: 16, color: Colors.white)
+                    .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                    .moveY(begin: -1.5, end: 1.5, duration: 1000.ms, curve: Curves.easeInOut),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                _hasUnread ? '您有 ${widget.unreadCount} 条未读消息' : '消息中心',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: _hasUnread ? FontWeight.w600 : FontWeight.w500,
+                  color: _hasUnread 
+                      ? Colors.white 
+                      : (widget.isDark ? Colors.white : Colors.black87),
+                  letterSpacing: 0.2,
+                ),
+              ),
+              if (_shouldShowConstantly) ...[
+                const SizedBox(width: 8),
+                _TooltipCloseButton(onTap: _onCloseTooltip),
+              ],
+            ],
+          ),
+        ),
         child: GestureDetector(
-          onTap: widget.onPressed,
+          onTap: () {
+            if (_shouldShowConstantly) {
+              setState(() {
+                _dismissedUnreadCount = widget.unreadCount;
+              });
+              _hideTooltip();
+            }
+            widget.onPressed();
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: 44,
@@ -327,6 +435,48 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TooltipCloseButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _TooltipCloseButton({required this.onTap});
+
+  @override
+  State<_TooltipCloseButton> createState() => _TooltipCloseButtonState();
+}
+
+class _TooltipCloseButtonState extends State<_TooltipCloseButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: _isHovered 
+                ? Colors.white.withValues(alpha: 0.5) 
+                : Colors.white.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+            boxShadow: _isHovered ? [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              )
+            ] : null,
+          ),
+          child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
         ),
       ),
     );
