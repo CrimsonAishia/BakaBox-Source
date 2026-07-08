@@ -159,6 +159,12 @@ class NotificationWindowService {
   /// 活跃的通知窗口
   final Map<String, _NotificationWindowInfo> _activeWindows = {};
 
+  /// 窗口关闭事件流控制器
+  final _windowClosedController = StreamController<String>.broadcast();
+  
+  /// 窗口关闭事件流
+  Stream<String> get windowClosedStream => _windowClosedController.stream;
+
   /// 主窗口 ID（用于子窗口通过 IPC 通知主窗口）
   String _mainWindowId = '';
 
@@ -593,6 +599,7 @@ class NotificationWindowService {
       LogService.d(
         '[NotificationWindow] Window closed via IPC: $notificationId, remaining: ${_activeWindows.length}',
       );
+      _windowClosedController.add(notificationId);
       // 从等待队列中取出下一个通知显示（会自动填补空位）
       Future.microtask(() => _showNextFromPendingQueue());
     }
@@ -653,5 +660,6 @@ class NotificationWindowService {
 
   void dispose() {
     dismissAll();
+    _windowClosedController.close();
   }
 }

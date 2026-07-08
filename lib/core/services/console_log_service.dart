@@ -547,7 +547,6 @@ class ConsoleLogService {
     _targetServer = '';
     _isLoopbackFallback = false;
     _isInLoopbackMode = false;
-    _isInLoopbackMode = false;
 
     // 初始化状态
     _currentState = ConsoleLogState(
@@ -607,10 +606,6 @@ class ConsoleLogService {
       _targetServer = '';
       _isLoopbackFallback = false;
       _isInLoopbackMode = false;
-      _isInLoopbackMode = false;
-      _lastFileSize = 0;
-      _lastReadPos = 0;
-      _pendingBytes.clear();
       _updateState(_currentState);
     }
   }
@@ -647,7 +642,6 @@ class ConsoleLogService {
     // 重置连接追踪状态
     _targetServer = '';
     _isLoopbackFallback = false;
-    _isInLoopbackMode = false;
     _isInLoopbackMode = false;
 
     _updateState(_currentState);
@@ -869,7 +863,6 @@ class ConsoleLogService {
     _stateController.close();
   }
 
-  // ==================== 私有方法 ====================
 
   /// 更新状态
   void _updateState(ConsoleLogState newState) {
@@ -928,7 +921,6 @@ class ConsoleLogService {
         // 重置连接追踪状态
         _targetServer = '';
         _isLoopbackFallback = false;
-        _isInLoopbackMode = false;
         _isInLoopbackMode = false;
       }
 

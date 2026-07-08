@@ -51,6 +51,7 @@ class WarmupMonitorService {
   StreamSubscription<ConsoleLogState>? _consoleStateSubscription;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   StreamSubscription<ServerMapRuntimeEvent>? _realtimeSubscription;
+  StreamSubscription<String>? _notificationClosedSubscription;
   bool _realtimeSubscribed = false;
   GameState _lastGameState = GameState.unknown;
 
@@ -66,11 +67,26 @@ class WarmupMonitorService {
       _onGameStatusChanged,
     );
 
+    _notificationClosedSubscription?.cancel();
+    _notificationClosedSubscription = _notificationService.windowClosedStream.listen(
+      _onNotificationClosed,
+    );
+
     await _addressMapping.load();
 
     _restoreStateFromConsoleLog();
 
     LogService.d('[WarmupMonitor] 服务已初始化（WS 驱动）');
+  }
+
+  void _onNotificationClosed(String notificationId) {
+    if (_currentServerAddress != null && notificationId == 'warmup_$_currentServerAddress') {
+      if (_isWarmingUp) {
+        LogService.d('[WarmupMonitor] 用户手动关闭了热身通知，停止倒计时刷新');
+        _isWarmingUp = false;
+        _stopWarmupTimer();
+      }
+    }
   }
 
 
@@ -362,6 +378,8 @@ class WarmupMonitorService {
     LogService.d('[WarmupMonitor] 热身通知已${enabled ? '启用' : '禁用'}');
     if (!enabled && _isWarmingUp && _currentServerAddress != null) {
       _notificationService.dismissWarmupNotification(_currentServerAddress!);
+      _isWarmingUp = false;
+      _stopWarmupTimer();
     }
   }
 
@@ -370,6 +388,7 @@ class WarmupMonitorService {
     _stopRealtime();
     _consoleStateSubscription?.cancel();
     _gameStatusSubscription?.cancel();
+    _notificationClosedSubscription?.cancel();
     if (_isWarmingUp && _currentServerAddress != null) {
       _notificationService.dismissWarmupNotification(_currentServerAddress!);
     }
