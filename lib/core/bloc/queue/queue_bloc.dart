@@ -73,9 +73,16 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     // 调整目标人数不超过允许的最大值
     var config = savedConfig;
     if (initialServerInfo != null) {
-      final maxTarget = (initialServerInfo.maxPlayers ?? 64) - 1;
-      if (maxTarget > 0 && config.targetPlayers > maxTarget) {
-        config = config.copyWith(targetPlayers: maxTarget);
+      final mp = initialServerInfo.maxPlayers ?? 64;
+      final maxTarget = mp - 1;
+      final minTarget = (mp * 0.8).ceil();
+      if (maxTarget > 0) {
+        var clamped = config.targetPlayers;
+        if (clamped > maxTarget) clamped = maxTarget;
+        if (clamped < minTarget && minTarget <= maxTarget) clamped = minTarget;
+        if (clamped != config.targetPlayers) {
+          config = config.copyWith(targetPlayers: clamped);
+        }
       }
     }
 
@@ -210,11 +217,18 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
           LogService.d('[QueueBloc] 获取地图信息失败: $e');
         }
 
-        // 调整目标人数不超过允许的最大值
+        // 调整目标人数：不超过 maxPlayers-1，不低于 maxPlayers 的 80%
         var config = state.config;
-        final maxTarget = sourceInfo.maxPlayers - 1;
-        if (maxTarget > 0 && config.targetPlayers > maxTarget) {
-          config = config.copyWith(targetPlayers: maxTarget);
+        final mp = sourceInfo.maxPlayers;
+        final maxTarget = mp - 1;
+        final minTarget = (mp * 0.8).ceil();
+        if (maxTarget > 0) {
+          var clamped = config.targetPlayers;
+          if (clamped > maxTarget) clamped = maxTarget;
+          if (clamped < minTarget && minTarget <= maxTarget) clamped = minTarget;
+          if (clamped != config.targetPlayers) {
+            config = config.copyWith(targetPlayers: clamped);
+          }
         }
 
         emit(
@@ -390,18 +404,25 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     }
 
     final maxPlayers = state.serverInfo?.maxPlayers ?? 64;
+    final minTarget = (maxPlayers * 0.8).ceil();
 
     // 切换捐助者状态时，调整目标人数
     int newTargetPlayers;
     if (event.isDonator) {
-      // 开启捐助者：保持当前设置，但不超过 maxPlayers - 1
-      newTargetPlayers = state.config.targetPlayers.clamp(1, maxPlayers - 1);
+      // 开启捐助者：保持当前设置，但不低于 80% 且不超过 maxPlayers - 1
+      newTargetPlayers = state.config.targetPlayers.clamp(
+        minTarget,
+        maxPlayers - 1,
+      );
     } else {
-      // 关闭捐助者：如果当前超过59，则设为59
+      // 关闭捐助者：如果当前超过59，则设为59，且不低于 80%
       final maxNonDonator = 59;
-      newTargetPlayers = state.config.targetPlayers > maxNonDonator
-          ? maxNonDonator
-          : state.config.targetPlayers;
+      final upperBound =
+          maxNonDonator < maxPlayers - 1 ? maxNonDonator : maxPlayers - 1;
+      newTargetPlayers = state.config.targetPlayers.clamp(
+        minTarget,
+        upperBound,
+      );
     }
 
     // 更新配置

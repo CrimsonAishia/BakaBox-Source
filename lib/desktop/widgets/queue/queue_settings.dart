@@ -157,7 +157,14 @@ class QueueSettings extends StatelessWidget {
       effectiveMaxPlayers = serverMax < 59 ? serverMax : 59;
     }
 
-    final effectiveTargetPlayers = targetPlayers.clamp(1, effectiveMaxPlayers);
+    // 最小值：服务器最大人数的 80%（向上取整），保证挤服时服务器已接近满员。
+    // 拿不到 maxPlayers 时回退到 1，避免 Slider 出现 min > max。
+    final rawMin = ((maxPlayers > 1 ? maxPlayers : 0) * 0.8).ceil();
+    final effectiveMinPlayers =
+        (rawMin > 0 && rawMin <= effectiveMaxPlayers) ? rawMin : 1;
+
+    final effectiveTargetPlayers =
+        targetPlayers.clamp(effectiveMinPlayers, effectiveMaxPlayers);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,9 +215,11 @@ class QueueSettings extends StatelessWidget {
           ),
           child: Slider(
             value: effectiveTargetPlayers.toDouble(),
-            min: 1,
+            min: effectiveMinPlayers.toDouble(),
             max: effectiveMaxPlayers.toDouble(),
-            divisions: effectiveMaxPlayers - 1,
+            divisions: effectiveMaxPlayers - effectiveMinPlayers > 0
+                ? effectiveMaxPlayers - effectiveMinPlayers
+                : 1,
             onChanged: disabled
                 ? null
                 : (value) {
@@ -222,7 +231,7 @@ class QueueSettings extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '1人',
+              '$effectiveMinPlayers人',
               style: TextStyle(
                 fontSize: 11,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),

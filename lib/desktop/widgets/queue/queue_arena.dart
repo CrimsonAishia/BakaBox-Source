@@ -130,6 +130,15 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
   /// 随机数生成器
   final Random _random = Random();
 
+  /// 面板宽高比（width / height），用于把归一化距离修正为等效物理距离。
+  ///
+  /// 面板通常为长方形（约 388×250 → 1.55），若直接用归一化欧氏距离判定，
+  /// Y 方向 1 单位对应的物理像素比 X 方向少 55%，会导致上下相邻头像明显重叠。
+  /// 距离判定时用 `dy / _panelAspectRatio` 校正后，判定等效于比较物理距离。
+  ///
+  /// 首次 build 前默认取贴近实际的 1.55，避免 initState 里放置初始用户时判错。
+  double _panelAspectRatio = 1.55;
+
   /// 淡入动画时长
   static const Duration _fadeInDuration = Duration(milliseconds: 400);
 
@@ -140,13 +149,20 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
   static const Duration _flyDuration = Duration(milliseconds: 500);
 
   /// 最大显示用户数
-  static const int _maxDisplayUsers = 20;
+  static const int _maxDisplayUsers = 50;
 
-  /// 中心区域半径比例（避开中心服务器图标）
-  static const double _centerExclusionRatio = 0.38;
+  /// 中心排斥半径（aspect 修正后，等价于物理圆的归一化半径）
+  ///
+  /// 判定采用 aspect 修正欧氏距离：sqrt(dx² + (dy/aspect)²) < ratio。
+  /// 面板宽 388、高 250，aspect≈1.55；0.22 对应物理 X 半径 ≈ 85px、Y 半径 ≈ 85px
+  /// （两方向物理距离相等的圆），服务器图标半径 ≈ 50px 时留白约 35px。
+  static const double _centerExclusionRatio = 0.22;
 
-  /// 头像大小浮动范围
-  static const double _sizeVariation = 0.2; // ±20%
+  /// 头像大小基础浮动幅度（±15%）
+  static const double _sizeVariation = 0.15;
+
+  /// 面板外框留白（0.06 → 88% 有效放置带宽）
+  static const double _edgeMargin = 0.06;
 
   /// 漂浮幅度
   static const double _floatAmplitude = 3.0;
@@ -250,27 +266,65 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     ];
   }
 
-  /// 随机生成头像大小
+  /// 随机生成头像大小（根据当前人数动态缩放）
+  ///
+  /// - ≤20 人：完整 avatarSize，±15% 浮动
+  /// - 21-50 人：base 线性缩到 55%（36 → 20px），且浮动收到 ±8% 避免最大值超预算
+  ///
+  /// 与 [_getMinDistance] 配套设计：50 人时 base=20、max=21.6px，
+  /// 而 minDistance=0.06 对应水平物理距离 23.3px，能容纳最大头像。
   double _randomSize() {
-    final variation = (_random.nextDouble() * 2 - 1) * _sizeVariation;
-    return widget.avatarSize * (1 + variation);
+    final count = _userStates.length;
+    final scale = count <= 20
+        ? 1.0
+        : (1.0 - (count - 20) * 0.015).clamp(0.55, 1.0);
+    // 人多时收敛浮动，避免罕见"两个都是最大"命中重叠边界
+    final variation = count > 30 ? 0.08 : _sizeVariation;
+    final rnd = (_random.nextDouble() * 2 - 1) * variation;
+    return widget.avatarSize * scale * (1 + rnd);
+  }
+
+  /// 根据当前人数动态决定最小归一化间距（水平方向物理距离）
+  ///
+  /// - ≤20 人：0.11 → 水平 42.7px，能容纳 41.4px 最大头像
+  /// - 50 人：  0.06 → 水平 23.3px，能容纳 21.6px 最大头像
+  ///
+  /// 判定时对 dy 做 aspect 修正，等效于比较物理距离，保证 Y 方向也不重叠。
+  double _getMinDistance() {
+    final count = _userStates.length;
+    if (count <= 20) return 0.11;
+    return (0.11 - (count - 20) * 0.00167).clamp(0.06, 0.11);
   }
 
   /// 找一个可用的位置
+  ///
+  /// **距离判定原理**：面板是长方形（宽 > 高），归一化坐标下同一 dx/dy 对应
+  /// 的物理像素不等。判定时把 dy 除以 aspect 比例，使 `sqrt(dx² + (dy/aspect)²)`
+  /// 等价于比较 X 方向物理距离，保证任意方向上头像都不会重叠。
+  ///
+  /// - 中心排斥用同样的 aspect 修正，让排斥区在物理上是圆而非椭圆
+  /// - 头像间距 [_getMinDistance] 已按最大头像尺寸预留缓冲
   (double, double) _findAvailablePosition() {
-    const maxAttempts = 50;
-    const minDistance = 0.12;
+    const maxAttempts = 100;
+    final minDistance = _getMinDistance();
+    final aspect = _panelAspectRatio;
+    final range = 1.0 - 2 * _edgeMargin;
 
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      final x = 0.1 + _random.nextDouble() * 0.8;
-      final y = 0.1 + _random.nextDouble() * 0.8;
+      final x = _edgeMargin + _random.nextDouble() * range;
+      final y = _edgeMargin + _random.nextDouble() * range;
 
-      final distToCenter = sqrt(pow(x - 0.5, 2) + pow(y - 0.5, 2));
-      if (distToCenter < _centerExclusionRatio) continue;
+      // 中心排斥（aspect 修正后 → 物理圆）
+      final dxc = x - 0.5;
+      final dyc = (y - 0.5) / aspect;
+      if (sqrt(dxc * dxc + dyc * dyc) < _centerExclusionRatio) continue;
 
+      // 与已放置头像的最小间距检查（aspect 修正后 → 物理距离）
       bool overlaps = false;
       for (final state in _userStates.values) {
-        final dist = sqrt(pow(x - state.x, 2) + pow(y - state.y, 2));
+        final dx = x - state.x;
+        final dy = (y - state.y) / aspect;
+        final dist = sqrt(dx * dx + dy * dy);
         if (dist < minDistance) {
           overlaps = true;
           break;
@@ -280,13 +334,18 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
       if (!overlaps) return (x, y);
     }
 
+    // 兜底：只保证中心排斥，允许与其他头像轻微重叠（尝试 100 次都没找到，
+    // 意味着面板已经很拥挤，此时 UX 上少量重叠比抛异常好）
     double x, y;
     do {
-      x = 0.1 + _random.nextDouble() * 0.8;
-      y = 0.1 + _random.nextDouble() * 0.8;
-    } while (sqrt(pow(x - 0.5, 2) + pow(y - 0.5, 2)) < _centerExclusionRatio);
-
-    return (x, y);
+      x = _edgeMargin + _random.nextDouble() * range;
+      y = _edgeMargin + _random.nextDouble() * range;
+      final dxc = x - 0.5;
+      final dyc = (y - 0.5) / aspect;
+      if (sqrt(dxc * dxc + dyc * dyc) >= _centerExclusionRatio) {
+        return (x, y);
+      }
+    } while (true);
   }
 
   /// 处理用户列表变化
@@ -524,6 +583,13 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         final height = constraints.maxHeight;
         final centerX = width / 2;
         final centerY = height / 2;
+
+        // 更新面板 aspect（用于 _findAvailablePosition 的距离修正）。
+        // 首次 initState 时使用默认 1.55；build 拿到实际尺寸后校准，之后新加入
+        // 的用户位置解析会使用真实 aspect。
+        if (width > 0 && height > 0) {
+          _panelAspectRatio = width / height;
+        }
 
         return Stack(
           children: [
