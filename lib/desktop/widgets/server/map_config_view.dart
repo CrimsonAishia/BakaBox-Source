@@ -319,7 +319,9 @@ class _MapConfigViewState extends State<MapConfigView> {
       width: 200,
       height: 36,
       decoration: BoxDecoration(
-        color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+        color: widget.isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _borderColor),
       ),
@@ -330,22 +332,39 @@ class _MapConfigViewState extends State<MapConfigView> {
         decoration: InputDecoration(
           hintText: '搜索属性...',
           hintStyle: TextStyle(color: _subTextColor, fontSize: 13, height: 1.0),
-          prefixIcon: Icon(Icons.search_rounded, size: 16, color: _subTextColor),
-          prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 16,
+            color: _subTextColor,
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 36,
+            minHeight: 36,
+          ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.close_rounded, size: 14, color: _subTextColor),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 14,
+                    color: _subTextColor,
+                  ),
                   onPressed: () {
                     _searchController.clear();
                     FocusScope.of(context).unfocus();
                   },
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
                 )
               : null,
-          suffixIconConstraints: _searchQuery.isNotEmpty 
+          suffixIconConstraints: _searchQuery.isNotEmpty
               ? const BoxConstraints(minWidth: 36, minHeight: 36)
-              : const BoxConstraints(minWidth: 12, minHeight: 36), // Right padding when no icon
+              : const BoxConstraints(
+                  minWidth: 12,
+                  minHeight: 36,
+                ), // Right padding when no icon
           contentPadding: EdgeInsets.zero,
           isDense: true,
           border: InputBorder.none,
@@ -539,12 +558,14 @@ class _MapConfigViewState extends State<MapConfigView> {
           spacing: 8,
           runSpacing: 8,
           children: anonymousAttrs
-              .map((p) => _buildPropertyItem(
-                    p,
-                    anonymousEntity,
-                    category,
-                    categoryColor,
-                  ))
+              .map(
+                (p) => _buildPropertyItem(
+                  p,
+                  anonymousEntity,
+                  category,
+                  categoryColor,
+                ),
+              )
               .toList(),
         ),
       );
@@ -581,10 +602,13 @@ class _MapConfigViewState extends State<MapConfigView> {
 
   /// 属性签名：把实体的属性列表规范化后拼串，用于分桶
   String _signatureOf(MapConfigEntity entity) {
-    final sorted = [...entity.attributes]..sort((a, b) => a.key.compareTo(b.key));
+    final sorted = [...entity.attributes]
+      ..sort((a, b) => a.key.compareTo(b.key));
     return sorted
-        .map((a) =>
-            '${a.key}\u0001${a.value}\u0002${a.unit ?? ''}\u0002${a.originalValue ?? ''}\u0002${a.description ?? ''}')
+        .map(
+          (a) =>
+              '${a.key}\u0001${a.value}\u0002${a.unit ?? ''}\u0002${a.originalValue ?? ''}\u0002${a.description ?? ''}',
+        )
         .join('\u0003');
   }
 
@@ -593,7 +617,10 @@ class _MapConfigViewState extends State<MapConfigView> {
     final Map<String, _EntityCluster> byKey = <String, _EntityCluster>{};
     for (final e in entities) {
       final sig = _signatureOf(e);
-      byKey.putIfAbsent(sig, () => _EntityCluster(signature: sig)).entities.add(e);
+      byKey
+          .putIfAbsent(sig, () => _EntityCluster(signature: sig))
+          .entities
+          .add(e);
     }
     return byKey.values.toList();
   }
@@ -611,14 +638,18 @@ class _MapConfigViewState extends State<MapConfigView> {
       if (cluster.sharedAttributes.isEmpty) {
         final aliasId = '${category.category}_${e.name}_';
         final primaryId = '${category.category}_${primary.name}_';
-        _propertyKeys[aliasId] =
-            _propertyKeys.putIfAbsent(primaryId, () => GlobalKey());
+        _propertyKeys[aliasId] = _propertyKeys.putIfAbsent(
+          primaryId,
+          () => GlobalKey(),
+        );
       } else {
         for (final a in cluster.sharedAttributes) {
           final aliasId = '${category.category}_${e.name}_${a.key}';
           final primaryId = '${category.category}_${primary.name}_${a.key}';
-          _propertyKeys[aliasId] =
-              _propertyKeys.putIfAbsent(primaryId, () => GlobalKey());
+          _propertyKeys[aliasId] = _propertyKeys.putIfAbsent(
+            primaryId,
+            () => GlobalKey(),
+          );
         }
       }
     }
@@ -649,8 +680,9 @@ class _MapConfigViewState extends State<MapConfigView> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: (widget.isDark ? Colors.white : Colors.black)
-              .withValues(alpha: 0.02),
+          color: (widget.isDark ? Colors.white : Colors.black).withValues(
+            alpha: 0.02,
+          ),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: _borderColor),
         ),
@@ -691,8 +723,14 @@ class _MapConfigViewState extends State<MapConfigView> {
                 spacing: 6,
                 runSpacing: 6,
                 children: cluster.sharedAttributes
-                    .map((p) =>
-                        _buildPropertyItem(p, primary, category, categoryColor))
+                    .map(
+                      (p) => _buildPropertyItem(
+                        p,
+                        primary,
+                        category,
+                        categoryColor,
+                      ),
+                    )
                     .toList(),
               ),
             ],
@@ -706,13 +744,13 @@ class _MapConfigViewState extends State<MapConfigView> {
     final Color? userKeyBg = hexToColor(_keyBgHex);
     final bool useCustom = userKeyBg != null;
 
-    final Color bg =
-        useCustom ? userKeyBg : _accentColor.withValues(alpha: 0.12);
+    final Color bg = useCustom
+        ? userKeyBg
+        : _accentColor.withValues(alpha: 0.12);
     final Color borderColor = useCustom
         ? userKeyBg.withValues(alpha: 0.55)
         : _accentColor.withValues(alpha: 0.35);
-    final Color textColor =
-        useCustom ? _contrastText(userKeyBg) : _accentColor;
+    final Color textColor = useCustom ? _contrastText(userKeyBg) : _accentColor;
 
     final Widget label = useCustom
         ? _buildStrokedText(
@@ -730,7 +768,8 @@ class _MapConfigViewState extends State<MapConfigView> {
             ),
           );
 
-    final isMatch = _searchQuery.isEmpty ||
+    final isMatch =
+        _searchQuery.isEmpty ||
         entity.name.toLowerCase().contains(_searchQuery);
 
     return Opacity(
@@ -789,7 +828,9 @@ class _MapConfigViewState extends State<MapConfigView> {
                   width: 3,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: isDisabled ? _subTextColor.withValues(alpha: 0.5) : themeColor,
+                    color: isDisabled
+                        ? _subTextColor.withValues(alpha: 0.5)
+                        : themeColor,
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -800,10 +841,6 @@ class _MapConfigViewState extends State<MapConfigView> {
                     color: isDisabled ? _subTextColor : _textColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    decoration:
-                        isDisabled ? TextDecoration.lineThrough : null,
-                    decorationColor: _subTextColor,
-                    decorationThickness: 1.5,
                   ),
                 ),
                 if (isDisabled) ...[
@@ -817,12 +854,9 @@ class _MapConfigViewState extends State<MapConfigView> {
             spacing: 6,
             runSpacing: 6,
             children: entity.attributes
-                .map((p) => _buildPropertyItem(
-                      p,
-                      entity,
-                      category,
-                      categoryColor,
-                    ))
+                .map(
+                  (p) => _buildPropertyItem(p, entity, category, categoryColor),
+                )
                 .toList(),
           ),
         ],
@@ -884,10 +918,7 @@ class _MapConfigViewState extends State<MapConfigView> {
   ) {
     final itemKeyId = '${category.category}_${entity.name}_';
     final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
-    return Container(
-      key: globalKey,
-      child: _buildClusterEntityPill(entity),
-    );
+    return Container(key: globalKey, child: _buildClusterEntityPill(entity));
   }
 
   /// 「禁用」条：把仅禁用无属性的实体聚拢到底部一排小胶囊
@@ -909,11 +940,7 @@ class _MapConfigViewState extends State<MapConfigView> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.block_rounded,
-                size: 13,
-                color: _subTextColor,
-              ),
+              Icon(Icons.block_rounded, size: 13, color: _subTextColor),
               const SizedBox(width: 6),
               Text(
                 '已禁用（${entities.length}）',
@@ -946,7 +973,8 @@ class _MapConfigViewState extends State<MapConfigView> {
     final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
 
     // 搜索也命中带属性的实体的 attr key/value
-    bool isMatch = _searchQuery.isEmpty ||
+    bool isMatch =
+        _searchQuery.isEmpty ||
         entity.name.toLowerCase().contains(_searchQuery);
     if (!isMatch) {
       for (final a in entity.attributes) {
@@ -988,15 +1016,15 @@ class _MapConfigViewState extends State<MapConfigView> {
                   color: _subTextColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  decoration: TextDecoration.lineThrough,
-                  decorationColor: _subTextColor,
                 ),
               ),
               if (hasAttrs) ...[
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 5, vertical: 1),
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: _accentColor.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(8),
@@ -1029,10 +1057,7 @@ class _MapConfigViewState extends State<MapConfigView> {
       tailBaseWidth: 14,
       margin: const EdgeInsets.all(16),
       content: _buildDisabledEntityTooltip(entity),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.help,
-        child: pill,
-      ),
+      child: MouseRegion(cursor: SystemMouseCursors.help, child: pill),
     );
   }
 
@@ -1057,8 +1082,6 @@ class _MapConfigViewState extends State<MapConfigView> {
                       color: _textColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.lineThrough,
-                      decorationColor: _subTextColor,
                     ),
                   ),
                 ),
@@ -1083,8 +1106,7 @@ class _MapConfigViewState extends State<MapConfigView> {
                       children: [
                         Text(
                           '${a.key}: ',
-                          style: TextStyle(
-                              color: _subTextColor, fontSize: 12),
+                          style: TextStyle(color: _subTextColor, fontSize: 12),
                         ),
                         Expanded(
                           child: Text(
@@ -1157,8 +1179,9 @@ class _MapConfigViewState extends State<MapConfigView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: (widget.isDark ? Colors.white : Colors.black)
-            .withValues(alpha: 0.08),
+        color: (widget.isDark ? Colors.white : Colors.black).withValues(
+          alpha: 0.08,
+        ),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Row(
@@ -1193,7 +1216,8 @@ class _MapConfigViewState extends State<MapConfigView> {
     Color? strokeColorOverride,
     double strokeWidth = 2.5,
   }) {
-    final Color strokeColor = strokeColorOverride ??
+    final Color strokeColor =
+        strokeColorOverride ??
         (textColor.computeLuminance() > 0.5 ? Colors.black : Colors.white);
     return Stack(
       children: [
@@ -1223,7 +1247,8 @@ class _MapConfigViewState extends State<MapConfigView> {
 
   /// 构建 Tag 的 Key 分段
   Widget _buildTagKeySegment(String key, Color? userKeyBg) {
-    final Color bg = userKeyBg ??
+    final Color bg =
+        userKeyBg ??
         (widget.isDark
             ? Colors.white.withValues(alpha: 0.1)
             : Colors.black.withValues(alpha: 0.05));
@@ -1246,6 +1271,7 @@ class _MapConfigViewState extends State<MapConfigView> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      alignment: Alignment.center,
       color: bg,
       child: label,
     );
@@ -1257,33 +1283,15 @@ class _MapConfigViewState extends State<MapConfigView> {
     Color? userValueBg,
     Color baseColor,
     Color lightColor,
-    Color darkColor,
-  ) {
-    if (userValueBg != null) {
-      // 用户自定义 → 纯色 + 自动对比色 + 描边
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        color: userValueBg,
-        child: _buildStrokedText(valueText, _contrastText(userValueBg)),
-      );
-    }
+    Color darkColor, {
+    bool hasDescription = false,
+  }) {
+    final bool isDefault = userValueBg == null;
+    final Color textColor = isDefault ? Colors.white : _contrastText(userValueBg);
 
-    // 默认：分类色渐变 + 白字 + 多重阴影描边
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            lightColor.withValues(alpha: 0.4),
-            baseColor.withValues(alpha: 0.5),
-            darkColor.withValues(alpha: 0.45),
-          ],
-          stops: const [0.0, 0.5, 1.0],
-        ),
-      ),
-      child: Text(
+    Widget textWidget;
+    if (isDefault) {
+      textWidget = Text(
         valueText,
         style: TextStyle(
           color: Colors.white,
@@ -1307,8 +1315,62 @@ class _MapConfigViewState extends State<MapConfigView> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    } else {
+      textWidget = _buildStrokedText(valueText, textColor);
+    }
+
+    Widget content = textWidget;
+    if (hasDescription) {
+      content = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          textWidget,
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: textColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: _buildStrokedText(
+              '?',
+              textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              strokeWidth: 2.0,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (isDefault) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              lightColor.withValues(alpha: 0.4),
+              baseColor.withValues(alpha: 0.5),
+              darkColor.withValues(alpha: 0.45),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: content,
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        alignment: Alignment.center,
+        color: userValueBg,
+        child: content,
+      );
+    }
   }
 
   Widget _buildPaletteButton() {
@@ -1368,18 +1430,21 @@ class _MapConfigViewState extends State<MapConfigView> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildTagKeySegment('示例属性', userKeyBg),
-                      _buildTagValueSegment(
-                        '示例值 42',
-                        userValueBg,
-                        baseColor,
-                        lightColor,
-                        darkColor,
-                      ),
-                    ],
+                  child: IntrinsicHeight(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildTagKeySegment('示例属性', userKeyBg),
+                        _buildTagValueSegment(
+                          '示例值 42',
+                          userValueBg,
+                          baseColor,
+                          lightColor,
+                          darkColor,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -1460,10 +1525,7 @@ class _MapConfigViewState extends State<MapConfigView> {
                     const SizedBox(height: 12),
                     Text(
                       '提示：选择「无颜色」可恢复默认样式；文字颜色会根据背景自动切换并添加描边。',
-                      style: TextStyle(
-                        color: _subTextColor,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: _subTextColor, fontSize: 11),
                     ),
                   ],
                 ),
@@ -1475,17 +1537,11 @@ class _MapConfigViewState extends State<MapConfigView> {
                     _updateKeyBgColor(null);
                     _updateValueBgColor(null);
                   },
-                  child: Text(
-                    '重置',
-                    style: TextStyle(color: _subTextColor),
-                  ),
+                  child: Text('重置', style: TextStyle(color: _subTextColor)),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(
-                    '完成',
-                    style: TextStyle(color: _accentColor),
-                  ),
+                  child: Text('完成', style: TextStyle(color: _accentColor)),
                 ),
               ],
             );
@@ -1531,7 +1587,8 @@ class _MapConfigViewState extends State<MapConfigView> {
 
     bool isMatch = false;
     if (_searchQuery.isNotEmpty) {
-      isMatch = entity.name.toLowerCase().contains(_searchQuery) ||
+      isMatch =
+          entity.name.toLowerCase().contains(_searchQuery) ||
           prop.key.toLowerCase().contains(_searchQuery) ||
           prop.value.toLowerCase().contains(_searchQuery);
     }
@@ -1547,10 +1604,7 @@ class _MapConfigViewState extends State<MapConfigView> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: accent.withValues(alpha: 0.5),
-              width: 1,
-            ),
+            border: Border.all(color: accent.withValues(alpha: 0.5), width: 1),
             boxShadow: [
               BoxShadow(
                 color: accent.withValues(alpha: 0.2),
@@ -1561,18 +1615,22 @@ class _MapConfigViewState extends State<MapConfigView> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(3),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildTagKeySegment(prop.key, userKeyBg),
-                _buildTagValueSegment(
-                  valueText,
-                  userValueBg,
-                  baseColor,
-                  lightColor,
-                  darkColor,
-                ),
-              ],
+            child: IntrinsicHeight(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildTagKeySegment(prop.key, userKeyBg),
+                  _buildTagValueSegment(
+                    valueText,
+                    userValueBg,
+                    baseColor,
+                    lightColor,
+                    darkColor,
+                    hasDescription: prop.description != null && prop.description!.isNotEmpty,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1598,19 +1656,36 @@ class _MapConfigViewState extends State<MapConfigView> {
               onTapLink: (text, href, title) {
                 if (href != null) {
                   try {
-                    launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                    launchUrl(
+                      Uri.parse(href),
+                      mode: LaunchMode.externalApplication,
+                    );
                   } catch (_) {}
                 }
               },
               styleSheet: MarkdownStyleSheet(
                 p: TextStyle(color: _textColor, fontSize: 13, height: 1.5),
-                h1: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.bold),
-                h2: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.bold),
-                h3: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.bold),
+                h1: TextStyle(
+                  color: _textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                h2: TextStyle(
+                  color: _textColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                h3: TextStyle(
+                  color: _textColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
                 listBullet: TextStyle(color: _textColor),
                 code: TextStyle(
                   color: _accentColor,
-                  backgroundColor: widget.isDark ? Colors.white10 : Colors.black12,
+                  backgroundColor: widget.isDark
+                      ? Colors.white10
+                      : Colors.black12,
                   fontFamily: 'monospace',
                 ),
                 codeblockDecoration: BoxDecoration(
@@ -1621,10 +1696,7 @@ class _MapConfigViewState extends State<MapConfigView> {
             ),
           ),
         ),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.help,
-          child: chip,
-        ),
+        child: MouseRegion(cursor: SystemMouseCursors.help, child: chip),
       );
     }
 
@@ -1646,7 +1718,9 @@ class _MapConfigViewState extends State<MapConfigView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = guideCrossAxisCount(MediaQuery.of(context).size.width);
+        final crossAxisCount = guideCrossAxisCount(
+          MediaQuery.of(context).size.width,
+        );
 
         return MasonryGridView.count(
           crossAxisCount: crossAxisCount,
