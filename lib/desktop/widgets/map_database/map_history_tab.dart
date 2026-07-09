@@ -208,11 +208,11 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
       // 昨天
       return '昨天 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (dateTime.year == now.year) {
-      // 今年：显示月-日 时间
-      return '${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      // 今年：显示月日 时间
+      return '${dateTime.month.toString().padLeft(2, '0')}月${dateTime.day.toString().padLeft(2, '0')}日 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else {
-      // 其他年份：显示年-月-日 时间
-      return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      // 其他年份：显示年月日 时间
+      return '${dateTime.year}年${dateTime.month.toString().padLeft(2, '0')}月${dateTime.day.toString().padLeft(2, '0')}日 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     }
   }
 
@@ -367,7 +367,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             itemCount:
                 _historyData.length + (_hasMoreData || _isLoadingMore ? 1 : 1),
             itemBuilder: (context, index) {
@@ -623,209 +623,256 @@ class _HistoryListItemState extends State<_HistoryListItem>
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        clipBehavior: Clip.antiAlias, // 为左侧边线圆角裁剪
+        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: _isHovered
-              ? (widget.isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.02))
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: widget.isDark
+              ? Colors.white.withValues(alpha: _isHovered ? 0.05 : 0.02)
+              : Colors.black.withValues(alpha: _isHovered ? 0.02 : 0.0),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isExpanded
                 ? AppColors.primary.withValues(alpha: 0.5)
                 : (_isHovered
                       ? AppColors.primary.withValues(alpha: 0.3)
                       : (widget.isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.05))),
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.06))),
           ),
-        ),
-        child: Column(
-          children: [
-            // 主要信息（可点击）
-            InkWell(
-              onTap: widget.hasTrendData ? _toggleExpand : null,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 第一行：时间 + 服务器名称
-                    Row(
-                      children: [
-                        Icon(
-                          widget.isLatest
-                              ? MdiIcons.fire
-                              : MdiIcons.clockOutline,
-                          size: 16,
-                          color: widget.isLatest
-                              ? AppColors.amber500
-                              : (widget.isDark
-                                    ? Colors.white.withValues(alpha: 0.5)
-                                    : Colors.black.withValues(alpha: 0.5)),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          widget.time,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: widget.isLatest
-                                ? AppColors.amber500
-                                : (widget.isDark
-                                      ? Colors.white.withValues(alpha: 0.7)
-                                      : Colors.black.withValues(alpha: 0.7)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '${widget.serverName} (${widget.serverAddress})',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: widget.isDark
-                                  ? Colors.white.withValues(alpha: 0.9)
-                                  : Colors.black.withValues(alpha: 0.9),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // 展开/收起图标
-                        if (widget.hasTrendData)
-                          AnimatedRotation(
-                            turns: _isExpanded ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              MdiIcons.chevronDown,
-                              size: 20,
-                              color: widget.isDark
-                                  ? Colors.white.withValues(alpha: 0.5)
-                                  : Colors.black.withValues(alpha: 0.5),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // 第二行：统计信息
-                    Row(
-                      children: [
-                        const SizedBox(width: 22), // 对齐图标
-                        _buildStatItem(MdiIcons.clockOutline, widget.duration),
-                        const SizedBox(width: 16),
-                        _buildStatItem(
-                          MdiIcons.chartLine,
-                          '${widget.dataPoints}点',
-                        ),
-                        const SizedBox(width: 16),
-                        _buildStatItem(
-                          MdiIcons.accountGroup,
-                          '${widget.maxPlayers}/${widget.totalSlots}',
-                        ),
-                        if (widget.hasFinalScore) ...[
-                          const SizedBox(width: 16),
-                          _buildScoreBadge(
-                            widget.finalCtScore!,
-                            widget.finalTScore!,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
+          boxShadow: [
+            if (!widget.isDark)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            // 展开的趋势图区域
-            SizeTransition(
-              sizeFactor: _expandAnimation,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 左侧彩色状态指示线
+              Container(
+                width: 4,
+                color: widget.isLatest
+                    ? AppColors.amber500
+                    : (widget.isDark
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : AppColors.primary.withValues(alpha: 0.5)),
+              ),
+              Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Divider(
-                      height: 1,
-                      color: widget.isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.1),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(
-                          MdiIcons.chartLine,
-                          color: AppColors.amber400,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '玩家趋势',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: widget.isDark
-                                ? Colors.white.withValues(alpha: 0.9)
-                                : Colors.black.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // 懒加载趋势图
-                    if (_trendData != null)
-                      ClipRect(
-                        clipBehavior: Clip.none,
-                        child: SizedBox(
-                          height: 180,
-                          child: PlayerTrendChart(
-                            infos: _trendData!,
-                            maxPlayers: widget.totalSlots,
-                            width: double.infinity,
-                            height: 180,
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(
-                        height: 180,
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                    // 主要信息（可点击）
+                    InkWell(
+                      onTap: widget.hasTrendData ? _toggleExpand : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 第一行：时间 + 服务器名称
+                            Row(
+                              children: [
+                                Icon(
+                                  widget.isLatest
+                                      ? MdiIcons.fire
+                                      : MdiIcons.clockOutline,
+                                  size: 16,
+                                  color: widget.isLatest
+                                      ? AppColors.amber500
+                                      : (widget.isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.5,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.5,
+                                              )),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  widget.time,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: widget.isLatest
+                                        ? AppColors.amber500
+                                        : (widget.isDark
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.9,
+                                                )
+                                              : Colors.black.withValues(
+                                                  alpha: 0.9,
+                                                )),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    '${widget.serverName} (${widget.serverAddress})',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: widget.isDark
+                                          ? Colors.white
+                                          : const Color(0xFF0F172A),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                // 展开/收起图标
+                                if (widget.hasTrendData)
+                                  AnimatedRotation(
+                                    turns: _isExpanded ? 0.5 : 0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Icon(
+                                      MdiIcons.chevronDown,
+                                      size: 20,
+                                      color: widget.isDark
+                                          ? Colors.white.withValues(alpha: 0.5)
+                                          : Colors.black.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // 第二行：Badge 统计信息
+                            Row(
+                              children: [
+                                _buildBadge(
+                                  MdiIcons.clockOutline,
+                                  widget.duration,
+                                ),
+                                const SizedBox(width: 8),
+                                _buildBadge(
+                                  MdiIcons.accountGroup,
+                                  '${widget.maxPlayers}/${widget.totalSlots}',
+                                ),
+                                if (widget.hasFinalScore) ...[
+                                  const SizedBox(width: 8),
+                                  _buildScoreBadge(
+                                    widget.finalCtScore!,
+                                    widget.finalTScore!,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
                         ),
                       ),
+                    ),
+                    // 展开的趋势图区域
+                    SizeTransition(
+                      sizeFactor: _expandAnimation,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Divider(
+                              height: 1,
+                              color: widget.isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.black.withValues(alpha: 0.1),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Icon(
+                                  MdiIcons.chartLine,
+                                  color: AppColors.amber400,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '玩家趋势',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: widget.isDark
+                                        ? Colors.white.withValues(alpha: 0.9)
+                                        : Colors.black.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // 懒加载趋势图
+                            if (_trendData != null)
+                              ClipRect(
+                                clipBehavior: Clip.none,
+                                child: SizedBox(
+                                  height: 180,
+                                  child: PlayerTrendChart(
+                                    infos: _trendData!,
+                                    maxPlayers: widget.totalSlots,
+                                    width: double.infinity,
+                                    height: 180,
+                                  ),
+                                ),
+                              )
+                            else
+                              const SizedBox(
+                                height: 180,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 14,
+  Widget _buildBadge(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: widget.isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
           color: widget.isDark
-              ? Colors.white.withValues(alpha: 0.5)
-              : Colors.black.withValues(alpha: 0.5),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
         ),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
             color: widget.isDark
-                ? Colors.white.withValues(alpha: 0.6)
+                ? Colors.white.withValues(alpha: 0.7)
                 : Colors.black.withValues(alpha: 0.6),
           ),
-        ),
-      ],
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: widget.isDark
+                  ? Colors.white.withValues(alpha: 0.9)
+                  : Colors.black.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -835,12 +882,12 @@ class _HistoryListItemState extends State<_HistoryListItem>
         widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: widget.isDark
-            ? Colors.white.withValues(alpha: 0.1)
-            : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(4),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: widget.isDark
               ? Colors.white.withValues(alpha: 0.15)
@@ -850,6 +897,14 @@ class _HistoryListItemState extends State<_HistoryListItem>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(
+            MdiIcons.gamepadVariantOutline,
+            size: 14,
+            color: widget.isDark
+                ? Colors.white.withValues(alpha: 0.7)
+                : Colors.black.withValues(alpha: 0.6),
+          ),
+          const SizedBox(width: 4),
           Text(
             '$ctScore',
             style: TextStyle(
