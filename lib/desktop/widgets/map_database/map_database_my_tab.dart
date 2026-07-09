@@ -84,6 +84,7 @@ class MapDatabaseMyTab extends StatelessWidget {
                                     context,
                                     mapName: group.mapInfo.mapName,
                                     mapLabel: group.mapInfo.mapLabel,
+                                    mapUrl: group.mapInfo.mapBackground,
                                   );
                                 },
                               );

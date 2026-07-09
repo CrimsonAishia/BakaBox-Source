@@ -409,6 +409,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                 context,
                 mapName: result.mapName,
                 mapLabel: result.mapLabel,
+                mapUrl: result.mapBackground,
               );
             },
             icon: Icon(
@@ -454,6 +455,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                 context,
                 mapName: result.mapName,
                 mapLabel: result.mapLabel,
+                mapUrl: result.mapBackground,
               );
             },
             icon: Icon(

@@ -76,6 +76,7 @@ class MapDatabaseAllTab extends StatelessWidget {
                                 context,
                                 mapName: mapInfo.mapName,
                                 mapLabel: mapInfo.mapLabel,
+                                mapUrl: mapInfo.mapBackground,
                               );
                             },
                           );

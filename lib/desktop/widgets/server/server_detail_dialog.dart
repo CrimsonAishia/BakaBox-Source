@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
+import '../../../core/widgets/marquee_text.dart';
 import '../../../core/constants/app_colors.dart';
 import 'server_history_view.dart';
 import 'map_contribution/map_general_contribution_view.dart';
@@ -32,6 +35,7 @@ class ServerDetailDialog extends StatefulWidget {
     BuildContext context, {
     required String mapName,
     String? mapLabel,
+    String? mapUrl,
     bool isDifficultySeparated = false,
     String? serverAddress,
   }) {
@@ -49,7 +53,7 @@ class ServerDetailDialog extends StatefulWidget {
             id: 0,
             mapName: mapName,
             mapLabel: mapLabel ?? '',
-            mapUrl: '',
+            mapUrl: mapUrl ?? '',
           ),
         ),
       ),
@@ -177,27 +181,33 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        displayMapName,
+                      MarqueeText(
+                        text: displayMapName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       if (subMapName.isNotEmpty)
-                        Text(
-                          subMapName,
+                        MarqueeText(
+                          text: subMapName,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 12,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                     ],
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _AnimatedCopyButton(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: mapName));
+                      ToastUtils.showSuccess(context, '已复制 $mapName');
+                    },
                   ),
                 ),
               ],
@@ -433,6 +443,90 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       mapLabel: mapLabel,
       isDifficultySeparated: isDifficultySeparated,
       serverAddress: serverAddress,
+    );
+  }
+}
+
+class _AnimatedCopyButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const _AnimatedCopyButton({required this.onPressed});
+
+  @override
+  State<_AnimatedCopyButton> createState() => _AnimatedCopyButtonState();
+}
+
+class _AnimatedCopyButtonState extends State<_AnimatedCopyButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.04,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _glowAnimation = Tween<double>(
+      begin: 4.0,
+      end: 12.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.8),
+                  blurRadius: _glowAnimation.value,
+                  spreadRadius: _glowAnimation.value / 1.5,
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: Tooltip(
+        message: '复制地图名',
+        child: Container(
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.copy_rounded, size: 16),
+            color: Colors.white,
+            hoverColor: Colors.white24,
+            splashRadius: 18,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
+            onPressed: widget.onPressed,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -336,6 +336,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           context,
           mapName: sub.mapName,
           mapLabel: sub.mapLabel,
+          mapUrl: sub.mapBackground,
         );
       },
       onDelete: () => _showDeleteConfirmDialog(context, isDark, sub),
