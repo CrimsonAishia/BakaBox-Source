@@ -12,11 +12,32 @@ import '../../../core/utils/map_tag_utils.dart';
 import '../server/server_card_components/hover_tag_popover.dart';
 import '../server/server_card_components/server_card_overflow_tag_row.dart';
 
-
 /// 地图大卡片组件
 ///
 /// 显示单个地图的大卡片，点击后弹出详情对话框
 class MapGroupCard extends StatefulWidget {
+  /// 卡片的统一固定高度
+  static const double fixedHeight = 160.0;
+
+  /// 获取统一的网格布局代理，避免在多个 Tab 中重复写约束逻辑
+  static SliverGridDelegate getGridDelegate(double width) {
+    int crossAxisCount = 1;
+    if (width > 1600) {
+      crossAxisCount = 4;
+    } else if (width > 1200) {
+      crossAxisCount = 3;
+    } else if (width > 800) {
+      crossAxisCount = 2;
+    }
+
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: crossAxisCount,
+      mainAxisExtent: fixedHeight,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+    );
+  }
+
   final MapContributionGroup group;
   final VoidCallback onTap;
   final bool showAuditStatus; // 是否显示审核状态
@@ -83,247 +104,247 @@ class _MapGroupCardState extends State<MapGroupCard> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _isHovered
-                ? AppColors.primary
-                : (isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.08)),
-            width: _isHovered ? 2 : 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isHovered
+                  ? AppColors.primary
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.08)),
+              width: _isHovered ? 2 : 1,
+            ),
+            boxShadow: [
+              if (_isHovered)
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+            ],
           ),
-          boxShadow: [
-            if (_isHovered)
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              )
-            else
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            height: 75,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // 背景图
-                _buildMapBackground(mapInfo, isDark),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: MapGroupCard.fixedHeight,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 背景图
+                  _buildMapBackground(mapInfo, isDark),
 
-                // CD徽章（右上角）
-                Positioned(top: 8, right: 8, child: _buildCdBadge(isDark)),
+                  // CD徽章（右上角）
+                  Positioned(top: 8, right: 8, child: _buildCdBadge(isDark)),
 
-                // 审核状态标签（右上角，CD下方）
-                if (widget.showAuditStatus && widget.group.items.isNotEmpty)
+                  // 审核状态标签（右上角，CD下方）
+                  if (widget.showAuditStatus && widget.group.items.isNotEmpty)
+                    Positioned(
+                      top: 44, // CD徽章下方
+                      right: 8,
+                      child: _buildAuditStatusBadge(
+                        widget.group.items.first.auditStatus,
+                      ),
+                    ),
+
+                  // 底部渐变遮罩（始终显示）
                   Positioned(
-                    top: 44, // CD徽章下方
-                    right: 8,
-                    child: _buildAuditStatusBadge(
-                      widget.group.items.first.auditStatus,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: _isHovered ? 100 : 60,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(
+                              alpha: _isHovered ? 0.95 : 0.8,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
 
-                // 底部渐变遮罩（始终显示）
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: _isHovered ? 100 : 60,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(
-                            alpha: _isHovered ? 0.95 : 0.8,
+                  // 地图名称（始终显示）
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: _isHovered ? 56 : 12,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: 1.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.map_outlined,
+                                size: 18,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(color: Colors.black, blurRadius: 4),
+                                ],
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: MarqueeText(
+                                  text: mapInfo.mapName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.2,
+                                    fontFamily: 'monospace',
+                                    letterSpacing: 0.5,
+                                    shadows: [
+                                      const Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 8,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(1, 1),
+                                        blurRadius: 2,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(-1, -1),
+                                        blurRadius: 2,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(1, -1),
+                                        blurRadius: 2,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(-1, 1),
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.translate,
+                                size: 15,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                shadows: const [
+                                  Shadow(color: Colors.black, blurRadius: 4),
+                                ],
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: MarqueeText(
+                                  text: mapInfo.mapLabel,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    shadows: [
+                                      const Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 4,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(1, 1),
+                                        blurRadius: 2,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(-1, -1),
+                                        blurRadius: 2,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(1, -1),
+                                        blurRadius: 2,
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        offset: const Offset(-1, 1),
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (!_isHovered) ...[
+                            const SizedBox(height: 6),
+                            _buildMapTagRow(mapInfo.tags),
+                          ],
                         ],
                       ),
                     ),
                   ),
-                ),
 
-                // 地图名称（始终显示）
-                Positioned(
-                  left: 12,
-                  right: 12,
-                  bottom: _isHovered ? 56 : 12,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: 1.0,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.map_outlined,
-                              size: 18,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(color: Colors.black, blurRadius: 4),
-                              ],
+                  // Hover 时显示的按钮
+                  if (_isHovered)
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 12,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildBottomButton(
+                              icon: Icons.info_outline,
+                              label: '地图信息',
+                              onPressed: widget.onTap,
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: MarqueeText(
-                                text: mapInfo.mapName,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  height: 1.2,
-                                  fontFamily: 'monospace',
-                                  letterSpacing: 0.5,
-                                  shadows: [
-                                    const Shadow(
-                                      color: Colors.black,
-                                      blurRadius: 8,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(1, 1),
-                                      blurRadius: 2,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(-1, -1),
-                                      blurRadius: 2,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(1, -1),
-                                      blurRadius: 2,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(-1, 1),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildBottomButton(
+                              icon: Icons.history,
+                              label: '运行记录',
+                              onPressed: _showHistoryDialog,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.translate,
-                              size: 15,
-                              color: Colors.white.withValues(alpha: 0.9),
-                              shadows: const [
-                                Shadow(color: Colors.black, blurRadius: 4),
-                              ],
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: MarqueeText(
-                                text: mapInfo.mapLabel,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  shadows: [
-                                    const Shadow(
-                                      color: Colors.black,
-                                      blurRadius: 4,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(1, 1),
-                                      blurRadius: 2,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(-1, -1),
-                                      blurRadius: 2,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(1, -1),
-                                      blurRadius: 2,
-                                    ),
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      offset: const Offset(-1, 1),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (!_isHovered) ...[
-                          const SizedBox(height: 6),
-                          _buildMapTagRow(mapInfo.tags),
+                          ),
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-
-                // Hover 时显示的按钮
-                if (_isHovered)
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildBottomButton(
-                            icon: Icons.info_outline,
-                            label: '地图信息',
-                            onPressed: widget.onTap,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildBottomButton(
-                            icon: Icons.history,
-                            label: '运行记录',
-                            onPressed: _showHistoryDialog,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),

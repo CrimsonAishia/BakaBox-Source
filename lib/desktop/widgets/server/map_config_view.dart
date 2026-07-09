@@ -504,7 +504,8 @@ class _MapConfigViewState extends State<MapConfigView> {
     }
 
     final anonymousAttrs = <MapConfigProperty>[];
-    final enabledNamed = <MapConfigEntity>[];
+    final enabledNoAttrs = <MapConfigEntity>[];
+    final enabledWithAttrs = <MapConfigEntity>[];
     final disabled = <MapConfigEntity>[];
 
     for (final entity in category.entities) {
@@ -516,7 +517,11 @@ class _MapConfigViewState extends State<MapConfigView> {
         disabled.add(entity);
         continue;
       }
-      enabledNamed.add(entity);
+      if (entity.attributes.isEmpty) {
+        enabledNoAttrs.add(entity);
+      } else {
+        enabledWithAttrs.add(entity);
+      }
     }
 
     // 匿名段的载体也是一个 anonymous entity（enabled=true），用于复用 _buildPropertyItem
@@ -545,7 +550,11 @@ class _MapConfigViewState extends State<MapConfigView> {
       );
     }
 
-    for (final cluster in _clusterEntities(enabledNamed)) {
+    if (enabledNoAttrs.isNotEmpty) {
+      blocks.add(_buildEnabledEntityStrip(enabledNoAttrs, category));
+    }
+
+    for (final cluster in _clusterEntities(enabledWithAttrs)) {
       if (cluster.entities.length == 1) {
         blocks.add(_buildEntityBlock(cluster.primary, category, categoryColor));
       } else {
@@ -806,6 +815,66 @@ class _MapConfigViewState extends State<MapConfigView> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 「启用」条：把「启用 + 无参数」实体聚拢到顶部一排小胶囊
+  /// 用途：类似「人类职业」这种默认全关、仅显式启用某几个的场景
+  Widget _buildEnabledEntityStrip(
+    List<MapConfigEntity> entities,
+    MapConfigCategory category,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: _accentColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _accentColor.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline_rounded,
+                size: 13,
+                color: _accentColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '已启用（${entities.length}）',
+                style: TextStyle(
+                  color: _accentColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: entities
+                .map((e) => _buildEnabledEntityPill(e, category))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 启用条里的胶囊：复用 cluster pill 视觉（跟自定义 key 色一致），并注入 GlobalKey 支持搜索定位
+  Widget _buildEnabledEntityPill(
+    MapConfigEntity entity,
+    MapConfigCategory category,
+  ) {
+    final itemKeyId = '${category.category}_${entity.name}_';
+    final globalKey = _propertyKeys.putIfAbsent(itemKeyId, () => GlobalKey());
+    return Container(
+      key: globalKey,
+      child: _buildClusterEntityPill(entity),
     );
   }
 

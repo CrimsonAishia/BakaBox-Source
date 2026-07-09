@@ -55,7 +55,7 @@ class MapCdBadge extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.schedule,
-                    size: 15,
+                    size: 18,
                     color: Colors.white.withValues(alpha: 0.5),
                   ),
                   const SizedBox(width: 5),
@@ -79,7 +79,7 @@ class MapCdBadge extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.touch_app_rounded,
-                      size: 15,
+                      size: 18,
                       color: const Color(0xFF818CF8),
                     ),
                     const SizedBox(width: 5),
@@ -103,8 +103,8 @@ class MapCdBadge extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 13,
-                  height: 13,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -132,7 +132,7 @@ class MapCdBadge extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.warning_amber_rounded,
-                    size: 15,
+                    size: 18,
                     color: Colors.orange.shade300,
                   ),
                   const SizedBox(width: 5),
@@ -153,7 +153,7 @@ class MapCdBadge extends StatelessWidget {
               children: [
                 Icon(
                   Icons.remove_circle_outline,
-                  size: 15,
+                  size: 18,
                   color: Colors.white38,
                 ),
                 const SizedBox(width: 5),
@@ -184,7 +184,7 @@ class MapCdBadge extends StatelessWidget {
               children: [
                 Icon(
                   isAvailable ? Icons.check_circle_rounded : Icons.schedule,
-                  size: 15,
+                  size: 18,
                   color: accentColor,
                 ),
                 const SizedBox(width: 5),
@@ -237,7 +237,7 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: hovered
                 ? Colors.black.withValues(alpha: 0.55)
@@ -278,7 +278,7 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
               Text(
                 's.zombieden.cn',
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   color: Colors.white.withValues(alpha: 0.35),
                   letterSpacing: 0.3,
                   height: 1,
@@ -304,7 +304,7 @@ class _CdBadgeText extends StatelessWidget {
     return Text(
       label,
       style: TextStyle(
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: FontWeight.bold,
         color: color,
         letterSpacing: 0.5,

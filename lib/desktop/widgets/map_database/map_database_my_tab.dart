@@ -47,11 +47,6 @@ class MapDatabaseMyTab extends StatelessWidget {
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          // 根据宽度计算列数
-                          final crossAxisCount = _calculateCrossAxisCount(
-                            constraints.maxWidth,
-                          );
-
                           return GridView.builder(
                             key: PageStorageKey(
                               'map_database_my_grid_page_$currentPage',
@@ -59,13 +54,9 @@ class MapDatabaseMyTab extends StatelessWidget {
                             padding: const EdgeInsets.all(20),
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  childAspectRatio: 3.0,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                ),
+                            gridDelegate: MapGroupCard.getGridDelegate(
+                              constraints.maxWidth,
+                            ),
                             itemCount: state.myMapGroups.length,
                             itemBuilder: (context, index) {
                               final group = state.myMapGroups[index];
@@ -116,12 +107,6 @@ class MapDatabaseMyTab extends StatelessWidget {
     );
   }
 
-  int _calculateCrossAxisCount(double width) {
-    if (width > 1600) return 4;
-    if (width > 1200) return 3;
-    if (width > 800) return 2;
-    return 1;
-  }
 
   Widget _buildLoginPrompt(BuildContext context) {
     final theme = Theme.of(context);
