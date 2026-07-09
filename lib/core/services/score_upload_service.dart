@@ -21,7 +21,6 @@ import 'server_address_mapping_service.dart';
 /// - 回合结束 + 比分变化 → 触发上传
 /// - 3 秒防抖，失败静默忽略
 class ScoreUploadService {
-  // ==================== 单例模式 ====================
   static final ScoreUploadService _instance = ScoreUploadService._internal();
   factory ScoreUploadService() => _instance;
   ScoreUploadService._internal() {
@@ -44,14 +43,12 @@ class ScoreUploadService {
     });
   }
 
-  // ==================== 依赖服务 ====================
   final ConsoleLogService _consoleLogService = ConsoleLogService();
   final GsiService _gsiService = GsiService();
   final ScoreApi _scoreApi = ScoreApi();
   final ServerAddressMappingService _addressMapping =
       ServerAddressMappingService();
 
-  // ==================== 状态追踪 ====================
   /// 当前服务器 IP 地址（从 ConsoleLogService 获取）
   String? _currentServerAddress;
 
@@ -79,7 +76,6 @@ class ScoreUploadService {
   /// 心跳间隔（5分钟）
   static const Duration _heartbeatInterval = Duration(minutes: 5);
 
-  // ==================== 订阅管理 ====================
   /// ConsoleLogService 状态订阅
   StreamSubscription<ConsoleLogState>? _consoleSubscription;
 
@@ -93,7 +89,6 @@ class ScoreUploadService {
   // ignore: unused_field
   StreamSubscription<bool>? _networkModeSubscription;
 
-  // ==================== 公开属性 ====================
   /// 服务是否已初始化
   bool get isInitialized => _isInitialized;
 
@@ -106,7 +101,6 @@ class ScoreUploadService {
   /// 上次上传时间
   DateTime? get lastUploadTime => _lastUploadTime;
 
-  // ==================== 公开方法 ====================
 
   /// 初始化服务
   ///
@@ -182,7 +176,6 @@ class ScoreUploadService {
     LogService.i('[ScoreUpload] 比分上传服务资源已释放');
   }
 
-  // ==================== 私有方法 ====================
 
   /// 处理 ConsoleLogService 状态变化
   ///
@@ -258,17 +251,45 @@ class ScoreUploadService {
   void _onGsiStateChanged(GsiGameState? state) {
     if (state == null) return;
 
+    // 一致性哨兵：ConsoleLogService 和 GsiService 是两条独立数据流，
+    // 存在切服瞬间「GSI 先到、console log 状态还没切」的时序风险，
+    // 例如：A 服 AA 4:3 → 切到 B 服 AA 热身，若 B 的 GSI(0:0) 先到达，
+    // 此时 _currentServerDomainAddress 仍是 A、_lastCtScore/_lastTScore
+    // 仍是 4/3，isScoreReset 会成立，把 0:0 误报到 A 服的历史上。
+    //
+    // 只有在下面两条同时满足时才继续处理 GSI：
+    //   1) console log 已经确认「在服务器中」（inGame）
+    //   2) console log 报出来的地址和我们内部记录的 _currentServerAddress
+    //      一致，即 _onConsoleLogStateChanged 已经把切服事件消化完
+    // 否则丢弃这一帧，等 console log 追上来再说。
+    final consoleState = _consoleLogService.currentState;
+    if (consoleState.state != GameState.inGame) {
+      return;
+    }
+    if (_currentServerAddress == null ||
+        _currentServerAddress != consoleState.serverAddress) {
+      return;
+    }
+
+    // GSI 数据完整性守护：切图 / 断线 / GSI 冷启动瞬间可能推来
+    // state.map == null 或 map.name 为空的"半空帧"。这类帧走到 isScoreReset
+    // 分支时会把 _lastMapName 覆盖成 null、_lastCtScore/_lastTScore 归零，
+    // 让紧接着到达的正常帧误判为「首次进入」（hasBaseline=false）→ 错过一次
+    // 真实的换图/重载上报。因此这类不完整帧整帧丢弃，不改任何本地状态。
     final map = state.map;
+    if (map == null || map.name == null || map.name!.isEmpty) {
+      return;
+    }
+
     final round = state.round;
-    final mapPhase = map?.phase;
+    final mapPhase = map.phase;
 
     // 检查地图变化或比分重置，重置比分记录
     // 场景1: 地图名称变化（A地图 → B地图）
     // 场景2: 同名地图但比分回落（A地图5:3 → 换图 → A地图0:0）
-    final ctScore = map?.teamCt?.score ?? 0;
-    final tScore = map?.teamT?.score ?? 0;
-    final bool isMapNameChanged =
-        map?.name != null && map!.name != _lastMapName;
+    final ctScore = map.teamCt?.score ?? 0;
+    final tScore = map.teamT?.score ?? 0;
+    final bool isMapNameChanged = map.name != _lastMapName;
     final bool isScoreReset =
         _lastCtScore != null &&
         _lastTScore != null &&
@@ -276,23 +297,57 @@ class ScoreUploadService {
         ctScore == 0 &&
         tScore == 0;
 
-    if (isMapNameChanged || isScoreReset) {
-      final reason = isMapNameChanged ? '地图变化' : '比分重置（同图换局）';
-      LogService.d(
-        '[ScoreUpload] $reason: $_lastMapName -> ${map?.name}，重置比分记录',
-      );
-      _lastMapName = map?.name;
-      _lastCtScore = null;
-      _lastTScore = null;
-      _lastUploadTime = null; // 重置上传时间，避免新地图第一次上传被防抖
-      _gameoverUploaded = false; // 重置 gameover 标记
-    }
-
     // 获取当前回合信息
     final currentPhase = round?.phase;
-    final roundNumber = map?.round ?? 0;
-    final mapName = map?.name ?? '';
+    final roundNumber = map.round ?? 0;
+    final mapName = map.name!;
     final steamId = state.provider?.steamId ?? '';
+
+    if (isMapNameChanged || isScoreReset) {
+      final reason = isMapNameChanged ? '地图变化' : '比分重置（同图换局）';
+
+      // 关键：只有存在前置基线（_lastMapName != null）时，才主动推送初始比分
+      // 触发后端「换图/换局」事件。
+      //
+      // 首次进入服务器时（切服、离服重进、启动后首次连接），_onConsoleLogStateChanged
+      // 已经把 _lastMapName / _lastCtScore / _lastTScore 全部清成 null。
+      // 若这里也一起触发上报，会出现：在 A 服打完 AA 4:3 后切到 B 服同样是 AA
+      // 但正在热身（0:0）→ 把 0:0 当作 A 服地图重载误报给后端。
+      //
+      // 因此首次记录只做本地状态初始化，不做上报；正常的回合结束流程会自然接管。
+      final bool hasBaseline = _lastMapName != null;
+
+      if (hasBaseline) {
+        LogService.d(
+          '[ScoreUpload] $reason: $_lastMapName -> ${map.name}，重置比分记录并触发初始上传',
+        );
+
+        // 主动推送初始比分给后端，使得后端立即检测到 ScoreReset（比分回落）
+        // 从而能在开局立刻锁定上一局比分，并向下游发出换图事件，无需等待第一回合结束
+        if (mapName.isNotEmpty &&
+            steamId.isNotEmpty &&
+            _currentServerDomainAddress != null) {
+          _uploadScore(
+            ctScore: ctScore,
+            tScore: tScore,
+            round: roundNumber,
+            mapName: mapName,
+            steamId: steamId,
+          );
+          // _uploadScore 内部已更新 _lastUploadTime，这里无需重复设置
+        }
+      } else {
+        LogService.d(
+          '[ScoreUpload] 首次记录地图状态: ${map.name} $ctScore:$tScore（跳过初始上报，避免切服误报）',
+        );
+        _lastUploadTime = null; // 首次进入不设置防抖，等真正的回合结束/心跳走正常流程
+      }
+
+      _lastMapName = map.name;
+      _lastCtScore = ctScore; // 记录当前基线，避免重复触发 isScoreReset
+      _lastTScore = tScore;
+      _gameoverUploaded = false; // 重置 gameover 标记
+    }
 
     // 检查是否应该上传（回合结束 + 比分变化）
     if (_shouldUpload(
