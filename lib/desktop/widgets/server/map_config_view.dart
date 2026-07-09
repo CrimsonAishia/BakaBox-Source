@@ -754,6 +754,9 @@ class _MapConfigViewState extends State<MapConfigView> {
     String? categoryColor,
   ) {
     final bool isDisabled = !entity.enabled;
+    final Color themeColor = categoryColor != null
+        ? Color(int.parse(categoryColor.replaceFirst('#', '0xFF')))
+        : _accentColor;
 
     // 搜索命中判断（用于整块透明度）
     bool blockMatched = _searchQuery.isEmpty;
@@ -782,6 +785,15 @@ class _MapConfigViewState extends State<MapConfigView> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                  width: 3,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: isDisabled ? _subTextColor.withValues(alpha: 0.5) : themeColor,
+                    borderRadius: BorderRadius.circular(1.5),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Text(
                   entity.name,
                   style: TextStyle(
