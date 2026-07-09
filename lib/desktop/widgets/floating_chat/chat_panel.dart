@@ -6,6 +6,7 @@ import '../../../core/bloc/lobby/lobby_bloc.dart';
 import '../../../core/models/lobby_models.dart';
 import '../lobby/lobby_broadcast_dialog.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/signed_network_image.dart';
 
 /// 浮动聊天面板，从 56×56 圆形展开为 320×480 矩形
 class ChatPanel extends StatefulWidget {
@@ -295,6 +296,10 @@ class _ChatPanelState extends State<ChatPanel>
     // latest message and always sits at the visual bottom. No scroll-to-bottom
     // logic is needed — the list is always "at the bottom" by construction.
     final reversed = messages.reversed.toList();
+
+    // 预构建 userId → avatarUrl 查表
+    final avatarByUserId = _buildAvatarLookup(lobbyState);
+
     return ListView.separated(
       controller: _scrollController,
       reverse: true,
@@ -303,55 +308,46 @@ class _ChatPanelState extends State<ChatPanel>
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final message = reversed[index];
+        // 使用 messageId 作为 Key，确保 reverse 列表在新消息到达导致
+        // 索引整体后移时，Element 能追踪到正确的消息实例，避免
+        // AutomaticKeepAliveClientMixin 保留的 SelectableText 选区
+        // 被"拽"到错误的消息上。
+        final key = ValueKey(message.messageId);
         if (message.type == LobbyMessageType.broadcast) {
           return _BroadcastMessageWidget(
+            key: key,
             message: message,
             formatTime: _formatTime,
           );
         }
-        return _buildRegularMessage(message);
+        return _RegularMessageItem(
+          key: key,
+          message: message,
+          avatarUrl: avatarByUserId[message.userId],
+          formatTime: _formatTime,
+        );
       },
     );
   }
 
-  Widget _buildRegularMessage(LobbyMessage message) {
-    final isSystem = message.type == LobbyMessageType.system;
-    final isAnonymous = message.isAnonymous;
-
-    return SelectableText.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: '[${_formatTime(message.timestamp)}] ',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
-              fontSize: 11,
-            ),
-          ),
-          TextSpan(
-            text: '${message.displayName}: ',
-            style: TextStyle(
-              color: isSystem
-                  ? const Color(0xFFFFB74D)
-                  : (isAnonymous
-                        ? const Color(0xFFB0BEC5)
-                        : const Color(0xFF81D4FA)),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          TextSpan(
-            text: message.content,
-            style: TextStyle(
-              color: isSystem
-                  ? Colors.white.withValues(alpha: 0.85)
-                  : Colors.white.withValues(alpha: 0.9),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
+  /// 从 state.users 与 state.allOnlineUsers 构建 userId → avatarUrl 索引。
+  /// users 优先（在场景内的用户信息更新更及时），allOnlineUsers 兜底。
+  Map<String, String> _buildAvatarLookup(LobbyState lobbyState) {
+    final map = <String, String>{};
+    // allOnlineUsers 先塞，被 users 覆盖
+    for (final u in lobbyState.allOnlineUsers) {
+      final url = u.avatarUrl;
+      if (url != null && url.isNotEmpty) {
+        map[u.userId] = url;
+      }
+    }
+    for (final u in lobbyState.users) {
+      final url = u.avatarUrl;
+      if (url != null && url.isNotEmpty) {
+        map[u.userId] = url;
+      }
+    }
+    return map;
   }
 
   Widget _buildDisconnectedBanner() {
@@ -503,6 +499,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
   final String Function(DateTime) formatTime;
 
   const _BroadcastMessageWidget({
+    super.key,
     required this.message,
     required this.formatTime,
   });
@@ -542,7 +539,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
                         text: '${message.displayName}: ',
                         style: const TextStyle(
                           color: AppColors.amber400,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -550,7 +547,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
                         text: message.content,
                         style: const TextStyle(
                           color: AppColors.amber400,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -563,8 +560,9 @@ class _BroadcastMessageWidget extends StatelessWidget {
                   child: Text(
                     formatTime(message.timestamp),
                     style: TextStyle(
-                      color: AppColors.amber400.withValues(alpha: 0.9),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 10,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -827,4 +825,247 @@ class _RevealClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(_RevealClipper oldClipper) =>
       oldClipper.progress != progress || oldClipper.origin != origin;
+}
+
+class _RegularMessageItem extends StatefulWidget {
+  final LobbyMessage message;
+
+  /// 预解析的头像 URL（父级从 users/allOnlineUsers 查表得到），
+  /// 避免 item 内做 O(users) 线性扫描。传 null 或空串走 fallback。
+  final String? avatarUrl;
+  final String Function(DateTime) formatTime;
+
+  const _RegularMessageItem({
+    super.key,
+    required this.message,
+    required this.avatarUrl,
+    required this.formatTime,
+  });
+
+  @override
+  State<_RegularMessageItem> createState() => _RegularMessageItemState();
+}
+
+class _RegularMessageItemState extends State<_RegularMessageItem>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final message = widget.message;
+    final isSystem = message.type == LobbyMessageType.system;
+    final isAnonymous = message.isAnonymous;
+    final isSelf = message.isSelf;
+
+    // 名字与头像边框色
+    final nameColor = isSystem
+        ? const Color(0xFFFFB74D) // Amber
+        : (isSelf
+            ? const Color(0xFF1D9BF0) // 主题蓝 (lobbyBlue)
+            : (isAnonymous
+                ? const Color(0xFF9CA3AF) // 匿名者用偏暗的灰色
+                : const Color(0xFFE2E8F0))); // 其他用户用明亮的银灰色
+
+    final initial = message.displayName.isNotEmpty
+        ? message.displayName.substring(0, 1).toUpperCase()
+        : '?';
+
+    // 匿名/系统消息不显示头像；否则用父级 O(1) 查表得到的 URL。
+    final String? avatarUrl = (isSystem || isAnonymous)
+        ? null
+        : widget.avatarUrl;
+
+    final fallbackText = Text(
+      isSystem ? '!' : initial,
+      style: TextStyle(
+        color: nameColor,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+
+    final avatarWidget = Container(
+      margin: isSelf
+          ? const EdgeInsets.only(top: 2, left: 10)
+          : const EdgeInsets.only(top: 2, right: 10),
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            nameColor.withValues(alpha: 0.25),
+            nameColor.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: nameColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl != null && avatarUrl.isNotEmpty
+          ? SignedNetworkImage(
+              url: avatarUrl,
+              cacheWidth: 52,
+              cacheHeight: 52,
+              fallback: fallbackText,
+            )
+          : fallbackText,
+    );
+
+    final textWidget = Expanded(
+      child: Column(
+        crossAxisAlignment:
+            isSelf ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment:
+                isSelf ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (isSelf) ...[
+                Text(
+                  widget.formatTime(message.timestamp),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    message.displayName,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: nameColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Flexible(
+                  child: Text(
+                    message.displayName,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: nameColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  widget.formatTime(message.timestamp),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (isSystem) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB74D)
+                          .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: const Color(0xFFFFB74D)
+                            .withValues(alpha: 0.3),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: const Text(
+                      'SYSTEM',
+                      style: TextStyle(
+                        color: Color(0xFFFFB74D),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
+          const SizedBox(height: 3),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isSelf
+                    ? [
+                        const Color(0xFF1D9BF0).withValues(alpha: 0.25),
+                        const Color(0xFF1D9BF0).withValues(alpha: 0.08),
+                      ]
+                    : (isSystem
+                        ? [
+                            const Color(0xFFFFB74D).withValues(alpha: 0.15),
+                            const Color(0xFFFFB74D).withValues(alpha: 0.05),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.08),
+                            Colors.white.withValues(alpha: 0.02),
+                          ]),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(
+                color: isSelf
+                    ? const Color(0xFF1D9BF0).withValues(alpha: 0.3)
+                    : (isSystem
+                        ? const Color(0xFFFFB74D).withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.08)),
+                width: 0.5,
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(isSelf ? 12 : 4),
+                topRight: Radius.circular(isSelf ? 4 : 12),
+                bottomLeft: const Radius.circular(12),
+                bottomRight: const Radius.circular(12),
+              ),
+            ),
+            child: SelectableText(
+              message.content,
+              textAlign: TextAlign.left, // 气泡内统一左对齐更易读
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: isSelf
+            ? [textWidget, avatarWidget]
+            : [avatarWidget, textWidget],
+      ),
+    );
+  }
 }

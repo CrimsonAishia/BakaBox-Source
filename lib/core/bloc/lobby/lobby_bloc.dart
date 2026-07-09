@@ -875,6 +875,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       type: LobbyMessageType.user,
       timestamp: now,
       isAnonymous: state.isAnonymous,
+      isSelf: true,
     );
 
     // 立即更新自己的 lastMessage 状态，使聊天气泡和聊天栏立即显示
@@ -1721,6 +1722,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 新用户 serverId = loginUserId
         var migratedUsers = state.users;
         var migratedAllOnline = state.allOnlineUsers;
+        var migratedMessages = state.messages;
         if (loginUserId.isNotEmpty && loginUserId != _selfUserId) {
           // 迁移函数：把列表中的旧匿名自己替换为新登录用户
           List<LobbyUser> migrateSelf(List<LobbyUser> list) {
@@ -1753,12 +1755,30 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           if (migratedAllOnline.isNotEmpty) {
             migratedAllOnline = migrateSelf(migratedAllOnline);
           }
+
+          // 重新认领属于新登录用户的历史消息
+          migratedMessages = migratedMessages.map((m) {
+            if (!m.isSelf && _isSelfServerUserId(m.userId)) {
+              return LobbyMessage(
+                messageId: m.messageId,
+                userId: m.userId,
+                nickname: m.nickname,
+                content: m.content,
+                type: m.type,
+                timestamp: m.timestamp,
+                isAnonymous: m.isAnonymous,
+                isSelf: true,
+              );
+            }
+            return m;
+          }).toList(growable: false);
         }
 
         emit(
           state.copyWith(
             users: migratedUsers,
             allOnlineUsers: migratedAllOnline,
+            messages: migratedMessages,
             isAnonymous: false,
             transientNotice: state.isAnonymous ? '身份升级成功' : '登录成功',
           ),
@@ -1924,10 +1944,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           }
 
           final previousSelf = state.selfUser;
-          final snapshotState = _applySnapshot(envelope.snapshotResponse);
+          // 必须在 _applySnapshot 前捕获旧的 _selfServerUserId，因为
+          // _applySnapshot 内部会提前同步该值以保证 recentMessages 的 isSelf
+          // 判定正确，之后再读就已经是新值了。
           final previousServerUserId = _selfServerUserId;
+          final snapshotState = _applySnapshot(envelope.snapshotResponse);
           final nextServerUserId = snapshotState.selfServerUserId;
-          _selfServerUserId = nextServerUserId;
+          // _selfServerUserId 已在 _applySnapshot 内更新（若 pbSnapshot 携带 self），
+          // 这里再赋值一次是显式兜底：某些兜底路径下 snapshotState.selfServerUserId
+          // 可能与 _selfServerUserId 不一致，保持外部语义。
+          if (nextServerUserId != null && nextServerUserId.isNotEmpty) {
+            _selfServerUserId = nextServerUserId;
+          }
 
           // snapshot 是全量状态，重置 seq 追踪（下一个 delta 帧作为新基线）
           _lastDeltaSeq = null;
@@ -2775,6 +2803,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       case 'broadcast.message':
         final broadcastMsgResp = envelope.broadcastMessageResponse;
         final broadcast = _parseBroadcastMessage(broadcastMsgResp.message);
+        final isSelfBroadcast = _isSelfServerUserId(broadcast.userId);
         // 将广播消息转换为 LobbyMessage 并添加到聊天栏
         final broadcastLobbyMessage = LobbyMessage(
           messageId: broadcast.messageId,
@@ -2784,42 +2813,47 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           type: LobbyMessageType.broadcast,
           timestamp: broadcast.timestamp,
           isAnonymous: false,
+          isSelf: isSelfBroadcast,
         );
         final updatedMessages = _limitMessages([
           ...state.messages,
           broadcastLobbyMessage,
         ]);
 
-        // 通过 Stream 通知 GlobalBroadcastBar 显示右下角广播通知卡片（桌面端使用）
-        _broadcastController.add(broadcast);
+        // 自己发出的广播不再对自己重复通知：跳过右下角广播条、系统通知和软件内浮窗，
+        // 聊天列表里的气泡已经足够表明"自己刚广播了什么"。
+        if (!isSelfBroadcast) {
+          // 通过 Stream 通知 GlobalBroadcastBar 显示右下角广播通知卡片（桌面端使用）
+          _broadcastController.add(broadcast);
 
-        // 根据设置选择通知方式
-        final rawIndex =
-            StorageUtils.getInt('broadcast_notification_type') ?? 0;
-        final safeIndex = rawIndex.clamp(
-          0,
-          BroadcastNotificationType.values.length - 1,
-        );
-        final broadcastNotificationType =
-            BroadcastNotificationType.values[safeIndex];
+          // 根据设置选择通知方式
+          final rawIndex =
+              StorageUtils.getInt('broadcast_notification_type') ?? 0;
+          final safeIndex = rawIndex.clamp(
+            0,
+            BroadcastNotificationType.values.length - 1,
+          );
+          final broadcastNotificationType =
+              BroadcastNotificationType.values[safeIndex];
 
-        if (broadcastNotificationType == BroadcastNotificationType.system) {
-          unawaited(
-            BroadcastNotificationService.instance.showBroadcastNotification(
-              sender: broadcast.nickname,
+          if (broadcastNotificationType == BroadcastNotificationType.system) {
+            unawaited(
+              BroadcastNotificationService.instance.showBroadcastNotification(
+                sender: broadcast.nickname,
+                content: broadcast.content,
+                avatarUrl: broadcast.avatarUrl,
+              ),
+            );
+          } else if (broadcastNotificationType ==
+              BroadcastNotificationType.software) {
+            // 软件内浮窗通知
+            NotificationWindowService().showBroadcastNotification(
+              nickname: broadcast.nickname,
               content: broadcast.content,
-              avatarUrl: broadcast.avatarUrl,
-            ),
-          );
-        } else if (broadcastNotificationType ==
-            BroadcastNotificationType.software) {
-          // 软件内浮窗通知
-          NotificationWindowService().showBroadcastNotification(
-            nickname: broadcast.nickname,
-            content: broadcast.content,
-          );
+            );
+          }
+          // disabled：不发送任何额外通知
         }
-        // disabled：不发送任何额外通知
 
         emit(state.copyWith(messages: updatedMessages));
         break;
@@ -3297,6 +3331,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         ? DateTime.fromMillisecondsSinceEpoch(pbMsg.timestamp.toInt())
         : DateTime.now();
 
+    bool isSelf = _isSelfServerUserId(pbMsg.userId);
+    // 如果消息是实名的（非匿名），但我当前是匿名的，那么这条消息不属于当前的匿名会话。
+    // 即使用户的设备绑定导致底层 UUID 没变，退出登录后也不应该自动认领历史的实名消息。
+    if (isSelf && state.isAnonymous && !pbMsg.isAnonymous) {
+      isSelf = false;
+    }
+
     return LobbyMessage(
       messageId: pbMsg.messageId,
       userId: pbMsg.userId,
@@ -3305,6 +3346,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       type: type,
       timestamp: timestamp,
       isAnonymous: pbMsg.isAnonymous,
+      isSelf: isSelf,
     );
   }
 
@@ -3471,6 +3513,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final selfServerUserId = pbSnapshot.hasSelf()
         ? pbSnapshot.self.userId
         : null;
+    // 关键：在解析 recentMessages 之前先把 _selfServerUserId 同步到最新值，
+    // 否则 _parseLobbyMessage → _isSelfServerUserId 会用旧值（首次进入时为 null）
+    // 判定历史消息的 isSelf，导致自己以前发的消息被当成别人的显示。
+    // 只在 pbSnapshot 明确携带 self 时更新，避免异常帧把 _selfServerUserId 抹成 null。
+    if (pbSnapshot.hasSelf() &&
+        selfServerUserId != null &&
+        selfServerUserId.isNotEmpty) {
+      _selfServerUserId = selfServerUserId;
+    }
     final self = pbSnapshot.hasSelf()
         ? _parseLobbyUser(
             pbSnapshot.self,
@@ -3573,6 +3624,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       type: message.type,
       timestamp: message.timestamp,
       isAnonymous: message.isAnonymous,
+      isSelf: message.isSelf,
     );
 
     final updatedUsers = state.users
@@ -4047,7 +4099,28 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         .firstOrNull;
     final defaultSpriteId = defaultSprite?.id ?? 'sprite_01';
 
-    emit(state.copyWith(selectedSpriteId: defaultSpriteId, isAnonymous: true));
+    // 3. 退出登录后，过去的自己已经不是现在的自己，将聊天记录里的 isSelf 全部重置为 false
+    final updatedMessages = state.messages.map((m) {
+      if (m.isSelf) {
+        return LobbyMessage(
+          messageId: m.messageId,
+          userId: m.userId,
+          nickname: m.nickname,
+          content: m.content,
+          type: m.type,
+          timestamp: m.timestamp,
+          isAnonymous: m.isAnonymous,
+          isSelf: false,
+        );
+      }
+      return m;
+    }).toList(growable: false);
+
+    emit(state.copyWith(
+      selectedSpriteId: defaultSpriteId,
+      isAnonymous: true,
+      messages: updatedMessages,
+    ));
   }
 
   /// 用户在被踢提示页面点击操作按钮后，重置被踢状态并重新连接

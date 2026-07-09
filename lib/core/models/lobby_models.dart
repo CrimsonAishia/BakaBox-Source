@@ -228,6 +228,7 @@ class LobbyMessage extends Equatable {
   final LobbyMessageType type;
   final bool isAnonymous;
   final DateTime timestamp;
+  final bool isSelf;
 
   const LobbyMessage({
     required this.messageId,
@@ -237,6 +238,7 @@ class LobbyMessage extends Equatable {
     required this.type,
     required this.timestamp,
     this.isAnonymous = false,
+    this.isSelf = false,
   });
 
   String get displayName {
@@ -253,6 +255,7 @@ class LobbyMessage extends Equatable {
     type,
     isAnonymous,
     timestamp,
+    isSelf,
   ];
 }
 
