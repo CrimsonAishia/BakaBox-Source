@@ -884,6 +884,12 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                         isOtherServerQueueing: isOtherServerQueueing,
                       ),
                     ),
+                  _buildActionBtn(
+                    text: '信息',
+                    icon: Icons.info_outline_rounded,
+                    bgColor: AppColors.emerald500,
+                    onPressed: widget.onTap,
+                  ),
                 ],
               ),
               // 分隔线
@@ -898,12 +904,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 child: Wrap(
                   spacing: 6,
                   children: [
-                    _buildSecondaryBtn(
-                      icon: Icons.info_outline_rounded,
-                      tooltip: '服务器详情',
-                      color: AppColors.emerald500,
-                      onPressed: widget.onTap,
-                    ),
                     if (isCustomServer)
                       _buildSecondaryBtn(
                         icon: MdiIcons.pencilOutline,
