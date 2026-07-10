@@ -20,6 +20,7 @@ class CS2ZeServerData {
   /// 地图开始运行的时间（Unix 时间戳，单位秒）。
   /// 第三方接口字段 `map_changed_at`，用于计算地图当前运行时间。
   final int? mapChangedAt;
+  final bool? hasPassword;
 
   CS2ZeServerData({
     required this.gameType,
@@ -34,6 +35,7 @@ class CS2ZeServerData {
     required this.serverTags,
     this.appId,
     this.mapChangedAt,
+    this.hasPassword,
   });
 
   factory CS2ZeServerData.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class CS2ZeServerData {
           [],
       appId: (json['app_id'] as num?)?.toInt(),
       mapChangedAt: (json['map_changed_at'] as num?)?.toInt(),
+      hasPassword: json['has_password'] as bool? ?? json['password'] as bool?,
     );
   }
 
@@ -75,6 +78,7 @@ class CS2ZeServerData {
       maxPlayers: maxPlayers,
       gameType: gameType,
       appId: appId,
+      password: hasPassword,
     );
   }
 }

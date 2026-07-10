@@ -1790,6 +1790,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       gameType: sourceInfo.gameType,
       pingLatency: sourceInfo.ping,
       appId: sourceInfo.appId,
+      password: sourceInfo.passwordProtected,
     );
   }
 

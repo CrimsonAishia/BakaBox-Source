@@ -885,6 +885,7 @@ class GameLauncherService {
     String address, {
     String? gameType,
     int? appId,
+    String? password,
   }) async {
     if (!isDesktopPlatform) {
       return ServerConnectResult.failure('游戏启动功能仅支持桌面平台');
@@ -929,19 +930,17 @@ class GameLauncherService {
     }
 
     // 解析地址和密码
-    String serverAddress;
-    String? password;
+    String serverAddress = address;
+    String? effectivePassword = password;
 
     if (address.contains(';password=')) {
       final parts = address.split(';password=');
       serverAddress = parts[0];
-      password = parts.length > 1 ? parts[1] : null;
-    } else {
-      serverAddress = address;
+      effectivePassword ??= parts.length > 1 ? parts[1] : null;
     }
 
     // 直接使用Steam URL启动并连接
-    return await _connectUsingSteamUrl(serverAddress, password, client: client);
+    return await _connectUsingSteamUrl(serverAddress, effectivePassword, client: client);
   }
 
   /// 仅启动游戏（不连接服务器），用于独立版 CSGO / CS:Source 的纯启动场景

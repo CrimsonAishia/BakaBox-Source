@@ -2993,15 +2993,32 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               // 服务器名称（过长时水平滚动）
               Expanded(
                 flex: 3,
-                child: _CompactMarqueeText(
-                  text: hostName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isOffline
-                        ? (isDark ? Colors.white38 : AppColors.gray400)
-                        : (isDark ? Colors.white : AppColors.gray800),
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: _CompactMarqueeText(
+                        text: hostName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isOffline
+                              ? (isDark ? Colors.white38 : AppColors.gray400)
+                              : (isDark ? Colors.white : AppColors.gray800),
+                        ),
+                      ),
+                    ),
+                    if (data?.password == true) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.lock_rounded,
+                        size: 12,
+                        color: isOffline
+                            ? (isDark ? Colors.white38 : AppColors.gray400)
+                            : (isDark ? Colors.white54 : AppColors.gray500),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
@@ -3305,6 +3322,15 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     ExtendedServerItem server,
     String address,
   ) async {
+    // 检查密码
+    String? password;
+    if (server.serverData?.password == true) {
+      password = await _showPasswordDialog(context);
+      if (password == null) {
+        return; // 用户取消输入
+      }
+    }
+
     final serverName = server.serverItem.getDisplayName(
       server.serverData?.hostName,
     );
@@ -3318,6 +3344,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       mapBackground: mapInfo?.mapUrl,
       gameType: server.serverData?.gameType,
       appId: server.serverData?.appId,
+      password: password,
     );
 
     if (mounted) {
@@ -3448,6 +3475,40 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         color: pingColor,
       ),
       textAlign: TextAlign.center,
+    );
+  }
+
+  Future<String?> _showPasswordDialog(BuildContext context) async {
+    String? inputPassword;
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('请输入服务器密码'),
+          content: TextField(
+            obscureText: true,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: '服务器密码',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (val) => inputPassword = val,
+            onSubmitted: (val) {
+              Navigator.of(context).pop(val);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(inputPassword ?? ''),
+              child: const Text('连接'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
