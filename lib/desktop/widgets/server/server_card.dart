@@ -21,6 +21,7 @@ import 'server_card_skeleton.dart';
 import '../queue/queue_window.dart';
 import '../warmup/warmup_window.dart';
 import '../edit_server_dialog.dart';
+import 'server_players_dialog.dart';
 import '../../../core/constants/app_colors.dart';
 import 'server_card_components/server_card_marquee_text.dart';
 import 'server_card_components/server_card_overflow_tag_row.dart';
@@ -884,11 +885,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                         isOtherServerQueueing: isOtherServerQueueing,
                       ),
                     ),
-                  _buildActionBtn(
-                    text: '信息',
-                    icon: Icons.info_outline_rounded,
-                    bgColor: AppColors.emerald500,
-                    onPressed: widget.onTap,
+                  _buildInfoAndPlayersBtn(
+                    onInfoTap: widget.onTap ?? () {},
+                    onPlayersTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => ServerPlayersDialog(server: widget.server),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1041,6 +1045,85 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       ),
     );
   }
+
+  /// 包含“玩家列表”图标和“信息”的组合按钮
+  Widget _buildInfoAndPlayersBtn({
+    required VoidCallback onInfoTap,
+    required VoidCallback onPlayersTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            AppColors.blue500,
+            AppColors.emerald500,
+          ],
+          stops: [0.1, 0.45],
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 玩家列表入口
+          Tooltip(
+            message: '玩家列表',
+            child: InkWell(
+              onTap: onPlayersTap,
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(4)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: const Icon(
+                  Icons.people_alt_outlined,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          // 分割线
+          Container(
+            width: 1,
+            height: 14,
+            color: Colors.white.withValues(alpha: 0.3),
+          ),
+          // 信息入口
+          InkWell(
+            onTap: onInfoTap,
+            borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 13,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    '信息',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
 
   /// 次要操作按钮（图标按钮）
   Widget _buildSecondaryBtn({

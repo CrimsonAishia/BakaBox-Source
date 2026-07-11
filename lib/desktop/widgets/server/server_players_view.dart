@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/server_models.dart';
-import '../../../core/services/network_mode_service.dart';
 import '../../../core/services/source_server_service.dart';
 
 enum PlayerSortOption { name, score, time }
@@ -26,7 +25,7 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
   bool _isLoadingPlayers = false;
   String? _playerError;
   List<PlayerInfo> _players = [];
-  
+
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _playerScrollController = ScrollController();
   String _searchQuery = '';
@@ -35,22 +34,18 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
   bool _canScrollUp = false;
   bool _canScrollDown = false;
 
-  Timer? _refreshTimer;
-  static const int _refreshInterval = 10;
 
   @override
   void initState() {
     super.initState();
     _playerScrollController.addListener(_updateScrollIndicators);
-    
+
     // 首次进入时拉取一次数据
     _fetchPlayerList();
-    _startAutoRefresh();
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
     _searchController.dispose();
     _playerScrollController.removeListener(_updateScrollIndicators);
     _playerScrollController.dispose();
@@ -70,14 +65,6 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
     }
   }
 
-  void _startAutoRefresh() {
-    if (NetworkModeService.instance.weakNetwork) return;
-    _refreshTimer = Timer.periodic(const Duration(seconds: _refreshInterval), (_) {
-      if (mounted) {
-        _fetchPlayerList();
-      }
-    });
-  }
 
   Future<void> _fetchPlayerList() async {
     if (!mounted) return;
@@ -88,7 +75,9 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
     });
 
     try {
-      final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+      final address =
+          widget.server.serverItem.address ??
+          widget.server.serverItem.serverAddress;
       if (address == null || address.isEmpty) {
         if (mounted) {
           setState(() {
@@ -144,7 +133,8 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
         final playerCount = widget.server.serverData?.players ?? 0;
         if (playerCount > 55) {
           setState(() {
-            _playerError = '由于协议限制，无法获取超过55人服务器的玩家详情';
+            _playerError =
+                '未接收到服务器返回数据：疑似受底层通信协议单包体积限制，中文名称占用字节较大，当55人左右及以上时极易超出上限导致获取失败';
             _isLoadingPlayers = false;
           });
         } else if (playerCount == 0) {
@@ -385,7 +375,9 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
 
   Widget _buildScrollIndicator({required bool isTop, required bool isDark}) {
     final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final iconColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3);
+    final iconColor = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.3,
+    );
     return IgnorePointer(
       child: Container(
         height: 40,
@@ -404,7 +396,9 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
         child: Padding(
           padding: EdgeInsets.only(top: isTop ? 4 : 0, bottom: isTop ? 0 : 4),
           child: Icon(
-            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            isTop
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
             color: iconColor,
             size: 24,
           ),

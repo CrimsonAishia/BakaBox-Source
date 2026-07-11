@@ -14,7 +14,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/bloc/map_contribution/map_contribution_bloc.dart';
 import '../../../core/bloc/map_tag/map_tag_bloc.dart';
 import 'map_config_view.dart';
-import 'server_players_view.dart';
 
 class ServerDetailDialog extends StatefulWidget {
   final ExtendedServerItem server;
@@ -225,12 +224,6 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
             _buildNavItem(
               isDark: isDark,
               index: 1,
-              icon: Icons.people_alt_outlined,
-              title: '玩家列表',
-            ),
-            _buildNavItem(
-              isDark: isDark,
-              index: 2,
               icon: Icons.history_rounded,
               title: '历史记录',
             ),
@@ -251,19 +244,19 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           ),
           _buildNavItem(
             isDark: isDark,
-            index: 3,
+            index: 2,
             icon: MdiIcons.textBoxOutline,
             title: '中文名称',
           ),
           _buildNavItem(
             isDark: isDark,
-            index: 4,
+            index: 3,
             icon: MdiIcons.imageOutline,
             title: '背景图片',
           ),
           _buildNavItem(
             isDark: isDark,
-            index: 5,
+            index: 4,
             icon: MdiIcons.tagOutline,
             title: '标签',
           ),
@@ -383,17 +376,13 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
         return _buildMapDetailsTab(isDark);
       case 1:
         return widget.isServerMode
-            ? ServerPlayersView(server: widget.server, isDark: isDark)
-            : const SizedBox.shrink();
-      case 2:
-        return widget.isServerMode
             ? _buildHistoryTab(isDark)
             : const SizedBox.shrink();
-      case 3:
+      case 2:
         return _buildNameContributionTab(isDark);
-      case 4:
+      case 3:
         return _buildBackgroundContributionTab(isDark);
-      case 5:
+      case 4:
         return _buildTagContributionTab(isDark);
       default:
         return const SizedBox.shrink();
