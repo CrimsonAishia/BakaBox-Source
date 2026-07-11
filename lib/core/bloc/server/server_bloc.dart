@@ -600,7 +600,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
             _updateServerByAddress(address, updatedServer, emit);
 
-            // 获取背景图信息 (如果第三方API提供了图片，我们可以封装一个 MapData)
             if (apiServerData.imageUrl != null) {
               final fakeMapData = MapData(
                 id: 0,
@@ -614,8 +613,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
                   mapInfo: fakeMapData,
                 ),
               );
-            } else if (info.map != null &&
-                (mapChanged || currentServer.mapInfo == null)) {
+            }
+            
+            // 为了获取官方接口的 tag，我们也去请求官方的 MapInfo
+            if (info.map != null &&
+                (mapChanged || currentServer.mapInfo == null || currentServer.mapInfo!.tags.isEmpty)) {
               _fetchMapInfoAsync(address, info.map!, requestId, serverApi);
             }
           } else {
@@ -1258,11 +1260,24 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       _trimCacheIfNeeded();
     }
 
+    MapData? finalMapInfo = current.mapInfo;
+    if (event.mapInfoFetched == true && event.mapInfo != null) {
+      // 官方接口返回的 MapInfo，需要和当前的合并，保留第三方提供的优质图片和中文名（如果官方没有的话）
+      finalMapInfo = event.mapInfo!.copyWith(
+        mapUrl: (event.mapInfo!.mapUrl.isEmpty) && current.mapInfo?.mapUrl != null
+            ? current.mapInfo!.mapUrl
+            : event.mapInfo!.mapUrl,
+        mapLabel: (event.mapInfo!.mapLabel.isEmpty) && current.mapInfo?.mapLabel != null
+            ? current.mapInfo!.mapLabel
+            : event.mapInfo!.mapLabel,
+      );
+    } else if (event.mapInfo != null) {
+      finalMapInfo = event.mapInfo;
+    }
+
     servers[index] = current.copyWith(
       pingInfo: event.pingInfo ?? current.pingInfo,
-      mapInfo: event.mapInfoFetched == true
-          ? event.mapInfo
-          : (event.mapInfo ?? current.mapInfo),
+      mapInfo: finalMapInfo,
       mapInfoFetched: event.mapInfoFetched ?? current.mapInfoFetched,
       mapRuntime: event.mapRuntimeFetched == true
           ? event.mapRuntime

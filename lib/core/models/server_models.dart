@@ -440,6 +440,22 @@ class MapData extends Equatable {
       _$MapDataFromJson(json);
   Map<String, dynamic> toJson() => _$MapDataToJson(this);
 
+  MapData copyWith({
+    int? id,
+    String? mapName,
+    String? mapLabel,
+    String? mapUrl,
+    List<MapTagSimple>? tags,
+  }) {
+    return MapData(
+      id: id ?? this.id,
+      mapName: mapName ?? this.mapName,
+      mapLabel: mapLabel ?? this.mapLabel,
+      mapUrl: mapUrl ?? this.mapUrl,
+      tags: tags ?? this.tags,
+    );
+  }
+
   @override
   List<Object?> get props => [id, mapName, mapLabel, mapUrl, tags];
 }

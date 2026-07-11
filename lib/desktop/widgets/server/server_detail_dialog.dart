@@ -46,6 +46,7 @@ class ServerDetailDialog extends StatefulWidget {
           serverItem: ServerItem(
             address: serverAddress,
             isDifficultySeparated: isDifficultySeparated,
+            dataSourceMode: 'a2s', // 明确标记为官方库数据，避免被误判为自定义服务器
           ),
           serverData: ServerInfo(map: mapName),
           mapInfo: MapData(

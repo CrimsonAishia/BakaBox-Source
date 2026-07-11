@@ -5,6 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../core/core.dart';
 import '../../core/models/map_tag_models.dart';
 import '../../core/utils/map_runtime_utils.dart';
+import '../../core/utils/map_tag_utils.dart';
 import 'animated_player_count.dart';
 
 class ServerListItem extends StatelessWidget {
@@ -331,7 +332,12 @@ class ServerListItem extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           // 标签行
-          _buildMapTagRow(server.mapInfo?.tags ?? []),
+          _buildMapTagRow(
+            MapTagUtils.prepareTags(
+              server.mapInfo?.tags ?? [],
+              isCustomServer: server.serverItem.isCustom,
+            ),
+          ),
           const SizedBox(height: 6),
           // 底部信息行
           Row(

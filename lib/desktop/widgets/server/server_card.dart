@@ -618,7 +618,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         if (!_isHovered) ...[
           SizedBox(height: verticalSpacing),
           _buildMapTagRow(
-            MapTagUtils.prepareTags(widget.server.mapInfo?.tags.toList() ?? []),
+            MapTagUtils.prepareTags(
+              widget.server.mapInfo?.tags.toList() ?? [],
+              isCustomServer: widget.server.serverItem.isCustom,
+            ),
           ),
         ],
       ],
