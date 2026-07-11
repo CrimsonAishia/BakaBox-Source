@@ -522,7 +522,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   shadows: [
-                    Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1)),
+                    Shadow(
+                      color: Colors.black,
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
                     Shadow(color: Colors.black, blurRadius: 8),
                     Shadow(color: Colors.black, offset: Offset(1, 1)),
                     Shadow(color: Colors.black, offset: Offset(-1, -1)),
@@ -539,7 +543,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 color: Colors.white,
                 size: 16,
                 shadows: [
-                  Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1)),
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
+                  ),
                   Shadow(color: Colors.black, blurRadius: 8),
                   Shadow(color: Colors.black, offset: Offset(1, 1)),
                   Shadow(color: Colors.black, offset: Offset(-1, -1)),
@@ -893,7 +901,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     onPlayersTap: () {
                       showDialog(
                         context: context,
-                        builder: (context) => ServerPlayersDialog(server: widget.server),
+                        builder: (context) =>
+                            ServerPlayersDialog(server: widget.server),
                       );
                     },
                   ),
@@ -1060,73 +1069,79 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [
-            AppColors.blue500,
-            AppColors.emerald500,
-          ],
+          colors: [AppColors.blue500, AppColors.emerald500],
           stops: [0.1, 0.45],
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 玩家列表入口
-          Tooltip(
-            message: '玩家列表',
-            child: InkWell(
-              onTap: onPlayersTap,
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(4)),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: const Icon(
-                  Icons.people_alt_outlined,
-                  size: 14,
-                  color: Colors.white,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 玩家列表入口
+            Tooltip(
+              message: '玩家列表',
+              child: InkWell(
+                onTap: onPlayersTap,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(4),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: const Icon(
+                    Icons.people_alt_outlined,
+                    size: 14,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
-          ),
-          // 分割线
-          Container(
-            width: 1,
-            height: 14,
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
-          // 信息入口
-          InkWell(
-            onTap: onInfoTap,
-            borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    size: 13,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '信息',
-                    style: TextStyle(
+            // 分割线
+            Container(
+              width: 1,
+              height: 14,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+            // 信息入口
+            InkWell(
+              onTap: onInfoTap,
+              borderRadius: const BorderRadius.horizontal(
+                right: Radius.circular(4),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 13,
                       color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    const Text(
+                      '信息',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
-
 
   /// 次要操作按钮（图标按钮）
   Widget _buildSecondaryBtn({
@@ -1659,7 +1674,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 color: AppColors.gray500,
               ),
               children: [
-                const TextSpan(text: '一周内出现'),
+                const TextSpan(text: '近7天'),
                 TextSpan(
                   text: ' $weeklyOccurrences ',
                   style: const TextStyle(

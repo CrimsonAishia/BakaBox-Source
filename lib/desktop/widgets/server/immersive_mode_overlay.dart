@@ -1511,7 +1511,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   color: AppColors.gray500,
                 ),
                 children: [
-                  const TextSpan(text: '一周内出现'),
+                  const TextSpan(text: '近7天'),
                   TextSpan(
                     text: ' $weeklyOccurrences ',
                     style: const TextStyle(
