@@ -14,6 +14,7 @@ import '../../../../core/utils/contribution_validation_utils.dart';
 import '../../../../core/utils/log_service.dart';
 import '../../../../core/utils/toast_utils.dart';
 import '../../../../core/widgets/disk_cached_image.dart';
+import '../../../../core/widgets/image_viewer_dialog.dart';
 import 'contribution_auth_mixin.dart';
 import 'contribution_image_widgets.dart';
 
@@ -432,23 +433,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
   }
 
   void _showFullImage(String imageRef) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Center(
-            child: InteractiveViewer(
-              child: DiskCachedImage(
-                imageUrl: imageRef,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      ),
+    ImageViewerDialog.show(
+      context,
+      imageUrls: [imageRef],
     );
   }
 
