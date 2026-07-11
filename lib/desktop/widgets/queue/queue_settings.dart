@@ -137,6 +137,44 @@ class QueueSettings extends StatelessWidget {
     return lowerMapName.startsWith('ze_') || lowerMapName.startsWith('zm_');
   }
 
+  String _getMultiThreadImpactText(int count) {
+    switch (count) {
+      case 1:
+        return '极低';
+      case 2:
+        return '低';
+      case 3:
+        return '中等';
+      case 4:
+        return '较高';
+      case 5:
+        return '高';
+      case 6:
+        return '极高';
+      default:
+        return '未知';
+    }
+  }
+
+  Color _getMultiThreadImpactColor(int count) {
+    switch (count) {
+      case 1:
+        return AppColors.green500;
+      case 2:
+        return AppColors.emerald500;
+      case 3:
+        return AppColors.amber500;
+      case 4:
+        return AppColors.orange500;
+      case 5:
+        return AppColors.red500;
+      case 6:
+        return AppColors.red600;
+      default:
+        return AppColors.gray500;
+    }
+  }
+
   Widget _buildTargetPlayersSlider(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
 
@@ -160,11 +198,14 @@ class QueueSettings extends StatelessWidget {
     // 最小值：服务器最大人数的 80%（向上取整），保证挤服时服务器已接近满员。
     // 拿不到 maxPlayers 时回退到 1，避免 Slider 出现 min > max。
     final rawMin = ((maxPlayers > 1 ? maxPlayers : 0) * 0.8).ceil();
-    final effectiveMinPlayers =
-        (rawMin > 0 && rawMin <= effectiveMaxPlayers) ? rawMin : 1;
+    final effectiveMinPlayers = (rawMin > 0 && rawMin <= effectiveMaxPlayers)
+        ? rawMin
+        : 1;
 
-    final effectiveTargetPlayers =
-        targetPlayers.clamp(effectiveMinPlayers, effectiveMaxPlayers);
+    final effectiveTargetPlayers = targetPlayers.clamp(
+      effectiveMinPlayers,
+      effectiveMaxPlayers,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,7 +494,7 @@ class QueueSettings extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '请求间隔(N秒获取一次服务器数据)',
+                  '请求间隔',
                   style: TextStyle(
                     fontSize: 13,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
@@ -516,13 +557,63 @@ class QueueSettings extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                MdiIcons.clockOutline,
+                size: 14,
+                color: theme.colorScheme.secondary,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '当前挤服速度：每 $effectiveInterval 秒向服务器发起 1 次进入请求\n',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '对服务器的压力：',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.secondary.withValues(
+                            alpha: 0.8,
+                          ),
+                        ),
+                      ),
+                      TextSpan(
+                        text: effectiveInterval == 1 ? '极低' : '几乎无影响',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.green500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildThreadCountSlider(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
-    final effectiveThreadCount = threadCount.clamp(3, 6);
+    final effectiveThreadCount = threadCount.clamp(1, 6);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,9 +664,9 @@ class QueueSettings extends StatelessWidget {
           ),
           child: Slider(
             value: effectiveThreadCount.toDouble(),
-            min: 3,
+            min: 1,
             max: 6,
-            divisions: 3,
+            divisions: 5,
             onChanged: disabled
                 ? null
                 : (value) {
@@ -587,7 +678,7 @@ class QueueSettings extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '3个',
+              '1个',
               style: TextStyle(
                 fontSize: 11,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -601,6 +692,58 @@ class QueueSettings extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                MdiIcons.lightningBolt,
+                size: 14,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '当前挤服速度：每秒内均匀错峰发起 $effectiveThreadCount 次进入请求\n',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '对服务器的压力：',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.8,
+                          ),
+                        ),
+                      ),
+                      TextSpan(
+                        text: _getMultiThreadImpactText(effectiveThreadCount),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _getMultiThreadImpactColor(
+                            effectiveThreadCount,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

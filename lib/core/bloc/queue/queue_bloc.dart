@@ -117,7 +117,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   Future<QueueConfig> _loadSavedConfig() async {
     try {
       final targetPlayers = StorageUtils.getInt(_keyQueueTargetPlayers) ?? 60;
-      final threadCount = StorageUtils.getInt(_keyQueueThreadCount) ?? 3;
+      final threadCount = StorageUtils.getInt(_keyQueueThreadCount) ?? 2;
       final isDonator = StorageUtils.getBool(
         _keyQueueIsDonator,
         defaultValue: false,

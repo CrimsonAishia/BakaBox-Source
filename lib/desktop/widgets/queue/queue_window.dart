@@ -281,6 +281,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
   /// 构建头部
   Widget _buildHeader(BuildContext context, QueueBlocState state) {
     final serverInfo = state.serverInfo;
+
     return ArenaWindowHeader(
       title: '挤服',
       serverName: state.serverName ?? serverInfo?.hostName ?? '加载中...',

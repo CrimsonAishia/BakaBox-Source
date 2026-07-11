@@ -16,7 +16,7 @@ class QueueConfig {
 
   const QueueConfig({
     this.targetPlayers = 60,
-    this.threadCount = 3,
+    this.threadCount = 2,
     this.enableAutoRetry = false,
     this.isDonator = false,
   });
