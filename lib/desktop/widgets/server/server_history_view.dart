@@ -89,7 +89,20 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   }) async {
     if (!mounted) return;
 
-    final address = widget.server.serverItem.address;
+    // 所有自定义服务器（包括三方导入和手动添加），直接不请求数据，显示无记录
+    if (widget.server.serverItem.isCustom) {
+      setState(() {
+        _isLoading = false;
+        _isLoadingMore = false;
+        _historyData = [];
+        _totalRecords = 0;
+        _hasMoreData = false;
+        _error = null;
+      });
+      return;
+    }
+
+    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
     if (address == null || address.isEmpty) {
       setState(() {
         _error = '服务器地址无效';

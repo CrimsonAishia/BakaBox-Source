@@ -123,16 +123,16 @@ class ServerAddServer extends ServerEvent {
 }
 
 /// 批量添加完整服务器对象到分类
-class ServerAddServerToCategory extends ServerEvent {
+class ServerAddServersToCategory extends ServerEvent {
   final String categoryName;
-  final ServerItem serverItem;
+  final List<ServerItem> serverItems;
   final bool isFromApi;
   final String? sourceApiUrl;
   final String? sourceApiCategoryName;
 
-  const ServerAddServerToCategory(
+  const ServerAddServersToCategory(
     this.categoryName,
-    this.serverItem, {
+    this.serverItems, {
     this.isFromApi = false,
     this.sourceApiUrl,
     this.sourceApiCategoryName,
@@ -140,7 +140,7 @@ class ServerAddServerToCategory extends ServerEvent {
   @override
   List<Object?> get props => [
     categoryName,
-    serverItem,
+    serverItems,
     isFromApi,
     sourceApiUrl,
     sourceApiCategoryName,
@@ -174,6 +174,18 @@ class ServerDeleteServer extends ServerEvent {
   });
   @override
   List<Object?> get props => [categoryName, serverAddress];
+}
+
+/// 批量删除自定义服务器
+class ServerDeleteServers extends ServerEvent {
+  final String categoryName;
+  final List<String> serverAddresses;
+  const ServerDeleteServers({
+    required this.categoryName,
+    required this.serverAddresses,
+  });
+  @override
+  List<Object?> get props => [categoryName, serverAddresses];
 }
 
 /// 重置倒计时

@@ -161,60 +161,74 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             .toSet();
 
         // 新增选中的
+        final newItems = <ServerItem>[];
         for (var server in selectedInThisCategory) {
           if (!existingAddresses.contains(server.serverKey)) {
-            final newItem = ServerItem(
-              serverAddress: server.serverKey,
-              nickname: server.name,
-              isCustom: true,
-              dataSourceMode: _dataSourceMode,
-              sourceApiUrl: ThirdPartyApiService.cs2zeApiUrl,
-            );
-            bloc.add(
-              ServerAddServerToCategory(
-                destinationCategoryName,
-                newItem,
-                isFromApi: true,
+            newItems.add(
+              ServerItem(
+                serverAddress: server.serverKey,
+                nickname: server.name,
+                isCustom: true,
+                dataSourceMode: _dataSourceMode,
                 sourceApiUrl: ThirdPartyApiService.cs2zeApiUrl,
-                sourceApiCategoryName: categoryName,
               ),
             );
           }
         }
 
+        if (newItems.isNotEmpty) {
+          bloc.add(
+            ServerAddServersToCategory(
+              destinationCategoryName,
+              newItems,
+              isFromApi: true,
+              sourceApiUrl: ThirdPartyApiService.cs2zeApiUrl,
+              sourceApiCategoryName: categoryName,
+            ),
+          );
+        }
+
         // 删除取消选中的
+        final toDelete = <String>[];
         for (var existingServer in widget.existingServers!) {
           final addr = existingServer.address ?? existingServer.serverAddress;
           if (addr != null && !newAddresses.contains(addr)) {
-            bloc.add(
-              ServerDeleteServer(
-                categoryName: destinationCategoryName,
-                serverAddress: addr,
-              ),
-            );
+            toDelete.add(addr);
           }
+        }
+
+        if (toDelete.isNotEmpty) {
+          bloc.add(
+            ServerDeleteServers(
+              categoryName: destinationCategoryName,
+              serverAddresses: toDelete,
+            ),
+          );
         }
       } else {
         // 全新导入
         if (selectedInThisCategory.isNotEmpty) {
+          final newItems = <ServerItem>[];
           for (var server in selectedInThisCategory) {
-            final newItem = ServerItem(
-              serverAddress: server.serverKey,
-              nickname: server.name,
-              isCustom: true,
-              dataSourceMode: _dataSourceMode,
-              sourceApiUrl: ThirdPartyApiService.cs2zeApiUrl,
-            );
-            bloc.add(
-              ServerAddServerToCategory(
-                categoryName,
-                newItem,
-                isFromApi: true,
+            newItems.add(
+              ServerItem(
+                serverAddress: server.serverKey,
+                nickname: server.name,
+                isCustom: true,
+                dataSourceMode: _dataSourceMode,
                 sourceApiUrl: ThirdPartyApiService.cs2zeApiUrl,
-                sourceApiCategoryName: categoryName,
               ),
             );
           }
+          bloc.add(
+            ServerAddServersToCategory(
+              categoryName,
+              newItems,
+              isFromApi: true,
+              sourceApiUrl: ThirdPartyApiService.cs2zeApiUrl,
+              sourceApiCategoryName: categoryName,
+            ),
+          );
         }
       }
     });

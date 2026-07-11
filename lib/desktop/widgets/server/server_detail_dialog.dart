@@ -69,6 +69,10 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   @override
   void initState() {
     super.initState();
+    final isCustom = widget.server.serverItem.isCustom;
+    if (isCustom) {
+      _selectedIndex = 2; // 自定义服务器默认选中“中文名称”编辑
+    }
   }
 
   @override
@@ -214,13 +218,14 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           ),
           const SizedBox(height: 16),
           // 导航菜单
-          _buildNavItem(
-            isDark: isDark,
-            index: 0,
-            icon: MdiIcons.mapSearch,
-            title: '地图详情',
-          ),
-          if (widget.isServerMode) ...[
+          if (!widget.server.serverItem.isCustom)
+            _buildNavItem(
+              isDark: isDark,
+              index: 0,
+              icon: MdiIcons.mapSearch,
+              title: '地图详情',
+            ),
+          if (widget.isServerMode && !widget.server.serverItem.isCustom) ...[
             _buildNavItem(
               isDark: isDark,
               index: 1,
