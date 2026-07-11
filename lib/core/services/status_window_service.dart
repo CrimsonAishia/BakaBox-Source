@@ -2624,15 +2624,18 @@ class StatusWindowService {
         ? (_threadPeriodMs / effectiveThreadCount).round()
         : 0;
 
+    final baseTime = DateTime.now().millisecondsSinceEpoch;
+
     for (int i = 0; i < effectiveThreadCount; i++) {
       final threadIndex = i;
-      final threadId = DateTime.now().millisecondsSinceEpoch + i;
+      final threadId = baseTime + i;
       _activeThreadIds.add(threadId);
       final initialDelay = i * staggerMs;
+      final threadStartTime = baseTime + initialDelay;
 
       Future.delayed(Duration(milliseconds: initialDelay), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs);
+          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs, threadStartTime);
         }
       });
     }
@@ -2640,21 +2643,21 @@ class StatusWindowService {
 
   /// 线程工作循环
   ///
-  /// 每次循环记录起始时间，查询完成后按 `max(period - elapsed, 0)` 睡眠，
-  /// 保证周期稳定不漂移（不因查询耗时累加导致间隔越拉越长）。
+  /// 基于固定的时间网格来调度请求。即使发生请求超时等导致单次耗时拉长，
+  /// 下一次唤醒也会对齐到该线程专有的时间槽（网格）上，
+  /// 从而彻底解决“超时后各线程同时唤醒，导致并发洪峰打乱错峰”的问题。
   Future<void> _startThreadWorkLoop(
     int threadIndex,
     int threadId,
     String serverAddress,
     int periodMs,
+    int threadStartTime,
   ) async {
     if (!_isQueueRunning ||
         _outcomeFinalized ||
         !_activeThreadIds.contains(threadId)) {
       return;
     }
-
-    final iterationStart = DateTime.now().millisecondsSinceEpoch;
 
     try {
       _updateThreadStatus(threadIndex, ThreadStatus.requesting);
@@ -2697,14 +2700,22 @@ class StatusWindowService {
       });
     }
 
-    // 保持固定周期：无论本次查询耗时多久，下次触发点都是 iterationStart + periodMs
-    final elapsed = DateTime.now().millisecondsSinceEpoch - iterationStart;
-    final nextDelay = periodMs - elapsed;
+    // 保持固定周期，即使超时或耗时过长也能恢复错峰：
+    // 计算当前时间相对于该线程初始启动时间的偏移量，
+    // 将下一次执行时间对齐到周期的网格上，避免多个线程在超时后同时唤醒产生并发洪峰。
+    final now = DateTime.now().millisecondsSinceEpoch;
+    int nextDelay;
+    if (now < threadStartTime) {
+      nextDelay = threadStartTime - now;
+    } else {
+      final elapsedFromStart = now - threadStartTime;
+      nextDelay = periodMs - (elapsedFromStart % periodMs);
+    }
 
     if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-      Future.delayed(Duration(milliseconds: nextDelay > 0 ? nextDelay : 0), () {
+      Future.delayed(Duration(milliseconds: nextDelay), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs);
+          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs, threadStartTime);
         }
       });
     }
