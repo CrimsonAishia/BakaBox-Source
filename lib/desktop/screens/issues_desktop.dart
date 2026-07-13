@@ -269,256 +269,175 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
             color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           ),
-          child: Row(
-            children: [
-              // 全部/我的 切换
-              _buildViewSwitch(state.showMine, authState.isAuthenticated),
-              const SizedBox(width: 12),
-              Container(
-                width: 1,
-                height: 24,
-                color: isDark ? AppColors.slate700 : AppColors.gray200,
-              ),
-              const SizedBox(width: 12),
-              // 类型筛选
-              _buildCompactFilterChips(
-                items: [
-                  _FilterItem(null, '全部', null),
-                  _FilterItem('bug', 'Bug', MdiIcons.bug),
-                  _FilterItem('feature', '建议', MdiIcons.lightbulbOnOutline),
-                  _FilterItem('question', '问题', MdiIcons.helpCircleOutline),
-                ],
-                selected: state.currentType,
-                onSelected: (type) =>
-                    context.read<IssueBloc>().add(IssueFilterType(type)),
-              ),
-              const SizedBox(width: 8),
-              // 状态筛选
-              _buildStatusChips(
-                state.currentStatus,
-                (v) => context.read<IssueBloc>().add(IssueFilterStatus(v)),
-              ),
-              const SizedBox(width: 8),
-              // 排序
-              _buildCompactDropdown(
-                value: state.currentSort,
-                items: _sortOptions.entries
-                    .map(
-                      (e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) context.read<IssueBloc>().add(IssueSort(v));
-                },
-              ),
-              const Spacer(),
-              _buildSearchBox(),
-              const SizedBox(width: 12),
-              _buildCreateButton(),
-              const SizedBox(width: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.slate700 : AppColors.gray100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${state.totalCount}条',
-                  style: TextStyle(
-                    color: isDark ? Colors.white54 : AppColors.gray500,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 全部/我的 切换
+                          _buildViewSwitch(state.showMine, authState.isAuthenticated),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 1,
+                            height: 24,
+                            color: isDark ? AppColors.slate700 : AppColors.gray200,
+                          ),
+                          const SizedBox(width: 12),
+                          // 类型筛选
+                          _buildDropdown<String?>(
+                            value: state.currentType,
+                            options: [
+                              const _DropdownOption(null, '全部类型', icon: Icons.filter_list_rounded),
+                              _DropdownOption('bug', 'Bug', icon: MdiIcons.bug),
+                              _DropdownOption('feature', '建议', icon: MdiIcons.lightbulbOnOutline),
+                              _DropdownOption('question', '问题', icon: MdiIcons.helpCircleOutline),
+                            ],
+                            onChanged: (type) =>
+                                context.read<IssueBloc>().add(IssueFilterType(type)),
+                            defaultIcon: Icons.filter_list_rounded,
+                          ),
+                          const SizedBox(width: 8),
+                          // 状态筛选
+                          _buildDropdown<String>(
+                            value: state.currentStatus,
+                            options: [
+                              _DropdownOption('open', '开放', icon: MdiIcons.checkCircleOutline, color: const Color(0xFF16A34A)),
+                              _DropdownOption('closed', '已关闭', icon: MdiIcons.closeCircleOutline, color: AppColors.gray500),
+                              _DropdownOption('all', '全部状态', icon: MdiIcons.formatListBulleted, color: AppColors.gray500),
+                            ],
+                            onChanged: (v) => context.read<IssueBloc>().add(IssueFilterStatus(v)),
+                            defaultIcon: MdiIcons.checkCircleOutline,
+                          ),
+                          const SizedBox(width: 8),
+                          // 排序
+                          _buildDropdown<String>(
+                            value: state.currentSort,
+                            options: _sortOptions.entries.map((e) => _DropdownOption(e.key, e.value, icon: Icons.sort_rounded)).toList(),
+                            onChanged: (v) => context.read<IssueBloc>().add(IssueSort(v)),
+                            defaultIcon: Icons.sort_rounded,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 24), // 保证两组之间在缩小到极限时有一定间距
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildSearchBox(),
+                          const SizedBox(width: 12),
+                          _buildCreateButton(),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         );
       },
     );
   }
 
-  Widget _buildCompactFilterChips({
-    required List<_FilterItem> items,
-    required String? selected,
-    required ValueChanged<String?> onSelected,
+  Widget _buildDropdown<T>({
+    required T value,
+    required List<_DropdownOption<T>> options,
+    required ValueChanged<T> onChanged,
+    required IconData defaultIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: items.map((item) {
-        final isSelected = item.value == selected;
-        return Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => onSelected(item.value),
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : (isDark ? AppColors.slate700 : AppColors.gray100),
-                  borderRadius: BorderRadius.circular(6),
+    
+    final selectedOption = options.firstWhere(
+      (o) => o.value == value, 
+      orElse: () => options.first,
+    );
+    
+    return PopupMenuButton<T>(
+      initialValue: value,
+      onSelected: onChanged,
+      color: isDark ? AppColors.slate800 : Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
+        ),
+      ),
+      offset: const Offset(0, 36),
+      itemBuilder: (context) => options.map((e) {
+        final isSelected = e.value == value;
+        return PopupMenuItem<T>(
+          value: e.value,
+          height: 36,
+          child: Row(
+            children: [
+              if (e.icon != null) ...[
+                Icon(
+                  e.icon,
+                  size: 14,
+                  color: isSelected 
+                    ? (e.color ?? AppColors.primary) 
+                    : (isDark ? Colors.white54 : AppColors.gray500),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (item.icon != null) ...[
-                      Icon(
-                        item.icon,
-                        size: 12,
-                        color: isSelected
-                            ? Colors.white
-                            : (isDark ? Colors.white54 : AppColors.gray500),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : (isDark ? Colors.white70 : AppColors.gray700),
-                        fontSize: 12,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 8),
+              ],
+              Text(
+                e.label,
+                style: TextStyle(
+                  color: isSelected 
+                    ? (e.color ?? AppColors.primary) 
+                    : (isDark ? Colors.white70 : AppColors.gray700),
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
-            ),
+              if (isSelected) ...[
+                const Spacer(),
+                Icon(Icons.check, size: 16, color: e.color ?? AppColors.primary),
+              ],
+            ],
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildCompactDropdown({
-    required String value,
-    required List<DropdownMenuItem<String>> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.slate700 : AppColors.gray100,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          items: items,
-          onChanged: onChanged,
-          style: TextStyle(
-            color: isDark ? Colors.white70 : AppColors.gray700,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.slate700.withValues(alpha: 0.5) : Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isDark ? AppColors.slate600 : AppColors.gray200,
           ),
-          isDense: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down,
-            size: 16,
-            color: isDark ? Colors.white38 : AppColors.gray400,
-          ),
-          dropdownColor: isDark ? AppColors.slate800 : null,
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChips(
-    String currentStatus,
-    ValueChanged<String> onChanged,
-  ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildStatusChip(
-          'open',
-          '开放',
-          MdiIcons.checkCircleOutline,
-          const Color(0xFF16A34A),
-          currentStatus == 'open',
-          () => onChanged('open'),
-        ),
-        const SizedBox(width: 4),
-        _buildStatusChip(
-          'closed',
-          '已关闭',
-          MdiIcons.closeCircleOutline,
-          AppColors.gray500,
-          currentStatus == 'closed',
-          () => onChanged('closed'),
-        ),
-        const SizedBox(width: 4),
-        _buildStatusChip(
-          'all',
-          '全部',
-          MdiIcons.formatListBulleted,
-          AppColors.gray500,
-          currentStatus == 'all',
-          () => onChanged('all'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusChip(
-    String value,
-    String label,
-    IconData icon,
-    Color color,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(alpha: 0.1)
-                : (isDark ? AppColors.slate700 : AppColors.gray100),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: isSelected ? color : Colors.transparent),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 12,
-                color: isSelected
-                    ? color
-                    : (isDark ? Colors.white54 : AppColors.gray500),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              selectedOption.icon ?? defaultIcon,
+              size: 14,
+              color: selectedOption.color ?? (isDark ? Colors.white54 : AppColors.gray500),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              selectedOption.label,
+              style: TextStyle(
+                color: selectedOption.color ?? (isDark ? Colors.white70 : AppColors.gray700),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected
-                      ? color
-                      : (isDark ? Colors.white70 : AppColors.gray700),
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: isDark ? Colors.white38 : AppColors.gray400,
+            ),
+          ],
         ),
       ),
     );
@@ -1025,11 +944,12 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
   }
 }
 
-class _FilterItem {
-  final String? value;
+class _DropdownOption<T> {
+  final T value;
   final String label;
   final IconData? icon;
-  _FilterItem(this.value, this.label, [this.icon]);
+  final Color? color;
+  const _DropdownOption(this.value, this.label, {this.icon, this.color});
 }
 
 /// Issue 卡片组件（带 hover 效果）
