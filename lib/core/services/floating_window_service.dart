@@ -180,21 +180,22 @@ class FloatingWindowService {
     return true;
   }
 
-  /// 关闭所有浮窗（非阻塞，快速返回）
+  /// 关闭所有浮窗（阻塞等待关闭）
   Future<void> closeAllWindows() async {
     final ids = List<String>.from(_activeWindows.keys);
     _activeWindows.clear(); // 立即清空列表
 
-    // 并行发送关闭命令，不等待响应
-    for (final id in ids) {
+    // 并行发送关闭命令并等待响应
+    final futures = ids.map((id) async {
       try {
         final controller = WindowController.fromWindowId(id);
-        // 使用 unawaited 发送关闭命令，不阻塞
-        controller.invokeMethod('window_close').catchError((_) {});
+        await controller.invokeMethod('window_close');
       } catch (e) {
         // 忽略错误，窗口可能已经关闭
       }
-    }
+    });
+
+    await Future.wait(futures);
   }
 
   /// 聚焦浮窗

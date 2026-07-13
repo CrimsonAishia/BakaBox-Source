@@ -646,16 +646,18 @@ class NotificationWindowService {
     _pendingQueue.clear();
 
     final ids = _activeWindows.keys.toList();
+    final futures = <Future>[];
     for (final id in ids) {
       final info = _activeWindows.remove(id);
       if (info != null) {
-        try {
-          await info.controller.invokeMethod('window_close');
-        } catch (e) {
-          LogService.d('[NotificationWindow] Dismiss error: $e');
-        }
+        futures.add(
+          info.controller.invokeMethod('window_close').catchError((e) {
+            LogService.d('[NotificationWindow] Dismiss error: $e');
+          }),
+        );
       }
     }
+    await Future.wait(futures);
   }
 
   void dispose() {
