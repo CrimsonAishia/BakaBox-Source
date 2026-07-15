@@ -24,38 +24,3 @@ Map<String, dynamic> _$UploadResultToJson(UploadResult instance) =>
       'fileSize': instance.fileSize,
       'fileMD5': instance.fileMD5,
     };
-
-InitUploadResponse _$InitUploadResponseFromJson(Map<String, dynamic> json) =>
-    InitUploadResponse(
-      uploadId: json['uploadId'] as String,
-      fileKey: json['fileKey'] as String,
-      fileId: (json['fileId'] as num).toInt(),
-      url: json['url'] as String,
-      isExists: json['isExists'] as bool,
-    );
-
-Map<String, dynamic> _$InitUploadResponseToJson(InitUploadResponse instance) =>
-    <String, dynamic>{
-      'uploadId': instance.uploadId,
-      'fileKey': instance.fileKey,
-      'fileId': instance.fileId,
-      'url': instance.url,
-      'isExists': instance.isExists,
-    };
-
-PartUploadResponse _$PartUploadResponseFromJson(Map<String, dynamic> json) =>
-    PartUploadResponse(etag: json['etag'] as String);
-
-Map<String, dynamic> _$PartUploadResponseToJson(PartUploadResponse instance) =>
-    <String, dynamic>{'etag': instance.etag};
-
-CompleteUploadResponse _$CompleteUploadResponseFromJson(
-  Map<String, dynamic> json,
-) => CompleteUploadResponse(
-  fileId: (json['fileId'] as num).toInt(),
-  url: json['url'] as String,
-);
-
-Map<String, dynamic> _$CompleteUploadResponseToJson(
-  CompleteUploadResponse instance,
-) => <String, dynamic>{'fileId': instance.fileId, 'url': instance.url};

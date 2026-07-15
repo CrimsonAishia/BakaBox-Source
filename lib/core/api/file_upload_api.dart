@@ -4,7 +4,6 @@
 // ============================================================
 
 import 'package:flutter/foundation.dart';
-import '../models/upload_models.dart';
 
 class FileUrlResponse {
   final String url;
@@ -19,6 +18,7 @@ class FileUploadApi {
     throw UnimplementedError('Stub');
   }
 
+  // === 以下为兼容旧版历史 Commit 遗留的已废弃方法 ===
   Future<InitUploadResponse> initMultipart({
     required String fileName,
     required int fileSize,
@@ -52,11 +52,12 @@ class FileUploadApi {
   }) async {
     throw UnimplementedError('Stub');
   }
+  // ===============================================
 
   Future<ImageBedUploadResponse> uploadToImageBed({
     required Uint8List data,
     required String filename,
-    String? categoryName,
+    String? categoryName, // 旧版代码这里可能传 String?
   }) async {
     throw UnimplementedError('Stub');
   }
@@ -65,6 +66,24 @@ class FileUploadApi {
     throw UnimplementedError('Stub');
   }
 }
+
+// 兼容旧版的返回模型
+class InitUploadResponse {
+  final String uploadId;
+  final String fileKey;
+  final List<int> uploadedParts;
+  InitUploadResponse({required this.uploadId, required this.fileKey, required this.uploadedParts});
+}
+class PartUploadResponse {
+  final String eTag;
+  PartUploadResponse({required this.eTag});
+}
+class CompleteUploadResponse {
+  final int fileId;
+  final String url;
+  CompleteUploadResponse({required this.fileId, required this.url});
+}
+// ===================
 
 class ImageBedUploadResponse {
   final int fileId;
