@@ -522,7 +522,7 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
     // 使用图床上传
     final uploadResult = await _uploadService.uploadToImageBed(
       cropTempFile,
-      categoryName: 'character_preview',
+      categoryName: 'bakabox_character_preview',
     );
 
     // 删除临时文件
@@ -1379,7 +1379,7 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
     // 使用图床上传
     final uploadResult = await _uploadService.uploadToImageBed(
       cropTempFile,
-      categoryName: 'character_thumbnail',
+      categoryName: 'bakabox_character_thumbnail',
     );
 
     // 删除临时文件

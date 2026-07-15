@@ -308,7 +308,7 @@ class _CoverUploadSlotState extends State<_CoverUploadSlot> {
       // 上传到图床（与 RichTextEditor 走同一服务）
       final uploadResult = await _uploadService.uploadToImageBed(
         file,
-        categoryName: 'guide_cover',
+        categoryName: 'bakabox_guide_cover',
       );
 
       if (!mounted) return;

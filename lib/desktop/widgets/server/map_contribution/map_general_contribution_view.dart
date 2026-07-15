@@ -409,7 +409,7 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
       final uploadService = FileUploadService();
       final result = await uploadService.uploadToImageBed(
         imageFile,
-        categoryName: 'map_backgrounds',
+        categoryName: 'bakabox_map_backgrounds',
       );
       if (!mounted) return;
       mapContributionBloc.add(
@@ -493,7 +493,7 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
         final uploadService = FileUploadService();
         final result = await uploadService.uploadToImageBed(
           _selectedImage!,
-          categoryName: 'map_backgrounds',
+          categoryName: 'bakabox_map_backgrounds',
         );
         if (!mounted) return;
         context.read<MapContributionBloc>().add(

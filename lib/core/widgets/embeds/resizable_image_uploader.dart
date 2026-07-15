@@ -23,7 +23,7 @@ class ResizableImageUploader {
   static final FileUploadService _uploadService = FileUploadService();
 
   /// 上传分类名（攻略正文图片）
-  static const String categoryName = 'guide_content';
+  static const String categoryName = 'bakabox_guide_content';
 
   /// 统计文档中 resizableImage 节点数量
   static int countImages(Document document) {
