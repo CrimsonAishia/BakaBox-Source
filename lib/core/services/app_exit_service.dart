@@ -20,8 +20,17 @@ class AppExitService {
     _desktopExitHandler = handler;
   }
 
+  /// 标识应用是否正在执行退出流程
+  bool _isExiting = false;
+
+  /// 获取应用是否正在退出
+  bool get isExiting => _isExiting;
+
   /// 执行完整的应用退出流程
   Future<void> exitApplication() async {
+    if (_isExiting) return;
+    _isExiting = true;
+
     if (_desktopExitHandler != null) {
       await _desktopExitHandler!();
     } else {

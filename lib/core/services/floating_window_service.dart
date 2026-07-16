@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
+import 'app_exit_service.dart';
 
 /// 浮窗类型
 enum FloatingWindowType {
@@ -97,6 +98,12 @@ class FloatingWindowService {
   Future<String?> openWindow(FloatingWindowConfig config) async {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
       LogService.w('Floating window only supported on desktop');
+      return null;
+    }
+
+    // 如果应用正在退出，则不创建任何新窗口
+    if (AppExitService.instance.isExiting) {
+      LogService.i('App is exiting, ignore floating window: ${config.type}');
       return null;
     }
 

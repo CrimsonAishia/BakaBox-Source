@@ -8,6 +8,7 @@ import '../bloc/settings/settings_state.dart';
 import '../utils/fullscreen_detector.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
+import 'app_exit_service.dart';
 
 /// 通知类型
 enum NotificationType {
@@ -161,7 +162,7 @@ class NotificationWindowService {
 
   /// 窗口关闭事件流控制器
   final _windowClosedController = StreamController<String>.broadcast();
-  
+
   /// 窗口关闭事件流
   Stream<String> get windowClosedStream => _windowClosedController.stream;
 
@@ -312,6 +313,14 @@ class NotificationWindowService {
   /// 显示通知
   Future<void> show(NotificationData notification) async {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
+
+    // 如果应用正在退出，则不创建任何新窗口
+    if (AppExitService.instance.isExiting) {
+      LogService.i(
+        '[NotificationWindow] App is exiting, ignore notification: ${notification.id}',
+      );
+      return;
+    }
 
     // 检查是否已存在相同 ID 的通知（活跃窗口中）
     if (_activeWindows.containsKey(notification.id)) {

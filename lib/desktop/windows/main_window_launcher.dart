@@ -16,6 +16,8 @@ import '../../core/services/tray_service.dart';
 import '../../core/utils/storage_utils.dart';
 import '../app.dart';
 
+import '../../core/utils/log_service.dart';
+
 /// 主窗口启动器
 class MainWindowLauncher {
   MainWindowLauncher._();
@@ -149,72 +151,108 @@ class MainWindowLauncher {
   /// 是干净的；崩点在主进程。所以只需要修主进程退出路径。
   static Future<void> _exitDesktop() async {
     const closeTimeout = Duration(seconds: 2);
+    final stopwatch = Stopwatch()..start();
+    LogService.i('[Exit] Starting desktop exit process...');
 
     // 1. 停止 OBS 服务
     final obsService = ObsServerService();
     if (obsService.isRunning) {
       try {
+        LogService.i('[Exit] Stopping OBS service...');
         obsService.clearDisplay();
         await obsService.stop().timeout(closeTimeout);
+        LogService.i(
+          '[Exit] OBS service stopped (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+        );
       } catch (e) {
-        debugPrint('[Exit] stop OBS failed: $e');
+        LogService.e('[Exit] stop OBS failed', e);
       }
     }
 
     // 2. 先隐藏主窗口 —— 视觉上立即"退出"，后续清理在后台做
     try {
+      LogService.i('[Exit] Hiding main window...');
       await windowManager.hide();
+      LogService.i(
+        '[Exit] Main window hidden (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+      );
     } catch (e) {
-      debugPrint('[Exit] hide window failed: $e');
+      LogService.e('[Exit] hide window failed', e);
     }
 
     // 3. 关闭所有浮动窗口（挤服 / 暖服 / 连接 / 启动 等浮窗）
     try {
+      LogService.i('[Exit] Closing floating windows...');
       await FloatingWindowService().closeAllWindows().timeout(closeTimeout);
+      LogService.i(
+        '[Exit] Floating windows closed (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+      );
     } catch (e) {
-      debugPrint('[Exit] closeAllWindows failed: $e');
+      LogService.e('[Exit] closeAllWindows failed or timed out', e);
     }
 
     // 4. 关闭所有通知窗口（换图 / 更新日志 / 广播 等通知窗）
-    //    之前只关了浮窗，通知窗被孤儿化，是 crash 的一个次要来源
     try {
+      LogService.i('[Exit] Closing notification windows...');
       await NotificationWindowService().dismissAll().timeout(closeTimeout);
+      LogService.i(
+        '[Exit] Notification windows closed (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+      );
     } catch (e) {
-      debugPrint('[Exit] dismissAll notifications failed: $e');
+      LogService.e('[Exit] dismissAll notifications failed or timed out', e);
     }
 
     // 5. 给子窗口进程 teardown 宽限期
-    //    子窗口是独立的 bakabox_app.exe 进程，从收到 IPC 到 Flutter engine
-    //    完成 teardown、Windows 释放 DLL 引用计数需要时间。1500ms 与
-    //    `update_service._finalizeExitForInstaller` 保持一致。
-    //    此时主窗口已经 hide，用户不会感知这段等待。
+    LogService.i(
+      '[Exit] Waiting 1500ms for child process teardown (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+    );
     await Future.delayed(const Duration(milliseconds: 1500));
 
     // 6. 销毁托盘图标
     try {
+      LogService.i(
+        '[Exit] Disposing tray service (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+      );
       await TrayService.instance.dispose();
+      LogService.i('[Exit] Tray service disposed');
     } catch (e) {
-      debugPrint('[Exit] tray dispose failed: $e');
+      LogService.e('[Exit] tray dispose failed', e);
     }
 
     // 7. 解除 preventClose，然后 destroy 触发原生 PostQuitMessage(0)
-    //    → wWinMain 消息循环自然退出
-    //    → CoUninitialize() 执行
-    //    → 干净退出（原生插件的 COM 卸载走正常路径，不会 SEH crash）
     try {
+      LogService.i(
+        '[Exit] Setting preventClose to false (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+      );
       await windowManager.setPreventClose(false);
     } catch (e) {
-      debugPrint('[Exit] setPreventClose(false) failed: $e');
+      LogService.e('[Exit] setPreventClose(false) failed', e);
     }
+
     try {
+      LogService.i(
+        '[Exit] Destroying main window (Elapsed: ${stopwatch.elapsedMilliseconds}ms)...',
+      );
+      // 在销毁窗口前，强制刷新一次内存中的所有日志到文件，
+      // 因为一旦 destroy，C++ 原生层会立刻终止进程，后续的异步日志将丢失。
+      await LogService.flush();
+      
       await windowManager.destroy();
     } catch (e) {
-      debugPrint('[Exit] destroy failed: $e');
+      LogService.e('[Exit] destroy failed', e);
+      // 如果销毁失败，再刷新一次错误日志
+      await LogService.flush();
     }
 
     // 8. 兜底：正常路径下上面 destroy 后进程已终止，代码走不到这里。
     //    极端情况（destroy 抛异常或消息循环卡住）10 秒后强退。
+    LogService.w(
+      '[Exit] Reached fallback! Waiting 10 seconds before forced exit (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+    );
     await Future.delayed(const Duration(seconds: 10));
+    LogService.w(
+      '[Exit] Forcing exit(0) after timeout! (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
+    );
     exit(0);
   }
 }
