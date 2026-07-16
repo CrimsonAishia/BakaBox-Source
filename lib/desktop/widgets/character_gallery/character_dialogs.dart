@@ -7,8 +7,6 @@ import '../../../core/bloc/character_gallery/character_gallery_state.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
-// TODO: 视频上传功能暂时隐藏
-// import 'video_upload_widget.dart';
 
 /// Dialog 输入框组件
 class DialogTextField extends StatelessWidget {
@@ -565,7 +563,7 @@ String getSpellCardTypeLabel(String type) {
   };
 }
 
-/// 编辑符卡弹窗（支持视频上传）
+/// 编辑符卡弹窗
 class EditSpellCardDialog extends StatefulWidget {
   final int characterId;
   final int subModelId;
@@ -576,7 +574,6 @@ class EditSpellCardDialog extends StatefulWidget {
   final int? cooldown;
   final String? damage;
   final int? cost;
-  final String? currentVideoUrl;
 
   const EditSpellCardDialog({
     super.key,
@@ -589,7 +586,6 @@ class EditSpellCardDialog extends StatefulWidget {
     this.cooldown,
     this.damage,
     this.cost,
-    this.currentVideoUrl,
   });
 
   @override
@@ -602,9 +598,6 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
   late TextEditingController _damageController;
   late TextEditingController _costController;
   late TextEditingController _editReasonController;
-  // TODO: 视频上传功能暂时隐藏
-  // int? _uploadedVideoFileId;
-  // bool _isVideoUploading = false;
 
   @override
   void initState() {
@@ -703,8 +696,6 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
-              // TODO: 视频上传功能暂时隐藏，等待服务器端转换方案
-              // VideoUploadWidget(...),
               EditReasonSelector(controller: _editReasonController),
             ],
           ),
@@ -745,7 +736,7 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
   }
 }
 
-/// 编辑僵尸技能弹窗（支持视频上传）
+/// 编辑僵尸技能弹窗
 class EditZombieSkillDialog extends StatefulWidget {
   final int characterId;
   final int subModelId;
@@ -757,7 +748,6 @@ class EditZombieSkillDialog extends StatefulWidget {
   final String? damage;
   final String? range;
   final String? special;
-  final String? currentVideoUrl;
 
   const EditZombieSkillDialog({
     super.key,
@@ -771,7 +761,6 @@ class EditZombieSkillDialog extends StatefulWidget {
     this.damage,
     this.range,
     this.special,
-    this.currentVideoUrl,
   });
 
   @override
@@ -785,9 +774,6 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
   late TextEditingController _rangeController;
   late TextEditingController _specialController;
   late TextEditingController _editReasonController;
-  // TODO: 视频上传功能暂时隐藏
-  // int? _uploadedVideoFileId;
-  // bool _isVideoUploading = false;
 
   @override
   void initState() {
@@ -898,8 +884,6 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
                 ],
               ),
               const SizedBox(height: 12),
-              // TODO: 视频上传功能暂时隐藏，等待服务器端转换方案
-              // VideoUploadWidget(...),
               EditReasonSelector(controller: _editReasonController),
             ],
           ),
@@ -1119,7 +1103,6 @@ Widget _buildTypeLabel(BuildContext context, String label) {
 List<Widget> _buildDialogActions({
   required BuildContext context,
   required VoidCallback onSubmit,
-  bool isVideoUploading = false,
 }) {
   final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
 
@@ -1146,9 +1129,8 @@ List<Widget> _buildDialogActions({
       },
       builder: (ctx, state) {
         final isLoading = state.submitEditState == LoadState.loading;
-        final isDisabled = isLoading || isVideoUploading;
         return ElevatedButton(
-          onPressed: isDisabled ? null : onSubmit,
+          onPressed: isLoading ? null : onSubmit,
           style: ElevatedButton.styleFrom(
             backgroundColor: CharacterGalleryTheme.getVermillion(context),
             foregroundColor: Colors.white,
@@ -1165,7 +1147,7 @@ List<Widget> _buildDialogActions({
                     color: Colors.white,
                   ),
                 )
-              : Text(isVideoUploading ? '视频上传中...' : '提交审核'),
+              : const Text('提交审核'),
         );
       },
     ),
