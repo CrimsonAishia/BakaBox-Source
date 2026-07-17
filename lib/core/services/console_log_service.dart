@@ -93,6 +93,7 @@ class ConsoleLogState {
     String? mapName,
     DateTime? lastUpdate,
     String? errorMessage,
+    bool clearErrorMessage = false,
     bool? condebugEnabled,
   }) {
     return ConsoleLogState(
@@ -101,7 +102,7 @@ class ConsoleLogState {
       serverAddress: serverAddress ?? this.serverAddress,
       mapName: mapName ?? this.mapName,
       lastUpdate: lastUpdate ?? this.lastUpdate,
-      errorMessage: errorMessage,
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       condebugEnabled: condebugEnabled ?? this.condebugEnabled,
     );
   }
@@ -1468,6 +1469,7 @@ class ConsoleLogService {
           GameState.connecting,
           serverAddress: newServer,
           mapName: '', // 新连接清空旧地图，避免残留上一个服务器的地图名
+          clearErrorMessage: true,
           rawLine: line,
         );
       }
@@ -1489,6 +1491,7 @@ class ConsoleLogService {
         GameState.connecting,
         serverAddress: event.address,
         mapName: '', // 新连接清空旧地图
+        clearErrorMessage: true,
         rawLine: line,
       );
     } else if (event is EvSignonState) {
@@ -1544,28 +1547,48 @@ class ConsoleLogService {
         _targetServer = '';
       }
     } else if (event is EvDisconnect) {
-      // 连接失败类断开（超时/被拒/建连失败）即使在 loopback 模式也必须处理：
-      // 切服时旧服先断开会进入 loopback 模式，而新连接的 "Sending connect to"
-      // 行可能因服务器无响应（超时）根本不会出现，导致 _isInLoopbackMode 一直为
-      // true。若此时直接 return，超时断开会被吞掉，状态永远卡在"连接中"。
-      if (_isInLoopbackMode && !event.isConnectFailure) return;
-      LogService.d(
-        '[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}',
-      );
+      LogService.d('[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}');
 
-      final state = event.isServerFull
-          ? GameState.serverFull
-          : GameState.failed;
+      if (event.isConnectFailure) {
+        _isInLoopbackMode = false;
+        _targetServer = '';
 
-      // 走到这里若仍处于 loopback 模式，说明是"切服超时"场景：需要复位标志，
-      // 让失败状态能正常向下游传播。
-      _isInLoopbackMode = false;
-      _targetServer = '';
+        String? errMsg;
+        if (event.reason.contains('HOSTSTATE_IDLE')) {
+          errMsg = '下载地图失败等异常';
+        }
 
+        _updateConnectionState(
+          GameState.failed,
+          serverAddress: _currentState.serverAddress,
+          errorMessage: errMsg,
+          rawLine: line,
+        );
+        return;
+      }
+
+      if (event.isServerFull) {
+        _isInLoopbackMode = false;
+        _targetServer = '';
+        _updateConnectionState(
+          GameState.serverFull,
+          serverAddress: _currentState.serverAddress,
+          rawLine: line,
+        );
+        return;
+      }
+
+      // 正常断开 (如 LOOPDEACTIVATE, LOOPSHUTDOWN)
+      // 若当前已在 loopback 模式（主菜单），则无需处理
+      if (_isInLoopbackMode) return;
+
+      // 否则说明是从远程服务器正常断开（如自动切服、地图更换或换图过程中的断开）
+      // 退回主菜单状态，等待后续的 connect 指令或重连
       _updateConnectionState(
-        state,
+        GameState.mainMenu,
         serverAddress: '',
         mapName: '', // 断开连接清空地图名
+        clearErrorMessage: true,
         rawLine: line,
       );
     } else if (event is EvMapLoaded) {
@@ -1581,6 +1604,7 @@ class ConsoleLogService {
         GameState.mainMenu,
         serverAddress: '',
         mapName: '', // 回到主菜单清空地图名
+        clearErrorMessage: true,
         rawLine: line,
       );
       _targetServer = '';
@@ -1595,11 +1619,15 @@ class ConsoleLogService {
     String? serverAddress,
     String? mapName,
     String? rawLine,
+    String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     _currentState = _currentState.copyWith(
       state: state,
       serverAddress: serverAddress ?? _currentState.serverAddress,
       mapName: mapName ?? _currentState.mapName,
+      errorMessage: errorMessage,
+      clearErrorMessage: clearErrorMessage,
       lastUpdate: DateTime.now(),
     );
 

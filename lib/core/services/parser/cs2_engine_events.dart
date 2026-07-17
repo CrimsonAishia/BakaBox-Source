@@ -60,7 +60,12 @@ class EvDisconnect extends CS2EngineEvent {
         r.contains('REJECT') ||
         r.contains('CONNECT_REQUEST') ||
         r.contains('CONNECTION_FAILURE') ||
-        r.contains('CONNECT_FAILED');
+        r.contains('CONNECT_FAILED') ||
+        r.contains('HOSTSTATE_IDLE') ||
+        r.contains('DISCONNECT_BY_USER') ||
+        r.contains('KICK') ||
+        r.contains('BAN') ||
+        r.contains('ERROR');
   }
 }
 

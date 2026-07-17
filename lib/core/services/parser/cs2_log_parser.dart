@@ -13,7 +13,7 @@ class CS2LogParser {
   // Disconnect reason: NETWORK_DISCONNECT_REJECT_SERVERFULL
   // Or Disconnected from server: NETWORK_DISCONNECT_TIMEDOUT
   static final _regDisconnect = RegExp(
-    r'(?:Disconnect reason:|Disconnected from server:)\s+([A-Z_]+)',
+    r'(?:Disconnect reason:|Disconnecting from server:|Disconnected from server:)\s+([A-Z_]+)',
   );
 
   // ChangeGameUIState: INGAME -> CSGO_GAME_UI_STATE_MAINMENU
@@ -52,20 +52,21 @@ class CS2LogParser {
     if (line.isEmpty) return null;
     line = line.trim();
 
-    final signonMatch = _regSignon.firstMatch(line);
-    if (signonMatch != null) {
-      return EvSignonState(
-        int.parse(signonMatch.group(1)!),
-        signonMatch.group(2)!,
-      );
-    }
-
+    // 先检查断开连接，避免 "Disconnection during connection phase. Sign-on state: 5" 被误判为进入游戏
     final discMatch = _regDisconnect.firstMatch(line);
     if (discMatch != null) {
       final reason = discMatch.group(1)!;
       return EvDisconnect(
         reason,
         isServerFull: reason == 'NETWORK_DISCONNECT_REJECT_SERVERFULL',
+      );
+    }
+
+    final signonMatch = _regSignon.firstMatch(line);
+    if (signonMatch != null) {
+      return EvSignonState(
+        int.parse(signonMatch.group(1)!),
+        signonMatch.group(2)!,
       );
     }
 

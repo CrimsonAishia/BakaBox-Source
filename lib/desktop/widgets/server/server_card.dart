@@ -814,7 +814,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       connectDisabled = true;
     } else if (isOtherServerBusy) {
       connectText = '连接';
-      connectDisabled = true;
+      connectDisabled = false; // 允许随时打断现有操作连接新服务器
     } else {
       connectText = '连接';
       // 只在加载中时禁用，离线状态也允许连接

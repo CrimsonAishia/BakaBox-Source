@@ -1461,15 +1461,6 @@ class StatusWindowService {
       );
       _windowId = null;
       _cancelCloseTimer();
-      
-      // 如果窗口被主动关闭时操作仍在进行，视为用户主动取消
-      if (_state.status == OperationStatus.running || 
-          _state.status == OperationStatus.paused) {
-        LogService.d(
-          '[StatusWindowService] Floating window closed while operation is active, cancelling operation.',
-        );
-        cancel();
-      }
     }
   }
 
@@ -1688,7 +1679,7 @@ class StatusWindowService {
     _consoleLogService.resetState();
 
     return await _consoleLogService.monitorConnection(
-      maxTimeout: const Duration(seconds: 60),
+      maxTimeout: const Duration(minutes: 1),
       onStateChange: (consoleState) async {
         String windowState;
         String message;
@@ -2644,7 +2635,13 @@ class StatusWindowService {
 
       Future.delayed(Duration(milliseconds: initialDelay), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs, threadStartTime);
+          _startThreadWorkLoop(
+            threadIndex,
+            threadId,
+            serverAddress,
+            periodMs,
+            threadStartTime,
+          );
         }
       });
     }
@@ -2724,7 +2721,13 @@ class StatusWindowService {
     if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
       Future.delayed(Duration(milliseconds: nextDelay), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
-          _startThreadWorkLoop(threadIndex, threadId, serverAddress, periodMs, threadStartTime);
+          _startThreadWorkLoop(
+            threadIndex,
+            threadId,
+            serverAddress,
+            periodMs,
+            threadStartTime,
+          );
         }
       });
     }
