@@ -6,6 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/core.dart';
+import '../../../core/widgets/disk_cached_image.dart';
 
 /// 公告面板
 class AnnouncementsPanel extends StatelessWidget {
@@ -431,6 +432,21 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                   onTapLink: (text, href, title) {
                     if (href != null) _launchUrl(href);
                   },
+                  imageBuilder: (uri, title, alt) {
+                    final url = uri.toString();
+                    final imageUrls = _extractImageUrls(item.content);
+                    final index = imageUrls.indexOf(url);
+                    return _HoverableMarkdownImage(
+                      imageUrl: url,
+                      onTap: () {
+                        ImageViewerDialog.show(
+                          context,
+                          imageUrls: imageUrls.isEmpty ? [url] : imageUrls,
+                          initialIndex: index >= 0 ? index : 0,
+                        );
+                      },
+                    );
+                  },
                   styleSheet: _buildMarkdownStyle(isDark, typeColor),
                 ),
               ),
@@ -481,6 +497,12 @@ class _AnnouncementDetailDialog extends StatelessWidget {
     }
   }
 
+  List<String> _extractImageUrls(String markdown) {
+    final RegExp imageRegExp = RegExp(r'!\[.*?\]\((.*?)\)');
+    final matches = imageRegExp.allMatches(markdown);
+    return matches.map((m) => m.group(1)!).toList();
+  }
+
   MarkdownStyleSheet _buildMarkdownStyle(bool isDark, Color accentColor) {
     return MarkdownStyleSheet(
       p: TextStyle(
@@ -523,6 +545,65 @@ class _AnnouncementDetailDialog extends StatelessWidget {
       listBullet: TextStyle(
         fontSize: 14,
         color: isDark ? AppColors.gray300 : AppColors.gray700,
+      ),
+    );
+  }
+}
+
+/// Markdown 中的可悬停图片
+class _HoverableMarkdownImage extends StatefulWidget {
+  final String imageUrl;
+  final VoidCallback onTap;
+
+  const _HoverableMarkdownImage({
+    required this.imageUrl,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverableMarkdownImage> createState() =>
+      _HoverableMarkdownImageState();
+}
+
+class _HoverableMarkdownImageState extends State<_HoverableMarkdownImage> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: DiskCachedImage(
+                imageUrl: widget.imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            if (_isHovered)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    child: const Center(
+                      child: Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

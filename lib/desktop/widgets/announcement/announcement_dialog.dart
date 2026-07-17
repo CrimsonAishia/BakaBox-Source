@@ -9,6 +9,8 @@ import '../../../core/bloc/announcement/announcement_state.dart';
 import '../../../core/models/announcement_models.dart';
 import '../../../core/utils/announcement_utils.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/image_viewer_dialog.dart';
+import '../../../core/widgets/disk_cached_image.dart';
 
 /// 公告详情对话框
 class AnnouncementDialog extends StatefulWidget {
@@ -539,6 +541,21 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         onTapLink: (text, href, title) {
                           if (href != null) _launchUrl(href);
                         },
+                        imageBuilder: (uri, title, alt) {
+                          final url = uri.toString();
+                          final imageUrls = _extractImageUrls(detail.content);
+                          final index = imageUrls.indexOf(url);
+                          return _HoverableMarkdownImage(
+                            imageUrl: url,
+                            onTap: () {
+                              ImageViewerDialog.show(
+                                context,
+                                imageUrls: imageUrls.isEmpty ? [url] : imageUrls,
+                                initialIndex: index >= 0 ? index : 0,
+                              );
+                            },
+                          );
+                        },
                         styleSheet: _buildMarkdownStyle(isDark, typeColor),
                       ),
                     ),
@@ -685,6 +702,12 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     }
   }
 
+  List<String> _extractImageUrls(String markdown) {
+    final RegExp imageRegExp = RegExp(r'!\[.*?\]\((.*?)\)');
+    final matches = imageRegExp.allMatches(markdown);
+    return matches.map((m) => m.group(1)!).toList();
+  }
+
   MarkdownStyleSheet _buildMarkdownStyle(bool isDark, Color accentColor) {
     return MarkdownStyleSheet(
       p: TextStyle(
@@ -784,6 +807,65 @@ class _HoverableItemState extends State<_HoverableItem> {
             ),
           ),
           child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Markdown 中的可悬停图片
+class _HoverableMarkdownImage extends StatefulWidget {
+  final String imageUrl;
+  final VoidCallback onTap;
+
+  const _HoverableMarkdownImage({
+    required this.imageUrl,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverableMarkdownImage> createState() =>
+      _HoverableMarkdownImageState();
+}
+
+class _HoverableMarkdownImageState extends State<_HoverableMarkdownImage> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: DiskCachedImage(
+                imageUrl: widget.imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            if (_isHovered)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    child: const Center(
+                      child: Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
