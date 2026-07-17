@@ -478,6 +478,7 @@ class _MapAllVotersDialogState extends State<MapAllVotersDialog> {
                       description: payload.description,
                       evidenceImages: payload.evidenceImages,
                       penalties: payload.penalties ?? const [],
+                      serverAddress: widget.serverAddress,
                     );
                     await MapTagApi().reportVote(report);
                   },
@@ -986,6 +987,7 @@ class _TagVotersDialogState extends State<TagVotersDialog> {
                       description: payload.description,
                       evidenceImages: payload.evidenceImages,
                       penalties: payload.penalties ?? const [],
+                      serverAddress: widget.serverAddress,
                     );
                     await MapTagApi().reportVote(report);
                   },

@@ -24,6 +24,7 @@ MapTagVoteReport _$MapTagVoteReportFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           [],
+      serverAddress: json['serverAddress'] as String?,
     );
 
 Map<String, dynamic> _$MapTagVoteReportToJson(MapTagVoteReport instance) =>
@@ -36,6 +37,7 @@ Map<String, dynamic> _$MapTagVoteReportToJson(MapTagVoteReport instance) =>
       'description': instance.description,
       'evidenceImages': instance.evidenceImages,
       'penalties': instance.penalties,
+      'serverAddress': instance.serverAddress,
     };
 
 const _$TagVoteReportReasonEnumMap = {

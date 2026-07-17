@@ -56,6 +56,7 @@ class MapTagVoteReport extends Equatable {
   final List<String> evidenceImages;
   @JsonKey(defaultValue: <String>[])
   final List<String> penalties;
+  final String? serverAddress;
 
   const MapTagVoteReport({
     required this.mapName,
@@ -66,6 +67,7 @@ class MapTagVoteReport extends Equatable {
     this.description,
     this.evidenceImages = const [],
     this.penalties = const [],
+    this.serverAddress,
   });
 
   factory MapTagVoteReport.fromJson(Map<String, dynamic> json) =>
@@ -82,5 +84,6 @@ class MapTagVoteReport extends Equatable {
     description,
     evidenceImages,
     penalties,
+    serverAddress,
   ];
 }
