@@ -192,8 +192,13 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
                           maxScale: _maxScale,
                           clipBehavior: Clip.none,
                           child: Center(
-                            child: DiskCachedImage(
-                              imageUrl: widget.imageUrls[index],
+                            child: widget.imageUrls[index].startsWith('assets/')
+                                ? Image.asset(
+                                    widget.imageUrls[index],
+                                    fit: BoxFit.contain,
+                                  )
+                                : DiskCachedImage(
+                                    imageUrl: widget.imageUrls[index],
                               fit: BoxFit.contain,
                               placeholder: const Center(
                                 child: CircularProgressIndicator(

@@ -12,6 +12,7 @@ import '../widgets/desktop_window_controls.dart';
 import '../widgets/desktop_navigation.dart';
 import '../widgets/queue/queue_floating_card.dart';
 import '../widgets/warmup/warmup_floating_card.dart';
+import '../widgets/map_manage/workshop_missing_dialog.dart';
 
 import 'welcome_screen.dart';
 import 'servers_desktop.dart';
@@ -202,6 +203,9 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
           _showObsWarningDialog();
         }
       }
+      
+      // 检测创意工坊必备组件
+      WorkshopMissingDialog.checkAndShow(context);
     });
 
     _gameStatusSubscription = GameStatusService().statusStream.listen((event) {
