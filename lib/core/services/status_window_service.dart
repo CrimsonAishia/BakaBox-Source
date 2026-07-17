@@ -1461,6 +1461,15 @@ class StatusWindowService {
       );
       _windowId = null;
       _cancelCloseTimer();
+      
+      // 如果窗口被主动关闭时操作仍在进行，视为用户主动取消
+      if (_state.status == OperationStatus.running || 
+          _state.status == OperationStatus.paused) {
+        LogService.d(
+          '[StatusWindowService] Floating window closed while operation is active, cancelling operation.',
+        );
+        cancel();
+      }
     }
   }
 
