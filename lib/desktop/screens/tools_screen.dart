@@ -8,6 +8,8 @@ import '../widgets/crash_report/crash_report_tool.dart';
 import '../widgets/key_binding/key_binding_tool.dart';
 import '../widgets/obs_tool/obs_tool.dart';
 import '../widgets/page_layout.dart';
+import '../widgets/map_manage/cs2_map_manage_tool.dart';
+import '../widgets/map_manage/bloc/map_manage_bloc.dart';
 import 'map_database_desktop.dart';
 import '../../core/constants/app_colors.dart';
 
@@ -93,6 +95,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
       icon: MdiIcons.alertOctagonOutline,
       isFullScreen: true,
     ),
+    _ToolItem(
+      id: 'cs2_map_manage',
+      name: '创意工坊管理',
+      description: '管理已下载的 CS2 创意工坊',
+      icon: MdiIcons.steam,
+      isFullScreen: true,
+    ),
   ];
 
   @override
@@ -111,10 +120,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           // 浮动装饰
           const _FloatingShapes(),
           // 页面内容
-          PageLayout(
-            title: '工具箱',
-            child: _buildToolsGrid(context),
-          ),
+          PageLayout(title: '工具箱', child: _buildToolsGrid(context)),
         ],
       ),
     );
@@ -138,7 +144,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
     );
   }
 
-
   Widget _buildToolContent() {
     switch (_openedToolId) {
       case 'key_binding':
@@ -156,6 +161,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
         return const ObsTool();
       case 'crash_reports':
         return const CrashReportTool();
+      case 'cs2_map_manage':
+        return BlocProvider(
+          create: (context) => MapManageBloc(),
+          child: const Cs2MapManageTool(),
+        );
       default:
         return const Center(child: Text('工具未找到'));
     }
