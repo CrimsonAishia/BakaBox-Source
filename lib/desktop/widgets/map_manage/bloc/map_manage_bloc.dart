@@ -27,16 +27,16 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
   Future<void> _onScanLocalMaps(ScanLocalMaps event, Emitter<MapManageState> emit) async {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      final steamPath = await GamePathService().getSteamPath();
-      if (steamPath == null || steamPath.isEmpty) {
-        emit(state.copyWith(isLoading: false, error: '未配置 Steam 路径，请在设置中配置。'));
+      final steamappsPath = await GamePathService().getSteamappsPath();
+      if (steamappsPath == null || steamappsPath.isEmpty) {
+        emit(state.copyWith(isLoading: false, error: '未能定位到 steamapps 目录，请在设置中配置正确的游戏路径或 Steam 路径。'));
         return;
       }
 
-      final acfPath = '$steamPath\\steamapps\\workshop\\appworkshop_730.acf';
+      final acfPath = '$steamappsPath\\workshop\\appworkshop_730.acf';
       final acfFile = File(acfPath);
       if (!await acfFile.exists()) {
-        emit(state.copyWith(isLoading: false, error: '未找到 appworkshop_730.acf 文件，可能没有下载任何地图。'));
+        emit(state.copyWith(isLoading: false, error: '未找到订阅配置文件，请去设置里配置正确Steam的路径'));
         return;
       }
 
@@ -50,7 +50,7 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
       }
 
       final List<LocalMapItem> maps = [];
-      final workshopPath = '$steamPath\\steamapps\\workshop\\content\\730';
+      final workshopPath = '$steamappsPath\\workshop\\content\\730';
 
       for (final prop in itemsNode.properties) {
         final mapId = prop.key.value;
@@ -185,10 +185,10 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
     emit(state.copyWith(isDeleting: true, clearError: true));
 
     try {
-      final steamPath = await GamePathService().getSteamPath();
-      if (steamPath == null) throw Exception('Steam 路径无效');
+      final steamappsPath = await GamePathService().getSteamappsPath();
+      if (steamappsPath == null) throw Exception('steamapps 路径无效');
 
-      final acfPath = '$steamPath\\steamapps\\workshop\\appworkshop_730.acf';
+      final acfPath = '$steamappsPath\\workshop\\appworkshop_730.acf';
       final acfFile = File(acfPath);
       final content = await acfFile.readAsString();
       final editor = VdfEditor(content);

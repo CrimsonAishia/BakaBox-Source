@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
+import 'game_launcher_service.dart';
 
 /// 路径失效类型
 enum InvalidPathType {
@@ -38,7 +39,6 @@ class GamePathService {
   Stream<PathValidationResult> get onPathInvalidStream =>
       _pathInvalidController.stream;
 
-  // ==================== 路径获取 ====================
 
   /// 获取游戏路径
   Future<String?> getGamePath() async {
@@ -47,7 +47,44 @@ class GamePathService {
 
   /// 获取 Steam 路径
   Future<String?> getSteamPath() async {
-    return StorageUtils.getString(_keySteamPath);
+    String? path = StorageUtils.getString(_keySteamPath);
+    if (path == null || path.isEmpty) {
+      path = await GameLauncherService().detectSteamPath();
+      if (path != null && path.isNotEmpty) {
+        // 如果能自动检测到并且验证通过，则保存下来
+        final validation = await validateSteamPath(path);
+        if (validation.isValid) {
+          await StorageUtils.setString(_keySteamPath, path);
+          LogService.i('[GamePathService] Steam 路径自动获取并保存: $path');
+        } else {
+          path = null;
+        }
+      }
+    }
+    return path;
+  }
+
+  /// 获取当前游戏所在的 steamapps 目录路径
+  /// 
+  /// 因为用户可能将 Steam 装在 C 盘，但游戏装在 D 盘的 SteamLibrary 中，
+  /// 这时候 workshop 文件夹会在 D 盘的 SteamLibrary\steamapps 下，而不是 C 盘。
+  Future<String?> getSteamappsPath() async {
+    final gamePath = await getGamePath();
+    if (gamePath != null && gamePath.isNotEmpty) {
+      final lowerPath = gamePath.toLowerCase().replaceAll('\\', '/');
+      final index = lowerPath.indexOf('/steamapps/common/');
+      if (index != -1) {
+        return gamePath.substring(0, index + '/steamapps'.length).replaceAll('/', '\\');
+      }
+    }
+    
+    // 如果没有配置 gamePath，或者路径格式不包含 steamapps/common，则回退使用 steamPath
+    final steamPath = await getSteamPath();
+    if (steamPath != null && steamPath.isNotEmpty) {
+      return '$steamPath\\steamapps';
+    }
+    
+    return null;
   }
 
   /// 检查游戏路径是否已配置
@@ -62,7 +99,6 @@ class GamePathService {
     return path != null && path.isNotEmpty;
   }
 
-  // ==================== 路径设置 ====================
 
   /// 设置游戏路径
   Future<bool> setGamePath(String path) async {
@@ -102,7 +138,6 @@ class GamePathService {
     LogService.i('[GamePathService] Steam路径已清除');
   }
 
-  // ==================== 路径验证 ====================
 
   /// 验证游戏路径
   Future<PathValidationResult> validateGamePath(String path) async {
@@ -261,7 +296,6 @@ class GamePathService {
     }
   }
 
-  // ==================== 路径工具 ====================
 
   /// 获取 autoexec.cfg 文件路径
   Future<String?> getAutoexecPath() async {

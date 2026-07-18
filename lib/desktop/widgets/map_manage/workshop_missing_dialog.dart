@@ -27,10 +27,10 @@ class WorkshopMissingDialog extends StatefulWidget {
   static Future<String?> _checkWorkshopItem() async {
     const String workshopId = '3191706064';
     try {
-      final steamPath = await GamePathService().getSteamPath();
-      if (steamPath != null && steamPath.isNotEmpty) {
+      final steamappsPath = await GamePathService().getSteamappsPath();
+      if (steamappsPath != null && steamappsPath.isNotEmpty) {
         final dirPath =
-            '$steamPath\\steamapps\\workshop\\content\\730\\$workshopId';
+            '$steamappsPath\\workshop\\content\\730\\$workshopId';
         final dir = Directory(dirPath);
         if (!await dir.exists()) {
           return '未检测到 ZED Addons 必备组件 (ID: $workshopId)。';
