@@ -6,6 +6,7 @@ import 'package:dart_ping/dart_ping.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
 import '../../core/services/status_window_service.dart';
+import '../../core/utils/map_runtime_utils.dart';
 import '../widgets/server/server_card.dart';
 import '../widgets/server/server_card_skeleton.dart';
 import '../widgets/category_card.dart';
@@ -857,10 +858,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
     return Row(
       children: [
         // 左侧服务器列表
-        Expanded(child: _buildServersColumn()),
+        Expanded(child: RepaintBoundary(child: _buildServersColumn())),
         const SizedBox(width: 5),
         // 右侧分类列表
-        SizedBox(width: 300, child: _buildCategoriesColumn()),
+        SizedBox(width: 300, child: RepaintBoundary(child: _buildCategoriesColumn())),
       ],
     );
   }
@@ -887,6 +888,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
   Widget _buildTopBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) =>
+          previous.selectedCategory != current.selectedCategory ||
+          previous.countdownResetKey != current.countdownResetKey ||
+          previous.serverCategories != current.serverCategories,
       builder: (context, state) {
         final canAddServer = state.selectedCategory?.isCustom == true;
         final categoryName = state.selectedCategory?.modelName ?? '';
@@ -1059,13 +1064,15 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 _buildServerSettingsButton(isDark),
                 const SizedBox(width: 8),
               ],
-              CompactRefreshProgress(
-                key: ValueKey(
-                  'refresh_${categoryName}_${state.countdownResetKey}',
+              RepaintBoundary(
+                child: CompactRefreshProgress(
+                  key: ValueKey(
+                    'refresh_${categoryName}_${state.countdownResetKey}',
+                  ),
+                  refreshInterval: _kRefreshInterval,
+                  onRefresh: () => _handleRefresh(state),
+                  onForceRefresh: () => _handleForceRefresh(),
                 ),
-                refreshInterval: _kRefreshInterval,
-                onRefresh: () => _handleRefresh(state),
-                onForceRefresh: () => _handleForceRefresh(),
               ),
               // 占位符，使得按钮区域右边界对齐下方的服务器列表分栏 (Categories宽度300 + 间距5)
               const SizedBox(width: 305),
@@ -1075,10 +1082,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
       },
     );
   }
-
   /// 服务器列表内容
   Widget _buildServersList() {
     return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: _shouldRebuildServerList,
       builder: (context, state) {
         if (state.selectedCategory == null) {
           return _buildEmptyState(
@@ -1127,6 +1134,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     return Stack(
       children: [
         BlocBuilder<ServerBloc, ServerState>(
+          buildWhen: _shouldRebuildServerList,
           builder: (context, state) {
             final isCustomCategory = state.selectedCategory?.isCustom == true;
             final categoryName = state.selectedCategory?.modelName;
@@ -1179,37 +1187,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
     );
   }
 
-  /// 服务器在线状态排序（在线 > 加载中 > 离线）
-  /// - 在线服务器排在最前面（获取到数据的服务器，无论人数）
-  /// - 加载中的服务器排在中间，保持原始相对顺序
-  /// - 离线服务器排在最后（无法获取数据的服务器）
-  List<ExtendedServerItem> _sortServersByOnlineStatus(
-    List<ExtendedServerItem> servers,
-  ) {
-    // 分离三个状态
-    final onlineServers = <ExtendedServerItem>[];
-    final loadingServers = <ExtendedServerItem>[];
-    final offlineServers = <ExtendedServerItem>[];
-
-    for (final server in servers) {
-      final hasData = server.serverData != null;
-      final isLoading = server.isLoading;
-
-      if (hasData) {
-        // 在线服务器：获取到数据的服务器，无论玩家数量
-        onlineServers.add(server);
-      } else if (isLoading) {
-        // 加载中的服务器：正在等待响应
-        loadingServers.add(server);
-      } else {
-        // 离线服务器：没有数据且不在加载中（已超时或错误）
-        offlineServers.add(server);
-      }
-    }
-
-    // 合并：在线 + 加载中 + 离线
-    return [...onlineServers, ...loadingServers, ...offlineServers];
-  }
 
   /// 构建普通服务器列表（非自定义分类）
   Widget _buildNormalServerList(
@@ -1224,12 +1201,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
         controller: _serversScrollController,
         padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: servers.length,
-        itemBuilder: (context, index) => _buildServerCardItem(
-          context,
-          state,
-          servers[index],
-          index,
-          index == servers.length - 1,
+        itemBuilder: (context, index) => _ServerCardItemContainer(
+          initialServer: servers[index],
+          index: index,
+          isLast: index == servers.length - 1,
+          onShowDetails: _showServerDetails,
         ),
       ),
     );
@@ -1307,113 +1283,18 @@ class _ServersDesktopState extends State<ServersDesktop> {
               server.serverItem.address ??
               server.serverItem.serverAddress ??
               'server_$index';
-          return _buildDraggableServerCardItem(
+          return _DraggableServerCardItemContainer(
             key: ValueKey(serverKey),
-            context: context,
-            state: state,
-            server: server,
+            initialServer: server,
             index: index,
             isLast: index == servers.length - 1,
+            onShowDetails: _showServerDetails,
           );
         },
       ),
     );
   }
 
-  /// 构建单个服务器卡片项（用于普通列表）
-  Widget _buildServerCardItem(
-    BuildContext context,
-    ServerState state,
-    ExtendedServerItem server,
-    int index,
-    bool isLast,
-  ) {
-    final showSkeleton = server.isLoading && server.serverData == null;
-    // 在 A2S 加载阶段显示加载文字
-    final String? loadingText =
-        showSkeleton && state.loadingPhase == LoadingPhase.loadingA2S
-        ? '正在获取服务器数据...'
-        : null;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: showSkeleton
-            ? ServerCardSkeleton(
-                key: ValueKey('skeleton_$index'),
-                loadingText: loadingText,
-              )
-            : ServerCard(
-                key: ValueKey(server.serverItem.address),
-                server: server,
-                categoryName: state.selectedCategory?.isCustom == true
-                    ? state.selectedCategory?.modelName
-                    : null,
-                onTap: () => _showServerDetails(server),
-                onDelete: server.serverItem.isCustom
-                    ? () {
-                        final categoryName = state.selectedCategory?.modelName;
-                        final address =
-                            server.serverItem.address ??
-                            server.serverItem.serverAddress;
-                        if (categoryName != null && address != null) {
-                          context.read<ServerBloc>().add(
-                            ServerDeleteServer(
-                              categoryName: categoryName,
-                              serverAddress: address,
-                            ),
-                          );
-                        }
-                      }
-                    : null,
-              ),
-      ),
-    );
-  }
-
-  /// 构建可拖拽的服务器卡片项（用于可排序列表）
-  Widget _buildDraggableServerCardItem({
-    required Key key,
-    required BuildContext context,
-    required ServerState state,
-    required ExtendedServerItem server,
-    required int index,
-    required bool isLast,
-  }) {
-    final showSkeleton = server.isLoading && server.serverData == null;
-
-    // 构建卡片内容
-    final Widget cardContent = showSkeleton
-        ? const ServerCardSkeleton()
-        : ServerCard(
-            key: ValueKey('card_${server.serverItem.address}'),
-            server: server,
-            categoryName: state.selectedCategory?.modelName,
-            // 保留 hover 效果，通过长按触发拖拽
-            onTap: () => _showServerDetails(server),
-            onDelete: () {
-              final categoryName = state.selectedCategory?.modelName;
-              final address =
-                  server.serverItem.address ?? server.serverItem.serverAddress;
-              if (categoryName != null && address != null) {
-                context.read<ServerBloc>().add(
-                  ServerDeleteServer(
-                    categoryName: categoryName,
-                    serverAddress: address,
-                  ),
-                );
-              }
-            },
-          );
-
-    return Padding(
-      key: key,
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
-      // 使用自定义长按监听器，长按 500ms 后触发拖拽
-      child: _LongPressDraggableWrapper(index: index, child: cardContent),
-    );
-  }
 
   /// 加载中列表
   Widget _buildLoadingList(int count) {
@@ -1774,6 +1655,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
   Widget _buildTabBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) =>
+          previous.serverCategories != current.serverCategories ||
+          previous.selectedTabIndex != current.selectedTabIndex,
       builder: (context, state) {
         return Container(
           padding: const EdgeInsets.fromLTRB(15, 5, 15, 10),
@@ -2386,6 +2270,15 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) =>
+          previous.isLoading != current.isLoading ||
+          previous.error != current.error ||
+          previous.serverCategories != current.serverCategories ||
+          previous.selectedTabIndex != current.selectedTabIndex ||
+          previous.selectedCategory != current.selectedCategory ||
+          previous.categoryOnlineCounts != current.categoryOnlineCounts ||
+          previous.hasEverLoadedOnlineCounts != current.hasEverLoadedOnlineCounts ||
+          previous.isLoadingOnlineCounts != current.isLoadingOnlineCounts,
       builder: (context, state) {
         // 首次加载且没有分类数据时显示加载指示器
         if (state.isLoading && state.serverCategories.isEmpty) {
@@ -2607,6 +2500,217 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+bool _shouldRebuildServerList(ServerState previous, ServerState current) {
+  if (previous.selectedCategory != current.selectedCategory) return true;
+  if (previous.isLoadingServers != current.isLoadingServers) return true;
+  if (previous.error != current.error) return true;
+  if (previous.servers.length != current.servers.length) return true;
+
+  // 1. 检查原始顺序是否变化 (影响手动排序模式)
+  for (int i = 0; i < previous.servers.length; i++) {
+    final p = previous.servers[i];
+    final c = current.servers[i];
+    if ((p.serverItem.address ?? p.serverItem.serverAddress) !=
+        (c.serverItem.address ?? c.serverItem.serverAddress)) {
+      return true;
+    }
+  }
+
+
+  return false;
+}
+
+List<ExtendedServerItem> _sortServersByOnlineStatus(List<ExtendedServerItem> servers) {
+  final onlineServers = <ExtendedServerItem>[];
+  final loadingServers = <ExtendedServerItem>[];
+  final offlineServers = <ExtendedServerItem>[];
+
+  for (final server in servers) {
+    if (server.serverData != null) {
+      onlineServers.add(server);
+    } else if (server.isLoading) {
+      loadingServers.add(server);
+    } else {
+      offlineServers.add(server);
+    }
+  }
+  return [...onlineServers, ...loadingServers, ...offlineServers];
+}
+
+bool _shouldRebuildCard(ExtendedServerItem? p, ExtendedServerItem? c) {
+  if (identical(p, c)) return false;
+  if (p == null || c == null) return true;
+
+  // 只比对视觉结构相关的核心数据，忽略经常变化的数值型数据
+  // 这允许卡片内部进行局部渲染（如单独更新 Ping、人数、比分等）而无需重建整个大卡片
+  if (p.serverItem != c.serverItem) return true;
+  if (p.isLoading != c.isLoading) return true;
+  if (p.isOffline != c.isOffline) return true;
+  if (p.hasError != c.hasError) return true;
+  
+  if (p.serverData?.map != c.serverData?.map) return true;
+  if (p.serverData?.hostName != c.serverData?.hostName) return true;
+  if (p.mapInfo != c.mapInfo) return true;
+
+  // 热身状态影响卡片外边框（RGB跑马灯），所以当热身状态发生“切换”时需要重建外层
+  final pWarmingUp = p.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
+      p.mapRuntime, fetchedAt: p.mapRuntimeLastFetched, mapName: p.serverData?.map, hasError: p.mapRuntimeError);
+  final cWarmingUp = c.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
+      c.mapRuntime, fetchedAt: c.mapRuntimeLastFetched, mapName: c.serverData?.map, hasError: c.mapRuntimeError);
+  if (pWarmingUp != cWarmingUp) return true;
+
+  return false;
+}
+
+ExtendedServerItem? _getServerByAddress(List<ExtendedServerItem> servers, String? address) {
+  if (address == null) return null;
+  for (final s in servers) {
+    if ((s.serverItem.address ?? s.serverItem.serverAddress) == address) return s;
+  }
+  return null;
+}
+
+
+/// 封装的普通服务器卡片，独立监听自己的状态更新
+class _ServerCardItemContainer extends StatelessWidget {
+  final ExtendedServerItem initialServer;
+  final int index;
+  final bool isLast;
+  final void Function(ExtendedServerItem) onShowDetails;
+
+  const _ServerCardItemContainer({
+    required this.initialServer,
+    required this.index,
+    required this.isLast,
+    required this.onShowDetails,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final address = initialServer.serverItem.address ?? initialServer.serverItem.serverAddress;
+    
+    return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) {
+        final p = _getServerByAddress(previous.servers, address);
+        final c = _getServerByAddress(current.servers, address);
+        
+        if (_shouldRebuildCard(p, c)) return true;
+        
+        // 只有在骨架屏状态下，才关心 loadingPhase 的变化，用于更新文本
+        final pIsSkeleton = p != null && p.isLoading && p.serverData == null;
+        final cIsSkeleton = c != null && c.isLoading && c.serverData == null;
+        if (pIsSkeleton || cIsSkeleton) {
+          if (previous.loadingPhase != current.loadingPhase) return true;
+        }
+        
+        return false;
+      },
+      builder: (context, currentState) {
+        final server = _getServerByAddress(currentState.servers, address) ?? initialServer;
+        final showSkeleton = server.isLoading && server.serverData == null;
+        
+        final String? loadingText =
+            showSkeleton && currentState.loadingPhase == LoadingPhase.loadingA2S
+            ? '正在获取服务器数据...'
+            : null;
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: showSkeleton
+                ? ServerCardSkeleton(
+                    key: ValueKey('skeleton_$address'),
+                    loadingText: loadingText,
+                  )
+                : ServerCard(
+                    key: ValueKey(address),
+                    server: server,
+                    categoryName: currentState.selectedCategory?.isCustom == true
+                        ? currentState.selectedCategory?.modelName
+                        : null,
+                    onTap: () => onShowDetails(server),
+                    onDelete: server.serverItem.isCustom
+                        ? () {
+                            final categoryName = currentState.selectedCategory?.modelName;
+                            if (categoryName != null && address != null) {
+                              context.read<ServerBloc>().add(
+                                ServerDeleteServer(
+                                  categoryName: categoryName,
+                                  serverAddress: address,
+                                ),
+                              );
+                            }
+                          }
+                        : null,
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 封装的可拖拽服务器卡片，独立监听自己的状态更新，保证 Key 传递正确
+class _DraggableServerCardItemContainer extends StatelessWidget {
+  final ExtendedServerItem initialServer;
+  final int index;
+  final bool isLast;
+  final void Function(ExtendedServerItem) onShowDetails;
+
+  const _DraggableServerCardItemContainer({
+    required Key key, // Key 必须传递给自身，否则 ReorderableListView 无法识别
+    required this.initialServer,
+    required this.index,
+    required this.isLast,
+    required this.onShowDetails,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final address = initialServer.serverItem.address ?? initialServer.serverItem.serverAddress;
+    
+    return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) {
+        final p = _getServerByAddress(previous.servers, address);
+        final c = _getServerByAddress(current.servers, address);
+        return _shouldRebuildCard(p, c);
+      },
+      builder: (context, currentState) {
+        final server = _getServerByAddress(currentState.servers, address) ?? initialServer;
+        final showSkeleton = server.isLoading && server.serverData == null;
+
+        final Widget cardContent = showSkeleton
+            ? const ServerCardSkeleton()
+            : ServerCard(
+                key: ValueKey('card_$address'),
+                server: server,
+                categoryName: currentState.selectedCategory?.modelName,
+                onTap: () => onShowDetails(server),
+                onDelete: () {
+                  final categoryName = currentState.selectedCategory?.modelName;
+                  if (categoryName != null && address != null) {
+                    context.read<ServerBloc>().add(
+                      ServerDeleteServer(
+                        categoryName: categoryName,
+                        serverAddress: address,
+                      ),
+                    );
+                  }
+                },
+              );
+
+        return Padding(
+          // 注意：不要在这里再次使用相同的 Key，外部的 Widget 已经持有该 Key。
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
+          child: _LongPressDraggableWrapper(index: index, child: cardContent),
+        );
+      },
     );
   }
 }

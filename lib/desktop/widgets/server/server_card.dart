@@ -69,9 +69,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   StreamSubscription<Set<String>>? _monitorSubscription;
   bool _isMonitoring = false;
 
-  // 热身时间刷新定时器
-  Timer? _warmupRefreshTimer;
-
   @override
   void initState() {
     super.initState();
@@ -93,9 +90,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     _monitorSubscription = _mapMonitorService.monitorStateStream.listen(
       _onMonitorStateChanged,
     );
-
-    // 如果处于热身状态，启动刷新定时器
-    _updateWarmupTimer();
   }
 
   @override
@@ -113,7 +107,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           );
 
     if (oldWarmingUp != _isWarmingUp) {
-      _updateWarmupTimer();
       _updateAnimationController();
     }
 
@@ -167,25 +160,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     return globalState.type == OperationType.queueing &&
         globalState.status == OperationStatus.running &&
         globalState.serverAddress == address;
-  }
-
-  /// 更新热身刷新定时器
-  void _updateWarmupTimer() {
-    if (_isWarmingUp && _warmupRefreshTimer == null) {
-      // 热身中，启动每秒刷新
-      _warmupRefreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted && _isWarmingUp) {
-          setState(() {});
-        } else {
-          _warmupRefreshTimer?.cancel();
-          _warmupRefreshTimer = null;
-        }
-      });
-    } else if (!_isWarmingUp && _warmupRefreshTimer != null) {
-      // 热身结束，停止定时器
-      _warmupRefreshTimer?.cancel();
-      _warmupRefreshTimer = null;
-    }
   }
 
   void _onMonitorStateChanged(Set<String> monitoredAddresses) {
@@ -242,7 +216,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   void dispose() {
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
-    _warmupRefreshTimer?.cancel();
     _rgbController?.dispose();
     _marchingAntsController?.dispose();
     super.dispose();
@@ -268,13 +241,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           if (!mounted) return;
           setState(() => _isHovered = false);
         },
-        child: _rgbController != null
-            ? AnimatedBuilder(
-                animation: _rgbController!,
-                builder: (context, child) =>
-                    _buildCardContent(_getRgbColor(_rgbController!.value)),
-              )
-            : _buildCardContent(AppColors.primary),
+        child: _buildCardContent(),
       ),
     );
   }
@@ -294,63 +261,90 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   /// 构建卡片内容
-  Widget _buildCardContent(Color rgbColor) {
+  Widget _buildCardContent() {
     final isQueueing = _isCurrentServerQueueing;
 
-    // 边框颜色优先级：挤服 > 热身 > hover > 无
-    Color borderColor;
-    if (isQueueing && _isHovered) {
-      borderColor = AppColors.green500.withValues(alpha: 0.8);
-    } else if (_isHovered && _isWarmingUp) {
-      borderColor = rgbColor.withValues(alpha: 0.8);
-    } else if (_isHovered) {
-      borderColor = AppColors.primary.withValues(alpha: 0.6);
-    } else {
-      borderColor = Colors.transparent;
-    }
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        if (_rgbController != null) _rgbController,
+      ]),
+      builder: (context, child) {
+        Color borderColor;
+        Color rgbColor = _rgbController != null
+            ? _getRgbColor(_rgbController!.value)
+            : AppColors.primary;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: borderColor, width: 2),
-        boxShadow: [
-          if (isQueueing) ...[
-            // 挤服时绿色发光
-            BoxShadow(
-              color: AppColors.green500.withValues(alpha: 0.4),
-              blurRadius: 12,
-            ),
-          ] else if (_isWarmingUp) ...[
-            BoxShadow(color: rgbColor, blurRadius: 8),
-          ] else ...[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6), // 内部圆角略小，配合边框
+        // 边框颜色优先级：挤服 > 热身 > hover > 无
+        if (isQueueing && _isHovered) {
+          borderColor = AppColors.green500.withValues(alpha: 0.8);
+        } else if (_isHovered && _isWarmingUp) {
+          borderColor = rgbColor.withValues(alpha: 0.8);
+        } else if (_isHovered) {
+          borderColor = AppColors.primary.withValues(alpha: 0.6);
+        } else {
+          borderColor = Colors.transparent;
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderColor, width: 2),
+            boxShadow: [
+              if (isQueueing) ...[
+                // 挤服时绿色发光
+                BoxShadow(
+                  color: AppColors.green500.withValues(alpha: 0.4),
+                  blurRadius: 12,
+                ),
+              ] else if (_isWarmingUp) ...[
+                BoxShadow(color: rgbColor, blurRadius: 8),
+              ] else ...[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: RepaintBoundary(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6), // 内部圆角略小，配合边框
         child: SizedBox(
           height: 132, // 136 - 2*2 边框
           child: Stack(
             children: [
-              // 地图背景
-              Positioned.fill(child: _buildMapBackground()),
-              // 渐变遮罩
-              Positioned.fill(child: _buildGradientOverlay()),
+              // 静态背景部分，套上 RepaintBoundary，避免被前方的数值更新影响
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildMapBackground(),
+                      _buildGradientOverlay(),
+                    ],
+                  ),
+                ),
+              ),
               // 边框效果优先级：挤服 > 热身
               // 挤服跑马灯边框（最高优先级）
               if (isQueueing && _marchingAntsController != null)
                 _buildMarchingAntsBorder()
               // 热身边框（挤服时不显示）
               else if (_isWarmingUp)
-                _buildWarmupBorder(rgbColor),
+                _rgbController != null
+                    ? AnimatedBuilder(
+                        animation: _rgbController!,
+                        builder: (context, child) => _buildWarmupBorder(
+                            _getRgbColor(_rgbController!.value)),
+                      )
+                    : _buildWarmupBorder(AppColors.primary),
               // 刷新加载指示器
-              _buildRefreshIndicator(),
-              // 内容
+              RepaintBoundary(child: _buildRefreshIndicator()),
+              // 内容，频繁变动的部分内部也有 RepaintBoundary
               _buildContent(),
               // 监控黄点
               if (_isMonitoring) _buildMonitoringIndicator(),
@@ -359,6 +353,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -427,6 +422,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 刷新加载指示器（骨架屏）
   Widget _buildRefreshIndicator() {
     return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) {
+        final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+        if (address == null) return false;
+        return previous.isMapRefreshing(address) != current.isMapRefreshing(address);
+      },
       builder: (context, state) {
         final address =
             widget.server.serverItem.address ??
@@ -474,8 +474,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(width: 10),
-          // 右侧玩家数量和运行时间
-          _buildRightContent(),
+          // 右侧玩家数量和运行时间，加 RepaintBoundary 隔离高频刷新
+          RepaintBoundary(child: _buildRightContent()),
         ],
       ),
     );
@@ -567,21 +567,23 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: ServerCardMarqueeText(
-                text: displayMapName,
-                copyText: mapName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black,
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                    Shadow(color: Colors.black, blurRadius: 6),
-                  ],
+              child: RepaintBoundary(
+                child: ServerCardMarqueeText(
+                  text: displayMapName,
+                  copyText: mapName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                      Shadow(color: Colors.black, blurRadius: 6),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -619,7 +621,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               padding: EdgeInsets.symmetric(horizontal: 8),
               child: Text('|', style: TextStyle(color: Colors.white30)),
             ),
-            _buildPingBadge(ping),
+            RepaintBoundary(child: _buildPingBadge(address, ping)),
           ],
         ),
         // 地图标签（非 hover 时显示，hover 时隐藏，让位给底部操作层）
@@ -703,55 +705,81 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildPingBadge(int? ping) {
-    if (ping == null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: const Color(0xFF999999).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: const Text(
-          '???',
-          style: TextStyle(
-            color: Color(0xFF999999),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+  Widget _buildPingBadge(String address, int? initialPing) {
+    return BlocSelector<ServerBloc, ServerState, int?>(
+      selector: (state) {
+        final s = state.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
+        return s?.pingInfo?.ping;
+      },
+      builder: (context, currentPing) {
+        final ping = currentPing ?? initialPing;
+        if (ping == null) {
+          return Container(
+            width: 52,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF999999).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '???',
+                style: TextStyle(
+                  color: Color(0xFF999999),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          );
+        }
+
+        Color color;
+        if (ping < 50) {
+          color = const Color(0xFF00D084);
+        } else if (ping < 100) {
+          color = const Color(0xFF52C41A);
+        } else if (ping < 150) {
+          color = const Color(0xFFFAAD14);
+        } else if (ping < 300) {
+          color = const Color(0xFFFF7A45);
+        } else {
+          color = const Color(0xFFFF4D4F);
+        }
+
+        return Container(
+          width: 52,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: [
+              BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8),
+            ],
           ),
-        ),
-      );
-    }
-
-    Color color;
-    if (ping < 50) {
-      color = const Color(0xFF00D084);
-    } else if (ping < 100) {
-      color = const Color(0xFF52C41A);
-    } else if (ping < 150) {
-      color = const Color(0xFFFAAD14);
-    } else if (ping < 300) {
-      color = const Color(0xFFFF7A45);
-    } else {
-      color = const Color(0xFFFF4D4F);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8),
-        ],
-      ),
-      child: Text(
-        '${ping}ms',
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.wifi, size: 10, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  '${ping}ms',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1280,13 +1308,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  /// 是否处于离线/维护状态
-  bool get _isOffline =>
-      widget.server.hasError && widget.server.serverData == null;
-
-  /// 是否处于服务器启动状态（graphics_settings 地图）
-  bool get _isStarting => widget.server.serverData?.map == 'graphics_settings';
-
   /// 检测是否为僵尸地图
   ///
   /// 僵尸地图前缀：ze_（zombie escape）、zm_（zombie mod）
@@ -1333,98 +1354,140 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final leftLabel = isZombie ? '人类' : 'CT';
     final rightLabel = isZombie ? '僵尸' : 'T';
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '$leftLabel $ctScore',
-          style: TextStyle(
-            color: leftColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$leftLabel $ctScore',
+            style: TextStyle(
+              color: leftColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Icon(MdiIcons.swordCross, size: 12, color: iconColor),
-        ),
-        Text(
-          '$tScore $rightLabel',
-          style: TextStyle(
-            color: rightColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Icon(MdiIcons.swordCross, size: 12, color: iconColor),
           ),
-        ),
-      ],
+          Text(
+            '$tScore $rightLabel',
+            style: TextStyle(
+              color: rightColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildRightContent() {
-    final data = widget.server.serverData;
-    final players = data?.players ?? 0;
-    final maxPlayers = data?.maxPlayers ?? 0;
+    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    
+    // 使用 BlocBuilder 和 buildWhen 实现局部渲染，仅当此服务器的相关数值发生变化时重建右侧
+    return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) {
+        if (address == null) return false;
+        final p = previous.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
+        final c = current.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
+        
+        if (identical(p, c)) return false;
+        if (p == null || c == null) return true;
+        
+        if (p.serverData?.players != c.serverData?.players) return true;
+        if (p.serverData?.maxPlayers != c.serverData?.maxPlayers) return true;
+        if (p.hasError != c.hasError) return true;
+        if ((p.serverData == null) != (c.serverData == null)) return true;
+        if (p.serverData?.map != c.serverData?.map) return true;
+        if (p.isLoading != c.isLoading) return true;
+        if (p.mapRuntime != c.mapRuntime) return true;
+        if (p.mapRuntimeLastFetched != c.mapRuntimeLastFetched) return true;
+        if (p.mapRuntimeError != c.mapRuntimeError) return true;
+        if (p.mapRuntimeFetching != c.mapRuntimeFetching) return true;
+        if (p.queueCount != c.queueCount) return true;
+        if (p.warmupCount != c.warmupCount) return true;
+        if (p.teamScores != c.teamScores) return true;
+        
+        return false;
+      },
+      builder: (context, state) {
+        final currentServer = state.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
+        final server = currentServer ?? widget.server;
+        final data = server.serverData;
+        final players = data?.players ?? 0;
+        final maxPlayers = data?.maxPlayers ?? 0;
 
-    // 离线/维护状态显示
-    if (_isOffline) {
-      return _buildOfflineStatus();
-    }
+        // 离线/维护状态显示
+        if (server.hasError && data == null) {
+          return _buildOfflineStatus();
+        }
 
-    // 服务器启动状态显示
-    if (_isStarting) {
-      return _buildStartingStatus();
-    }
+        // 服务器启动状态显示
+        if (data?.map == 'graphics_settings') {
+          return _buildStartingStatus();
+        }
 
-    // API 数据源的自定义服务器由第三方接口提供地图运行时间（map_changed_at），
-    // 需要显示运行时间；其余自定义服务器（A2S 模式）不显示。
-    final isApiSourced = widget.server.serverItem.dataSourceMode == 'api';
-    final showRuntime =
-        data?.map != null &&
-        !widget.server.isLoading &&
-        (!widget.server.serverItem.isCustom ||
-            (isApiSourced && widget.server.mapRuntime != null));
+        // API 数据源的自定义服务器由第三方接口提供地图运行时间（map_changed_at），
+        // 需要显示运行时间；其余自定义服务器（A2S 模式）不显示。
+        final isApiSourced = server.serverItem.dataSourceMode == 'api';
+        final showRuntime =
+            data?.map != null &&
+            !server.isLoading &&
+            (!server.serverItem.isCustom ||
+                (isApiSourced && server.mapRuntime != null));
 
-    Color bgColor;
-    if (players >= maxPlayers && maxPlayers > 0) {
-      bgColor = const Color(0xFFFEEAEA);
-    } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-      bgColor = const Color(0xFFFFF9E6);
-    } else {
-      bgColor = Colors.white;
-    }
+        Color bgColor;
+        if (players >= maxPlayers && maxPlayers > 0) {
+          bgColor = const Color(0xFFFEEAEA);
+        } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
+          bgColor = const Color(0xFFFFF9E6);
+        } else {
+          bgColor = Colors.white;
+        }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: IntrinsicWidth(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(child: _buildPlayerCount(players, maxPlayers)),
-            if (showRuntime) ...[
-              const SizedBox(height: 4),
-              SizedBox(
-                height: 1,
-                child: CustomPaint(painter: ServerCardDashedLinePainter()),
+        return Container(
+          constraints: const BoxConstraints(minWidth: 72, maxWidth: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: bgColor.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              const SizedBox(height: 4),
-              Center(child: _buildRuntimeInfo()),
             ],
-          ],
-        ),
-      ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 28,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildPlayerCount(server, players, maxPlayers),
+                ),
+              ),
+              if (showRuntime) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 1,
+                  child: CustomPaint(painter: ServerCardDashedLinePainter()),
+                ),
+                const SizedBox(height: 4),
+                Center(child: _buildRuntimeInfo(server)),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1489,7 +1552,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildPlayerCount(int players, int maxPlayers) {
+  Widget _buildPlayerCount(ExtendedServerItem server, int players, int maxPlayers) {
     Color primaryColor;
 
     if (players >= maxPlayers && maxPlayers > 0) {
@@ -1500,8 +1563,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       primaryColor = AppColors.primary;
     }
 
-    final int queueCount = widget.server.queueCount;
-    final int warmupCount = widget.server.warmupCount;
+    final int queueCount = server.queueCount;
+    final int warmupCount = server.warmupCount;
     final int extraCount = queueCount + warmupCount;
 
     return Row(
@@ -1604,34 +1667,24 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildRuntimeInfo() {
-    final hasError = widget.server.mapRuntimeError;
+  Widget _buildRuntimeInfo(ExtendedServerItem server) {
+    final hasError = server.mapRuntimeError;
     if (hasError) return const SizedBox.shrink();
 
-    final isLoading = widget.server.mapRuntimeFetching;
-    final mapName = widget.server.serverData?.map;
-    final fetchedAt = widget.server.mapRuntimeLastFetched;
-
-    String displayText;
-    if (_isWarmingUp) {
-      displayText = MapRuntimeUtils.getWarmupDisplay(
-        widget.server.mapRuntime,
-        fetchedAt: fetchedAt,
-        mapName: mapName,
-      );
-    } else {
-      displayText = MapRuntimeUtils.getRuntimeDisplay(
-        mapRuntime: widget.server.mapRuntime,
-        fetchedAt: fetchedAt,
-        isLoading: isLoading,
-        hasError: hasError,
-      );
-    }
+    final isLoading = server.mapRuntimeFetching;
+    final mapName = server.serverData?.map;
+    
+    final isWarmingUp = server.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
+      server.mapRuntime,
+      fetchedAt: server.mapRuntimeLastFetched,
+      mapName: mapName,
+      hasError: server.mapRuntimeError,
+    );
 
     Color iconColor;
     Color textColor;
 
-    if (_isWarmingUp) {
+    if (isWarmingUp) {
       iconColor = AppColors.orange;
       textColor = const Color(0xFFE65100);
     } else if (isLoading) {
@@ -1642,23 +1695,25 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       textColor = AppColors.gray800;
     }
 
-    final weeklyOccurrences = widget.server.mapRuntime?.weeklyOccurrences;
+    final weeklyOccurrences = server.mapRuntime?.weeklyOccurrences;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 运行时间
+        // 运行时间（如果是热身则每秒局部刷新）
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(MdiIcons.clockOutline, size: 12, color: iconColor),
             const SizedBox(width: 4),
-            Text(
-              displayText,
+            _LiveRuntimeText(
+              server: server,
+              isWarmingUp: isWarmingUp,
               style: TextStyle(
                 color: textColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ],
@@ -1688,18 +1743,18 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           ),
         ],
         // 比分显示（非热身且有有效比分数据时，0:0不显示）
-        if (!_isWarmingUp &&
-            widget.server.teamScores?.ctScore != null &&
-            widget.server.teamScores?.tScore != null &&
-            widget.server.teamScores!.matchesMap(mapName) &&
-            (widget.server.teamScores!.ctScore! > 0 ||
-                widget.server.teamScores!.tScore! > 0)) ...[
+        if (!isWarmingUp &&
+            server.teamScores?.ctScore != null &&
+            server.teamScores?.tScore != null &&
+            server.teamScores!.matchesMap(mapName) &&
+            (server.teamScores!.ctScore! > 0 ||
+                server.teamScores!.tScore! > 0)) ...[
           const SizedBox(height: 2),
           _buildScoreDisplay(
-            widget.server.teamScores!.ctScore!,
-            widget.server.teamScores!.tScore!,
+            server.teamScores!.ctScore!,
+            server.teamScores!.tScore!,
             mapName,
-            dataQuality: widget.server.teamScores!.dataQuality,
+            dataQuality: server.teamScores!.dataQuality,
           ),
         ],
       ],
@@ -1930,6 +1985,84 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         );
       },
     );
+  }
+}
+
+/// 局部刷新时间的文本组件，避免频繁 setState 导致整个卡片重建
+class _LiveRuntimeText extends StatefulWidget {
+  final ExtendedServerItem server;
+  final bool isWarmingUp;
+  final TextStyle style;
+
+  const _LiveRuntimeText({
+    required this.server,
+    required this.isWarmingUp,
+    required this.style,
+  });
+
+  @override
+  State<_LiveRuntimeText> createState() => _LiveRuntimeTextState();
+}
+
+class _LiveRuntimeTextState extends State<_LiveRuntimeText> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isWarmingUp) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _LiveRuntimeText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isWarmingUp && !oldWidget.isWarmingUp) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!widget.isWarmingUp && oldWidget.isWarmingUp) {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = widget.server.mapRuntimeFetching;
+    final mapName = widget.server.serverData?.map;
+    final fetchedAt = widget.server.mapRuntimeLastFetched;
+    final hasError = widget.server.mapRuntimeError;
+
+    String displayText = '';
+    if (widget.isWarmingUp) {
+      displayText = MapRuntimeUtils.getWarmupDisplay(
+        widget.server.mapRuntime,
+        fetchedAt: fetchedAt,
+        mapName: mapName,
+      );
+    }
+
+    // 动态回退：如果热身文本返回空（例如剩余0秒），说明热身实际上已经结束，应显示正常时间
+    if (displayText.isEmpty) {
+      displayText = MapRuntimeUtils.getRuntimeDisplay(
+        mapRuntime: widget.server.mapRuntime,
+        fetchedAt: fetchedAt,
+        isLoading: isLoading,
+        hasError: hasError,
+      );
+    }
+
+    return Text(displayText, style: widget.style);
   }
 }
 

@@ -565,7 +565,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                     ),
                   // 浮动聊天按钮（非大厅页面显示）
                   if (isDesktop && _currentIndex != 2)
-                    const Positioned.fill(child: FloatingChatButton()),
+                    const Positioned.fill(child: RepaintBoundary(child: FloatingChatButton())),
                   // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
                   if (isDesktop)
                     Positioned(
@@ -576,11 +576,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          GlobalBroadcastBar(),
+                          RepaintBoundary(child: GlobalBroadcastBar()),
                           SizedBox(height: 8),
-                          WarmupFloatingCard(),
+                          RepaintBoundary(child: WarmupFloatingCard()),
                           SizedBox(height: 8),
-                          QueueFloatingCard(),
+                          RepaintBoundary(child: QueueFloatingCard()),
                         ],
                       ),
                     ),
