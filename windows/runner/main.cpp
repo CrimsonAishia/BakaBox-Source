@@ -108,7 +108,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
+  // Lower the priority of the entire process to ensure that the game process has absolute priority under high load
+  ::SetPriorityClass(::GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+
   flutter::DartProject project(L"data");
+
+  // Force the Flutter engine to prefer low-power GPU (integrated graphics) to prevent preempting the dedicated GPU on dual-GPU devices
+  project.set_gpu_preference(flutter::GpuPreference::LowPowerPreference);
 
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 

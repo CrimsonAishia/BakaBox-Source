@@ -191,7 +191,8 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   int _dismissedUnreadCount = 0;
 
   bool get _hasUnread => widget.unreadCount > 0;
-  bool get _shouldShowConstantly => _hasUnread && widget.unreadCount > _dismissedUnreadCount;
+  bool get _shouldShowConstantly =>
+      _hasUnread && widget.unreadCount > _dismissedUnreadCount;
 
   @override
   void initState() {
@@ -224,10 +225,10 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
         _pulseController.reset();
       }
     }
-    
+
     _lastUnreadCount = widget.unreadCount;
   }
-  
+
   void _onCloseTooltip() {
     setState(() {
       _dismissedUnreadCount = widget.unreadCount;
@@ -244,7 +245,8 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   Widget build(BuildContext context) {
     final hasUnread = _hasUnread;
     // 面板打开时隐藏气泡，避免箭头从面板上方露出造成视觉冲突
-    final showBubble = (_shouldShowConstantly || _isHovered) && !widget.panelIsOpen;
+    final showBubble =
+        (_shouldShowConstantly || _isHovered) && !widget.panelIsOpen;
 
     return PortalTarget(
       visible: showBubble,
@@ -385,14 +387,14 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
           child: Container(
             width: 10,
             height: 6,
-            color: _hasUnread 
+            color: _hasUnread
                 ? AppColors.primary
                 : (widget.isDark ? const Color(0xFF2D2D2D) : Colors.white),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: _hasUnread 
+            color: _hasUnread
                 ? AppColors.primary
                 : (widget.isDark ? const Color(0xFF2D2D2D) : Colors.white),
             borderRadius: BorderRadius.circular(10),
@@ -405,18 +407,29 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
             ],
           ),
           padding: EdgeInsets.only(
-            left: 12, 
-            right: _shouldShowConstantly ? 6 : 12, 
-            top: 8, 
+            left: 12,
+            right: _shouldShowConstantly ? 6 : 12,
+            top: 8,
             bottom: 8,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_hasUnread) ...[
-                const Icon(Icons.mark_email_unread_rounded, size: 16, color: Colors.white)
-                    .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                    .moveY(begin: -1.5, end: 1.5, duration: 1000.ms, curve: Curves.easeInOut),
+                const Icon(
+                      Icons.mark_email_unread_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    )
+                    .animate(
+                      onPlay: (controller) => controller.repeat(reverse: true),
+                    )
+                    .moveY(
+                      begin: -1.5,
+                      end: 1.5,
+                      duration: 1000.ms,
+                      curve: Curves.easeInOut,
+                    ),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -424,8 +437,8 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: _hasUnread ? FontWeight.w600 : FontWeight.w500,
-                  color: _hasUnread 
-                      ? Colors.white 
+                  color: _hasUnread
+                      ? Colors.white
                       : (widget.isDark ? Colors.white : Colors.black87),
                   letterSpacing: 0.2,
                 ),
@@ -480,17 +493,19 @@ class _TooltipCloseButtonState extends State<_TooltipCloseButton> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: _isHovered 
-                ? Colors.white.withValues(alpha: 0.5) 
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.5)
                 : Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
-            boxShadow: _isHovered ? [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              )
-            ] : null,
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
         ),

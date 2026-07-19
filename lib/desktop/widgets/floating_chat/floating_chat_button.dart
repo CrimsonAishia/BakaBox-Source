@@ -222,8 +222,16 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    // Initial state is connecting, start pulsing immediately.
-    _connectingPulseController.repeat(reverse: true);
+    // Check actual state after first frame to avoid infinite pulsing if already connected.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = context.read<LobbyBloc>().state;
+      final isConnecting = state.connectionStatus == LobbyConnectionStatus.connecting ||
+          state.connectionStatus == LobbyConnectionStatus.reconnecting;
+      if (isConnecting) {
+        _connectingPulseController.repeat(reverse: true);
+      }
+    });
     // Start timeout for initial connecting state.
     _connectingTimeoutTimer = Timer(const Duration(seconds: 10), () {
       if (_isDisposed) return;
