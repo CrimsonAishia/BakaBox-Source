@@ -29,6 +29,7 @@ import 'server_card_components/server_card_icon_buttons.dart';
 import 'server_card_components/hover_tag_popover.dart';
 import 'server_card_components/server_card_monitoring_badge.dart';
 import 'server_card_components/server_card_painters.dart';
+import 'server_card_components/server_card_warmup_border.dart';
 import '../../../core/utils/map_tag_utils.dart';
 
 /// 服务器卡片
@@ -51,8 +52,6 @@ class ServerCard extends StatefulWidget {
 }
 
 class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
-  // 跑马灯动画控制器（仅热身状态时创建）
-  AnimationController? _warmupMarchingAntsController;
   // 跑马灯动画控制器（仅挤服状态时创建）
   AnimationController? _marchingAntsController;
   bool _isConnecting = false;
@@ -72,8 +71,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // 延迟创建动画控制器，只在热身状态时创建
-    _updateAnimationController();
 
     // 监听状态变化，当操作完成或游戏关闭时重置连接状态
     _stateSubscription = _statusService.stateStream.listen(_onStatusChanged);
@@ -96,20 +93,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   void didUpdateWidget(covariant ServerCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // 只在热身状态真正改变时更新
-    final oldWarmingUp = oldWidget.server.serverItem.isCustom
-        ? false
-        : MapRuntimeUtils.isWarmingUp(
-            oldWidget.server.mapRuntime,
-            fetchedAt: oldWidget.server.mapRuntimeLastFetched,
-            mapName: oldWidget.server.serverData?.map,
-            hasError: oldWidget.server.mapRuntimeError,
-          );
-
-    if (oldWarmingUp != _isWarmingUp) {
-      _updateAnimationController();
-    }
-
     // 检查地址是否改变，更新监控状态
     final oldAddress =
         oldWidget.server.serverItem.address ??
@@ -119,25 +102,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         widget.server.serverItem.serverAddress;
     if (oldAddress != newAddress && newAddress != null) {
       _isMonitoring = _mapMonitorService.isMonitoring(newAddress);
-    }
-  }
-
-  /// 更新动画控制器（仅热身状态时创建）
-  void _updateAnimationController() {
-    if (_isWarmingUp && _warmupMarchingAntsController == null) {
-      // 热身中，创建动画控制器
-      _warmupMarchingAntsController = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 1500),
-      )..repeat();
-    } else if (!_isWarmingUp && _warmupMarchingAntsController != null) {
-      // 热身结束，释放动画控制器
-      _warmupMarchingAntsController?.dispose();
-      _warmupMarchingAntsController = null;
-      // 必须调用 setState 强制重新构建，以清除外层依赖该状态的渲染效果（修复 GPU 泄漏）
-      if (mounted) {
-        setState(() {});
-      }
     }
   }
 
@@ -220,7 +184,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   void dispose() {
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
-    _warmupMarchingAntsController?.dispose();
     _marchingAntsController?.dispose();
     super.dispose();
   }
@@ -250,13 +213,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  bool get _isWarmingUp {
-    // 自定义服务器不进行热身检测
-    if (widget.server.serverItem.isCustom) {
-      return false;
-    }
-
-    return MapRuntimeUtils.isWarmingUp(
+  DateTime? get _warmupEndTime {
+    if (widget.server.serverItem.isCustom) return null;
+    return MapRuntimeUtils.getWarmupEndTime(
       widget.server.mapRuntime,
       fetchedAt: widget.server.mapRuntimeLastFetched,
       mapName: widget.server.serverData?.map,
@@ -264,55 +223,52 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
+  bool get _isCurrentlyWarmingUp {
+    final endTime = _warmupEndTime;
+    if (endTime == null) return false;
+    return DateTime.now().isBefore(endTime);
+  }
+
   /// 构建卡片内容
   Widget _buildCardContent() {
     final isQueueing = _isCurrentServerQueueing;
 
-    return AnimatedBuilder(
-      animation: Listenable.merge([
-        if (_warmupMarchingAntsController != null)
-          _warmupMarchingAntsController,
-      ]),
-      builder: (context, child) {
-        Color borderColor;
+    Color borderColor;
 
-        // 边框颜色优先级：挤服 > 热身 > hover > 无
-        // 发光边框现已由跑马灯 Painter 直接处理，这里只需设置普通的细边框
-        if (isQueueing && _isHovered) {
-          borderColor = AppColors.green500.withValues(alpha: 0.8);
-        } else if (_isHovered && _isWarmingUp) {
-          borderColor = AppColors.primary.withValues(alpha: 0.8);
-        } else if (_isHovered) {
-          borderColor = AppColors.primary.withValues(alpha: 0.6);
-        } else {
-          borderColor = Colors.transparent;
-        }
+    // 边框颜色优先级：挤服 > 热身 > hover > 无
+    // 发光边框现已由跑马灯 Painter 直接处理，这里只需设置普通的细边框
+    if (isQueueing && _isHovered) {
+      borderColor = AppColors.green500.withValues(alpha: 0.8);
+    } else if (_isHovered && _isCurrentlyWarmingUp) {
+      borderColor = AppColors.primary.withValues(alpha: 0.8);
+    } else if (_isHovered) {
+      borderColor = AppColors.primary.withValues(alpha: 0.6);
+    } else {
+      borderColor = Colors.transparent;
+    }
 
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: borderColor, width: 2),
-            boxShadow: [
-              if (isQueueing) ...[
-                // 挤服时绿色发光
-                BoxShadow(
-                  color: AppColors.green500.withValues(alpha: 0.4),
-                  blurRadius: 12,
-                ),
-              ] else ...[
-                // 注意：热身发光（RGB）已移至 ServerCardWarmupMarchingAntsPainter 内部处理
-                // 不在这里添加 BoxShadow，从而避免控制器 dispose 后的残影导致的 GPU 泄漏
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ],
-          ),
-          child: child,
-        );
-      },
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 2),
+        boxShadow: [
+          if (isQueueing) ...[
+            // 挤服时绿色发光
+            BoxShadow(
+              color: AppColors.green500.withValues(alpha: 0.4),
+              blurRadius: 12,
+            ),
+          ] else ...[
+            // 注意：热身发光（RGB）已移至 ServerCardWarmupMarchingAntsPainter 内部处理
+            // 不在这里添加 BoxShadow，从而避免残影导致的 GPU 泄漏
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ],
+      ),
       child: RepaintBoundary(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6), // 内部圆角略小，配合边框
@@ -337,8 +293,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 if (isQueueing && _marchingAntsController != null)
                   _buildMarchingAntsBorder()
                 // 热身跑马灯边框（挤服时不显示）
-                else if (_isWarmingUp && _warmupMarchingAntsController != null)
-                  _buildWarmupMarchingAntsBorder(),
+                else
+                  ServerCardWarmupBorder(endTime: _warmupEndTime),
                 // 刷新加载指示器
                 RepaintBoundary(child: _buildRefreshIndicator()),
                 // 内容，频繁变动的部分内部也有 RepaintBoundary
@@ -351,23 +307,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  /// 热身跑马灯边框（彩虹渐变）
-  Widget _buildWarmupMarchingAntsBorder() {
-    return Positioned.fill(
-      child: AnimatedBuilder(
-        animation: _warmupMarchingAntsController!,
-        builder: (context, child) {
-          return CustomPaint(
-            painter: ServerCardWarmupMarchingAntsPainter(
-              progress: _warmupMarchingAntsController!.value,
-              borderRadius: 6,
-            ),
-          );
-        },
       ),
     );
   }

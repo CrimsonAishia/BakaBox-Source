@@ -135,4 +135,27 @@ class MapRuntimeUtils {
 
     return hasMap && noRuntime && noError && notFetching && notLoading;
   }
+
+  /// 计算热身结束的绝对时间戳
+  /// 该值完全由数据拉取时的状态唯一确定，不受当前时间或系统流逝影响。
+  /// 返回值为 DateTime，如果当前地图不需要热身、没有数据，或者获取时间为空，则返回 null。
+  static DateTime? getWarmupEndTime(
+    MapRuntimeData? mapRuntime, {
+    int? fetchedAt,
+    String? mapName,
+    bool hasError = false,
+  }) {
+    if (mapRuntime == null || hasError || fetchedAt == null) return null;
+
+    final warmupDuration = getWarmupDuration(mapName);
+    if (warmupDuration == null) return null;
+
+    // 当前服务端剩余热身时间 = (总热身时间 - 拉取时服务端的当前运行时间)
+    final remainingFromFetch = warmupDuration - mapRuntime.currentRuntime;
+    
+    // 结束的绝对时间 = 拉取数据时的时间戳 + 剩余秒数 * 1000
+    return DateTime.fromMillisecondsSinceEpoch(
+      fetchedAt + remainingFromFetch * 1000,
+    );
+  }
 }
