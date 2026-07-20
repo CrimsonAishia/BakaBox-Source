@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -298,7 +299,7 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
+        BakaCachedImage(
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) =>
@@ -1154,7 +1155,7 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
+        BakaCachedImage(
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => _buildIdleContent(context),

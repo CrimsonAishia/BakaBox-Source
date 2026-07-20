@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -1543,7 +1544,7 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
                         ),
                       )
                     : _signedUrl != null
-                    ? Image.network(
+                    ? BakaCachedImage(
                         _signedUrl!,
                         fit: BoxFit.cover,
                         width: 48,

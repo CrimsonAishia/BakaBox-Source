@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -1264,7 +1265,7 @@ class _IssueCardState extends State<_IssueCard> {
           radius: 10,
           backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
           backgroundImage: authorAvatar != null
-              ? NetworkImage(authorAvatar)
+              ? bakaCachedImageProvider(authorAvatar)
               : null,
           child: authorAvatar == null
               ? Text(
@@ -1656,7 +1657,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                     ? AppColors.slate700
                     : AppColors.gray200,
                 backgroundImage: issue.authorAvatar != null
-                    ? NetworkImage(issue.authorAvatar!)
+                    ? bakaCachedImageProvider(issue.authorAvatar!)
                     : null,
                 child: issue.authorAvatar == null
                     ? Text(
@@ -2041,7 +2042,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               radius: 18,
               backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
               backgroundImage: comment.authorAvatar != null
-                  ? NetworkImage(comment.authorAvatar!)
+                  ? bakaCachedImageProvider(comment.authorAvatar!)
                   : null,
               child: comment.authorAvatar == null
                   ? Text(
@@ -3017,7 +3018,7 @@ class _IssueBottomCommentComposerState
             radius: 18,
             backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
             backgroundImage: isLoggedIn && _avatarUrl() != null
-                ? NetworkImage(_avatarUrl()!)
+                ? bakaCachedImageProvider(_avatarUrl()!)
                 : null,
             child: (!isLoggedIn || _avatarUrl() == null)
                 ? Text(
@@ -3126,7 +3127,7 @@ class _IssueBottomCommentComposerState
                     ? AppColors.slate700
                     : AppColors.gray200,
                 backgroundImage: _avatarUrl() != null
-                    ? NetworkImage(_avatarUrl()!)
+                    ? bakaCachedImageProvider(_avatarUrl()!)
                     : null,
                 child: _avatarUrl() == null
                     ? Text(

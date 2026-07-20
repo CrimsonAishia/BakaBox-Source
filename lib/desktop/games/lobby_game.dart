@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -1223,7 +1224,7 @@ class BackgroundComponent extends PositionComponent
 
   Future<ui.Image?> _loadNetworkImage(String url) async {
     if (_disposed) return null;
-    final imageProvider = NetworkImage(url);
+    final imageProvider = bakaCachedImageProvider(url);
     final completer = Completer<ui.Image>();
     final stream = imageProvider.resolve(ImageConfiguration.empty);
     late final ImageStreamListener listener;

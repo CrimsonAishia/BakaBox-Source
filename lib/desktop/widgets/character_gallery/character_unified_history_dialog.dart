@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api/character_api.dart';
 import '../../../core/models/character_models.dart';
@@ -527,7 +528,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
                   child:
                       (firstItem.editorAvatar != null &&
                           firstItem.editorAvatar!.isNotEmpty)
-                      ? Image.network(
+                      ? BakaCachedImage(
                           firstItem.editorAvatar!,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Icon(
@@ -1277,7 +1278,7 @@ class _FileIdImageState extends State<_FileIdImage> {
                   ),
                 )
               else
-                Image.network(
+                BakaCachedImage(
                   _url!,
                   fit: BoxFit.cover,
                   width: widget.size,

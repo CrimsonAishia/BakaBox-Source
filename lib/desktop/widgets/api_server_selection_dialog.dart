@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -721,7 +722,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
               children: [
                 // 背景图片
                 if (server.imageUrl != null && server.imageUrl!.isNotEmpty)
-                  Image.network(
+                  BakaCachedImage(
                     server.imageUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>

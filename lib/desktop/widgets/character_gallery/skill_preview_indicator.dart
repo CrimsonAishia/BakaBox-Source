@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -438,7 +439,7 @@ class _ImageTooltipContentState extends State<_ImageTooltipContent> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: Image.network(
+                  child: BakaCachedImage(
                     widget.imageUrl,
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
@@ -635,7 +636,7 @@ class _VideoTooltipContentState extends State<_VideoTooltipContent> {
                     children: [
                       // 封面图或占位
                       if (_coverUrl != null)
-                        Image.network(
+                        BakaCachedImage(
                           _coverUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => _buildPlaceholder(),

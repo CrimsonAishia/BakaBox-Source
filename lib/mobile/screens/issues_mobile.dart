@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -816,7 +817,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                         context,
                       ).colorScheme.surfaceContainerHighest,
                       backgroundImage: issue.authorAvatar != null
-                          ? NetworkImage(issue.authorAvatar!)
+                          ? bakaCachedImageProvider(issue.authorAvatar!)
                           : null,
                       child: issue.authorAvatar == null
                           ? Text(

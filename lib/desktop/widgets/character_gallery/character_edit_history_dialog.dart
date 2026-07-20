@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api/character_api.dart';
 import '../../../core/models/character_models.dart';
@@ -650,7 +651,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                         child:
                             (item.editorAvatar != null &&
                                 item.editorAvatar!.isNotEmpty)
-                            ? Image.network(
+                            ? BakaCachedImage(
                                 item.editorAvatar!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>

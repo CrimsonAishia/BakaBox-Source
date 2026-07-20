@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -693,7 +694,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   radius: 18,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   backgroundImage: issue.authorAvatar != null
-                      ? NetworkImage(issue.authorAvatar!)
+                      ? bakaCachedImageProvider(issue.authorAvatar!)
                       : null,
                   child: issue.authorAvatar == null
                       ? Text(
@@ -1220,7 +1221,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 radius: 18,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 backgroundImage: comment.authorAvatar != null
-                    ? NetworkImage(comment.authorAvatar!)
+                    ? bakaCachedImageProvider(comment.authorAvatar!)
                     : null,
                 child: comment.authorAvatar == null
                     ? Text(

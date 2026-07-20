@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -249,7 +250,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
               radius: 18,
               backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
               backgroundImage: comment.authorAvatar != null
-                  ? NetworkImage(comment.authorAvatar!)
+                  ? bakaCachedImageProvider(comment.authorAvatar!)
                   : null,
               child: comment.authorAvatar == null
                   ? Text(

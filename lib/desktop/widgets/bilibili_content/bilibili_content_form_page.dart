@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1008,7 +1009,7 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                     child: SizedBox(
                       width: 28,
                       height: 28,
-                      child: Image.network(
+                      child: BakaCachedImage(
                         _fetchedOwnerFace!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(

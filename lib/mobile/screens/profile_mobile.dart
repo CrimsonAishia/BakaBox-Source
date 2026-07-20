@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -214,7 +215,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
             radius: 40,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
             backgroundImage: userInfo.avatar.isNotEmpty
-                ? NetworkImage(userInfo.avatar)
+                ? bakaCachedImageProvider(userInfo.avatar)
                 : null,
             child: userInfo.avatar.isEmpty
                 ? const Icon(Icons.person, size: 40, color: Colors.white)

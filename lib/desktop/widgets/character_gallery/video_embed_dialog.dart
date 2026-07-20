@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -380,7 +381,7 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
         children: [
           // 封面图
           if (_coverUrl != null)
-            Image.network(
+            BakaCachedImage(
               _coverUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _buildPlaceholder(isBili),

@@ -1,58 +1,27 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../utils/image_utils.dart';
 import '../services/disk_image_cache_service.dart';
 
-/// 磁盘缓存图片组件
+/// 磁盘缓存图片组件（纯文件缓存方案）
 ///
-/// 使用 [DiskImageCacheService] 从磁盘加载图片，
-/// 如果图片未缓存则自动下载并保存到磁盘。
-///
-/// 与 [CachedNetworkImage] 不同，此组件不使用内存缓存，
-/// 所有图片都从磁盘读取，以减少内存占用。
-///
-/// 内存优化：
-/// - 使用 gaplessPlayback 避免图片切换时的闪烁
-/// - 在 dispose 时清理 _cachedFile 引用
-/// - 支持 cacheWidth/cacheHeight 限制解码尺寸
+/// 专为多窗口（Multi-Window）和高并发场景设计，避免使用 sqlite（CachedNetworkImage 底层）导致的
+/// 跨 Isolate/进程数据库死锁问题。结合 LayoutBuilder 和 cacheWidth/cacheHeight 自动控制解码内存。
 class DiskCachedImage extends StatefulWidget {
-  /// 图片 URL
   final String imageUrl;
-
-  /// 图片填充方式
   final BoxFit? fit;
-
-  /// 图片宽度
   final double? width;
-
-  /// 图片高度
   final double? height;
-
-  /// 加载中占位组件
-  final Widget? placeholder;
-
-  /// 加载失败占位组件
-  final Widget? errorWidget;
-
-  /// 图片对齐方式
-  final Alignment alignment;
-
-  /// 图片颜色混合
-  final Color? color;
-
-  /// 图片颜色混合模式
-  final BlendMode? colorBlendMode;
-
-  /// 解码缓存宽度（限制图片解码尺寸以节省内存）
-  /// 设置后图片会以此宽度解码，而非原图宽度
+  final AlignmentGeometry alignment;
+  final ImageRepeat repeat;
+  final FilterQuality filterQuality;
   final int? cacheWidth;
-
-  /// 解码缓存高度（限制图片解码尺寸以节省内存）
-  /// 设置后图片会以此高度解码，而非原图高度
   final int? cacheHeight;
-
-  /// 加载失败时显示的本地资源图片路径
-  /// 例如：'assets/images/default-map-bg.jpg'
   final String? fallbackAsset;
+  final Widget? errorWidget;
+  final Widget? placeholder;
+  final Color? color;
+  final BlendMode? colorBlendMode;
 
   const DiskCachedImage({
     super.key,
@@ -60,14 +29,16 @@ class DiskCachedImage extends StatefulWidget {
     this.fit,
     this.width,
     this.height,
-    this.placeholder,
-    this.errorWidget,
     this.alignment = Alignment.center,
-    this.color,
-    this.colorBlendMode,
+    this.repeat = ImageRepeat.noRepeat,
+    this.filterQuality = FilterQuality.low,
     this.cacheWidth,
     this.cacheHeight,
     this.fallbackAsset,
+    this.errorWidget,
+    this.placeholder,
+    this.color,
+    this.colorBlendMode,
   });
 
   @override
@@ -75,10 +46,9 @@ class DiskCachedImage extends StatefulWidget {
 }
 
 class _DiskCachedImageState extends State<DiskCachedImage> {
-  File? _cachedFile;
+  File? _imageFile;
   bool _isLoading = true;
   bool _hasError = false;
-  String? _lastUrl; // 记录上次加载的 URL
 
   @override
   void initState() {
@@ -87,117 +57,124 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
   }
 
   @override
-  void didUpdateWidget(DiskCachedImage oldWidget) {
+  void didUpdateWidget(covariant DiskCachedImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageUrl != widget.imageUrl) {
       _loadImage();
     }
   }
 
-  @override
-  void dispose() {
-    // 清理文件引用，帮助 GC 回收
-    _cachedFile = null;
-    _lastUrl = null;
-    super.dispose();
-  }
-
   Future<void> _loadImage() async {
-    // 如果 URL 没变且已加载，不重复加载
-    if (widget.imageUrl == _lastUrl && _cachedFile != null && !_hasError) {
-      return;
-    }
-
     if (widget.imageUrl.isEmpty) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
+      if (mounted) setState(() { _isLoading = false; _hasError = true; });
       return;
     }
 
-    _lastUrl = widget.imageUrl;
+    if (mounted) setState(() { _isLoading = true; _hasError = false; });
 
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-      _cachedFile = null;
-    });
-
-    // 使用异步方法获取图片，每次都会验证缓存文件是否有效
-    // 如果缓存图片无效（空图片或损坏），会自动删除并重新下载
-    final file = await DiskImageCacheService.instance.getImage(widget.imageUrl);
-
-    if (mounted) {
-      setState(() {
-        _cachedFile = file;
-        _isLoading = false;
-        _hasError = file == null;
-      });
+    try {
+      final file = await DiskImageCacheService.instance.getImage(widget.imageUrl, maxRetries: 2);
+      if (mounted) {
+        setState(() {
+          _imageFile = file;
+          _isLoading = false;
+          _hasError = file == null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasFiniteWidth = widget.width != null && widget.width!.isFinite;
+    final hasFiniteHeight = widget.height != null && widget.height!.isFinite;
+
+    if (widget.cacheWidth != null || widget.cacheHeight != null || hasFiniteWidth || hasFiniteHeight) {
+      return _buildContent(context, null);
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return _buildContent(context, constraints);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, BoxConstraints? constraints) {
     if (_isLoading) {
-      return _buildPlaceholder();
+      return widget.placeholder ?? SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
     }
 
-    if (_hasError || _cachedFile == null) {
-      return _buildErrorWidget();
+    if (_hasError || _imageFile == null) {
+      if (widget.fallbackAsset != null) {
+        return Image.asset(
+          widget.fallbackAsset!,
+          fit: widget.fit,
+          width: widget.width,
+          height: widget.height,
+          alignment: widget.alignment,
+          color: widget.color,
+          colorBlendMode: widget.colorBlendMode,
+          cacheWidth: widget.cacheWidth,
+          cacheHeight: widget.cacheHeight,
+        );
+      }
+      return widget.errorWidget ?? SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      );
     }
 
-    // 直接返回图片，不使用淡入动画，避免尺寸跳变
+    final memSize = ImageUtils.calculateMemCacheSize(
+      context: context,
+      constraints: constraints,
+      width: widget.width,
+      height: widget.height,
+    );
+    int? memWidth = widget.cacheWidth ?? memSize.width;
+    int? memHeight = widget.cacheHeight ?? memSize.height;
+
     return Image.file(
-      _cachedFile!,
-      key: ValueKey(_cachedFile!.path),
+      _imageFile!,
       fit: widget.fit,
       width: widget.width,
       height: widget.height,
       alignment: widget.alignment,
+      repeat: widget.repeat,
+      filterQuality: widget.filterQuality,
+      cacheWidth: memWidth,
+      cacheHeight: memHeight,
       color: widget.color,
       colorBlendMode: widget.colorBlendMode,
-      cacheWidth: widget.cacheWidth,
-      cacheHeight: widget.cacheHeight,
-      gaplessPlayback: true,
-      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return widget.placeholder ??
-        SizedBox(
+      errorBuilder: (context, error, stackTrace) {
+        if (widget.fallbackAsset != null) {
+          return Image.asset(
+            widget.fallbackAsset!,
+            fit: widget.fit,
+            width: widget.width,
+            height: widget.height,
+            alignment: widget.alignment,
+            color: widget.color,
+            colorBlendMode: widget.colorBlendMode,
+          );
+        }
+        return widget.errorWidget ?? SizedBox(
           width: widget.width,
           height: widget.height,
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          child: const Icon(Icons.broken_image, color: Colors.grey),
         );
-  }
-
-  Widget _buildErrorWidget() {
-    // 如果设置了 fallbackAsset，显示本地资源图片
-    if (widget.fallbackAsset != null) {
-      return Image.asset(
-        widget.fallbackAsset!,
-        fit: widget.fit,
-        width: widget.width,
-        height: widget.height,
-        alignment: widget.alignment,
-        color: widget.color,
-        colorBlendMode: widget.colorBlendMode,
-        cacheWidth: widget.cacheWidth,
-        cacheHeight: widget.cacheHeight,
-        errorBuilder: (context, error, stackTrace) =>
-            _buildDefaultErrorWidget(),
-      );
-    }
-    return widget.errorWidget ?? _buildDefaultErrorWidget();
-  }
-
-  Widget _buildDefaultErrorWidget() {
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+      },
     );
   }
 }

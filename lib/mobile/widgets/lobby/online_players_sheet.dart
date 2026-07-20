@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -514,7 +515,7 @@ class _PlayerTileMobile extends StatelessWidget {
     Widget avatar;
     if (hasAvatar) {
       avatar = ClipOval(
-        child: Image.network(
+        child: BakaCachedImage(
           user.avatarUrl!,
           width: 40,
           height: 40,

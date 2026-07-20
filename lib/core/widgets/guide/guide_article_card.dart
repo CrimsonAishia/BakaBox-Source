@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/image_url_service.dart';
@@ -377,7 +378,7 @@ class _GuideArticleCardState extends State<GuideArticleCard> {
         if (widget.authorAvatar != null) ...[
           CircleAvatar(
             radius: 8,
-            backgroundImage: NetworkImage(widget.authorAvatar!),
+            backgroundImage: bakaCachedImageProvider(widget.authorAvatar!),
           ),
           const SizedBox(width: GuideTokens.space4),
         ] else ...[

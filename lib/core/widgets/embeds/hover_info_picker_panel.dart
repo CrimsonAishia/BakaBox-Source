@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1058,7 +1059,7 @@ class _PickerTile extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: iconUrl.isNotEmpty
-                  ? Image.network(
+                  ? BakaCachedImage(
                       iconUrl,
                       width: 40,
                       height: 40,

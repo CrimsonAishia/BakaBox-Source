@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1175,7 +1176,7 @@ class _BilibiliUserCenterPageState extends State<BilibiliUserCenterPage> {
                                 width: 18,
                                 height: 18,
                                 child: video.displayFace != null
-                                    ? Image.network(
+                                    ? BakaCachedImage(
                                         video.displayFace!,
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) => Container(

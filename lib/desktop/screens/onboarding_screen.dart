@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -923,7 +924,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     state.userInfo?.avatar != null &&
                         state.userInfo!.avatar.isNotEmpty
                     ? ClipOval(
-                        child: Image.network(
+                        child: BakaCachedImage(
                           state.userInfo!.avatar,
                           width: 64,
                           height: 64,

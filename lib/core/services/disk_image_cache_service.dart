@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../utils/image_utils.dart';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
@@ -239,12 +240,7 @@ class DiskImageCacheService {
     // 下载图片，支持重试
     for (int attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        Map<String, String> headers = {};
-        if (url.contains('hdslb.com') || url.contains('bilibili.com')) {
-          headers['Referer'] = 'https://www.bilibili.com';
-          headers['User-Agent'] =
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-        }
+        Map<String, String> headers = ImageUtils.getBilibiliHeaders(url, {}) ?? {};
 
         final response = await _dio.get<List<int>>(
           url,

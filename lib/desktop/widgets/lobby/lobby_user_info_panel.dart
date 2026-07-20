@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
@@ -292,7 +293,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
       ),
       child: ClipOval(
         child: hasAvatar
-            ? Image.network(
+            ? BakaCachedImage(
                 avatarUrl,
                 width: 60,
                 height: 60,

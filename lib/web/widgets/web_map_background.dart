@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
@@ -39,7 +40,7 @@ class WebMapBackground extends StatelessWidget {
         normalizedUrl.isNotEmpty &&
         (normalizedUrl.startsWith('http://') ||
             normalizedUrl.startsWith('https://'))) {
-      return Image.network(
+      return BakaCachedImage(
         normalizedUrl,
         fit: fit,
         width: double.infinity,

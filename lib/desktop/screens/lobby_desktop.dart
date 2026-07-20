@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -2022,7 +2023,7 @@ class _PlayerAvatar extends StatelessWidget {
     Widget avatar;
     if (hasAvatar) {
       avatar = ClipOval(
-        child: Image.network(
+        child: BakaCachedImage(
           user.avatarUrl!,
           width: 40,
           height: 40,

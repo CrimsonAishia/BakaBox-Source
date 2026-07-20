@@ -1,3 +1,4 @@
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -691,7 +692,7 @@ class _Avatar extends StatelessWidget {
     const double size = 36;
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return ClipOval(
-        child: Image.network(
+        child: BakaCachedImage(
           avatarUrl!,
           width: size,
           height: size,
