@@ -23,6 +23,7 @@ import '../core/services/map_change_monitor_service.dart';
 
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
+import '../core/utils/windows_priority_utils.dart';
 import 'theme/desktop_theme.dart';
 import 'screens/desktop_home_screen.dart';
 import 'widgets/exit_dialog.dart';
@@ -36,10 +37,11 @@ class DesktopApp extends StatefulWidget {
   State<DesktopApp> createState() => _DesktopAppState();
 }
 
-class _DesktopAppState extends State<DesktopApp> with WindowListener {
+class _DesktopAppState extends State<DesktopApp> with WindowListener, WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     windowManager.addListener(this);
     // 设置关闭前的处理
     windowManager.setPreventClose(true);
@@ -47,8 +49,48 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     windowManager.removeListener(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _updatePriority();
+  }
+
+  /// 根据窗口焦点状态调整进程优先级（失焦 → IDLE，聚焦 → NORMAL）
+  Future<void> _updatePriority() async {
+    if (!mounted) return;
+    try {
+      final isFocused = await windowManager.isFocused();
+      if (isFocused) {
+        WindowsPriorityUtils.setNormalPriority();
+      } else {
+        WindowsPriorityUtils.setIdlePriority();
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void onWindowMinimize() {
+    // 最小化时一定不在焦点，直接降级
+    WindowsPriorityUtils.setIdlePriority();
+  }
+
+  @override
+  void onWindowRestore() {
+    _updatePriority();
+  }
+
+  @override
+  void onWindowFocus() {
+    WindowsPriorityUtils.setNormalPriority();
+  }
+
+  @override
+  void onWindowBlur() {
+    WindowsPriorityUtils.setIdlePriority();
   }
 
   @override
@@ -100,7 +142,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
           return Portal(
             child: MaterialApp.router(
               title: AppConstants.appName,
-              debugShowCheckedModeBanner: false,
+                debugShowCheckedModeBanner: false,
               localizationsDelegates: const [
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
