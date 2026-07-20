@@ -286,10 +286,30 @@ class _ServersDesktopState extends State<ServersDesktop> {
         bloc.add(
           ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
         );
+      } else if (mounted) {
+        // Ping 无结果（超时或离线），赋予一个失败的 PingInfo 避免无限重试
+        final pingInfo = ServerPingInfo(
+          ip: ip,
+          ping: -1,
+          pingStatus: 'bad',
+        );
+        bloc.add(
+          ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
+        );
       }
     } catch (e) {
-      // 忽略 ping 获取失败
+      // 忽略 ping 获取失败，但必须赋予失败标记避免死循环
       LogService.d('Ping 获取失败 ($ip): $e');
+      if (mounted) {
+        final pingInfo = ServerPingInfo(
+          ip: ip,
+          ping: -1,
+          pingStatus: 'bad',
+        );
+        bloc.add(
+          ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
+        );
+      }
     }
   }
 
