@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:window_manager/window_manager.dart';
 import '../../../core/core.dart';
 import 'announcement_dialog.dart';
 
@@ -15,17 +16,48 @@ class AnnouncementTip extends StatefulWidget {
   State<AnnouncementTip> createState() => _AnnouncementTipState();
 }
 
-class _AnnouncementTipState extends State<AnnouncementTip> {
+class _AnnouncementTipState extends State<AnnouncementTip> with WindowListener {
   bool _showTip = false;
   bool _tipDismissed = false;
   Timer? _showTimer;
   int _lastUnreadCount = 0;
   bool _initialized = false;
+  AnimationController? _iconAnimController;
+
+  @override
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+  }
 
   @override
   void dispose() {
+    windowManager.removeListener(this);
     _showTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void onWindowFocus() {
+    if (mounted && _showTip) {
+      _iconAnimController?.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void onWindowBlur() {
+    if (mounted) {
+      _iconAnimController?.stop();
+    }
+  }
+
+  Future<void> _checkFocusAndPlay() async {
+    final isFocused = await windowManager.isFocused();
+    if (mounted && isFocused && _showTip) {
+      _iconAnimController?.repeat(reverse: true);
+    } else if (mounted && !isFocused) {
+      _iconAnimController?.stop();
+    }
   }
 
   void _scheduleTip(int unreadCount) {
@@ -153,7 +185,10 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
                                 size: 22,
                               ),
                             )
-                            .animate(onPlay: (c) => c.repeat(reverse: true))
+                            .animate(
+                              onInit: (c) => _iconAnimController = c,
+                              onPlay: (c) => _checkFocusAndPlay(),
+                            )
                             .scale(
                               begin: const Offset(1, 1),
                               end: const Offset(1.1, 1.1),

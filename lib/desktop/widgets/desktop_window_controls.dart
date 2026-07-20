@@ -183,12 +183,13 @@ class _MessageCenterButton extends StatefulWidget {
 }
 
 class _MessageCenterButtonState extends State<_MessageCenterButton>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WindowListener {
   bool _isHovered = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   int _lastUnreadCount = 0;
   int _dismissedUnreadCount = 0;
+  AnimationController? _bubbleIconController;
 
   bool get _hasUnread => widget.unreadCount > 0;
   bool get _shouldShowConstantly =>
@@ -197,6 +198,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   @override
   void initState() {
     super.initState();
+    windowManager.addListener(this);
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -207,7 +209,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
 
     _lastUnreadCount = widget.unreadCount;
     if (widget.unreadCount > 0) {
-      _pulseController.repeat(reverse: true);
+      _checkFocusAndPlay();
     }
   }
 
@@ -216,17 +218,44 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
     super.didUpdateWidget(oldWidget);
 
     if (widget.unreadCount > _lastUnreadCount) {
-      _pulseController.repeat(reverse: true);
       _dismissedUnreadCount = 0;
+      _checkFocusAndPlay();
     } else if (widget.unreadCount == 0) {
       _dismissedUnreadCount = 0;
-      if (_pulseController.isAnimating) {
-        _pulseController.stop();
-        _pulseController.reset();
-      }
+      _pulseController.stop();
+      _pulseController.reset();
+      _bubbleIconController?.stop();
+      _bubbleIconController?.reset();
     }
 
     _lastUnreadCount = widget.unreadCount;
+  }
+
+  Future<void> _checkFocusAndPlay() async {
+    final isFocused = await windowManager.isFocused();
+    if (mounted && isFocused && _hasUnread) {
+      _pulseController.repeat(reverse: true);
+      _bubbleIconController?.repeat(reverse: true);
+    } else if (mounted && !isFocused) {
+      _pulseController.stop();
+      _bubbleIconController?.stop();
+    }
+  }
+
+  @override
+  void onWindowFocus() {
+    if (mounted && _hasUnread) {
+      _pulseController.repeat(reverse: true);
+      _bubbleIconController?.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void onWindowBlur() {
+    if (mounted) {
+      _pulseController.stop();
+      _bubbleIconController?.stop();
+    }
   }
 
   void _onCloseTooltip() {
@@ -237,6 +266,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
 
   @override
   void dispose() {
+    windowManager.removeListener(this);
     _pulseController.dispose();
     super.dispose();
   }
@@ -422,7 +452,8 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                       color: Colors.white,
                     )
                     .animate(
-                      onPlay: (controller) => controller.repeat(reverse: true),
+                      onInit: (c) => _bubbleIconController = c,
+                      onPlay: (c) => _checkFocusAndPlay(),
                     )
                     .moveY(
                       begin: -1.5,
