@@ -228,11 +228,16 @@ class CrashInspector {
         .toList();
 
     // 严重程度 (有致命错误 -> high; 可疑第三方/资源/工具 -> medium; 其它 -> low)
-    final hasSuspiciousThird = thirdParties.any((e) => e.severity == 'high' || e.severity == 'medium');
+    final hasSuspiciousThird = thirdParties.any(
+      (e) => e.severity == 'high' || e.severity == 'medium',
+    );
     CrashSeverity severity;
     if (fatals.isNotEmpty) {
       severity = CrashSeverity.high;
-    } else if (hasSuspiciousThird || cat == 'resource' || cat == 'tools' || cat == 'code_exec') {
+    } else if (hasSuspiciousThird ||
+        cat == 'resource' ||
+        cat == 'tools' ||
+        cat == 'code_exec') {
       severity = CrashSeverity.medium;
     } else {
       severity = CrashSeverity.low;

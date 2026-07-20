@@ -121,13 +121,17 @@ class LobbyMapLoaderService {
 
     // 如果已加载，跳过
     if (isMapReady(mapId)) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyMapLoader] 地图已就绪: $mapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyMapLoader] 地图已就绪: $mapId');
+      }
       return true;
     }
 
     // 如果正在加载，等待完成
     if (_loadingMaps.contains(mapId)) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyMapLoader] 地图正在加载中: $mapId，等待完成');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyMapLoader] 地图正在加载中: $mapId，等待完成');
+      }
       return await waitForMapReady(mapId)
           .then((_) => true)
           .timeout(
@@ -168,7 +172,9 @@ class LobbyMapLoaderService {
             progress: 1.0,
           ),
         );
-        if (LogService.enableLobbyDebugLog) LogService.d('[LobbyMapLoader] 地图无背景图，标记为已加载: $mapId');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyMapLoader] 地图无背景图，标记为已加载: $mapId');
+        }
         return true;
       }
 

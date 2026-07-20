@@ -9,7 +9,10 @@ class MapTagUtils {
   /// 处理和排序标签列表
   /// 合并 Tier 标签时使用 "玩家:Tier" 前缀，
   /// 并将标签按照官方和玩家分类排序。
-  static List<MapTagSimple> prepareTags(List<MapTagSimple> rawTags, {bool isCustomServer = false}) {
+  static List<MapTagSimple> prepareTags(
+    List<MapTagSimple> rawTags, {
+    bool isCustomServer = false,
+  }) {
     if (rawTags.length <= 1 && !isCustomServer) return rawTags.toList();
 
     final officialTags = <MapTagSimple>[];
@@ -21,8 +24,7 @@ class MapTagUtils {
         if (!isCustomServer) {
           officialTags.add(tag);
         }
-      } else if (tag.isDifficulty == true &&
-          tag.difficultyType == 'tier') {
+      } else if (tag.isDifficulty == true && tag.difficultyType == 'tier') {
         tierTags.add(tag);
       } else {
         otherTags.add(tag);
@@ -84,7 +86,11 @@ class MapTagUtils {
     }
 
     if (officialTags.isNotEmpty) {
-      final names = officialTags.expand((t) => t.name.split(',')).map((s) => s.trim()).where((s) => s.isNotEmpty).join('、');
+      final names = officialTags
+          .expand((t) => t.name.split(','))
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .join('、');
       final combinedOfficialTag = MapTagSimple(
         name: names,
         color: officialTags.first.color,

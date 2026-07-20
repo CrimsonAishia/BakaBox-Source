@@ -29,8 +29,7 @@ class WorkshopMissingDialog extends StatefulWidget {
     try {
       final steamappsPath = await GamePathService().getSteamappsPath();
       if (steamappsPath != null && steamappsPath.isNotEmpty) {
-        final dirPath =
-            '$steamappsPath\\workshop\\content\\730\\$workshopId';
+        final dirPath = '$steamappsPath\\workshop\\content\\730\\$workshopId';
         final dir = Directory(dirPath);
         if (!await dir.exists()) {
           return '未检测到 ZED Addons 必备组件 (ID: $workshopId)。';
@@ -156,7 +155,11 @@ class _WorkshopMissingDialogState extends State<WorkshopMissingDialog> {
                 color: Colors.orange.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
             const Expanded(
@@ -165,10 +168,7 @@ class _WorkshopMissingDialogState extends State<WorkshopMissingDialog> {
                 children: [
                   Text(
                     '缺少 ZED Addons 必备组件',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -190,78 +190,84 @@ class _WorkshopMissingDialogState extends State<WorkshopMissingDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.reason,
-                    style: const TextStyle(color: Colors.red, fontSize: 13),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.reason,
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            '订阅教程：',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          ),
-          const SizedBox(height: 12),
-          _buildTutorialStep('1', '点击下方「前往订阅」按钮，将唤起您的 Steam 客户端。'),
-          _buildTutorialStep('2', '在打开的创意工坊页面中，找到并点击绿色的【订阅】按钮。'),
-          Padding(
-            padding: const EdgeInsets.only(left: 26.0, bottom: 8.0, right: 8.0),
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              onEnter: (_) => setState(() => _isImageHovering = true),
-              onExit: (_) => setState(() => _isImageHovering = false),
-              child: GestureDetector(
-                onTap: () => ImageViewerDialog.show(
-                  context,
-                  imageUrls: ['assets/images/tutorials/zed_addons_subscribe_guide.png'],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 200),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/images/tutorials/zed_addons_subscribe_guide.png',
-                          fit: BoxFit.contain,
-                        ),
-                        if (_isImageHovering)
-                          Positioned.fill(
-                            child: Container(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              child: const Icon(
-                                Icons.zoom_in_rounded,
-                                color: Colors.white,
-                                size: 36,
+            const SizedBox(height: 20),
+            const Text(
+              '订阅教程：',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 12),
+            _buildTutorialStep('1', '点击下方「前往订阅」按钮，将唤起您的 Steam 客户端。'),
+            _buildTutorialStep('2', '在打开的创意工坊页面中，找到并点击绿色的【订阅】按钮。'),
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 26.0,
+                bottom: 8.0,
+                right: 8.0,
+              ),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                onEnter: (_) => setState(() => _isImageHovering = true),
+                onExit: (_) => setState(() => _isImageHovering = false),
+                child: GestureDetector(
+                  onTap: () => ImageViewerDialog.show(
+                    context,
+                    imageUrls: [
+                      'assets/images/tutorials/zed_addons_subscribe_guide.png',
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/tutorials/zed_addons_subscribe_guide.png',
+                            fit: BoxFit.contain,
+                          ),
+                          if (_isImageHovering)
+                            Positioned.fill(
+                              child: Container(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                child: const Icon(
+                                  Icons.zoom_in_rounded,
+                                  color: Colors.white,
+                                  size: 36,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          _buildTutorialStep('3', '观察 Steam 底部下载进度，耐心等待游戏资源下载完毕。'),
-          _buildTutorialStep('4', '下载完成后，本弹窗会自动检测并关闭，无需手动操作。'),
-        ],
-      ),
+            _buildTutorialStep('3', '观察 Steam 底部下载进度，耐心等待游戏资源下载完毕。'),
+            _buildTutorialStep('4', '下载完成后，本弹窗会自动检测并关闭，无需手动操作。'),
+          ],
+        ),
       ),
       actionsPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       actions: [

@@ -152,7 +152,9 @@ class GameLauncherService {
   /// Windows平台检测CS2进程
   Future<bool> _isCS2RunningWindows() async {
     try {
-      final isRunning = NativeProcessUtils.isAnyProcessRunning(_gameProcessNames);
+      final isRunning = NativeProcessUtils.isAnyProcessRunning(
+        _gameProcessNames,
+      );
       if (isRunning) {
         LogService.d('检测到游戏进程');
       }
@@ -464,7 +466,10 @@ class GameLauncherService {
 
   /// 构建游戏启动URL
   String _buildLaunchUrl(LaunchPlatform platform, List<String> launchOptions) {
-    final options = <String>['-condebug', '-disable_workshop_command_filtering'];
+    final options = <String>[
+      '-condebug',
+      '-disable_workshop_command_filtering',
+    ];
 
     // 添加平台参数
     if (platform == LaunchPlatform.perfect) {
@@ -506,7 +511,12 @@ class GameLauncherService {
       final launchOptions = await getLaunchOptions();
 
       // 构建启动参数
-      final args = <String>['-applaunch', _cs2AppId, '-condebug', '-disable_workshop_command_filtering'];
+      final args = <String>[
+        '-applaunch',
+        _cs2AppId,
+        '-condebug',
+        '-disable_workshop_command_filtering',
+      ];
 
       // 添加平台参数
       if (platform == LaunchPlatform.perfect) {
@@ -940,7 +950,11 @@ class GameLauncherService {
     }
 
     // 直接使用Steam URL启动并连接
-    return await _connectUsingSteamUrl(serverAddress, effectivePassword, client: client);
+    return await _connectUsingSteamUrl(
+      serverAddress,
+      effectivePassword,
+      client: client,
+    );
   }
 
   /// 仅启动游戏（不连接服务器），用于独立版 CSGO / CS:Source 的纯启动场景
@@ -1102,7 +1116,9 @@ class GameLauncherService {
   /// 从进程查找Steam路径
   Future<String?> _findSteamPathFromProcess() async {
     try {
-      final executablePath = NativeProcessUtils.getProcessExecutablePath('steam.exe');
+      final executablePath = NativeProcessUtils.getProcessExecutablePath(
+        'steam.exe',
+      );
       if (executablePath != null && executablePath.isNotEmpty) {
         var steamPath = File(executablePath).parent.path;
         try {
@@ -1168,7 +1184,9 @@ class GameLauncherService {
                   LogService.d('在Steam库中检测到游戏路径: $altGamePath');
                   _gamePathDetectionAttempted = true;
                   try {
-                    _cachedGamePath = await Directory(altGamePath).resolveSymbolicLinks();
+                    _cachedGamePath = await Directory(
+                      altGamePath,
+                    ).resolveSymbolicLinks();
                   } catch (_) {
                     _cachedGamePath = altGamePath;
                   }

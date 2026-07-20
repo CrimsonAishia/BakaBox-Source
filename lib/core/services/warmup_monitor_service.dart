@@ -68,9 +68,8 @@ class WarmupMonitorService {
     );
 
     _notificationClosedSubscription?.cancel();
-    _notificationClosedSubscription = _notificationService.windowClosedStream.listen(
-      _onNotificationClosed,
-    );
+    _notificationClosedSubscription = _notificationService.windowClosedStream
+        .listen(_onNotificationClosed);
 
     await _addressMapping.load();
 
@@ -80,7 +79,8 @@ class WarmupMonitorService {
   }
 
   void _onNotificationClosed(String notificationId) {
-    if (_currentServerAddress != null && notificationId == 'warmup_$_currentServerAddress') {
+    if (_currentServerAddress != null &&
+        notificationId == 'warmup_$_currentServerAddress') {
       if (_isWarmingUp) {
         LogService.d('[WarmupMonitor] 用户手动关闭了热身通知，停止倒计时刷新');
         _isWarmingUp = false;

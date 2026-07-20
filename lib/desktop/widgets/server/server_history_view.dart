@@ -102,7 +102,9 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       return;
     }
 
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     if (address == null || address.isEmpty) {
       setState(() {
         _error = '服务器地址无效';
@@ -488,76 +490,79 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           itemCount: rowCount + 1, // +1 for loading/no-more indicator
           itemBuilder: (context, index) {
-        if (index == rowCount) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: _isLoadingMore
-                ? _buildLoadingMore()
-                : (_hasMoreData ? _buildLoadMoreButton() : _buildNoMoreData()),
-          );
-        }
+            if (index == rowCount) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: _isLoadingMore
+                    ? _buildLoadingMore()
+                    : (_hasMoreData
+                          ? _buildLoadMoreButton()
+                          : _buildNoMoreData()),
+              );
+            }
 
-        final leftIndex = index * 2;
-        final rightIndex = index * 2 + 1;
-        final hasRight = rightIndex < totalItems;
+            final leftIndex = index * 2;
+            final rightIndex = index * 2 + 1;
+            final hasRight = rightIndex < totalItems;
 
-        final leftSnapshot = _historyData[leftIndex];
-        final rightSnapshot = hasRight ? _historyData[rightIndex] : null;
+            final leftSnapshot = _historyData[leftIndex];
+            final rightSnapshot = hasRight ? _historyData[rightIndex] : null;
 
-        // 错位布局的关键：右侧卡片整体向下偏移 64 像素，左侧卡片底部增加 64 像素间距
-        return Stack(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // 错位布局的关键：右侧卡片整体向下偏移 64 像素，左侧卡片底部增加 64 像素间距
+            return Stack(
               children: [
-                // 左侧列
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8, bottom: 64),
-                    child: _buildTimelineItem(
-                      leftSnapshot,
-                      leftIndex,
-                      isLatest: leftIndex == 0,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 左侧列
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8, bottom: 64),
+                        child: _buildTimelineItem(
+                          leftSnapshot,
+                          leftIndex,
+                          isLatest: leftIndex == 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 96), // 中央轴宽度
+                    // 右侧列
+                    Expanded(
+                      child: hasRight
+                          ? Padding(
+                              padding: const EdgeInsets.only(left: 8, top: 64),
+                              child: _buildTimelineItem(
+                                rightSnapshot!,
+                                rightIndex,
+                                isLatest:
+                                    rightIndex ==
+                                    0, // 右侧永远不可能是最新(index 0)，但以防万一
+                              ),
+                            )
+                          : const SizedBox(),
+                    ),
+                  ],
+                ),
+                // 中央时间线轴（每行负责画出左右两张卡片的连接点）
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: _buildTimelineCenterAxisPaired(
+                      leftIndex: leftIndex,
+                      hasRight: hasRight,
+                      isFirstRow: index == 0,
+                      isLastRow: index == rowCount - 1,
+                      hasMoreData: _hasMoreData,
                     ),
                   ),
                 ),
-                const SizedBox(width: 96), // 中央轴宽度
-                // 右侧列
-                Expanded(
-                  child: hasRight
-                      ? Padding(
-                          padding: const EdgeInsets.only(left: 8, top: 64),
-                          child: _buildTimelineItem(
-                            rightSnapshot!,
-                            rightIndex,
-                            isLatest:
-                                rightIndex == 0, // 右侧永远不可能是最新(index 0)，但以防万一
-                          ),
-                        )
-                      : const SizedBox(),
-                ),
               ],
-            ),
-            // 中央时间线轴（每行负责画出左右两张卡片的连接点）
-            Positioned(
-              top: 0,
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Align(
-                alignment: Alignment.center,
-                child: _buildTimelineCenterAxisPaired(
-                  leftIndex: leftIndex,
-                  hasRight: hasRight,
-                  isFirstRow: index == 0,
-                  isLastRow: index == rowCount - 1,
-                  hasMoreData: _hasMoreData,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+            );
+          },
         ),
         if (_canScrollUp)
           Positioned(
@@ -876,8 +881,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   Widget _buildScrollIndicator({required bool isTop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final iconColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3);
-    
+    final iconColor = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.3,
+    );
+
     return IgnorePointer(
       child: Container(
         height: 40,
@@ -896,7 +903,9 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         child: Padding(
           padding: EdgeInsets.only(top: isTop ? 4 : 0, bottom: isTop ? 0 : 4),
           child: Icon(
-            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            isTop
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
             color: iconColor,
             size: 24,
           ),

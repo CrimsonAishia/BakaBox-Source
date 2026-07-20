@@ -2149,7 +2149,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 ),
               ),
 
-              // 渐变蒙版
+              // 渐变蒙版（顶部透明 → 底部加深，让属性行落在清晰区域）
               Positioned.fill(
                 child: DecoratedBox(
                   decoration:

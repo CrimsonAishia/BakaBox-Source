@@ -65,7 +65,7 @@ class GamePathService {
   }
 
   /// 获取当前游戏所在的 steamapps 目录路径
-  /// 
+  ///
   /// 因为用户可能将 Steam 装在 C 盘，但游戏装在 D 盘的 SteamLibrary 中，
   /// 这时候 workshop 文件夹会在 D 盘的 SteamLibrary\steamapps 下，而不是 C 盘。
   Future<String?> getSteamappsPath() async {
@@ -74,16 +74,18 @@ class GamePathService {
       final lowerPath = gamePath.toLowerCase().replaceAll('\\', '/');
       final index = lowerPath.indexOf('/steamapps/common/');
       if (index != -1) {
-        return gamePath.substring(0, index + '/steamapps'.length).replaceAll('/', '\\');
+        return gamePath
+            .substring(0, index + '/steamapps'.length)
+            .replaceAll('/', '\\');
       }
     }
-    
+
     // 如果没有配置 gamePath，或者路径格式不包含 steamapps/common，则回退使用 steamPath
     final steamPath = await getSteamPath();
     if (steamPath != null && steamPath.isNotEmpty) {
       return '$steamPath\\steamapps';
     }
-    
+
     return null;
   }
 

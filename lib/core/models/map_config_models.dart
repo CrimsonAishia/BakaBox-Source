@@ -12,9 +12,11 @@ class MapConfigResponse {
 
   factory MapConfigResponse.fromJson(Map<String, dynamic> json) {
     return MapConfigResponse(
-      categories: (json['categories'] as List?)
-              ?.map((e) =>
-                  MapConfigCategory.fromJson(e as Map<String, dynamic>))
+      categories:
+          (json['categories'] as List?)
+              ?.map(
+                (e) => MapConfigCategory.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -36,9 +38,9 @@ class MapConfigCategory {
     return MapConfigCategory(
       categoryId: json['categoryId'] as int? ?? 0,
       category: json['category'] as String? ?? '',
-      entities: (json['entities'] as List?)
-              ?.map((e) =>
-                  MapConfigEntity.fromJson(e as Map<String, dynamic>))
+      entities:
+          (json['entities'] as List?)
+              ?.map((e) => MapConfigEntity.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const <MapConfigEntity>[],
     );
@@ -66,9 +68,11 @@ class MapConfigEntity {
     return MapConfigEntity(
       name: json['name'] as String? ?? '',
       enabled: json['enabled'] as bool? ?? true,
-      attributes: (json['attributes'] as List?)
-              ?.map((e) =>
-                  MapConfigProperty.fromJson(e as Map<String, dynamic>))
+      attributes:
+          (json['attributes'] as List?)
+              ?.map(
+                (e) => MapConfigProperty.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const <MapConfigProperty>[],
     );

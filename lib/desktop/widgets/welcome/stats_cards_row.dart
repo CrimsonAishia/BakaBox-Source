@@ -15,13 +15,16 @@ class StatsCardsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isWeakNetwork = NetworkModeService.instance.weakNetwork;
     return BlocBuilder<ServerBloc, ServerState>(
-      buildWhen: (previous, current) => _getServerCount(previous) != _getServerCount(current),
+      buildWhen: (previous, current) =>
+          _getServerCount(previous) != _getServerCount(current),
       builder: (context, serverState) {
         return BlocBuilder<ServerStatsBloc, ServerStatsState>(
-          buildWhen: (previous, current) => previous.stats?.todayMax != current.stats?.todayMax,
+          buildWhen: (previous, current) =>
+              previous.stats?.todayMax != current.stats?.todayMax,
           builder: (context, statsState) {
             return BlocBuilder<LobbyBloc, LobbyState>(
-              buildWhen: (previous, current) => previous.serverOnlineCount != current.serverOnlineCount,
+              buildWhen: (previous, current) =>
+                  previous.serverOnlineCount != current.serverOnlineCount,
               builder: (context, lobbyState) {
                 return Row(
                   children: [

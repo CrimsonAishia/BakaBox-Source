@@ -41,7 +41,6 @@ class _ServerPlayersDialogState extends State<ServerPlayersDialog> {
   bool _canScrollUp = false;
   bool _canScrollDown = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -81,7 +80,6 @@ class _ServerPlayersDialogState extends State<ServerPlayersDialog> {
     }
   }
 
-
   /// 获取服务器详情
   Future<void> _fetchServerDetail() async {
     if (!mounted) return;
@@ -92,7 +90,9 @@ class _ServerPlayersDialogState extends State<ServerPlayersDialog> {
     });
 
     try {
-      final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+      final address =
+          widget.server.serverItem.address ??
+          widget.server.serverItem.serverAddress;
       if (address == null || address.isEmpty) {
         if (mounted) {
           setState(() {
@@ -140,7 +140,9 @@ class _ServerPlayersDialogState extends State<ServerPlayersDialog> {
     });
 
     try {
-      final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+      final address =
+          widget.server.serverItem.address ??
+          widget.server.serverItem.serverAddress;
       if (address == null || address.isEmpty) {
         if (mounted) {
           setState(() {
@@ -409,7 +411,9 @@ class _ServerPlayersDialogState extends State<ServerPlayersDialog> {
                     const SizedBox(width: 12),
                     _buildInfoChip(
                       MdiIcons.ip,
-                      widget.server.serverItem.address ?? widget.server.serverItem.serverAddress ?? '未知',
+                      widget.server.serverItem.address ??
+                          widget.server.serverItem.serverAddress ??
+                          '未知',
                     ),
                     const SizedBox(width: 12),
                     if (_pingLatency != null) _buildPingChip(_pingLatency!),
@@ -872,4 +876,3 @@ class _ServerPlayersDialogState extends State<ServerPlayersDialog> {
     );
   }
 }
-

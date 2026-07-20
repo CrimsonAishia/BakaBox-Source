@@ -219,11 +219,7 @@ class MapTagListSimpleResponse extends Equatable {
   final String mapName;
   final List<MapTagVoteSimple> items;
 
-
-  const MapTagListSimpleResponse({
-    required this.mapName,
-    required this.items,
-  });
+  const MapTagListSimpleResponse({required this.mapName, required this.items});
 
   factory MapTagListSimpleResponse.fromJson(Map<String, dynamic> json) =>
       _$MapTagListSimpleResponseFromJson(json);
@@ -449,7 +445,8 @@ class MapTagServerInfo extends Equatable {
     required this.serverAddress,
   });
 
-  factory MapTagServerInfo.fromJson(Map<String, dynamic> json) => _$MapTagServerInfoFromJson(json);
+  factory MapTagServerInfo.fromJson(Map<String, dynamic> json) =>
+      _$MapTagServerInfoFromJson(json);
   Map<String, dynamic> toJson() => _$MapTagServerInfoToJson(this);
 
   @override
@@ -462,12 +459,10 @@ class MapTagServerListResponse extends Equatable {
   final String mapName;
   final List<MapTagServerInfo>? servers;
 
-  const MapTagServerListResponse({
-    required this.mapName,
-    this.servers,
-  });
+  const MapTagServerListResponse({required this.mapName, this.servers});
 
-  factory MapTagServerListResponse.fromJson(Map<String, dynamic> json) => _$MapTagServerListResponseFromJson(json);
+  factory MapTagServerListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MapTagServerListResponseFromJson(json);
   Map<String, dynamic> toJson() => _$MapTagServerListResponseToJson(this);
 
   @override

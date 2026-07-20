@@ -14,7 +14,7 @@ class ScanLocalMaps extends MapManageEvent {}
 class FetchPreviewMapInfo extends MapManageEvent {
   final String mapName;
   const FetchPreviewMapInfo(this.mapName);
-  
+
   @override
   List<Object?> get props => [mapName];
 }
@@ -27,7 +27,7 @@ class ToggleMapSelection extends MapManageEvent {
   final String mapId;
   final bool isSelected;
   const ToggleMapSelection(this.mapId, this.isSelected);
-  
+
   @override
   List<Object?> get props => [mapId, isSelected];
 }
@@ -36,7 +36,7 @@ class ToggleMapSelection extends MapManageEvent {
 class SelectAllMaps extends MapManageEvent {
   final bool select;
   const SelectAllMaps(this.select);
-  
+
   @override
   List<Object?> get props => [select];
 }
@@ -48,7 +48,7 @@ class SetFilter extends MapManageEvent {
   final String? searchQuery;
   final String? filterType;
   const SetFilter({this.searchQuery, this.filterType});
-  
+
   @override
   List<Object?> get props => [searchQuery, filterType];
 }
@@ -57,7 +57,7 @@ class SetFilter extends MapManageEvent {
 class PreviewMap extends MapManageEvent {
   final String? mapId;
   const PreviewMap(this.mapId);
-  
+
   @override
   List<Object?> get props => [mapId];
 }

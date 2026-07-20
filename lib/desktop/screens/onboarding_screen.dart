@@ -577,78 +577,86 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: isDark 
-                        ? (_isHoveringPath ? AppColors.slate600 : AppColors.slate700) 
-                        : (_isHoveringPath ? AppColors.slate200 : AppColors.slate100),
+                    color: isDark
+                        ? (_isHoveringPath
+                              ? AppColors.slate600
+                              : AppColors.slate700)
+                        : (_isHoveringPath
+                              ? AppColors.slate200
+                              : AppColors.slate100),
                     borderRadius: BorderRadius.circular(12),
                     border: hasError
                         ? Border.all(
                             color: AppColors.red500.withValues(alpha: 0.5),
                           )
-                        : (_isHoveringPath 
-                            ? Border.all(
-                                color: isDark ? AppColors.slate500 : AppColors.slate300,
-                              )
-                            : null),
+                        : (_isHoveringPath
+                              ? Border.all(
+                                  color: isDark
+                                      ? AppColors.slate500
+                                      : AppColors.slate300,
+                                )
+                              : null),
                   ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _gamePath != null
-                          ? MdiIcons.checkCircle
-                          : MdiIcons.folderQuestion,
-                      color: _gamePath != null
-                          ? AppColors.emerald500
-                          : (isDark ? Colors.white38 : AppColors.slate400),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Tooltip(
-                        message: _gamePath ?? '请选择 CS2 游戏根目录',
-                        waitDuration: const Duration(milliseconds: 500),
-                        child: Text(
-                          _gamePath ?? '请选择 CS2 游戏根目录',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: _gamePath != null
-                                ? (isDark ? Colors.white : AppColors.slate800)
-                                : (isDark
-                                      ? Colors.white38
-                                      : AppColors.slate400),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _gamePath != null
+                            ? MdiIcons.checkCircle
+                            : MdiIcons.folderQuestion,
+                        color: _gamePath != null
+                            ? AppColors.emerald500
+                            : (isDark ? Colors.white38 : AppColors.slate400),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Tooltip(
+                          message: _gamePath ?? '请选择 CS2 游戏根目录',
+                          waitDuration: const Duration(milliseconds: 500),
+                          child: Text(
+                            _gamePath ?? '请选择 CS2 游戏根目录',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _gamePath != null
+                                  ? (isDark ? Colors.white : AppColors.slate800)
+                                  : (isDark
+                                        ? Colors.white38
+                                        : AppColors.slate400),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                    if (_gamePath != null) ...[
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: IconButton(
-                          icon: Icon(
-                            MdiIcons.close,
-                            size: 16,
-                            color: isDark ? Colors.white38 : AppColors.slate400,
+                      if (_gamePath != null) ...[
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: IconButton(
+                            icon: Icon(
+                              MdiIcons.close,
+                              size: 16,
+                              color: isDark
+                                  ? Colors.white38
+                                  : AppColors.slate400,
+                            ),
+                            onPressed: () => setState(() {
+                              _gamePath = null;
+                              _gamePathError = null;
+                            }),
+                            padding: EdgeInsets.zero,
+                            tooltip: '清除',
+                            splashRadius: 16,
                           ),
-                          onPressed: () => setState(() {
-                            _gamePath = null;
-                            _gamePathError = null;
-                          }),
-                          padding: EdgeInsets.zero,
-                          tooltip: '清除',
-                          splashRadius: 16,
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            // 错误提示
+              // 错误提示
               if (hasError) ...[
                 const SizedBox(height: 8),
                 Row(

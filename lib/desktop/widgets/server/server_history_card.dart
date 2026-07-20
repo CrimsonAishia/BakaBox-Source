@@ -127,10 +127,7 @@ class _ServerHistoryCardState extends State<ServerHistoryCard> {
         const SizedBox(height: 4),
         Row(
           children: [
-            widget.buildStatChip(
-              MdiIcons.clockOutline,
-              widget.mapPlayDuration,
-            ),
+            widget.buildStatChip(MdiIcons.clockOutline, widget.mapPlayDuration),
           ],
         ),
       ],

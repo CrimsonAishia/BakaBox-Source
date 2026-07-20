@@ -273,10 +273,11 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       if (event.rewardAmount != null) {
         await _saveShakeReward(event.rewardAmount!);
       }
-      
+
       // 保存摇一摇时间
       final now = DateTime.now();
-      final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+      final timeStr =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
       await _saveShakeTime(timeStr);
 
       emit(

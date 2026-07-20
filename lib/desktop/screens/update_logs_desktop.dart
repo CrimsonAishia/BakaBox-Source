@@ -80,13 +80,9 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
-      body: PageLayout(
-        title: '更新日志',
-        child: _buildLogCard(),
-      ),
+      body: PageLayout(title: '更新日志', child: _buildLogCard()),
     );
   }
-
 
   /// 搜索框
   Widget _buildSearchBox() {

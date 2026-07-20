@@ -63,7 +63,9 @@ class LobbyImageCacheService {
       await _loadDiskMapping();
 
       _initialized = true;
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 初始化完成，缓存目录: ${_getCacheDir()}');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 初始化完成，缓存目录: ${_getCacheDir()}');
+      }
     } catch (e) {
       LogService.e('[LobbyImageCache] 初始化失败', e);
     }
@@ -131,7 +133,9 @@ class LobbyImageCacheService {
         for (final entry in data.entries) {
           _diskMapping[entry.key] = entry.value;
         }
-        if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 加载了 ${_diskMapping.length} 个磁盘映射');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyImageCache] 加载了 ${_diskMapping.length} 个磁盘映射');
+        }
       }
     } catch (e) {
       LogService.e('[LobbyImageCache] 加载映射表失败', e);
@@ -185,12 +189,16 @@ class LobbyImageCacheService {
     }
 
     if (urlsToDownload.isEmpty) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 所有图片已缓存');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 所有图片已缓存');
+      }
       onProgress?.call(uniqueUrls.length, uniqueUrls.length);
       return;
     }
 
-    if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 需下载 ${urlsToDownload.length} 张图片');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[LobbyImageCache] 需下载 ${urlsToDownload.length} 张图片');
+    }
 
     int completed = 0;
     final total = urlsToDownload.length;
@@ -201,7 +209,9 @@ class LobbyImageCacheService {
         completed++;
       } else {
         // 下载失败，记录但不影响整体进度
-        if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 跳过失败图片: $url');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[LobbyImageCache] 跳过失败图片: $url');
+        }
       }
       onProgress?.call(completed, total);
     }
@@ -227,19 +237,25 @@ class LobbyImageCacheService {
 
     // 用稳定 URL 检查是否已在缓存
     if (_memoryCache.containsKey(stableUrl)) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 内存缓存命中(稳定URL): $stableUrl');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 内存缓存命中(稳定URL): $stableUrl');
+      }
       return _memoryCache[stableUrl];
     }
 
     final diskData = await _loadFromDisk(stableUrl);
     if (diskData != null) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 磁盘缓存命中(稳定URL): $stableUrl');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 磁盘缓存命中(稳定URL): $stableUrl');
+      }
       _memoryCache[stableUrl] = diskData;
       return diskData;
     }
 
     // 下载图片
-    if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 下载图片: $rawUrl -> 稳定URL: $stableUrl');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[LobbyImageCache] 下载图片: $rawUrl -> 稳定URL: $stableUrl');
+    }
     try {
       final response = await _dio!.get<List<int>>(
         rawUrl,
@@ -259,7 +275,9 @@ class LobbyImageCacheService {
       // 用稳定 URL 添加到内存缓存
       _memoryCache[stableUrl] = bytes;
 
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 下载并缓存成功: $stableUrl');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 下载并缓存成功: $stableUrl');
+      }
       return bytes;
     } catch (e) {
       LogService.e('[LobbyImageCache] 下载失败: $rawUrl', e);
@@ -340,7 +358,9 @@ class LobbyImageCacheService {
       await file.writeAsBytes(data);
       _diskMapping[stableUrl] = fileName;
       await _saveDiskMapping();
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 已缓存: $fileName');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 已缓存: $fileName');
+      }
     } catch (e) {
       LogService.e('[LobbyImageCache] 保存磁盘缓存失败: $stableUrl', e);
     }
@@ -429,6 +449,8 @@ class LobbyImageCacheService {
         }
       }
     }
-    if (LogService.enableLobbyDebugLog) LogService.d('[LobbyImageCache] 预热了 $loaded 个内存缓存');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[LobbyImageCache] 预热了 $loaded 个内存缓存');
+    }
   }
 }

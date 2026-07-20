@@ -102,7 +102,9 @@ class ConsoleLogState {
       serverAddress: serverAddress ?? this.serverAddress,
       mapName: mapName ?? this.mapName,
       lastUpdate: lastUpdate ?? this.lastUpdate,
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
       condebugEnabled: condebugEnabled ?? this.condebugEnabled,
     );
   }
@@ -1210,7 +1212,6 @@ class ConsoleLogService {
             break;
           }
         }
-
       } finally {
         await raf.close();
       }
@@ -1339,7 +1340,10 @@ class ConsoleLogService {
               var end = i;
               if (end > lineStart && buffer[end - 1] == 0x0D) end--;
               lines.add(
-                utf8.decode(buffer.sublist(lineStart, end), allowMalformed: true),
+                utf8.decode(
+                  buffer.sublist(lineStart, end),
+                  allowMalformed: true,
+                ),
               );
               lineStart = i + 1;
             }
@@ -1547,7 +1551,9 @@ class ConsoleLogService {
         _targetServer = '';
       }
     } else if (event is EvDisconnect) {
-      LogService.d('[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}');
+      LogService.d(
+        '[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}',
+      );
 
       if (event.isConnectFailure) {
         _isInLoopbackMode = false;

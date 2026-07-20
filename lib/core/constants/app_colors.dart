@@ -130,7 +130,7 @@ class AppColors {
   static const Color orange700 = Color(0xFFC2410C);
   static const Color orange800 = Color(0xFF9A3412);
   static const Color orange900 = Color(0xFF7C2D12);
-  
+
   static const Color orange = Color(0xFFFF9800); // Material Orange 500
 
   /// 角色图鉴技能绿

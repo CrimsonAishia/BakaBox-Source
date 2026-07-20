@@ -226,7 +226,8 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final state = context.read<LobbyBloc>().state;
-      final isConnecting = state.connectionStatus == LobbyConnectionStatus.connecting ||
+      final isConnecting =
+          state.connectionStatus == LobbyConnectionStatus.connecting ||
           state.connectionStatus == LobbyConnectionStatus.reconnecting;
       if (isConnecting) {
         _connectingPulseController.repeat(reverse: true);

@@ -222,7 +222,10 @@ class ServerQueueService {
         if (sourceInfo.map != _lastMapName) {
           isMapChanged = _lastMapName != null;
           try {
-            mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: _targetServer);
+            mapInfo = await _serverApi.getMapInfo(
+              sourceInfo.map,
+              address: _targetServer,
+            );
           } catch (e) {
             LogService.d('[ServerQueueService] 获取地图信息失败: $e');
           }

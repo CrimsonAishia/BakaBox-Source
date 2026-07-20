@@ -158,7 +158,9 @@ class LobbyAssetCacheService {
 
     if (updated > 0) {
       await _saveSpriteCache();
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyAssetCache] 缓存了 $updated/$total 个 sprite URL');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyAssetCache] 缓存了 $updated/$total 个 sprite URL');
+      }
 
       // 触发图片下载到本地（使用原始 URL，后台执行不阻塞）
       _downloadImagesWithRawUrls(rawUrlsToDownload);
@@ -181,7 +183,9 @@ class LobbyAssetCacheService {
         lastUpdated: DateTime.now().millisecondsSinceEpoch,
       );
       await _saveMapCache();
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyAssetCache] 缓存了地图背景: ${mapConfig.mapId}');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyAssetCache] 缓存了地图背景: ${mapConfig.mapId}');
+      }
 
       // 触发图片下载到本地（使用原始 URL，后台执行不阻塞）
       if (mapConfig.backgroundUrl != null &&
@@ -283,7 +287,9 @@ class LobbyAssetCacheService {
   Future<void> clearSpriteCache(String spriteId) async {
     if (_spriteMemoryCache.remove(spriteId) != null) {
       await _saveSpriteCache();
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyAssetCache] 已清除 sprite 缓存: $spriteId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyAssetCache] 已清除 sprite 缓存: $spriteId');
+      }
     }
   }
 
@@ -291,7 +297,9 @@ class LobbyAssetCacheService {
   Future<void> clearMapCache(String mapId) async {
     if (_mapMemoryCache.remove(mapId) != null) {
       await _saveMapCache();
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyAssetCache] 已清除 map 缓存: $mapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyAssetCache] 已清除 map 缓存: $mapId');
+      }
     }
   }
 

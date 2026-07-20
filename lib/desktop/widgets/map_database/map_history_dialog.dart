@@ -68,14 +68,8 @@ class MapHistoryDialog extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: isDark
-                      ? [
-                          const Color(0xFF0F172A),
-                          const Color(0xFF1E293B),
-                        ]
-                      : [
-                          const Color(0xFFF8FAFC),
-                          const Color(0xFFF1F5F9),
-                        ],
+                      ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                      : [const Color(0xFFF8FAFC), const Color(0xFFF1F5F9)],
                 ),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
@@ -99,7 +93,11 @@ class MapHistoryDialog extends StatelessWidget {
                         color: AppColors.primary.withValues(alpha: 0.2),
                       ),
                     ),
-                    child: Icon(MdiIcons.history, color: AppColors.primary, size: 24),
+                    child: Icon(
+                      MdiIcons.history,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -130,7 +128,9 @@ class MapHistoryDialog extends StatelessWidget {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Container(
                                 width: 4,
                                 height: 4,

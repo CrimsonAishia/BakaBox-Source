@@ -66,7 +66,9 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
 
     // 情况1：地图切换
     if (newMapId != oldMapId) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyScene] 地图切换 $oldMapId -> $newMapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyScene] 地图切换 $oldMapId -> $newMapId');
+      }
       _handleMapChange(newMapId);
       return;
     }
@@ -101,11 +103,15 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
 
     // 检查地图是否已加载
     if (LobbyMapLoaderService.instance.isMapReady(newMapId)) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyScene] 地图已就绪，直接切换: $newMapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyScene] 地图已就绪，直接切换: $newMapId');
+      }
       _performMapSwitch(newMapId);
     } else {
       // 地图尚未加载，设置为等待状态并开始预加载
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyScene] 地图需要加载，等待加载: $newMapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyScene] 地图需要加载，等待加载: $newMapId');
+      }
       _isWaitingForMapLoad = true;
       _targetMapId = newMapId;
 
@@ -129,7 +135,9 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
 
           // 如果地图加载完成且正在等待，进行切换
           if (state.isReady && _isWaitingForMapLoad && _targetMapId == mapId) {
-            if (LogService.enableLobbyDebugLog) LogService.d('[LobbyScene] 地图加载完成，开始切换: $mapId');
+            if (LogService.enableLobbyDebugLog) {
+              LogService.d('[LobbyScene] 地图加载完成，开始切换: $mapId');
+            }
             _isWaitingForMapLoad = false;
             _performMapSwitch(mapId);
           }

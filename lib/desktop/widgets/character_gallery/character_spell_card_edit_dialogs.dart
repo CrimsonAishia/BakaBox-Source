@@ -194,7 +194,9 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                               SizedBox(
                                 height: 200,
                                 child: RichTextEditor(
-                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  customToolbar: RichTextDialogToolbar(
+                                    controller: _descriptionController,
+                                  ),
                                   imageMode: ImageMode.inline,
 
                                   controller: _descriptionController,
@@ -463,7 +465,9 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                               SizedBox(
                                 height: 200,
                                 child: RichTextEditor(
-                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  customToolbar: RichTextDialogToolbar(
+                                    controller: _descriptionController,
+                                  ),
                                   imageMode: ImageMode.inline,
 
                                   controller: _descriptionController,
@@ -765,7 +769,9 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                               SizedBox(
                                 height: 200,
                                 child: RichTextEditor(
-                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  customToolbar: RichTextDialogToolbar(
+                                    controller: _descriptionController,
+                                  ),
                                   imageMode: ImageMode.inline,
 
                                   controller: _descriptionController,

@@ -199,31 +199,34 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
                                   )
                                 : DiskCachedImage(
                                     imageUrl: widget.imageUrls[index],
-                              fit: BoxFit.contain,
-                              placeholder: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              ),
-                              errorWidget: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.broken_image_rounded,
-                                    size: 64,
-                                    color: Colors.white54,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    '图片加载失败',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.7),
-                                      fontSize: 14,
+                                    fit: BoxFit.contain,
+                                    placeholder: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    errorWidget: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 64,
+                                          color: Colors.white54,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          '图片加载失败',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
                           ),
                         ),
                       );

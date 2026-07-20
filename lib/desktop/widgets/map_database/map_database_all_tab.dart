@@ -137,7 +137,6 @@ class MapDatabaseAllTab extends StatelessWidget {
     );
   }
 
-
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

@@ -197,8 +197,12 @@ class CacheService {
       final data = await _getMapInfoCacheData();
       final timestamps = await _getMapInfoTimestamps();
 
-      data.removeWhere((k, _) => k == normalizedName || k.startsWith('$normalizedName:'));
-      timestamps.removeWhere((k, _) => k == normalizedName || k.startsWith('$normalizedName:'));
+      data.removeWhere(
+        (k, _) => k == normalizedName || k.startsWith('$normalizedName:'),
+      );
+      timestamps.removeWhere(
+        (k, _) => k == normalizedName || k.startsWith('$normalizedName:'),
+      );
 
       await StorageUtils.setString(_mapInfoKey, json.encode(data));
       await StorageUtils.setString(

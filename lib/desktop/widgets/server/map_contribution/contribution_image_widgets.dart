@@ -8,8 +8,7 @@ import '../../../../core/widgets/disk_cached_image.dart';
 class HoverScaleWidget extends StatefulWidget {
   final Widget child;
 
-  const HoverScaleWidget({
-    super.key,required this.child});
+  const HoverScaleWidget({super.key, required this.child});
 
   @override
   State<HoverScaleWidget> createState() => _HoverScaleWidgetState();
@@ -36,8 +35,7 @@ class _HoverScaleWidgetState extends State<HoverScaleWidget> {
 class HoverOverlay extends StatefulWidget {
   final Widget child;
 
-  const HoverOverlay({
-    super.key,required this.child});
+  const HoverOverlay({super.key, required this.child});
 
   @override
   State<HoverOverlay> createState() => _HoverOverlayState();
@@ -69,7 +67,10 @@ class ContributionImage extends StatefulWidget {
   final BoxFit fit;
 
   const ContributionImage({
-    super.key,required this.imageRef, this.fit = BoxFit.cover});
+    super.key,
+    required this.imageRef,
+    this.fit = BoxFit.cover,
+  });
 
   @override
   State<ContributionImage> createState() => _ContributionImageState();

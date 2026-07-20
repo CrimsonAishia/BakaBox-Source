@@ -133,7 +133,6 @@ class CancelTagChangeRequest extends MapTagEvent {
   List<Object?> get props => [tagId];
 }
 
-
 /// 清除错误
 class ClearTagError extends MapTagEvent {
   const ClearTagError();

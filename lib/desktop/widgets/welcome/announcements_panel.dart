@@ -432,8 +432,8 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                   onTapLink: (text, href, title) {
                     if (href != null) _launchUrl(href);
                   },
-                  imageBuilder: (uri, title, alt) {
-                    final url = uri.toString();
+                  sizedImageBuilder: (config) {
+                    final url = config.uri.toString();
                     final imageUrls = _extractImageUrls(item.content);
                     final index = imageUrls.indexOf(url);
                     return _HoverableMarkdownImage(
@@ -555,10 +555,7 @@ class _HoverableMarkdownImage extends StatefulWidget {
   final String imageUrl;
   final VoidCallback onTap;
 
-  const _HoverableMarkdownImage({
-    required this.imageUrl,
-    required this.onTap,
-  });
+  const _HoverableMarkdownImage({required this.imageUrl, required this.onTap});
 
   @override
   State<_HoverableMarkdownImage> createState() =>
@@ -593,11 +590,7 @@ class _HoverableMarkdownImageState extends State<_HoverableMarkdownImage> {
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.4),
                     child: const Center(
-                      child: Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 32,
-                      ),
+                      child: Icon(Icons.zoom_in, color: Colors.white, size: 32),
                     ),
                   ),
                 ),

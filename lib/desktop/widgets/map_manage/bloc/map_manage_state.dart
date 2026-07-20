@@ -5,13 +5,13 @@ class MapManageState extends Equatable {
   final bool isLoading;
   final bool isDeleting;
   final String? error;
-  
+
   // 本地地图列表
   final List<LocalMapItem> localMaps;
-  
+
   // 选中的地图 ID 集合（用于批量删除）
   final Set<String> selectedMapIds;
-  
+
   // Steam 运行状态
   final bool isSteamRunning;
 
@@ -22,7 +22,7 @@ class MapManageState extends Equatable {
 
   // 当前激活/预览的地图 ID
   final String? previewMapId;
-  
+
   // 当前预览的地图详细信息（从 API 获取的译名和背景）
   final MapData? previewMapInfo;
 
@@ -64,19 +64,25 @@ class MapManageState extends Equatable {
       searchQuery: searchQuery ?? this.searchQuery,
       filterType: filterType ?? this.filterType,
       previewMapId: clearPreview ? null : (previewMapId ?? this.previewMapId),
-      previewMapInfo: clearPreview || clearPreviewMapInfo ? null : (previewMapInfo ?? this.previewMapInfo),
+      previewMapInfo: clearPreview || clearPreviewMapInfo
+          ? null
+          : (previewMapInfo ?? this.previewMapInfo),
     );
   }
 
   /// 过滤和排序后的地图列表
   List<LocalMapItem> get displayMaps {
     var filtered = localMaps;
-    
+
     // 按前缀过滤
     if (filterType.isNotEmpty) {
-      filtered = filtered.where((m) => m.title.toLowerCase().startsWith(filterType.toLowerCase())).toList();
+      filtered = filtered
+          .where(
+            (m) => m.title.toLowerCase().startsWith(filterType.toLowerCase()),
+          )
+          .toList();
     }
-    
+
     // 按搜索关键字过滤
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
@@ -84,7 +90,7 @@ class MapManageState extends Equatable {
         return m.title.toLowerCase().contains(q) || m.id.contains(q);
       }).toList();
     }
-    
+
     // 排序：可以根据标题或更新时间等排序，这里默认按标题排序
     final sorted = List<LocalMapItem>.from(filtered);
     sorted.sort((a, b) => a.title.compareTo(b.title));
@@ -93,17 +99,17 @@ class MapManageState extends Equatable {
 
   @override
   List<Object?> get props => [
-        isLoading,
-        isDeleting,
-        error,
-        localMaps,
-        selectedMapIds,
-        isSteamRunning,
-        searchQuery,
-        filterType,
-        previewMapId,
-        previewMapInfo,
-      ];
+    isLoading,
+    isDeleting,
+    error,
+    localMaps,
+    selectedMapIds,
+    isSteamRunning,
+    searchQuery,
+    filterType,
+    previewMapId,
+    previewMapInfo,
+  ];
 }
 
 /// 本地创意工坊地图项

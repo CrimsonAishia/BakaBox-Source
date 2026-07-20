@@ -1,13 +1,9 @@
 /// VDF 节点类型
-enum VdfNodeType {
-  document,
-  property,
-  object,
-}
+enum VdfNodeType { document, property, object }
 
 abstract class VdfNode {
   VdfNodeType get type;
-  
+
   /// 生成带格式的文本
   String toText();
 }
@@ -28,17 +24,21 @@ class VdfTrivia extends VdfNode {
 /// 一个由双引号包裹的字符串键或值
 class VdfStringNode extends VdfNode {
   String value;
-  
+
   /// 字符串前后的 Trivia
   List<VdfTrivia> leadingTrivia;
   List<VdfTrivia> trailingTrivia;
 
-  VdfStringNode(this.value, {List<VdfTrivia>? leading, List<VdfTrivia>? trailing})
-      : leadingTrivia = leading ?? [],
-        trailingTrivia = trailing ?? [];
+  VdfStringNode(
+    this.value, {
+    List<VdfTrivia>? leading,
+    List<VdfTrivia>? trailing,
+  }) : leadingTrivia = leading ?? [],
+       trailingTrivia = trailing ?? [];
 
   @override
-  VdfNodeType get type => throw UnimplementedError('StringNode has no node type');
+  VdfNodeType get type =>
+      throw UnimplementedError('StringNode has no node type');
 
   @override
   String toText() {
@@ -58,8 +58,10 @@ class VdfStringNode extends VdfNode {
 class VdfObjectNode extends VdfNode {
   /// { 之前的 Trivia
   List<VdfTrivia> leadingTrivia;
+
   /// } 之前的 Trivia（对象内部最后的空白）
   List<VdfTrivia> trailingTrivia;
+
   /// } 之后的 Trivia
   List<VdfTrivia> postTrivia;
 
@@ -70,10 +72,10 @@ class VdfObjectNode extends VdfNode {
     List<VdfTrivia>? trailing,
     List<VdfTrivia>? post,
     List<VdfPropertyNode>? properties,
-  })  : leadingTrivia = leading ?? [],
-        trailingTrivia = trailing ?? [],
-        postTrivia = post ?? [],
-        properties = properties ?? [];
+  }) : leadingTrivia = leading ?? [],
+       trailingTrivia = trailing ?? [],
+       postTrivia = post ?? [],
+       properties = properties ?? [];
 
   @override
   VdfNodeType get type => VdfNodeType.object;
@@ -154,7 +156,9 @@ class VdfParser {
       final c = _input[_pos];
       if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
         _pos++;
-      } else if (c == '/' && _pos + 1 < _input.length && _input[_pos + 1] == '/') {
+      } else if (c == '/' &&
+          _pos + 1 < _input.length &&
+          _input[_pos + 1] == '/') {
         // C-style comments
         _pos += 2;
         while (_pos < _input.length && _input[_pos] != '\n') {
@@ -189,7 +193,7 @@ class VdfParser {
     if (_pos < _input.length && _input[_pos] == '"') {
       _pos++; // skip "
     }
-    
+
     // 如果字符串同行后面还有空格或者制表符，我们可以把它当做 trailing 吗？
     // 为了简单，我们只在扫描下一个节点前收集 leading trivia
     return VdfStringNode(value, leading: leadingTrivia);
@@ -210,7 +214,7 @@ class VdfParser {
       // Object value
       _pos++; // skip {
       final objNode = VdfObjectNode(leading: valueLeadingTrivia);
-      
+
       while (_pos < _input.length) {
         final innerTrivia = _scanTrivia();
         if (_pos < _input.length && _input[_pos] == '}') {
@@ -218,7 +222,7 @@ class VdfParser {
           objNode.trailingTrivia = innerTrivia;
           break;
         }
-        
+
         final prop = _parseProperty(innerTrivia);
         if (prop != null) {
           objNode.properties.add(prop);
@@ -235,21 +239,21 @@ class VdfParser {
         return VdfPropertyNode(keyNode, valNode);
       }
     }
-    
+
     return null;
   }
 
   /// 解析整个文档
   VdfDocumentNode parse() {
     final doc = VdfDocumentNode();
-    
+
     while (_pos < _input.length) {
       final trivia = _scanTrivia();
       if (_pos >= _input.length) {
         doc.trailingTrivia.addAll(trivia);
         break;
       }
-      
+
       final prop = _parseProperty(trivia);
       if (prop != null) {
         doc.properties.add(prop);
@@ -259,7 +263,7 @@ class VdfParser {
         break;
       }
     }
-    
+
     return doc;
   }
 }
@@ -304,17 +308,17 @@ class VdfEditor {
   /// 获取字符串值
   String? getStringValue(List<String> path) {
     if (path.isEmpty) return null;
-    
+
     final objPath = path.sublist(0, path.length - 1);
     final key = path.last;
-    
+
     List<VdfPropertyNode> currentProps = _doc.properties;
     if (objPath.isNotEmpty) {
       final obj = findObjectNode(objPath);
       if (obj == null) return null;
       currentProps = obj.properties;
     }
-    
+
     for (final prop in currentProps) {
       if (prop.key.value == key && prop.value is VdfStringNode) {
         return (prop.value as VdfStringNode).value;

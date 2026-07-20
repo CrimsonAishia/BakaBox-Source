@@ -52,7 +52,8 @@ class IssueDetailState extends Equatable {
       comments: comments ?? this.comments,
       isLoading: isLoading ?? this.isLoading,
       isLoadingComments: isLoadingComments ?? this.isLoadingComments,
-      isLoadingMoreComments: isLoadingMoreComments ?? this.isLoadingMoreComments,
+      isLoadingMoreComments:
+          isLoadingMoreComments ?? this.isLoadingMoreComments,
       hasMoreComments: hasMoreComments ?? this.hasMoreComments,
       hasLoadMoreError: hasLoadMoreError ?? this.hasLoadMoreError,
       commentsCurrentPage: commentsCurrentPage ?? this.commentsCurrentPage,

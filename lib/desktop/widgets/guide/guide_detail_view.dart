@@ -214,10 +214,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
       DetailStatus.failure => _buildError(context, state),
     };
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: body,
-    );
+    return Scaffold(backgroundColor: Colors.transparent, body: body);
   }
 
   // ─── 加载态 ─────────────────────────────────────────────────────────────

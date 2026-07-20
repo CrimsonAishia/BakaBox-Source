@@ -189,7 +189,10 @@ class _ObsToolState extends State<ObsTool> {
         _queriedDisplayName = displayName;
 
         final serverApi = ServerApi();
-        final mapData = await serverApi.refreshMapInfo(info.map, address: address);
+        final mapData = await serverApi.refreshMapInfo(
+          info.map,
+          address: address,
+        );
         if (mounted) {
           setState(() {
             _queriedMapData = mapData;

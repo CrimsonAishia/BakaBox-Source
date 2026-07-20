@@ -232,7 +232,9 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                               SizedBox(
                                 height: 180,
                                 child: RichTextEditor(
-                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  customToolbar: RichTextDialogToolbar(
+                                    controller: _descriptionController,
+                                  ),
                                   imageMode: ImageMode.inline,
 
                                   controller: _descriptionController,
@@ -809,7 +811,9 @@ class _ZombieSkillCreateSubDialogState
                               SizedBox(
                                 height: 180,
                                 child: RichTextEditor(
-                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  customToolbar: RichTextDialogToolbar(
+                                    controller: _descriptionController,
+                                  ),
                                   imageMode: ImageMode.inline,
 
                                   controller: _descriptionController,
@@ -1462,7 +1466,9 @@ class _NewZombieSkillEditSubDialogState
                               SizedBox(
                                 height: 180,
                                 child: RichTextEditor(
-                                  customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+                                  customToolbar: RichTextDialogToolbar(
+                                    controller: _descriptionController,
+                                  ),
                                   imageMode: ImageMode.inline,
 
                                   controller: _descriptionController,

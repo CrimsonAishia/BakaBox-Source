@@ -1757,21 +1757,23 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           }
 
           // 重新认领属于新登录用户的历史消息
-          migratedMessages = migratedMessages.map((m) {
-            if (!m.isSelf && _isSelfServerUserId(m.userId)) {
-              return LobbyMessage(
-                messageId: m.messageId,
-                userId: m.userId,
-                nickname: m.nickname,
-                content: m.content,
-                type: m.type,
-                timestamp: m.timestamp,
-                isAnonymous: m.isAnonymous,
-                isSelf: true,
-              );
-            }
-            return m;
-          }).toList(growable: false);
+          migratedMessages = migratedMessages
+              .map((m) {
+                if (!m.isSelf && _isSelfServerUserId(m.userId)) {
+                  return LobbyMessage(
+                    messageId: m.messageId,
+                    userId: m.userId,
+                    nickname: m.nickname,
+                    content: m.content,
+                    type: m.type,
+                    timestamp: m.timestamp,
+                    isAnonymous: m.isAnonymous,
+                    isSelf: true,
+                  );
+                }
+                return m;
+              })
+              .toList(growable: false);
         }
 
         emit(
@@ -4100,27 +4102,31 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final defaultSpriteId = defaultSprite?.id ?? 'sprite_01';
 
     // 3. 退出登录后，过去的自己已经不是现在的自己，将聊天记录里的 isSelf 全部重置为 false
-    final updatedMessages = state.messages.map((m) {
-      if (m.isSelf) {
-        return LobbyMessage(
-          messageId: m.messageId,
-          userId: m.userId,
-          nickname: m.nickname,
-          content: m.content,
-          type: m.type,
-          timestamp: m.timestamp,
-          isAnonymous: m.isAnonymous,
-          isSelf: false,
-        );
-      }
-      return m;
-    }).toList(growable: false);
+    final updatedMessages = state.messages
+        .map((m) {
+          if (m.isSelf) {
+            return LobbyMessage(
+              messageId: m.messageId,
+              userId: m.userId,
+              nickname: m.nickname,
+              content: m.content,
+              type: m.type,
+              timestamp: m.timestamp,
+              isAnonymous: m.isAnonymous,
+              isSelf: false,
+            );
+          }
+          return m;
+        })
+        .toList(growable: false);
 
-    emit(state.copyWith(
-      selectedSpriteId: defaultSpriteId,
-      isAnonymous: true,
-      messages: updatedMessages,
-    ));
+    emit(
+      state.copyWith(
+        selectedSpriteId: defaultSpriteId,
+        isAnonymous: true,
+        messages: updatedMessages,
+      ),
+    );
   }
 
   /// 用户在被踢提示页面点击操作按钮后，重置被踢状态并重新连接

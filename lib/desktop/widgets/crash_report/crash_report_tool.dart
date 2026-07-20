@@ -190,14 +190,18 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
                             Icon(
                               Icons.last_page,
                               size: 48,
-                              color: isDark ? Colors.white24 : AppColors.gray300,
+                              color: isDark
+                                  ? Colors.white24
+                                  : AppColors.gray300,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               '请收起导航栏以查看详情',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark ? Colors.white38 : AppColors.gray400,
+                                color: isDark
+                                    ? Colors.white38
+                                    : AppColors.gray400,
                               ),
                             ),
                           ],

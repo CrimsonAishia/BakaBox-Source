@@ -32,7 +32,8 @@ class MapTagContributionView extends StatefulWidget {
   State<MapTagContributionView> createState() => _MapTagContributionViewState();
 }
 
-class _MapTagContributionViewState extends State<MapTagContributionView> with ContributionAuthMixin {
+class _MapTagContributionViewState extends State<MapTagContributionView>
+    with ContributionAuthMixin {
   final _tagSearchController = TextEditingController();
   final _scrollController = ScrollController();
   bool _canScrollUp = false;
@@ -169,7 +170,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
                 const SizedBox(height: 8),
                 TagColorPicker(
                   selectedColor: selectedColor,
-                  onColorChanged: (color) => setDialogState(() => selectedColor = color),
+                  onColorChanged: (color) =>
+                      setDialogState(() => selectedColor = color),
                   enabled: true,
                 ),
                 if (isApproved) ...[
@@ -410,7 +412,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
   }
 
   void showTagVotersDialog(String mapName, MapTag tag) {
-    final currentServerAddress = context.read<MapTagBloc>().state.serverAddress ?? widget.serverAddress;
+    final currentServerAddress =
+        context.read<MapTagBloc>().state.serverAddress ?? widget.serverAddress;
     showDialog(
       context: context,
       builder: (dialogContext) => TagVotersDialog(
@@ -423,7 +426,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
   }
 
   void _showMapAllVotersDialog() {
-    final currentServerAddress = context.read<MapTagBloc>().state.serverAddress ?? widget.serverAddress;
+    final currentServerAddress =
+        context.read<MapTagBloc>().state.serverAddress ?? widget.serverAddress;
     showDialog(
       context: context,
       builder: (dialogContext) => MapAllVotersDialog(
@@ -504,7 +508,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
                 const SizedBox(height: 8),
                 TagColorPicker(
                   selectedColor: selectedColor,
-                  onColorChanged: (color) => setDialogState(() => selectedColor = color),
+                  onColorChanged: (color) =>
+                      setDialogState(() => selectedColor = color),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -514,7 +519,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
                       height: 24,
                       child: Checkbox(
                         value: autoVote,
-                        onChanged: (value) => setDialogState(() => autoVote = value ?? false),
+                        onChanged: (value) =>
+                            setDialogState(() => autoVote = value ?? false),
                         activeColor: AppColors.primary,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
@@ -636,7 +642,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
                         '由于该模式采用按难度分服的机制，当前的地图投票仅反映本服务器所属的标签',
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? Colors.amber.shade300 : Colors.amber.shade700,
+                          color: isDark
+                              ? Colors.amber.shade300
+                              : Colors.amber.shade700,
                         ),
                       ),
                     ),
@@ -661,7 +669,10 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child: _buildScrollIndicator(isTop: false, isDark: isDark),
+                      child: _buildScrollIndicator(
+                        isTop: false,
+                        isDark: isDark,
+                      ),
                     ),
                   Positioned(
                     bottom: 0,
@@ -681,7 +692,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
   Widget _buildServerFilter(MapTagState state, bool isDark) {
     if (state.mapServers.isEmpty) return const SizedBox.shrink();
 
-    final effectiveAddress = state.mapServers.any((s) => s.serverAddress == state.serverAddress)
+    final effectiveAddress =
+        state.mapServers.any((s) => s.serverAddress == state.serverAddress)
         ? state.serverAddress
         : null;
 
@@ -708,7 +720,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
               height: 36,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey[100],
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isDark ? Colors.white24 : Colors.black12,
@@ -807,7 +821,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
             borderSide: const BorderSide(color: AppColors.primary),
           ),
           filled: true,
-          fillColor: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey[100],
+          fillColor: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.grey[100],
         ),
       ),
     );
@@ -815,13 +831,19 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
 
   Widget _buildTagList(MapTagState state, bool isDark) {
     final query = _tagSearchController.text.trim().toLowerCase();
-    final currentUserId = int.tryParse(context.read<AuthBloc>().state.userInfo?.uid ?? '');
+    final currentUserId = int.tryParse(
+      context.read<AuthBloc>().state.userInfo?.uid ?? '',
+    );
 
     final userGlobalTags = currentUserId != null
-        ? state.tagList.where((t) => t.contributor?.userId == currentUserId).toList()
+        ? state.tagList
+              .where((t) => t.contributor?.userId == currentUserId)
+              .toList()
         : <MapTag>[];
     final otherGlobalTags = currentUserId != null
-        ? state.tagList.where((t) => t.contributor?.userId != currentUserId).toList()
+        ? state.tagList
+              .where((t) => t.contributor?.userId != currentUserId)
+              .toList()
         : state.tagList;
 
     final seen = <int>{};
@@ -833,8 +855,12 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
     List<MapTag> filteredUserTags = allUserTags.toList();
     List<MapTag> filteredTagList = otherGlobalTags.toList();
     if (query.isNotEmpty) {
-      filteredUserTags = allUserTags.where((t) => t.name.toLowerCase().contains(query)).toList();
-      filteredTagList = otherGlobalTags.where((t) => t.name.toLowerCase().contains(query)).toList();
+      filteredUserTags = allUserTags
+          .where((t) => t.name.toLowerCase().contains(query))
+          .toList();
+      filteredTagList = otherGlobalTags
+          .where((t) => t.name.toLowerCase().contains(query))
+          .toList();
     }
 
     int byVoteCountDesc(MapTag a, MapTag b) {
@@ -846,16 +872,27 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
     filteredTagList.sort(byVoteCountDesc);
 
     final difficultyTags = filteredTagList
-        .where((t) => t.isDifficulty == true && t.difficultyType == 'difficulty')
+        .where(
+          (t) => t.isDifficulty == true && t.difficultyType == 'difficulty',
+        )
         .toList();
     final tierTags = filteredTagList
         .where((t) => t.isDifficulty == true && t.difficultyType == 'tier')
         .toList();
     final otherTags = filteredTagList
-        .where((t) => !(t.isDifficulty == true && (t.difficultyType == 'difficulty' || t.difficultyType == 'tier')))
+        .where(
+          (t) =>
+              !(t.isDifficulty == true &&
+                  (t.difficultyType == 'difficulty' ||
+                      t.difficultyType == 'tier')),
+        )
         .toList();
 
-    final hasNoTags = filteredUserTags.isEmpty && filteredTagList.isEmpty && !state.isLoadingTagList && !state.isLoadingUserTags;
+    final hasNoTags =
+        filteredUserTags.isEmpty &&
+        filteredTagList.isEmpty &&
+        !state.isLoadingTagList &&
+        !state.isLoadingUserTags;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateScrollIndicators();
@@ -884,7 +921,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
               query.isNotEmpty ? '试试其他关键词吧' : '成为第一个贡献者吧！',
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white38 : AppColors.gray500.withValues(alpha: 0.7),
+                color: isDark
+                    ? Colors.white38
+                    : AppColors.gray500.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -1030,7 +1069,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
 
   Widget _buildScrollIndicator({required bool isTop, required bool isDark}) {
     final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final iconColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3);
+    final iconColor = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.3,
+    );
     return IgnorePointer(
       child: Container(
         height: 40,
@@ -1049,7 +1090,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
         child: Padding(
           padding: EdgeInsets.only(top: isTop ? 4 : 0, bottom: isTop ? 0 : 4),
           child: Icon(
-            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            isTop
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
             color: iconColor,
             size: 24,
           ),
@@ -1093,7 +1136,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
           ),
         ),
       ),
@@ -1115,7 +1160,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView> with Co
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  disabledBackgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                  disabledBackgroundColor: const Color(
+                    0xFF0080FF,
+                  ).withValues(alpha: 0.5),
                 ),
               ),
             ),

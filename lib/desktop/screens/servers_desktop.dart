@@ -861,7 +861,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
         Expanded(child: RepaintBoundary(child: _buildServersColumn())),
         const SizedBox(width: 5),
         // 右侧分类列表
-        SizedBox(width: 300, child: RepaintBoundary(child: _buildCategoriesColumn())),
+        SizedBox(
+          width: 300,
+          child: RepaintBoundary(child: _buildCategoriesColumn()),
+        ),
       ],
     );
   }
@@ -997,7 +1000,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                         context: context,
                         builder: (context) => CategoryTimelineDialog(
                           initialServerGroupId: serverGroupId,
-                          categories: state.serverCategories.where((c) => c.id != null && !c.isCustom).toList(),
+                          categories: state.serverCategories
+                              .where((c) => c.id != null && !c.isCustom)
+                              .toList(),
                         ),
                       );
                     },
@@ -1082,6 +1087,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
       },
     );
   }
+
   /// 服务器列表内容
   Widget _buildServersList() {
     return BlocBuilder<ServerBloc, ServerState>(
@@ -1186,7 +1192,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
       ],
     );
   }
-
 
   /// 构建普通服务器列表（非自定义分类）
   Widget _buildNormalServerList(
@@ -1294,7 +1299,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
       ),
     );
   }
-
 
   /// 加载中列表
   Widget _buildLoadingList(int count) {
@@ -2277,7 +2281,8 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
           previous.selectedTabIndex != current.selectedTabIndex ||
           previous.selectedCategory != current.selectedCategory ||
           previous.categoryOnlineCounts != current.categoryOnlineCounts ||
-          previous.hasEverLoadedOnlineCounts != current.hasEverLoadedOnlineCounts ||
+          previous.hasEverLoadedOnlineCounts !=
+              current.hasEverLoadedOnlineCounts ||
           previous.isLoadingOnlineCounts != current.isLoadingOnlineCounts,
       builder: (context, state) {
         // 首次加载且没有分类数据时显示加载指示器
@@ -2521,11 +2526,12 @@ bool _shouldRebuildServerList(ServerState previous, ServerState current) {
     }
   }
 
-
   return false;
 }
 
-List<ExtendedServerItem> _sortServersByOnlineStatus(List<ExtendedServerItem> servers) {
+List<ExtendedServerItem> _sortServersByOnlineStatus(
+  List<ExtendedServerItem> servers,
+) {
   final onlineServers = <ExtendedServerItem>[];
   final loadingServers = <ExtendedServerItem>[];
   final offlineServers = <ExtendedServerItem>[];
@@ -2552,25 +2558,42 @@ bool _shouldRebuildCard(ExtendedServerItem? p, ExtendedServerItem? c) {
   if (p.isLoading != c.isLoading) return true;
   if (p.isOffline != c.isOffline) return true;
   if (p.hasError != c.hasError) return true;
-  
+
   if (p.serverData?.map != c.serverData?.map) return true;
   if (p.serverData?.hostName != c.serverData?.hostName) return true;
   if (p.mapInfo != c.mapInfo) return true;
 
   // 热身状态影响卡片外边框（RGB跑马灯），所以当热身状态发生“切换”时需要重建外层
-  final pWarmingUp = p.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
-      p.mapRuntime, fetchedAt: p.mapRuntimeLastFetched, mapName: p.serverData?.map, hasError: p.mapRuntimeError);
-  final cWarmingUp = c.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
-      c.mapRuntime, fetchedAt: c.mapRuntimeLastFetched, mapName: c.serverData?.map, hasError: c.mapRuntimeError);
+  final pWarmingUp = p.serverItem.isCustom
+      ? false
+      : MapRuntimeUtils.isWarmingUp(
+          p.mapRuntime,
+          fetchedAt: p.mapRuntimeLastFetched,
+          mapName: p.serverData?.map,
+          hasError: p.mapRuntimeError,
+        );
+  final cWarmingUp = c.serverItem.isCustom
+      ? false
+      : MapRuntimeUtils.isWarmingUp(
+          c.mapRuntime,
+          fetchedAt: c.mapRuntimeLastFetched,
+          mapName: c.serverData?.map,
+          hasError: c.mapRuntimeError,
+        );
   if (pWarmingUp != cWarmingUp) return true;
 
   return false;
 }
 
-ExtendedServerItem? _getServerByAddress(List<ExtendedServerItem> servers, String? address) {
+ExtendedServerItem? _getServerByAddress(
+  List<ExtendedServerItem> servers,
+  String? address,
+) {
   if (address == null) return null;
   for (final s in servers) {
-    if ((s.serverItem.address ?? s.serverItem.serverAddress) == address) return s;
+    if ((s.serverItem.address ?? s.serverItem.serverAddress) == address) {
+      return s;
+    }
   }
   return null;
 }
@@ -2623,9 +2646,11 @@ class _ServerCardItemContainerState extends State<_ServerCardItemContainer> {
   void didUpdateWidget(covariant _ServerCardItemContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 服务器身份改变（如分类切换复用 widget）时重置交错状态
-    final oldAddress = oldWidget.initialServer.serverItem.address ??
+    final oldAddress =
+        oldWidget.initialServer.serverItem.address ??
         oldWidget.initialServer.serverItem.serverAddress;
-    final newAddress = widget.initialServer.serverItem.address ??
+    final newAddress =
+        widget.initialServer.serverItem.address ??
         widget.initialServer.serverItem.serverAddress;
     if (oldAddress != newAddress) {
       _scheduleStaggeredRender();
@@ -2643,8 +2668,10 @@ class _ServerCardItemContainerState extends State<_ServerCardItemContainer> {
     _isReadyToRender = false;
     _hasSeenSkeleton = false;
     _staggerTimer?.cancel();
-    final delayMs =
-        (widget.index * _kStaggerIntervalMs).clamp(0, _kStaggerMaxDelayMs);
+    final delayMs = (widget.index * _kStaggerIntervalMs).clamp(
+      0,
+      _kStaggerMaxDelayMs,
+    );
     if (delayMs == 0) {
       _isReadyToRender = true;
       return;
@@ -2656,7 +2683,8 @@ class _ServerCardItemContainerState extends State<_ServerCardItemContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final address = widget.initialServer.serverItem.address ??
+    final address =
+        widget.initialServer.serverItem.address ??
         widget.initialServer.serverItem.serverAddress;
 
     return BlocBuilder<ServerBloc, ServerState>(
@@ -2692,8 +2720,7 @@ class _ServerCardItemContainerState extends State<_ServerCardItemContainer> {
             isNowSkeleton || (_hasSeenSkeleton && !_isReadyToRender);
 
         final String? loadingText =
-            showSkeleton &&
-                currentState.loadingPhase == LoadingPhase.loadingA2S
+            showSkeleton && currentState.loadingPhase == LoadingPhase.loadingA2S
             ? '正在获取服务器数据...'
             : null;
 
@@ -2772,9 +2799,11 @@ class _DraggableServerCardItemContainerState
   @override
   void didUpdateWidget(covariant _DraggableServerCardItemContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldAddress = oldWidget.initialServer.serverItem.address ??
+    final oldAddress =
+        oldWidget.initialServer.serverItem.address ??
         oldWidget.initialServer.serverItem.serverAddress;
-    final newAddress = widget.initialServer.serverItem.address ??
+    final newAddress =
+        widget.initialServer.serverItem.address ??
         widget.initialServer.serverItem.serverAddress;
     if (oldAddress != newAddress) {
       _scheduleStaggeredRender();
@@ -2791,8 +2820,10 @@ class _DraggableServerCardItemContainerState
     _isReadyToRender = false;
     _hasSeenSkeleton = false;
     _staggerTimer?.cancel();
-    final delayMs =
-        (widget.index * _kStaggerIntervalMs).clamp(0, _kStaggerMaxDelayMs);
+    final delayMs = (widget.index * _kStaggerIntervalMs).clamp(
+      0,
+      _kStaggerMaxDelayMs,
+    );
     if (delayMs == 0) {
       _isReadyToRender = true;
       return;
@@ -2804,7 +2835,8 @@ class _DraggableServerCardItemContainerState
 
   @override
   Widget build(BuildContext context) {
-    final address = widget.initialServer.serverItem.address ??
+    final address =
+        widget.initialServer.serverItem.address ??
         widget.initialServer.serverItem.serverAddress;
 
     return BlocBuilder<ServerBloc, ServerState>(
@@ -2831,8 +2863,7 @@ class _DraggableServerCardItemContainerState
                 categoryName: currentState.selectedCategory?.modelName,
                 onTap: () => widget.onShowDetails(server),
                 onDelete: () {
-                  final categoryName =
-                      currentState.selectedCategory?.modelName;
+                  final categoryName = currentState.selectedCategory?.modelName;
                   if (categoryName != null && address != null) {
                     context.read<ServerBloc>().add(
                       ServerDeleteServer(

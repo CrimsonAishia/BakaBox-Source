@@ -541,8 +541,8 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         onTapLink: (text, href, title) {
                           if (href != null) _launchUrl(href);
                         },
-                        imageBuilder: (uri, title, alt) {
-                          final url = uri.toString();
+                        sizedImageBuilder: (config) {
+                          final url = config.uri.toString();
                           final imageUrls = _extractImageUrls(detail.content);
                           final index = imageUrls.indexOf(url);
                           return _HoverableMarkdownImage(
@@ -550,7 +550,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             onTap: () {
                               ImageViewerDialog.show(
                                 context,
-                                imageUrls: imageUrls.isEmpty ? [url] : imageUrls,
+                                imageUrls: imageUrls.isEmpty
+                                    ? [url]
+                                    : imageUrls,
                                 initialIndex: index >= 0 ? index : 0,
                               );
                             },
@@ -818,10 +820,7 @@ class _HoverableMarkdownImage extends StatefulWidget {
   final String imageUrl;
   final VoidCallback onTap;
 
-  const _HoverableMarkdownImage({
-    required this.imageUrl,
-    required this.onTap,
-  });
+  const _HoverableMarkdownImage({required this.imageUrl, required this.onTap});
 
   @override
   State<_HoverableMarkdownImage> createState() =>
@@ -856,11 +855,7 @@ class _HoverableMarkdownImageState extends State<_HoverableMarkdownImage> {
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.4),
                     child: const Center(
-                      child: Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 32,
-                      ),
+                      child: Icon(Icons.zoom_in, color: Colors.white, size: 32),
                     ),
                   ),
                 ),

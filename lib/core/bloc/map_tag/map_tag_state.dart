@@ -167,7 +167,9 @@ class MapTagState extends Equatable {
       cancelSuccess: cancelSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
-      serverAddress: clearServerAddress ? null : (serverAddress ?? this.serverAddress),
+      serverAddress: clearServerAddress
+          ? null
+          : (serverAddress ?? this.serverAddress),
       mapServers: mapServers ?? this.mapServers,
       isLoadingServers: isLoadingServers ?? this.isLoadingServers,
     );

@@ -313,7 +313,8 @@ class _PathSelectorState extends State<_PathSelector> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasPath = widget.path?.isNotEmpty == true;
-    final hasError = widget.errorMessage != null && widget.errorMessage!.isNotEmpty;
+    final hasError =
+        widget.errorMessage != null && widget.errorMessage!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,16 +336,24 @@ class _PathSelectorState extends State<_PathSelector> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: isDark 
-                        ? (_isHovering ? AppColors.slate700 : AppColors.slate800) 
-                        : (_isHovering ? AppColors.slate100 : AppColors.slate50),
+                    color: isDark
+                        ? (_isHovering
+                              ? AppColors.slate700
+                              : AppColors.slate800)
+                        : (_isHovering
+                              ? AppColors.slate100
+                              : AppColors.slate50),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: hasError
                           ? Colors.red.withValues(alpha: 0.5)
-                          : (isDark 
-                              ? (_isHovering ? AppColors.slate500 : AppColors.slate600) 
-                              : (_isHovering ? AppColors.slate300 : AppColors.slate200)),
+                          : (isDark
+                                ? (_isHovering
+                                      ? AppColors.slate500
+                                      : AppColors.slate600)
+                                : (_isHovering
+                                      ? AppColors.slate300
+                                      : AppColors.slate200)),
                     ),
                   ),
                   child: Tooltip(

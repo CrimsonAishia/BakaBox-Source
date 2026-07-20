@@ -270,7 +270,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
     return AnimatedBuilder(
       animation: Listenable.merge([
-        if (_warmupMarchingAntsController != null) _warmupMarchingAntsController,
+        if (_warmupMarchingAntsController != null)
+          _warmupMarchingAntsController,
       ]),
       builder: (context, child) {
         Color borderColor;
@@ -315,41 +316,41 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       child: RepaintBoundary(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6), // 内部圆角略小，配合边框
-        child: SizedBox(
-          height: 132, // 136 - 2*2 边框
-          child: Stack(
-            children: [
-              // 静态背景部分，套上 RepaintBoundary，避免被前方的数值更新影响
-              Positioned.fill(
-                child: RepaintBoundary(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _buildMapBackground(),
-                      _buildGradientOverlay(),
-                    ],
+          child: SizedBox(
+            height: 132, // 136 - 2*2 边框
+            child: Stack(
+              children: [
+                // 静态背景部分，套上 RepaintBoundary，避免被前方的数值更新影响
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildMapBackground(),
+                        _buildGradientOverlay(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              // 边框效果优先级：挤服 > 热身
-              // 挤服跑马灯边框（最高优先级）
-              if (isQueueing && _marchingAntsController != null)
-                _buildMarchingAntsBorder()
-              // 热身跑马灯边框（挤服时不显示）
-              else if (_isWarmingUp && _warmupMarchingAntsController != null)
-                _buildWarmupMarchingAntsBorder(),
-              // 刷新加载指示器
-              RepaintBoundary(child: _buildRefreshIndicator()),
-              // 内容，频繁变动的部分内部也有 RepaintBoundary
-              _buildContent(),
-              // 监控黄点
-              if (_isMonitoring) _buildMonitoringIndicator(),
-              // Hover 时的毛玻璃操作层
-              _buildHoverActionOverlay(),
-            ],
+                // 边框效果优先级：挤服 > 热身
+                // 挤服跑马灯边框（最高优先级）
+                if (isQueueing && _marchingAntsController != null)
+                  _buildMarchingAntsBorder()
+                // 热身跑马灯边框（挤服时不显示）
+                else if (_isWarmingUp && _warmupMarchingAntsController != null)
+                  _buildWarmupMarchingAntsBorder(),
+                // 刷新加载指示器
+                RepaintBoundary(child: _buildRefreshIndicator()),
+                // 内容，频繁变动的部分内部也有 RepaintBoundary
+                _buildContent(),
+                // 监控黄点
+                if (_isMonitoring) _buildMonitoringIndicator(),
+                // Hover 时的毛玻璃操作层
+                _buildHoverActionOverlay(),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -390,7 +391,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// 监控中角标（卡片右上角倒三角）
   Widget _buildMonitoringIndicator() {
-    return const Positioned(top: 0, right: 0, child: ServerCardMonitoringBadge());
+    return const Positioned(
+      top: 0,
+      right: 0,
+      child: ServerCardMonitoringBadge(),
+    );
   }
 
   Widget _buildMapBackground() {
@@ -411,9 +416,12 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   Widget _buildRefreshIndicator() {
     return BlocBuilder<ServerBloc, ServerState>(
       buildWhen: (previous, current) {
-        final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+        final address =
+            widget.server.serverItem.address ??
+            widget.server.serverItem.serverAddress;
         if (address == null) return false;
-        return previous.isMapRefreshing(address) != current.isMapRefreshing(address);
+        return previous.isMapRefreshing(address) !=
+            current.isMapRefreshing(address);
       },
       builder: (context, state) {
         final address =
@@ -696,7 +704,13 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   Widget _buildPingBadge(String address, int? initialPing) {
     return BlocSelector<ServerBloc, ServerState, int?>(
       selector: (state) {
-        final s = state.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
+        final s = state.servers
+            .where(
+              (s) =>
+                  (s.serverItem.address ?? s.serverItem.serverAddress) ==
+                  address,
+            )
+            .firstOrNull;
         return s?.pingInfo?.ping;
       },
       builder: (context, currentPing) {
@@ -1374,18 +1388,32 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   Widget _buildRightContent() {
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
-    
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
+
     // 使用 BlocBuilder 和 buildWhen 实现局部渲染，仅当此服务器的相关数值发生变化时重建右侧
     return BlocBuilder<ServerBloc, ServerState>(
       buildWhen: (previous, current) {
         if (address == null) return false;
-        final p = previous.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
-        final c = current.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
-        
+        final p = previous.servers
+            .where(
+              (s) =>
+                  (s.serverItem.address ?? s.serverItem.serverAddress) ==
+                  address,
+            )
+            .firstOrNull;
+        final c = current.servers
+            .where(
+              (s) =>
+                  (s.serverItem.address ?? s.serverItem.serverAddress) ==
+                  address,
+            )
+            .firstOrNull;
+
         if (identical(p, c)) return false;
         if (p == null || c == null) return true;
-        
+
         if (p.serverData?.players != c.serverData?.players) return true;
         if (p.serverData?.maxPlayers != c.serverData?.maxPlayers) return true;
         if (p.hasError != c.hasError) return true;
@@ -1399,11 +1427,17 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         if (p.queueCount != c.queueCount) return true;
         if (p.warmupCount != c.warmupCount) return true;
         if (p.teamScores != c.teamScores) return true;
-        
+
         return false;
       },
       builder: (context, state) {
-        final currentServer = state.servers.where((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address).firstOrNull;
+        final currentServer = state.servers
+            .where(
+              (s) =>
+                  (s.serverItem.address ?? s.serverItem.serverAddress) ==
+                  address,
+            )
+            .firstOrNull;
         final server = currentServer ?? widget.server;
         final data = server.serverData;
         final players = data?.players ?? 0;
@@ -1540,7 +1574,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildPlayerCount(ExtendedServerItem server, int players, int maxPlayers) {
+  Widget _buildPlayerCount(
+    ExtendedServerItem server,
+    int players,
+    int maxPlayers,
+  ) {
     Color primaryColor;
 
     if (players >= maxPlayers && maxPlayers > 0) {
@@ -1661,13 +1699,15 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
     final isLoading = server.mapRuntimeFetching;
     final mapName = server.serverData?.map;
-    
-    final isWarmingUp = server.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
-      server.mapRuntime,
-      fetchedAt: server.mapRuntimeLastFetched,
-      mapName: mapName,
-      hasError: server.mapRuntimeError,
-    );
+
+    final isWarmingUp = server.serverItem.isCustom
+        ? false
+        : MapRuntimeUtils.isWarmingUp(
+            server.mapRuntime,
+            fetchedAt: server.mapRuntimeLastFetched,
+            mapName: mapName,
+            hasError: server.mapRuntimeError,
+          );
 
     Color iconColor;
     Color textColor;

@@ -27,7 +27,8 @@ class HoverTagPopover extends StatefulWidget {
 }
 
 class _HoverTagPopoverState extends State<HoverTagPopover> {
-  final OverlayPortalController _tagPortalController = OverlayPortalController();
+  final OverlayPortalController _tagPortalController =
+      OverlayPortalController();
   final LayerLink _cardLink = LayerLink();
   Timer? _tagPopoverShowTimer;
   Timer? _tagPopoverHideTimer;
@@ -95,22 +96,25 @@ class _HoverTagPopoverState extends State<HoverTagPopover> {
   Widget _buildTagPopoverFollower(BuildContext overlayContext) {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return const SizedBox.shrink();
-    
+
     // 获取 Overlay 的真实渲染区域（防止应用存在侧边栏等嵌套布局导致 MediaQuery 宽度不准）
     final overlayState = Overlay.maybeOf(overlayContext);
     final overlayBox = overlayState?.context.findRenderObject() as RenderBox?;
-    
+
     // 坐标转换为相对于 Overlay 的真实坐标，而不是全屏幕坐标
     final topLeft = box.localToGlobal(Offset.zero, ancestor: overlayBox);
     final targetCenterY = topLeft.dy + box.size.height / 2;
-    
-    final overlayWidth = overlayBox?.size.width ?? MediaQuery.of(overlayContext).size.width;
-    final overlayHeight = overlayBox?.size.height ?? MediaQuery.of(overlayContext).size.height;
-    
+
+    final overlayWidth =
+        overlayBox?.size.width ?? MediaQuery.of(overlayContext).size.width;
+    final overlayHeight =
+        overlayBox?.size.height ?? MediaQuery.of(overlayContext).size.height;
+
     final spaceRight = overlayWidth - (topLeft.dx + box.size.width);
     final spaceLeft = topLeft.dx;
 
-    const requiredSpace = _kPopoverMinWidth + _kPopoverGap + _kPopoverScreenMargin;
+    const requiredSpace =
+        _kPopoverMinWidth + _kPopoverGap + _kPopoverScreenMargin;
     bool showOnRight;
     if (spaceRight >= requiredSpace) {
       showOnRight = true;
@@ -206,7 +210,8 @@ class _HoverTagPopoverState extends State<HoverTagPopover> {
       } else if (t.isDifficulty == true) {
         if (t.difficultyType == 'difficulty') {
           difficultyTags.add(t);
-        } else if (t.difficultyType == 'tier' || t.difficultyType == 'tier_combined') {
+        } else if (t.difficultyType == 'tier' ||
+            t.difficultyType == 'tier_combined') {
           tierTags.add(t);
         } else {
           otherTags.add(t);
@@ -222,11 +227,15 @@ class _HoverTagPopoverState extends State<HoverTagPopover> {
       children: [
         if (officialTags.isNotEmpty) ...[
           _buildPopoverTagSection('官方标签', officialTags),
-          if (difficultyTags.isNotEmpty || tierTags.isNotEmpty || otherTags.isNotEmpty) const SizedBox(height: 12),
+          if (difficultyTags.isNotEmpty ||
+              tierTags.isNotEmpty ||
+              otherTags.isNotEmpty)
+            const SizedBox(height: 12),
         ],
         if (difficultyTags.isNotEmpty) ...[
           _buildPopoverTagSection('难度标签', difficultyTags),
-          if (tierTags.isNotEmpty || otherTags.isNotEmpty) const SizedBox(height: 12),
+          if (tierTags.isNotEmpty || otherTags.isNotEmpty)
+            const SizedBox(height: 12),
         ],
         if (tierTags.isNotEmpty) ...[
           _buildPopoverTagSection('Tier 标签', tierTags),
@@ -266,7 +275,9 @@ class _HoverTagPopoverState extends State<HoverTagPopover> {
         TightWrap(
           spacing: 6,
           runSpacing: 6,
-          children: sectionTags.map((t) => ServerCardTagChip(tag: t, showPrefix: true)).toList(),
+          children: sectionTags
+              .map((t) => ServerCardTagChip(tag: t, showPrefix: true))
+              .toList(),
         ),
       ],
     );
@@ -278,7 +289,8 @@ class _HoverTagPopoverState extends State<HoverTagPopover> {
       link: _cardLink,
       child: OverlayPortal(
         controller: _tagPortalController,
-        overlayChildBuilder: (overlayContext) => _buildTagPopoverFollower(overlayContext),
+        overlayChildBuilder: (overlayContext) =>
+            _buildTagPopoverFollower(overlayContext),
         child: widget.child,
       ),
     );
@@ -307,7 +319,10 @@ class _PanelBoundsShifter extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, _RenderPanelBoundsShifter renderObject) {
+  void updateRenderObject(
+    BuildContext context,
+    _RenderPanelBoundsShifter renderObject,
+  ) {
     renderObject
       ..targetCenterY = targetCenterY
       ..screenHeight = screenHeight
@@ -325,10 +340,10 @@ class _RenderPanelBoundsShifter extends RenderShiftedBox {
     required double targetCenterY,
     required double screenHeight,
     required double margin,
-  })  : _targetCenterY = targetCenterY,
-        _screenHeight = screenHeight,
-        _margin = margin,
-        super(child);
+  }) : _targetCenterY = targetCenterY,
+       _screenHeight = screenHeight,
+       _margin = margin,
+       super(child);
 
   set targetCenterY(double value) {
     if (_targetCenterY != value) {
@@ -365,7 +380,7 @@ class _RenderPanelBoundsShifter extends RenderShiftedBox {
       if (actualTopGlobal + size.height > _screenHeight - _margin) {
         actualTopGlobal = _screenHeight - _margin - size.height;
       }
-      
+
       // 2. 如果超出顶部，则向下推（顶部优先级更高，确保即使面板比屏幕还高，顶部也不被截断）
       if (actualTopGlobal < _margin) {
         actualTopGlobal = _margin;

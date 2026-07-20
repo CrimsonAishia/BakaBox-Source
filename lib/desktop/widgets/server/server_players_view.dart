@@ -34,7 +34,6 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
   bool _canScrollUp = false;
   bool _canScrollDown = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -64,7 +63,6 @@ class _ServerPlayersViewState extends State<ServerPlayersView> {
       });
     }
   }
-
 
   Future<void> _fetchPlayerList() async {
     if (!mounted) return;

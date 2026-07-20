@@ -46,7 +46,10 @@ class SteamUserService {
     if (!Platform.isWindows) return null;
 
     try {
-      final key = Registry.openPath(RegistryHive.currentUser, path: r'Software\Valve\Steam');
+      final key = Registry.openPath(
+        RegistryHive.currentUser,
+        path: r'Software\Valve\Steam',
+      );
       final steamPath = key.getValueAsString('SteamPath');
       key.close();
       if (steamPath != null && steamPath.isNotEmpty) {
@@ -65,7 +68,10 @@ class SteamUserService {
     try {
       int? activeUser;
       try {
-        final key = Registry.openPath(RegistryHive.currentUser, path: r'Software\Valve\Steam\ActiveProcess');
+        final key = Registry.openPath(
+          RegistryHive.currentUser,
+          path: r'Software\Valve\Steam\ActiveProcess',
+        );
         activeUser = key.getValueAsInt('ActiveUser');
         key.close();
       } catch (e) {
@@ -112,7 +118,10 @@ class SteamUserService {
     try {
       int? activeUser;
       try {
-        final key = Registry.openPath(RegistryHive.currentUser, path: r'Software\Valve\Steam\ActiveProcess');
+        final key = Registry.openPath(
+          RegistryHive.currentUser,
+          path: r'Software\Valve\Steam\ActiveProcess',
+        );
         activeUser = key.getValueAsInt('ActiveUser');
         key.close();
       } catch (e) {

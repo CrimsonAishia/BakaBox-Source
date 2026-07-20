@@ -134,29 +134,28 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     };
   }
 
-
   Widget _buildContent() {
     return switch (_currentView) {
       _IssueView.list => PageLayout(
-          title: _getTitle(),
-          child: _buildListView(),
-        ),
+        title: _getTitle(),
+        child: _buildListView(),
+      ),
       _IssueView.detail => _IssueDetailView(
-          issueId: _selectedIssueId!,
-          onBack: _navigateToList,
-          title: _getTitle(),
-        ),
+        issueId: _selectedIssueId!,
+        onBack: _navigateToList,
+        title: _getTitle(),
+      ),
       _IssueView.create => PageLayout(
-          title: _getTitle(),
+        title: _getTitle(),
+        onBack: _navigateToList,
+        child: _IssueCreateView(
           onBack: _navigateToList,
-          child: _IssueCreateView(
-            onBack: _navigateToList,
-            onCreated: (id) {
-              context.read<IssueBloc>().add(const IssueRefresh());
-              _navigateToDetail(id);
-            },
-          ),
+          onCreated: (id) {
+            context.read<IssueBloc>().add(const IssueRefresh());
+            _navigateToDetail(id);
+          },
         ),
+      ),
     };
   }
 
@@ -282,25 +281,43 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // 全部/我的 切换
-                          _buildViewSwitch(state.showMine, authState.isAuthenticated),
+                          _buildViewSwitch(
+                            state.showMine,
+                            authState.isAuthenticated,
+                          ),
                           const SizedBox(width: 12),
                           Container(
                             width: 1,
                             height: 24,
-                            color: isDark ? AppColors.slate700 : AppColors.gray200,
+                            color: isDark
+                                ? AppColors.slate700
+                                : AppColors.gray200,
                           ),
                           const SizedBox(width: 12),
                           // 类型筛选
                           _buildDropdown<String?>(
                             value: state.currentType,
                             options: [
-                              const _DropdownOption(null, '全部类型', icon: Icons.filter_list_rounded),
+                              const _DropdownOption(
+                                null,
+                                '全部类型',
+                                icon: Icons.filter_list_rounded,
+                              ),
                               _DropdownOption('bug', 'Bug', icon: MdiIcons.bug),
-                              _DropdownOption('feature', '建议', icon: MdiIcons.lightbulbOnOutline),
-                              _DropdownOption('question', '问题', icon: MdiIcons.helpCircleOutline),
+                              _DropdownOption(
+                                'feature',
+                                '建议',
+                                icon: MdiIcons.lightbulbOnOutline,
+                              ),
+                              _DropdownOption(
+                                'question',
+                                '问题',
+                                icon: MdiIcons.helpCircleOutline,
+                              ),
                             ],
-                            onChanged: (type) =>
-                                context.read<IssueBloc>().add(IssueFilterType(type)),
+                            onChanged: (type) => context.read<IssueBloc>().add(
+                              IssueFilterType(type),
+                            ),
                             defaultIcon: Icons.filter_list_rounded,
                           ),
                           const SizedBox(width: 8),
@@ -308,19 +325,45 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                           _buildDropdown<String>(
                             value: state.currentStatus,
                             options: [
-                              _DropdownOption('open', '开放', icon: MdiIcons.checkCircleOutline, color: const Color(0xFF16A34A)),
-                              _DropdownOption('closed', '已关闭', icon: MdiIcons.closeCircleOutline, color: AppColors.gray500),
-                              _DropdownOption('all', '全部状态', icon: MdiIcons.formatListBulleted, color: AppColors.gray500),
+                              _DropdownOption(
+                                'open',
+                                '开放',
+                                icon: MdiIcons.checkCircleOutline,
+                                color: const Color(0xFF16A34A),
+                              ),
+                              _DropdownOption(
+                                'closed',
+                                '已关闭',
+                                icon: MdiIcons.closeCircleOutline,
+                                color: AppColors.gray500,
+                              ),
+                              _DropdownOption(
+                                'all',
+                                '全部状态',
+                                icon: MdiIcons.formatListBulleted,
+                                color: AppColors.gray500,
+                              ),
                             ],
-                            onChanged: (v) => context.read<IssueBloc>().add(IssueFilterStatus(v)),
+                            onChanged: (v) => context.read<IssueBloc>().add(
+                              IssueFilterStatus(v),
+                            ),
                             defaultIcon: MdiIcons.checkCircleOutline,
                           ),
                           const SizedBox(width: 8),
                           // 排序
                           _buildDropdown<String>(
                             value: state.currentSort,
-                            options: _sortOptions.entries.map((e) => _DropdownOption(e.key, e.value, icon: Icons.sort_rounded)).toList(),
-                            onChanged: (v) => context.read<IssueBloc>().add(IssueSort(v)),
+                            options: _sortOptions.entries
+                                .map(
+                                  (e) => _DropdownOption(
+                                    e.key,
+                                    e.value,
+                                    icon: Icons.sort_rounded,
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) =>
+                                context.read<IssueBloc>().add(IssueSort(v)),
                             defaultIcon: Icons.sort_rounded,
                           ),
                         ],
@@ -352,12 +395,12 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     required IconData defaultIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final selectedOption = options.firstWhere(
-      (o) => o.value == value, 
+      (o) => o.value == value,
       orElse: () => options.first,
     );
-    
+
     return PopupMenuButton<T>(
       initialValue: value,
       onSelected: onChanged,
@@ -381,25 +424,29 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 Icon(
                   e.icon,
                   size: 14,
-                  color: isSelected 
-                    ? (e.color ?? AppColors.primary) 
-                    : (isDark ? Colors.white54 : AppColors.gray500),
+                  color: isSelected
+                      ? (e.color ?? AppColors.primary)
+                      : (isDark ? Colors.white54 : AppColors.gray500),
                 ),
                 const SizedBox(width: 8),
               ],
               Text(
                 e.label,
                 style: TextStyle(
-                  color: isSelected 
-                    ? (e.color ?? AppColors.primary) 
-                    : (isDark ? Colors.white70 : AppColors.gray700),
+                  color: isSelected
+                      ? (e.color ?? AppColors.primary)
+                      : (isDark ? Colors.white70 : AppColors.gray700),
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
               if (isSelected) ...[
                 const Spacer(),
-                Icon(Icons.check, size: 16, color: e.color ?? AppColors.primary),
+                Icon(
+                  Icons.check,
+                  size: 16,
+                  color: e.color ?? AppColors.primary,
+                ),
               ],
             ],
           ),
@@ -408,7 +455,9 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.slate700.withValues(alpha: 0.5) : Colors.white,
+          color: isDark
+              ? AppColors.slate700.withValues(alpha: 0.5)
+              : Colors.white,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isDark ? AppColors.slate600 : AppColors.gray200,
@@ -420,13 +469,17 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
             Icon(
               selectedOption.icon ?? defaultIcon,
               size: 14,
-              color: selectedOption.color ?? (isDark ? Colors.white54 : AppColors.gray500),
+              color:
+                  selectedOption.color ??
+                  (isDark ? Colors.white54 : AppColors.gray500),
             ),
             const SizedBox(width: 6),
             Text(
               selectedOption.label,
               style: TextStyle(
-                color: selectedOption.color ?? (isDark ? Colors.white70 : AppColors.gray700),
+                color:
+                    selectedOption.color ??
+                    (isDark ? Colors.white70 : AppColors.gray700),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -1286,7 +1339,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   int? _highlightedCommentId;
 
   bool _isLoadingMore = false;
-  
+
   bool _commentBarVisible = false;
   final GlobalKey _commentSectionKey = GlobalKey();
 
@@ -1307,18 +1360,18 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    
+
     // 提前 200px 触发加载
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       final bloc = context.read<IssueDetailBloc>();
-      if (!bloc.state.isLoadingComments && 
-          !bloc.state.isLoadingMoreComments && 
-          bloc.state.hasMoreComments && 
+      if (!bloc.state.isLoadingComments &&
+          !bloc.state.isLoadingMoreComments &&
+          bloc.state.hasMoreComments &&
           !bloc.state.hasLoadMoreError &&
           !_isLoadingMore) {
-        
         _isLoadingMore = true;
-        
+
         // 必须在下一帧执行，避免在 Layout 阶段修改状态导致 "Tried to build dirty widget in the wrong build scope"
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -1341,7 +1394,6 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     _scrollController.dispose();
     super.dispose();
   }
-
 
   void _setReplyTo(IssueComment comment) {
     setState(() {
@@ -1397,11 +1449,11 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           return const Center(child: CircularProgressIndicator());
         }
         if (state.issue == null) return _buildError(state.error);
-        
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _checkCommentBarVisibility();
         });
-        
+
         return _buildContent(state);
       },
     );
@@ -1507,7 +1559,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     final issue = state.issue!;
     final isAuthenticated = context.watch<AuthBloc>().state.isAuthenticated;
     final showComposer = issue.issueStatus.isOpen && isAuthenticated;
-    
+
     return Stack(
       children: [
         PageLayout(
@@ -1525,7 +1577,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   _buildIssueCard(issue, state),
                   const SizedBox(height: 20),
                   _buildCommentsSection(state),
-                  SizedBox(height: (showComposer && _commentBarVisible) ? 150 : 20),
+                  SizedBox(
+                    height: (showComposer && _commentBarVisible) ? 150 : 20,
+                  ),
                 ],
               ),
             ),
@@ -1899,7 +1953,13 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           if (state.isLoadingMoreComments)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
             ),
           if (state.hasLoadMoreError)
             Padding(
@@ -1909,7 +1969,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   onPressed: () {
                     if (_isLoadingMore) return;
                     _isLoadingMore = true;
-                    context.read<IssueDetailBloc>().add(IssueDetailLoadMoreComments(widget.issueId));
+                    context.read<IssueDetailBloc>().add(
+                      IssueDetailLoadMoreComments(widget.issueId),
+                    );
                     Future.delayed(const Duration(milliseconds: 200), () {
                       if (mounted) _isLoadingMore = false;
                     });
@@ -1917,7 +1979,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   icon: const Icon(Icons.refresh, size: 16),
                   label: const Text('加载失败，点击重试'),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDark ? const Color(0xFFFCA5A5) : AppColors.red600,
+                    foregroundColor: isDark
+                        ? const Color(0xFFFCA5A5)
+                        : AppColors.red600,
                   ),
                 ),
               ),
@@ -2043,7 +2107,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                         ),
                       ),
                       const Spacer(),
-                      if (isOpen && isAuthenticated) _buildReplyButton(comment, isDark),
+                      if (isOpen && isAuthenticated)
+                        _buildReplyButton(comment, isDark),
                     ],
                   ),
                   if (replyTarget != null) ...[
@@ -2180,8 +2245,6 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
       ),
     );
   }
-
-
 }
 
 /// Issue 创建视图（内嵌在 IssuesDesktop 中）
@@ -2203,7 +2266,6 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
   IssueType _selectedType = IssueType.bug;
   bool _isSubmitting = false;
   List<String> _imageUrls = [];
-
 
   // 实时验证状态
   String? _titleError;
@@ -2782,10 +2844,12 @@ class _IssueBottomCommentComposer extends StatefulWidget {
   });
 
   @override
-  State<_IssueBottomCommentComposer> createState() => _IssueBottomCommentComposerState();
+  State<_IssueBottomCommentComposer> createState() =>
+      _IssueBottomCommentComposerState();
 }
 
-class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer> {
+class _IssueBottomCommentComposerState
+    extends State<_IssueBottomCommentComposer> {
   final _commentController = quill.QuillController.basic();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   final FocusNode _focusNode = FocusNode();
@@ -2805,7 +2869,8 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
       _commentController.clear();
       _commentImageUrls = const [];
     }
-    if (widget.replyTarget != null && widget.replyTarget != oldWidget.replyTarget) {
+    if (widget.replyTarget != null &&
+        widget.replyTarget != oldWidget.replyTarget) {
       _expand();
     }
   }
@@ -2829,7 +2894,6 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
     final info = context.read<AuthBloc>().state.userInfo;
     return info?.username ?? '游客';
   }
-
 
   void _expand() {
     if (!_isLoggedIn()) {
@@ -2871,7 +2935,7 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
     }
     final content = QuillDeltaCodec.encode(_commentController.document);
     final target = widget.replyTarget;
-    
+
     final authState = context.read<AuthBloc>().state;
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
     context.read<IssueDetailBloc>().add(
@@ -2894,7 +2958,8 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
   @override
   Widget build(BuildContext context) {
     return BlocListener<IssueDetailBloc, IssueDetailState>(
-      listenWhen: (prev, curr) => prev.isSubmitting && !curr.isSubmitting && curr.error == null,
+      listenWhen: (prev, curr) =>
+          prev.isSubmitting && !curr.isSubmitting && curr.error == null,
       listener: (context, state) => _onPostingDone(),
       child: _buildContainer(context),
     );
@@ -2906,10 +2971,14 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.slate900.withValues(alpha: 0.96) : Colors.white.withValues(alpha: 0.97),
+          color: isDark
+              ? AppColors.slate900.withValues(alpha: 0.96)
+              : Colors.white.withValues(alpha: 0.97),
           border: Border(
             top: BorderSide(
-              color: isDark ? Colors.white.withValues(alpha: 0.06) : AppColors.gray200,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : AppColors.gray200,
               width: 1,
             ),
           ),
@@ -2937,7 +3006,7 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
     final hint = widget.replyTarget != null
         ? '回复 @${widget.replyTarget!.authorName}...'
         : (isLoggedIn ? '写下你的评论...' : '登录后参与评论');
-    
+
     return Padding(
       key: const ValueKey('collapsed'),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -2947,8 +3016,15 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
           CircleAvatar(
             radius: 18,
             backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
-            backgroundImage: isLoggedIn && _avatarUrl() != null ? NetworkImage(_avatarUrl()!) : null,
-            child: (!isLoggedIn || _avatarUrl() == null) ? Text(_displayName()[0].toUpperCase(), style: const TextStyle(fontSize: 14)) : null,
+            backgroundImage: isLoggedIn && _avatarUrl() != null
+                ? NetworkImage(_avatarUrl()!)
+                : null,
+            child: (!isLoggedIn || _avatarUrl() == null)
+                ? Text(
+                    _displayName()[0].toUpperCase(),
+                    style: const TextStyle(fontSize: 14),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2963,28 +3039,44 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.slate800 : AppColors.gray100,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: isDark ? AppColors.slate700 : AppColors.gray200),
+                    border: Border.all(
+                      color: isDark ? AppColors.slate700 : AppColors.gray200,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.edit_outlined, size: 16, color: isDark ? Colors.white38 : AppColors.gray400),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 16,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           hint,
-                          style: TextStyle(color: isDark ? Colors.white54 : AppColors.gray500, fontSize: 14),
+                          style: TextStyle(
+                            color: isDark ? Colors.white54 : AppColors.gray500,
+                            fontSize: 14,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (widget.replyTarget != null && widget.onCancelReply != null)
+                      if (widget.replyTarget != null &&
+                          widget.onCancelReply != null)
                         IconButton(
                           tooltip: '取消回复',
                           padding: EdgeInsets.zero,
                           iconSize: 16,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
                           onPressed: widget.onCancelReply,
-                          icon: Icon(Icons.close, color: isDark ? Colors.white38 : AppColors.gray400),
+                          icon: Icon(
+                            Icons.close,
+                            color: isDark ? Colors.white38 : AppColors.gray400,
+                          ),
                         ),
                     ],
                   ),
@@ -2999,11 +3091,16 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               minimumSize: const Size(0, 44),
             ),
-            child: Text(widget.replyTarget != null ? '回复' : '发送', style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(
+              widget.replyTarget != null ? '回复' : '发送',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -3025,9 +3122,18 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
-                backgroundImage: _avatarUrl() != null ? NetworkImage(_avatarUrl()!) : null,
-                child: _avatarUrl() == null ? Text(_displayName()[0].toUpperCase(), style: const TextStyle(fontSize: 14)) : null,
+                backgroundColor: isDark
+                    ? AppColors.slate700
+                    : AppColors.gray200,
+                backgroundImage: _avatarUrl() != null
+                    ? NetworkImage(_avatarUrl()!)
+                    : null,
+                child: _avatarUrl() == null
+                    ? Text(
+                        _displayName()[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 14),
+                      )
+                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -3035,7 +3141,10 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
                     ? Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(999),
@@ -3043,16 +3152,28 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.reply_rounded, size: 14, color: AppColors.primary),
+                                const Icon(
+                                  Icons.reply_rounded,
+                                  size: 14,
+                                  color: AppColors.primary,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   '回复 @${widget.replyTarget!.authorName}',
-                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
                                 GestureDetector(
                                   onTap: widget.onCancelReply,
-                                  child: const Icon(Icons.close, size: 14, color: AppColors.primary),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
                               ],
                             ),
@@ -3061,13 +3182,19 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
                       )
                     : Text(
                         _displayName(),
-                        style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.gray800),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : AppColors.gray800,
+                        ),
                       ),
               ),
               IconButton(
                 tooltip: '收起',
                 onPressed: _handleCancel,
-                icon: Icon(Icons.expand_more, color: isDark ? Colors.white54 : AppColors.gray500),
+                icon: Icon(
+                  Icons.expand_more,
+                  color: isDark ? Colors.white54 : AppColors.gray500,
+                ),
               ),
             ],
           ),
@@ -3077,7 +3204,9 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
             child: RichTextEditor(
               key: _commentEditorKey,
               controller: _commentController,
-              hintText: widget.replyTarget != null ? '回复 @${widget.replyTarget!.authorName}...' : '写下你的评论...',
+              hintText: widget.replyTarget != null
+                  ? '回复 @${widget.replyTarget!.authorName}...'
+                  : '写下你的评论...',
               compactMode: false,
               maxLength: 500,
               maxImages: 5,
@@ -3093,12 +3222,15 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
               const Spacer(),
               TextButton(
                 onPressed: _handleCancel,
-                style: TextButton.styleFrom(foregroundColor: isDark ? Colors.white54 : AppColors.gray500),
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
+                ),
                 child: const Text('取消'),
               ),
               const SizedBox(width: 8),
               BlocBuilder<IssueDetailBloc, IssueDetailState>(
-                buildWhen: (prev, curr) => prev.isSubmitting != curr.isSubmitting,
+                buildWhen: (prev, curr) =>
+                    prev.isSubmitting != curr.isSubmitting,
                 builder: (context, state) {
                   final loading = state.isSubmitting;
                   return ElevatedButton(
@@ -3107,13 +3239,28 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       minimumSize: const Size(0, 44),
                     ),
-                    child: loading 
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(widget.replyTarget != null ? '回复' : '发送', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    child: loading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            widget.replyTarget != null ? '回复' : '发送',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                   );
                 },
               ),
@@ -3123,7 +3270,4 @@ class _IssueBottomCommentComposerState extends State<_IssueBottomCommentComposer
       ),
     );
   }
-
-
 }
-

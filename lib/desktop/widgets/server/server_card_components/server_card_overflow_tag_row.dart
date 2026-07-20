@@ -94,7 +94,9 @@ class _ServerCardOverflowTagRowState extends State<ServerCardOverflowTagRow> {
     double total = 0;
     for (int i = 0; i < widget.tags.length; i++) {
       final tag = widget.tags[i];
-      final displayName = (widget.showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name;
+      final displayName = (widget.showPrefix && tag.isOfficial == true)
+          ? '官:${tag.name}'
+          : tag.name;
       total += _measureTagWidth(displayName);
       if (i < widget.tags.length - 1) total += _tagSpacing;
     }
@@ -109,7 +111,9 @@ class _ServerCardOverflowTagRowState extends State<ServerCardOverflowTagRow> {
     int visible = 0;
     for (int i = 0; i < widget.tags.length; i++) {
       final tag = widget.tags[i];
-      final displayName = (widget.showPrefix && tag.isOfficial == true) ? '官:${tag.name}' : tag.name;
+      final displayName = (widget.showPrefix && tag.isOfficial == true)
+          ? '官:${tag.name}'
+          : tag.name;
       final tagWidth = _measureTagWidth(displayName);
       final addition = (i == 0 ? 0 : _tagSpacing) + tagWidth;
       if (used + addition <= visibleArea) {

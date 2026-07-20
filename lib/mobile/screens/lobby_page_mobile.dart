@@ -149,7 +149,9 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
     // 排队中：无论后台多久都立即确认状态（ticket 30 秒未轮询会过期）
     if (_lobbyBloc.state.isQueueing) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbyPageMobile] 从后台恢复，排队中，立即确认排队状态');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyPageMobile] 从后台恢复，排队中，立即确认排队状态');
+      }
       _lobbyBloc.add(const LobbyAppResumed());
       return;
     }

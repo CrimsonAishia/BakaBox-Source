@@ -16,10 +16,7 @@ class TightWrap extends MultiChildRenderObjectWidget {
 
   @override
   RenderTightWrap createRenderObject(BuildContext context) {
-    return RenderTightWrap(
-      spacing: spacing,
-      runSpacing: runSpacing,
-    );
+    return RenderTightWrap(spacing: spacing, runSpacing: runSpacing);
   }
 
   @override
@@ -43,8 +40,8 @@ class RenderTightWrap extends RenderBox
     List<RenderBox>? children,
     double spacing = 0.0,
     double runSpacing = 0.0,
-  })  : _spacing = spacing,
-        _runSpacing = runSpacing {
+  }) : _spacing = spacing,
+       _runSpacing = runSpacing {
     addAll(children);
   }
 
@@ -76,7 +73,9 @@ class RenderTightWrap extends RenderBox
       return;
     }
 
-    final BoxConstraints childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
+    final BoxConstraints childConstraints = BoxConstraints(
+      maxWidth: constraints.maxWidth,
+    );
 
     // 1. 测量所有子组件并收集到一个未放置列表中
     final List<RenderBox> unplacedChildren = [];
@@ -84,7 +83,8 @@ class RenderTightWrap extends RenderBox
     while (child != null) {
       child.layout(childConstraints, parentUsesSize: true);
       unplacedChildren.add(child);
-      final TightWrapParentData childParentData = child.parentData! as TightWrapParentData;
+      final TightWrapParentData childParentData =
+          child.parentData! as TightWrapParentData;
       child = childParentData.nextSibling;
     }
 
@@ -101,17 +101,23 @@ class RenderTightWrap extends RenderBox
       for (int i = 0; i < unplacedChildren.length; i++) {
         final candidate = unplacedChildren[i];
         final double childWidth = candidate.size.width;
-        
+
         // 如果当前行是空的，必须放一个（哪怕超出 maxWidth）
         // 如果当前行不是空的，检查剩余空间是否足够 (考虑 spacing)
         final bool isRowEmpty = !placedAnyInRow;
-        final double requiredWidth = isRowEmpty ? childWidth : (childWidth + _spacing);
+        final double requiredWidth = isRowEmpty
+            ? childWidth
+            : (childWidth + _spacing);
 
         if (isRowEmpty || currentX + requiredWidth <= constraints.maxWidth) {
           // 放在当前行
-          final TightWrapParentData candidateParentData = candidate.parentData! as TightWrapParentData;
-          candidateParentData.offset = Offset(currentX + (isRowEmpty ? 0 : _spacing), currentY);
-          
+          final TightWrapParentData candidateParentData =
+              candidate.parentData! as TightWrapParentData;
+          candidateParentData.offset = Offset(
+            currentX + (isRowEmpty ? 0 : _spacing),
+            currentY,
+          );
+
           currentX += requiredWidth;
           if (candidate.size.height > maxRowHeight) {
             maxRowHeight = candidate.size.height;
@@ -119,7 +125,7 @@ class RenderTightWrap extends RenderBox
           if (currentX > maxTotalWidth) {
             maxTotalWidth = currentX;
           }
-          
+
           placedAnyInRow = true;
           unplacedChildren.removeAt(i);
           i--; // 因为移除了元素，索引回退

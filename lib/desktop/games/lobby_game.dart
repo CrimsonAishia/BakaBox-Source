@@ -1207,13 +1207,17 @@ class BackgroundComponent extends PositionComponent
       url,
     );
     if (cachedImage != null) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[BackgroundComponent] 从本地缓存加载背景: $url');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[BackgroundComponent] 从本地缓存加载背景: $url');
+      }
       return cachedImage;
     }
 
     // 本地没有，尝试网络下载
     if (_disposed) return null;
-    if (LogService.enableLobbyDebugLog) LogService.d('[BackgroundComponent] 本地缓存未命中，下载背景: $url');
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[BackgroundComponent] 本地缓存未命中，下载背景: $url');
+    }
     return _loadNetworkImage(url);
   }
 

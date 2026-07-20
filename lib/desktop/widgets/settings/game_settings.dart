@@ -568,21 +568,20 @@ class _HoverablePathBoxState extends State<_HoverablePathBox> {
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: widget.isDark 
-              ? (_isHovering ? AppColors.slate700 : AppColors.slate800) 
+          color: widget.isDark
+              ? (_isHovering ? AppColors.slate700 : AppColors.slate800)
               : (_isHovering ? AppColors.slate100 : AppColors.slate50),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: widget.hasError
                 ? Colors.red.withValues(alpha: 0.5)
-                : (widget.isDark 
-                    ? (_isHovering ? AppColors.slate500 : AppColors.slate600) 
-                    : (_isHovering ? AppColors.slate300 : AppColors.slate200)),
+                : (widget.isDark
+                      ? (_isHovering ? AppColors.slate500 : AppColors.slate600)
+                      : (_isHovering
+                            ? AppColors.slate300
+                            : AppColors.slate200)),
           ),
         ),
         child: Tooltip(

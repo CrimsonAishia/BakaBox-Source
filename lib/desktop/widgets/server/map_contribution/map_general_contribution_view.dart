@@ -29,14 +29,16 @@ class MapGeneralContributionView extends StatefulWidget {
   });
 
   @override
-  State<MapGeneralContributionView> createState() => _MapGeneralContributionViewState();
+  State<MapGeneralContributionView> createState() =>
+      _MapGeneralContributionViewState();
 }
 
-class _MapGeneralContributionViewState extends State<MapGeneralContributionView> with ContributionAuthMixin {
+class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
+    with ContributionAuthMixin {
   final _nameController = TextEditingController();
   final _nameFocusNode = FocusNode();
   final _scrollController = ScrollController();
-  
+
   bool _canScrollUp = false;
   bool _canScrollDown = false;
   File? _selectedImage;
@@ -118,7 +120,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
             const SizedBox(width: 12),
             Text(
               '确认删除',
-              style: TextStyle(color: isDark ? Colors.white : AppColors.gray800),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.gray800,
+              ),
             ),
           ],
         ),
@@ -131,7 +135,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               '取消',
-              style: TextStyle(color: isDark ? Colors.white54 : AppColors.gray500),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : AppColors.gray500,
+              ),
             ),
           ),
           ElevatedButton(
@@ -204,23 +210,24 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               '取消',
-              style: TextStyle(color: isDark ? Colors.white54 : AppColors.gray500),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : AppColors.gray500,
+              ),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               final newName = editController.text.trim();
-              final validation = ContributionValidationUtils.validateName(newName);
+              final validation = ContributionValidationUtils.validateName(
+                newName,
+              );
               if (!validation.isValid) {
                 ToastUtils.showError(dialogContext, validation.errorMessage!);
                 return;
               }
               Navigator.of(dialogContext).pop();
               mapContributionBloc.add(
-                UpdateNameContribution(
-                  id: contribution.id,
-                  name: newName,
-                ),
+                UpdateNameContribution(id: contribution.id, name: newName),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -249,10 +256,14 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
 
           return AlertDialog(
             backgroundColor: isDark ? AppColors.slate800 : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             title: Text(
               '修改背景图片',
-              style: TextStyle(color: isDark ? Colors.white : AppColors.gray800),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.gray800,
+              ),
             ),
             content: SizedBox(
               width: 400,
@@ -302,7 +313,8 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                           type: FileType.image,
                           allowMultiple: false,
                         );
-                        if (result != null && result.files.single.path != null) {
+                        if (result != null &&
+                            result.files.single.path != null) {
                           final file = File(result.files.single.path!);
                           final sizeInMb = file.lengthSync() / (1024 * 1024);
                           if (sizeInMb > 5) {
@@ -334,7 +346,10 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(7),
-                                  child: Image.file(newSelectedImage!, fit: BoxFit.cover),
+                                  child: Image.file(
+                                    newSelectedImage!,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                                 Positioned(
                                   right: 4,
@@ -343,8 +358,14 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                                     color: Colors.black54,
                                     shape: const CircleBorder(),
                                     child: IconButton(
-                                      icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                      onPressed: () => setDialogState(() => newSelectedImage = null),
+                                      icon: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () => setDialogState(
+                                        () => newSelectedImage = null,
+                                      ),
                                       constraints: const BoxConstraints(),
                                       padding: const EdgeInsets.all(4),
                                     ),
@@ -355,13 +376,19 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(MdiIcons.imagePlus, size: 32, color: AppColors.primary),
+                                Icon(
+                                  MdiIcons.imagePlus,
+                                  size: 32,
+                                  color: AppColors.primary,
+                                ),
                                 const SizedBox(height: 8),
                                 Text(
                                   '点击选择新图片',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: isDark ? Colors.white70 : AppColors.gray500,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : AppColors.gray500,
                                   ),
                                 ),
                               ],
@@ -376,7 +403,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                 onPressed: () => Navigator.of(dialogContext).pop(),
                 child: Text(
                   '取消',
-                  style: TextStyle(color: isDark ? Colors.white54 : AppColors.gray500),
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : AppColors.gray500,
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -384,7 +413,10 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                     ? null
                     : () {
                         Navigator.of(dialogContext).pop();
-                        _uploadAndUpdateBackground(contribution.id, newSelectedImage!);
+                        _uploadAndUpdateBackground(
+                          contribution.id,
+                          newSelectedImage!,
+                        );
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -399,7 +431,10 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
     );
   }
 
-  Future<void> _uploadAndUpdateBackground(int contributionId, File imageFile) async {
+  Future<void> _uploadAndUpdateBackground(
+    int contributionId,
+    File imageFile,
+  ) async {
     final mapContributionBloc = context.read<MapContributionBloc>();
     setState(() {
       _isUploadingImage = true;
@@ -413,10 +448,7 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
       );
       if (!mounted) return;
       mapContributionBloc.add(
-        UpdateBackgroundContribution(
-          id: contributionId,
-          fileId: result.fileId,
-        ),
+        UpdateBackgroundContribution(id: contributionId, fileId: result.fileId),
       );
     } catch (e) {
       LogService.e('上传新图片失败', e);
@@ -433,10 +465,7 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
   }
 
   void _showFullImage(String imageRef) {
-    ImageViewerDialog.show(
-      context,
-      imageUrls: [imageRef],
-    );
+    ImageViewerDialog.show(context, imageUrls: [imageRef]);
   }
 
   Future<void> _pickImage() async {
@@ -528,7 +557,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
       listener: (context, state) {
         if (state.error != null) {
           ToastUtils.showError(context, state.error!);
-          context.read<MapContributionBloc>().add(const ClearContributionError());
+          context.read<MapContributionBloc>().add(
+            const ClearContributionError(),
+          );
         }
         if (state.submitSuccess) {
           ToastUtils.showSuccess(context, '提交成功，感谢您的贡献！');
@@ -557,7 +588,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                   if (isLoading)
                     const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     )
                   else if (isEmpty)
@@ -576,7 +609,10 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child: _buildScrollIndicator(isTop: false, isDark: isDark),
+                      child: _buildScrollIndicator(
+                        isTop: false,
+                        isDark: isDark,
+                      ),
                     ),
                 ],
               ),
@@ -683,7 +719,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
 
   Widget _buildScrollIndicator({required bool isTop, required bool isDark}) {
     final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final iconColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3);
+    final iconColor = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.3,
+    );
     return IgnorePointer(
       child: Container(
         height: 40,
@@ -702,7 +740,9 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
         child: Padding(
           padding: EdgeInsets.only(top: isTop ? 4 : 0, bottom: isTop ? 0 : 4),
           child: Icon(
-            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            isTop
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
             color: iconColor,
             size: 24,
           ),
@@ -834,10 +874,7 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
                       )
                     : Align(
                         alignment: Alignment.centerLeft,
-                        child: _buildImagePreview(
-                          contribution.content,
-                          isDark,
-                        ),
+                        child: _buildImagePreview(contribution.content, isDark),
                       ),
               ),
               const SizedBox(width: 12),
@@ -1150,10 +1187,7 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(5),
-                child: ContributionImage(
-                  imageRef: imageRef,
-                  fit: BoxFit.cover,
-                ),
+                child: ContributionImage(imageRef: imageRef, fit: BoxFit.cover),
               ),
             ),
             Positioned.fill(
@@ -1524,5 +1558,4 @@ class _MapGeneralContributionViewState extends State<MapGeneralContributionView>
       ),
     );
   }
-
 }

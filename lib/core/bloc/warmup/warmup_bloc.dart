@@ -235,7 +235,10 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
         // 获取地图信息
         MapData? mapInfo;
         try {
-          mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: serverAddress);
+          mapInfo = await _serverApi.getMapInfo(
+            sourceInfo.map,
+            address: serverAddress,
+          );
         } catch (e) {
           LogService.d('[WarmupBloc] 获取地图信息失败: $e');
         }

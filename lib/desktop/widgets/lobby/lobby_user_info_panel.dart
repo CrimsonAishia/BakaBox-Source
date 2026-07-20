@@ -396,9 +396,22 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
 
   Widget _buildContent() {
     final info = _userInfo!;
-    
-    final hasCs2 = info.cs2Gold.toInt() > 0 || info.cs2Point.toInt() > 0 || info.cs2SpentPoint.toInt() > 0 || info.onlineTimeDay.toInt() > 0 || info.onlineTimeTotal.toInt() > 0;
-    final hasPts = info.mgPts.toInt() > 0 || info.surfPts.toInt() > 0 || info.bhopPts.toInt() > 0 || info.kzPts.toInt() > 0 || info.mgPtsRank.toInt() > 0 || info.surfPtsRank.toInt() > 0 || info.bhopPtsRank.toInt() > 0 || info.kzPtsRank.toInt() > 0;
+
+    final hasCs2 =
+        info.cs2Gold.toInt() > 0 ||
+        info.cs2Point.toInt() > 0 ||
+        info.cs2SpentPoint.toInt() > 0 ||
+        info.onlineTimeDay.toInt() > 0 ||
+        info.onlineTimeTotal.toInt() > 0;
+    final hasPts =
+        info.mgPts.toInt() > 0 ||
+        info.surfPts.toInt() > 0 ||
+        info.bhopPts.toInt() > 0 ||
+        info.kzPts.toInt() > 0 ||
+        info.mgPtsRank.toInt() > 0 ||
+        info.surfPtsRank.toInt() > 0 ||
+        info.bhopPtsRank.toInt() > 0 ||
+        info.kzPtsRank.toInt() > 0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
@@ -407,26 +420,47 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
         children: [
           // CS2 游戏数据
           if (hasCs2) ...[
-            _buildSectionTitle('CS2 游戏数据', Image.asset('assets/icons/cs2_logo.png', width: 22, height: 22)),
+            _buildSectionTitle(
+              'CS2 游戏数据',
+              Image.asset('assets/icons/cs2_logo.png', width: 22, height: 22),
+            ),
             _buildSubTitle('综合数据'),
             _buildInfoCard([
-              if (info.cs2Gold.toInt() > 0) _InfoItem('金', _formatNumber(info.cs2Gold.toInt())),
-              if (info.cs2Point.toInt() > 0) _InfoItem('点', _formatNumber(info.cs2Point.toInt())),
-              if (info.cs2SpentPoint.toInt() > 0) _InfoItem('已消耗点', _formatNumber(info.cs2SpentPoint.toInt())),
-              if (info.onlineTimeDay.toInt() > 0) _InfoItem('今日在线', _formatDuration(info.onlineTimeDay.toInt())),
-              if (info.onlineTimeTotal.toInt() > 0) _InfoItem('累计在线', _formatDuration(info.onlineTimeTotal.toInt())),
+              if (info.cs2Gold.toInt() > 0)
+                _InfoItem('金', _formatNumber(info.cs2Gold.toInt())),
+              if (info.cs2Point.toInt() > 0)
+                _InfoItem('点', _formatNumber(info.cs2Point.toInt())),
+              if (info.cs2SpentPoint.toInt() > 0)
+                _InfoItem('已消耗点', _formatNumber(info.cs2SpentPoint.toInt())),
+              if (info.onlineTimeDay.toInt() > 0)
+                _InfoItem('今日在线', _formatDuration(info.onlineTimeDay.toInt())),
+              if (info.onlineTimeTotal.toInt() > 0)
+                _InfoItem(
+                  '累计在线',
+                  _formatDuration(info.onlineTimeTotal.toInt()),
+                ),
             ]),
           ],
-          
+
           // PTS 排名
           if (hasPts) ...[
-            _buildSectionTitle('服务器排名 (PTS)', Icon(MdiIcons.trophyOutline, color: const Color(0xFFFFD700), size: 22)),
+            _buildSectionTitle(
+              '服务器排名 (PTS)',
+              Icon(
+                MdiIcons.trophyOutline,
+                color: const Color(0xFFFFD700),
+                size: 22,
+              ),
+            ),
             _buildPtsRankCard(info),
           ],
 
           // CS:S / CS:GO 通用数据
           if (info.csgoGold.toInt() > 0 || info.csgoOnlineTime.toInt() > 0) ...[
-            _buildSectionTitle('CS:S / CS:GO 通用数据', Icon(MdiIcons.steam, color: AppColors.lobbyBlue, size: 22)),
+            _buildSectionTitle(
+              'CS:S / CS:GO 通用数据',
+              Icon(MdiIcons.steam, color: AppColors.lobbyBlue, size: 22),
+            ),
             _buildSubTitle('综合数据'),
             _buildInfoCard([
               _InfoItem('金币', _formatNumber(info.csgoGold.toInt())),
@@ -437,13 +471,19 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
 
           // CS:GO 游戏数据
           if (_hasCsgoData(info)) ...[
-            _buildSectionTitle('CS:GO 游戏数据', Image.asset('assets/icons/csgo_logo.png', width: 22, height: 22)),
+            _buildSectionTitle(
+              'CS:GO 游戏数据',
+              Image.asset('assets/icons/csgo_logo.png', width: 22, height: 22),
+            ),
             _buildCsgoSection(info),
           ],
 
           // CS:S 游戏数据
           if (_hasCssData(info)) ...[
-            _buildSectionTitle('CS:S 游戏数据', Image.asset('assets/icons/css_logo.png', width: 22, height: 22)),
+            _buildSectionTitle(
+              'CS:S 游戏数据',
+              Image.asset('assets/icons/css_logo.png', width: 22, height: 22),
+            ),
             _buildCssSection(info),
           ],
         ],
@@ -562,10 +602,30 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
 
   Widget _buildPtsRankCard(pb.SteamUserInfoResponse info) {
     final modes = <_PtsMode>[
-      _PtsMode('娱乐服', info.mgPts.toInt(), info.mgPtsRank.toInt(), info.mgPtsTotal.toInt()),
-      _PtsMode('滑翔服', info.surfPts.toInt(), info.surfPtsRank.toInt(), info.surfPtsTotal.toInt()),
-      _PtsMode('连跳服', info.bhopPts.toInt(), info.bhopPtsRank.toInt(), info.bhopPtsTotal.toInt()),
-      _PtsMode('攀岩服', info.kzPts.toInt(), info.kzPtsRank.toInt(), info.kzPtsTotal.toInt()),
+      _PtsMode(
+        '娱乐服',
+        info.mgPts.toInt(),
+        info.mgPtsRank.toInt(),
+        info.mgPtsTotal.toInt(),
+      ),
+      _PtsMode(
+        '滑翔服',
+        info.surfPts.toInt(),
+        info.surfPtsRank.toInt(),
+        info.surfPtsTotal.toInt(),
+      ),
+      _PtsMode(
+        '连跳服',
+        info.bhopPts.toInt(),
+        info.bhopPtsRank.toInt(),
+        info.bhopPtsTotal.toInt(),
+      ),
+      _PtsMode(
+        '攀岩服',
+        info.kzPts.toInt(),
+        info.kzPtsRank.toInt(),
+        info.kzPtsTotal.toInt(),
+      ),
     ];
 
     final activeModes = modes.where((m) => m.pts > 0 || m.rank > 0).toList();
@@ -586,13 +646,36 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
             children: [
               Expanded(
                 flex: 2,
-                child: Text('模式', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text(
+                  '模式',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               Expanded(
-                child: Text('PTS', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text(
+                  'PTS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               Expanded(
-                child: Text('排名', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text(
+                  '排名',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -606,7 +689,11 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                     flex: 2,
                     child: Text(
                       mode.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -614,7 +701,9 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                       mode.pts > 0 ? _formatNumber(mode.pts) : '--',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: mode.pts > 0 ? const Color(0xFF4ADE80) : Colors.white.withValues(alpha: 0.3),
+                        color: mode.pts > 0
+                            ? const Color(0xFF4ADE80)
+                            : Colors.white.withValues(alpha: 0.3),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -625,7 +714,9 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                       mode.rank > 0 ? '#${mode.rank}' : '--',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: mode.rank > 0 ? const Color(0xFFFFD700) : Colors.white.withValues(alpha: 0.3),
+                        color: mode.rank > 0
+                            ? const Color(0xFFFFD700)
+                            : Colors.white.withValues(alpha: 0.3),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -656,34 +747,57 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (info.csgoZombiePts.toInt() > 0 || info.csgoZombieKill.toInt() > 0) ...[
+        if (info.csgoZombiePts.toInt() > 0 ||
+            info.csgoZombieKill.toInt() > 0) ...[
           _buildSubTitle('僵尸模式 (ZE/ZM)'),
           _buildInfoCard([
             _InfoItem('僵尸感染 PTS', _formatNumber(info.csgoZombiePts.toInt())),
             _InfoItem('僵尸击杀', _formatNumber(info.csgoZombieKill.toInt())),
-            if (info.csgoZombieKnife.toInt() > 0) _InfoItem('刀杀', _formatNumber(info.csgoZombieKnife.toInt())),
-            if (info.csgoZombieKickAss.toInt() > 0) _InfoItem('爆菊', _formatNumber(info.csgoZombieKickAss.toInt())),
-            if (info.csgoZombieLostAss.toInt() > 0) _InfoItem('被爆菊', _formatNumber(info.csgoZombieLostAss.toInt())),
-            if (info.csgoZombieProLevel.toInt() > 0) _InfoItem('高玩等级', '${info.csgoZombieProLevel}'),
+            if (info.csgoZombieKnife.toInt() > 0)
+              _InfoItem('刀杀', _formatNumber(info.csgoZombieKnife.toInt())),
+            if (info.csgoZombieKickAss.toInt() > 0)
+              _InfoItem('爆菊', _formatNumber(info.csgoZombieKickAss.toInt())),
+            if (info.csgoZombieLostAss.toInt() > 0)
+              _InfoItem('被爆菊', _formatNumber(info.csgoZombieLostAss.toInt())),
+            if (info.csgoZombieProLevel.toInt() > 0)
+              _InfoItem('高玩等级', '${info.csgoZombieProLevel}'),
           ]),
           const SizedBox(height: 16),
         ],
-        if (info.csgoMgPts.toInt() > 0 || info.csgoSurfPts.toInt() > 0 || info.csgoBhopPts.toInt() > 0 || info.csgoKzPts.toInt() > 0) ...[
+        if (info.csgoMgPts.toInt() > 0 ||
+            info.csgoSurfPts.toInt() > 0 ||
+            info.csgoBhopPts.toInt() > 0 ||
+            info.csgoKzPts.toInt() > 0) ...[
           _buildSubTitle('娱乐模式 (MG/Surf/Bhop/KZ)'),
           _buildInfoCard([
-            if (info.csgoMgPts.toInt() > 0) _InfoItem('娱乐服 PTS', _formatNumber(info.csgoMgPts.toInt())),
-            if (info.csgoSurfPts.toInt() > 0) _InfoItem('滑翔服 PTS', _formatNumber(info.csgoSurfPts.toInt())),
-            if (info.csgoBhopPts.toInt() > 0) _InfoItem('连跳服 PTS', _formatNumber(info.csgoBhopPts.toInt())),
-            if (info.csgoKzPts.toInt() > 0) _InfoItem('攀岩服 PTS', _formatNumber(info.csgoKzPts.toInt())),
+            if (info.csgoMgPts.toInt() > 0)
+              _InfoItem('娱乐服 PTS', _formatNumber(info.csgoMgPts.toInt())),
+            if (info.csgoSurfPts.toInt() > 0)
+              _InfoItem('滑翔服 PTS', _formatNumber(info.csgoSurfPts.toInt())),
+            if (info.csgoBhopPts.toInt() > 0)
+              _InfoItem('连跳服 PTS', _formatNumber(info.csgoBhopPts.toInt())),
+            if (info.csgoKzPts.toInt() > 0)
+              _InfoItem('攀岩服 PTS', _formatNumber(info.csgoKzPts.toInt())),
           ]),
           const SizedBox(height: 16),
         ],
-        if (info.csgoTttInnocentPts.toInt() > 0 || info.csgoTttDetectivePts.toInt() > 0 || info.csgoTttTraitorPts.toInt() > 0) ...[
+        if (info.csgoTttInnocentPts.toInt() > 0 ||
+            info.csgoTttDetectivePts.toInt() > 0 ||
+            info.csgoTttTraitorPts.toInt() > 0) ...[
           _buildSubTitle('叛徒小镇 (TTT)'),
           _buildInfoCard([
-            _InfoItem('TTT 平民 PTS', _formatNumber(info.csgoTttInnocentPts.toInt())),
-            _InfoItem('TTT 侦探 PTS', _formatNumber(info.csgoTttDetectivePts.toInt())),
-            _InfoItem('TTT 叛徒 PTS', _formatNumber(info.csgoTttTraitorPts.toInt())),
+            _InfoItem(
+              'TTT 平民 PTS',
+              _formatNumber(info.csgoTttInnocentPts.toInt()),
+            ),
+            _InfoItem(
+              'TTT 侦探 PTS',
+              _formatNumber(info.csgoTttDetectivePts.toInt()),
+            ),
+            _InfoItem(
+              'TTT 叛徒 PTS',
+              _formatNumber(info.csgoTttTraitorPts.toInt()),
+            ),
           ]),
           const SizedBox(height: 16),
         ],
@@ -703,14 +817,18 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (info.cssZombiePts.toInt() > 0 || info.cssZombieKill.toInt() > 0) ...[
+        if (info.cssZombiePts.toInt() > 0 ||
+            info.cssZombieKill.toInt() > 0) ...[
           _buildSubTitle('僵尸模式 (ZE/ZM)'),
           _buildInfoCard([
             _InfoItem('僵尸感染 PTS', _formatNumber(info.cssZombiePts.toInt())),
             _InfoItem('僵尸击杀', _formatNumber(info.cssZombieKill.toInt())),
-            if (info.cssZombieKnife.toInt() > 0) _InfoItem('刀杀', _formatNumber(info.cssZombieKnife.toInt())),
-            if (info.cssZombieKickAss.toInt() > 0) _InfoItem('爆菊', _formatNumber(info.cssZombieKickAss.toInt())),
-            if (info.cssZombieProLevel.toInt() > 0) _InfoItem('高玩等级', '${info.cssZombieProLevel}'),
+            if (info.cssZombieKnife.toInt() > 0)
+              _InfoItem('刀杀', _formatNumber(info.cssZombieKnife.toInt())),
+            if (info.cssZombieKickAss.toInt() > 0)
+              _InfoItem('爆菊', _formatNumber(info.cssZombieKickAss.toInt())),
+            if (info.cssZombieProLevel.toInt() > 0)
+              _InfoItem('高玩等级', '${info.cssZombieProLevel}'),
           ]),
           const SizedBox(height: 16),
         ],
@@ -718,10 +836,17 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
           _buildSubTitle('进击的巨人 (Titan)'),
           _buildInfoCard([
             _InfoItem('進撃の巨人 PTS', _formatNumber(info.cssTitanPts.toInt())),
-            if (info.cssTitanKills.toInt() > 0) _InfoItem('巨人击杀', _formatNumber(info.cssTitanKills.toInt())),
-            if (info.cssTitanSpecialKills.toInt() > 0) _InfoItem('特殊击杀', _formatNumber(info.cssTitanSpecialKills.toInt())),
-            if (info.cssTitanHumanKills.toInt() > 0) _InfoItem('人类击杀', _formatNumber(info.cssTitanHumanKills.toInt())),
-            if (info.cssTitanAssists.toInt() > 0) _InfoItem('助攻', _formatNumber(info.cssTitanAssists.toInt())),
+            if (info.cssTitanKills.toInt() > 0)
+              _InfoItem('巨人击杀', _formatNumber(info.cssTitanKills.toInt())),
+            if (info.cssTitanSpecialKills.toInt() > 0)
+              _InfoItem(
+                '特殊击杀',
+                _formatNumber(info.cssTitanSpecialKills.toInt()),
+              ),
+            if (info.cssTitanHumanKills.toInt() > 0)
+              _InfoItem('人类击杀', _formatNumber(info.cssTitanHumanKills.toInt())),
+            if (info.cssTitanAssists.toInt() > 0)
+              _InfoItem('助攻', _formatNumber(info.cssTitanAssists.toInt())),
           ]),
           const SizedBox(height: 16),
         ],
@@ -729,8 +854,10 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
           _buildSubTitle('叛徒小镇 (TTT)'),
           _buildInfoCard([
             _InfoItem('TTT PTS', _formatNumber(info.cssTttPts.toInt())),
-            if (info.cssTttWrongKill.toInt() > 0) _InfoItem('错误击杀', _formatNumber(info.cssTttWrongKill.toInt())),
-            if (info.cssTttKarma.toInt() > 0) _InfoItem('Karma', _formatNumber(info.cssTttKarma.toInt())),
+            if (info.cssTttWrongKill.toInt() > 0)
+              _InfoItem('错误击杀', _formatNumber(info.cssTttWrongKill.toInt())),
+            if (info.cssTttKarma.toInt() > 0)
+              _InfoItem('Karma', _formatNumber(info.cssTttKarma.toInt())),
           ]),
           const SizedBox(height: 16),
         ],

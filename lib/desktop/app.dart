@@ -37,7 +37,8 @@ class DesktopApp extends StatefulWidget {
   State<DesktopApp> createState() => _DesktopAppState();
 }
 
-class _DesktopAppState extends State<DesktopApp> with WindowListener, WidgetsBindingObserver {
+class _DesktopAppState extends State<DesktopApp>
+    with WindowListener, WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -142,7 +143,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener, WidgetsBin
           return Portal(
             child: MaterialApp.router(
               title: AppConstants.appName,
-                debugShowCheckedModeBanner: false,
+              debugShowCheckedModeBanner: false,
               localizationsDelegates: const [
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,

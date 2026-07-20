@@ -2506,7 +2506,9 @@ class _MosaicMapPreviewState extends State<_MosaicMapPreview> {
           _cachedImageBytes = bytes;
           _imageLoaded = true;
         });
-        if (LogService.enableLobbyDebugLog) LogService.d('[MosaicMapPreview] 从 LobbyImageCacheService 加载图片成功');
+        if (LogService.enableLobbyDebugLog) {
+          LogService.d('[MosaicMapPreview] 从 LobbyImageCacheService 加载图片成功');
+        }
       } else if (mounted) {
         // 缓存中没有，尝试用 Image.network 加载
         setState(() {

@@ -50,7 +50,9 @@ class _LobbySceneMobileState extends State<LobbySceneMobile> {
     final oldMapId = oldWidget.mapConfig.mapId;
 
     if (newMapId != oldMapId) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbySceneMobile] 地图切换 $oldMapId -> $newMapId');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbySceneMobile] 地图切换 $oldMapId -> $newMapId');
+      }
       _handleMapChange(newMapId);
       return;
     }
@@ -59,7 +61,9 @@ class _LobbySceneMobileState extends State<LobbySceneMobile> {
     final oldIds = oldWidget.state.availableSprites.map((s) => s.id).toSet();
     final newIds = widget.state.availableSprites.map((s) => s.id).toSet();
     if (newIds.difference(oldIds).isNotEmpty) {
-      if (LogService.enableLobbyDebugLog) LogService.d('[LobbySceneMobile] 发现新增 sprite，重新创建游戏');
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbySceneMobile] 发现新增 sprite，重新创建游戏');
+      }
       _disposeGame();
       _createGame();
     }

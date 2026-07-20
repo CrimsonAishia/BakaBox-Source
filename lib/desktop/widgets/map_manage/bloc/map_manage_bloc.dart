@@ -21,29 +21,47 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
     on<SetFilter>(_onSetFilter);
     on<PreviewMap>(_onPreviewMap);
     on<DeleteSelectedMaps>(_onDeleteSelectedMaps);
-    on<ClearMapManageError>((event, emit) => emit(state.copyWith(clearError: true)));
+    on<ClearMapManageError>(
+      (event, emit) => emit(state.copyWith(clearError: true)),
+    );
   }
 
-  Future<void> _onScanLocalMaps(ScanLocalMaps event, Emitter<MapManageState> emit) async {
+  Future<void> _onScanLocalMaps(
+    ScanLocalMaps event,
+    Emitter<MapManageState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
       final steamappsPath = await GamePathService().getSteamappsPath();
       if (steamappsPath == null || steamappsPath.isEmpty) {
-        emit(state.copyWith(isLoading: false, error: '未能定位到 steamapps 目录，请在设置中配置正确的游戏路径或 Steam 路径。'));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: '未能定位到 steamapps 目录，请在设置中配置正确的游戏路径或 Steam 路径。',
+          ),
+        );
         return;
       }
 
       final acfPath = '$steamappsPath\\workshop\\appworkshop_730.acf';
       final acfFile = File(acfPath);
       if (!await acfFile.exists()) {
-        emit(state.copyWith(isLoading: false, error: '未找到订阅配置文件，请去设置里配置正确Steam的路径'));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: '未找到订阅配置文件，请去设置里配置正确Steam的路径',
+          ),
+        );
         return;
       }
 
       final content = await acfFile.readAsString();
       final editor = VdfEditor(content);
-      
-      final itemsNode = editor.findObjectNode(['AppWorkshop', 'WorkshopItemsInstalled']);
+
+      final itemsNode = editor.findObjectNode([
+        'AppWorkshop',
+        'WorkshopItemsInstalled',
+      ]);
       if (itemsNode == null) {
         emit(state.copyWith(isLoading: false, localMaps: []));
         return;
@@ -59,10 +77,14 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
           int timeUpdated = 0;
           int size = 0;
           for (final innerProp in obj.properties) {
-            if (innerProp.key.value == 'timeupdated' && innerProp.value is VdfStringNode) {
-              timeUpdated = int.tryParse((innerProp.value as VdfStringNode).value) ?? 0;
-            } else if (innerProp.key.value == 'size' && innerProp.value is VdfStringNode) {
-              size = int.tryParse((innerProp.value as VdfStringNode).value) ?? 0;
+            if (innerProp.key.value == 'timeupdated' &&
+                innerProp.value is VdfStringNode) {
+              timeUpdated =
+                  int.tryParse((innerProp.value as VdfStringNode).value) ?? 0;
+            } else if (innerProp.key.value == 'size' &&
+                innerProp.value is VdfStringNode) {
+              size =
+                  int.tryParse((innerProp.value as VdfStringNode).value) ?? 0;
             }
           }
 
@@ -83,34 +105,35 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
             }
           }
 
-          maps.add(LocalMapItem(
-            id: mapId,
-            title: title,
-            timeUpdated: timeUpdated,
-            size: size,
-            folderPath: mapFolder,
-          ));
+          maps.add(
+            LocalMapItem(
+              id: mapId,
+              title: title,
+              timeUpdated: timeUpdated,
+              size: size,
+              folderPath: mapFolder,
+            ),
+          );
         }
       }
 
-      emit(state.copyWith(
-        isLoading: false,
-        localMaps: maps,
-      ));
+      emit(state.copyWith(isLoading: false, localMaps: maps));
 
       // 触发检查Steam状态
       add(CheckSteamStatus());
-
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: '扫描本地地图失败: $e'));
     }
   }
 
-  Future<void> _onFetchPreviewMapInfo(FetchPreviewMapInfo event, Emitter<MapManageState> emit) async {
+  Future<void> _onFetchPreviewMapInfo(
+    FetchPreviewMapInfo event,
+    Emitter<MapManageState> emit,
+  ) async {
     try {
       LogService.d('Fetching map info for: ${event.mapName}');
       final info = await _api.getMapInfo(event.mapName);
-      
+
       if (info != null) {
         LogService.d('Successfully fetched map info for: ${event.mapName}');
         emit(state.copyWith(previewMapInfo: info));
@@ -122,12 +145,18 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
     }
   }
 
-  Future<void> _onCheckSteamStatus(CheckSteamStatus event, Emitter<MapManageState> emit) async {
+  Future<void> _onCheckSteamStatus(
+    CheckSteamStatus event,
+    Emitter<MapManageState> emit,
+  ) async {
     final isRunning = NativeProcessUtils.isAnyProcessRunning(['steam.exe']);
     emit(state.copyWith(isSteamRunning: isRunning));
   }
 
-  void _onToggleMapSelection(ToggleMapSelection event, Emitter<MapManageState> emit) {
+  void _onToggleMapSelection(
+    ToggleMapSelection event,
+    Emitter<MapManageState> emit,
+  ) {
     final newSelected = Set<String>.from(state.selectedMapIds);
     if (event.isSelected) {
       newSelected.add(event.mapId);
@@ -153,28 +182,37 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
   }
 
   void _onSetFilter(SetFilter event, Emitter<MapManageState> emit) {
-    emit(state.copyWith(
-      searchQuery: event.searchQuery,
-      filterType: event.filterType,
-    ));
+    emit(
+      state.copyWith(
+        searchQuery: event.searchQuery,
+        filterType: event.filterType,
+      ),
+    );
   }
 
   void _onPreviewMap(PreviewMap event, Emitter<MapManageState> emit) {
     if (event.mapId == null) {
       emit(state.copyWith(clearPreview: true));
     } else {
-      emit(state.copyWith(previewMapId: event.mapId, clearPreviewMapInfo: true));
+      emit(
+        state.copyWith(previewMapId: event.mapId, clearPreviewMapInfo: true),
+      );
       // Trigger fetch for preview map info
-      final mapItem = state.localMaps.where((m) => m.id == event.mapId).firstOrNull;
+      final mapItem = state.localMaps
+          .where((m) => m.id == event.mapId)
+          .firstOrNull;
       if (mapItem != null) {
         add(FetchPreviewMapInfo(mapItem.title));
       }
     }
   }
 
-  Future<void> _onDeleteSelectedMaps(DeleteSelectedMaps event, Emitter<MapManageState> emit) async {
+  Future<void> _onDeleteSelectedMaps(
+    DeleteSelectedMaps event,
+    Emitter<MapManageState> emit,
+  ) async {
     if (state.selectedMapIds.isEmpty) return;
-    
+
     // 再次检测Steam状态
     if (NativeProcessUtils.isAnyProcessRunning(['steam.exe'])) {
       emit(state.copyWith(error: 'Steam 正在运行，请先完全退出 Steam 后再进行地图管理操作。'));
@@ -199,7 +237,7 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
       for (final mapId in state.selectedMapIds) {
         final mapItem = state.localMaps.firstWhere((m) => m.id == mapId);
         final folder = Directory(mapItem.folderPath);
-        
+
         try {
           // 删除文件夹
           if (await folder.exists()) {
@@ -207,8 +245,14 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
           }
 
           // 删除 ACF 节点 (仅在文件夹删除成功后执行)
-          final deleted1 = editor.deleteProperty(['AppWorkshop', 'WorkshopItemsInstalled'], mapId);
-          final deleted2 = editor.deleteProperty(['AppWorkshop', 'WorkshopItemDetails'], mapId);
+          final deleted1 = editor.deleteProperty([
+            'AppWorkshop',
+            'WorkshopItemsInstalled',
+          ], mapId);
+          final deleted2 = editor.deleteProperty([
+            'AppWorkshop',
+            'WorkshopItemDetails',
+          ], mapId);
           if (deleted1 || deleted2) {
             acfModified = true;
           }
@@ -226,19 +270,22 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
       add(ScanLocalMaps());
 
       if (failedMaps.isNotEmpty) {
-        emit(state.copyWith(
-          isDeleting: false,
-          error: '部分地图删除失败（可能文件被占用）:\n${failedMaps.join('\n')}',
-        ));
+        emit(
+          state.copyWith(
+            isDeleting: false,
+            error: '部分地图删除失败（可能文件被占用）:\n${failedMaps.join('\n')}',
+          ),
+        );
       } else {
         // 清除选中和预览状态
-        emit(state.copyWith(
-          isDeleting: false,
-          selectedMapIds: {},
-          clearPreview: true,
-        ));
+        emit(
+          state.copyWith(
+            isDeleting: false,
+            selectedMapIds: {},
+            clearPreview: true,
+          ),
+        );
       }
-      
     } catch (e) {
       emit(state.copyWith(isDeleting: false, error: '删除失败: $e'));
     }

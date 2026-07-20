@@ -537,7 +537,6 @@ class _SeverityList extends StatelessWidget {
   }
 }
 
-
 class _SidebarRow extends StatelessWidget {
   final IconData icon;
   final String label;

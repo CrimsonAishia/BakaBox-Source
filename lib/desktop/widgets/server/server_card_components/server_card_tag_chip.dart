@@ -8,7 +8,7 @@ class ServerCardTagChip extends StatelessWidget {
   final bool useMarkdown;
 
   const ServerCardTagChip({
-    super.key, 
+    super.key,
     required this.tag,
     this.showPrefix = true,
     this.useMarkdown = false,

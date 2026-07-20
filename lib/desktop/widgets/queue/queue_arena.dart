@@ -260,10 +260,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     if (self == null) {
       return users.sublist(0, _maxDisplayUsers);
     }
-    return [
-      self,
-      ...others.take(_maxDisplayUsers - 1),
-    ];
+    return [self, ...others.take(_maxDisplayUsers - 1)];
   }
 
   /// 随机生成头像大小（根据当前人数动态缩放）

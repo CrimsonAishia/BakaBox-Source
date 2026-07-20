@@ -236,7 +236,7 @@ class MainWindowLauncher {
       // 在销毁窗口前，强制刷新一次内存中的所有日志到文件，
       // 因为一旦 destroy，C++ 原生层会立刻终止进程，后续的异步日志将丢失。
       await LogService.flush();
-      
+
       await windowManager.destroy();
     } catch (e) {
       LogService.e('[Exit] destroy failed', e);

@@ -59,7 +59,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
     context.read<MapManageBloc>().add(ScanLocalMaps());
     _listScrollController.addListener(_checkScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkScroll());
-    
+
     // 定期检测 Steam 运行状态（每 3 秒一次）
     _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
@@ -585,10 +585,26 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
                               letterSpacing: 0.5,
                               shadows: [
                                 Shadow(color: Colors.black, blurRadius: 8),
-                                Shadow(color: Colors.black87, offset: Offset(1, 1), blurRadius: 2),
-                                Shadow(color: Colors.black87, offset: Offset(-1, -1), blurRadius: 2),
-                                Shadow(color: Colors.black87, offset: Offset(1, -1), blurRadius: 2),
-                                Shadow(color: Colors.black87, offset: Offset(-1, 1), blurRadius: 2),
+                                Shadow(
+                                  color: Colors.black87,
+                                  offset: Offset(1, 1),
+                                  blurRadius: 2,
+                                ),
+                                Shadow(
+                                  color: Colors.black87,
+                                  offset: Offset(-1, -1),
+                                  blurRadius: 2,
+                                ),
+                                Shadow(
+                                  color: Colors.black87,
+                                  offset: Offset(1, -1),
+                                  blurRadius: 2,
+                                ),
+                                Shadow(
+                                  color: Colors.black87,
+                                  offset: Offset(-1, 1),
+                                  blurRadius: 2,
+                                ),
                               ],
                             ),
                           ),
@@ -603,7 +619,9 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
                             Icons.translate,
                             size: 15,
                             color: Colors.white.withValues(alpha: 0.9),
-                            shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
+                            shadows: const [
+                              Shadow(color: Colors.black, blurRadius: 4),
+                            ],
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -614,11 +632,30 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white.withValues(alpha: 0.9),
                                 shadows: [
-                                  const Shadow(color: Colors.black, blurRadius: 4),
-                                  Shadow(color: Colors.black.withValues(alpha: 0.9), offset: const Offset(1, 1), blurRadius: 2),
-                                  Shadow(color: Colors.black.withValues(alpha: 0.9), offset: const Offset(-1, -1), blurRadius: 2),
-                                  Shadow(color: Colors.black.withValues(alpha: 0.9), offset: const Offset(1, -1), blurRadius: 2),
-                                  Shadow(color: Colors.black.withValues(alpha: 0.9), offset: const Offset(-1, 1), blurRadius: 2),
+                                  const Shadow(
+                                    color: Colors.black,
+                                    blurRadius: 4,
+                                  ),
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.9),
+                                    offset: const Offset(1, 1),
+                                    blurRadius: 2,
+                                  ),
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.9),
+                                    offset: const Offset(-1, -1),
+                                    blurRadius: 2,
+                                  ),
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.9),
+                                    offset: const Offset(1, -1),
+                                    blurRadius: 2,
+                                  ),
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.9),
+                                    offset: const Offset(-1, 1),
+                                    blurRadius: 2,
+                                  ),
                                 ],
                               ),
                             ),
@@ -667,16 +704,25 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
                             );
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.blue500.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppColors.blue500.withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: AppColors.blue500.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(MdiIcons.steam, size: 12, color: AppColors.blue500),
+                                Icon(
+                                  MdiIcons.steam,
+                                  size: 12,
+                                  color: AppColors.blue500,
+                                ),
                                 const SizedBox(width: 4),
                                 const Text(
                                   '前往工坊',
@@ -812,10 +858,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
                   color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing],
             ],
           ),
         ],

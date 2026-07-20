@@ -680,9 +680,7 @@ class UpdateService {
       LogService.i('[UpdateService] 安装器已通过 UAC 提权启动');
       return true;
     }
-    LogService.w(
-      '[UpdateService] PowerShell 以退出码 $exitCode 结束（用户可能拒绝了 UAC）',
-    );
+    LogService.w('[UpdateService] PowerShell 以退出码 $exitCode 结束（用户可能拒绝了 UAC）');
     return false;
   }
 

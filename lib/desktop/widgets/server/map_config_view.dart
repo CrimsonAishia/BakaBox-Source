@@ -1287,7 +1287,9 @@ class _MapConfigViewState extends State<MapConfigView> {
     bool hasDescription = false,
   }) {
     final bool isDefault = userValueBg == null;
-    final Color textColor = isDefault ? Colors.white : _contrastText(userValueBg);
+    final Color textColor = isDefault
+        ? Colors.white
+        : _contrastText(userValueBg);
 
     Widget textWidget;
     if (isDefault) {
@@ -1627,7 +1629,9 @@ class _MapConfigViewState extends State<MapConfigView> {
                     baseColor,
                     lightColor,
                     darkColor,
-                    hasDescription: prop.description != null && prop.description!.isNotEmpty,
+                    hasDescription:
+                        prop.description != null &&
+                        prop.description!.isNotEmpty,
                   ),
                 ],
               ),

@@ -512,11 +512,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
         hoverColor: Colors.red.withValues(alpha: 0.8),
         child: const Padding(
           padding: EdgeInsets.all(4),
-          child: Icon(
-            Icons.close,
-            color: Colors.white70,
-            size: 14,
-          ),
+          child: Icon(Icons.close, color: Colors.white70, size: 14),
         ),
       ),
     );

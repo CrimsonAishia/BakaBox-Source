@@ -107,7 +107,6 @@ class MapDatabaseMyTab extends StatelessWidget {
     );
   }
 
-
   Widget _buildLoginPrompt(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

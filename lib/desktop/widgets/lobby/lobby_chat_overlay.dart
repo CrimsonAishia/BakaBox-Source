@@ -255,11 +255,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.campaign,
-              color: AppColors.amber400,
-              size: 16,
-            ),
+            child: Icon(Icons.campaign, color: AppColors.amber400, size: 16),
           ),
           const SizedBox(width: 6),
           Expanded(
@@ -345,10 +341,10 @@ class _RegularMessageItemState extends State<_RegularMessageItem>
     final nameColor = isSystem
         ? const Color(0xFFFFB74D) // Amber
         : (isSelf
-            ? const Color(0xFF1D9BF0) // 主题蓝 (lobbyBlue)
-            : (isAnonymous
-                ? const Color(0xFF9CA3AF) // 匿名者用偏暗的灰色
-                : const Color(0xFFE2E8F0))); // 其他用户用明亮的银灰色
+              ? const Color(0xFF1D9BF0) // 主题蓝 (lobbyBlue)
+              : (isAnonymous
+                    ? const Color(0xFF9CA3AF) // 匿名者用偏暗的灰色
+                    : const Color(0xFFE2E8F0))); // 其他用户用明亮的银灰色
 
     final initial = message.displayName.isNotEmpty
         ? message.displayName.substring(0, 1).toUpperCase()
@@ -384,10 +380,7 @@ class _RegularMessageItemState extends State<_RegularMessageItem>
           ],
         ),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: nameColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: nameColor.withValues(alpha: 0.3), width: 1),
       ),
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
@@ -403,12 +396,14 @@ class _RegularMessageItemState extends State<_RegularMessageItem>
 
     final textWidget = Expanded(
       child: Column(
-        crossAxisAlignment:
-            isSelf ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isSelf
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                isSelf ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isSelf
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (isSelf) ...[
@@ -457,14 +452,14 @@ class _RegularMessageItemState extends State<_RegularMessageItem>
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 4, vertical: 1),
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFB74D)
-                          .withValues(alpha: 0.15),
+                      color: const Color(0xFFFFB74D).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: const Color(0xFFFFB74D)
-                            .withValues(alpha: 0.3),
+                        color: const Color(0xFFFFB74D).withValues(alpha: 0.3),
                         width: 0.5,
                       ),
                     ),
@@ -495,14 +490,14 @@ class _RegularMessageItemState extends State<_RegularMessageItem>
                         const Color(0xFF1D9BF0).withValues(alpha: 0.08),
                       ]
                     : (isSystem
-                        ? [
-                            const Color(0xFFFFB74D).withValues(alpha: 0.15),
-                            const Color(0xFFFFB74D).withValues(alpha: 0.05),
-                          ]
-                        : [
-                            Colors.white.withValues(alpha: 0.08),
-                            Colors.white.withValues(alpha: 0.02),
-                          ]),
+                          ? [
+                              const Color(0xFFFFB74D).withValues(alpha: 0.15),
+                              const Color(0xFFFFB74D).withValues(alpha: 0.05),
+                            ]
+                          : [
+                              Colors.white.withValues(alpha: 0.08),
+                              Colors.white.withValues(alpha: 0.02),
+                            ]),
               ),
               boxShadow: [
                 BoxShadow(
@@ -515,8 +510,8 @@ class _RegularMessageItemState extends State<_RegularMessageItem>
                 color: isSelf
                     ? const Color(0xFF1D9BF0).withValues(alpha: 0.3)
                     : (isSystem
-                        ? const Color(0xFFFFB74D).withValues(alpha: 0.25)
-                        : Colors.white.withValues(alpha: 0.08)),
+                          ? const Color(0xFFFFB74D).withValues(alpha: 0.25)
+                          : Colors.white.withValues(alpha: 0.08)),
                 width: 0.5,
               ),
               borderRadius: BorderRadius.only(

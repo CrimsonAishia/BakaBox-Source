@@ -209,7 +209,8 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     String? leftUserId;
     QueueUser? leftUser;
     if (leftUsers.isNotEmpty && state.leftUserId == null) {
-      leftUser = leftUsers.where((u) => u.isSelf).firstOrNull ?? leftUsers.first;
+      leftUser =
+          leftUsers.where((u) => u.isSelf).firstOrNull ?? leftUsers.first;
       leftUserId = leftUser.uniqueId;
       LogService.d(
         '[QueueUsersBloc] sync 检测到 ${leftUsers.length} 个用户离开，代表: $leftUserId',

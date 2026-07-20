@@ -242,7 +242,10 @@ class MapChangeMonitorService {
     String? newMapCn;
     String? mapBackground;
     try {
-      final mapInfo = await _serverApi.getMapInfo(newMap, address: entry.serverAddress);
+      final mapInfo = await _serverApi.getMapInfo(
+        newMap,
+        address: entry.serverAddress,
+      );
       newMapCn = mapInfo?.mapLabel;
       mapBackground = mapInfo?.mapUrl;
     } catch (_) {}

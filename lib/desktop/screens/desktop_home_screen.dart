@@ -203,7 +203,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
           _showObsWarningDialog();
         }
       }
-      
+
       // 检测创意工坊必备组件
       WorkshopMissingDialog.checkAndShow(context);
     });
@@ -509,84 +509,86 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
               body: Portal(
                 child: Stack(
                   children: [
-                  Row(
-                    children: [
-                      DesktopNavigation(
-                        currentIndex: _currentIndex,
-                        onIndexChanged: _onIndexChanged,
-                        items: _navigationItems,
-                        onFeedbackTap: () => _onIndexChanged(9),
-                        isFeedbackSelected: _currentIndex == 9,
-                      ),
-                      Expanded(
-                        child: AnimatedBuilder(
-                          animation: _contentAnimationController,
-                          builder: (context, child) {
-                            return FadeTransition(
-                              opacity: Tween<double>(begin: 0.0, end: 1.0)
-                                  .animate(
-                                    CurvedAnimation(
-                                      parent: _contentAnimationController,
-                                      curve: Curves.easeOutCubic,
-                                    ),
-                                  ),
-                              child: SlideTransition(
-                                position:
-                                    Tween<Offset>(
-                                      begin: const Offset(0.1, 0.0),
-                                      end: Offset.zero,
-                                    ).animate(
+                    Row(
+                      children: [
+                        DesktopNavigation(
+                          currentIndex: _currentIndex,
+                          onIndexChanged: _onIndexChanged,
+                          items: _navigationItems,
+                          onFeedbackTap: () => _onIndexChanged(9),
+                          isFeedbackSelected: _currentIndex == 9,
+                        ),
+                        Expanded(
+                          child: AnimatedBuilder(
+                            animation: _contentAnimationController,
+                            builder: (context, child) {
+                              return FadeTransition(
+                                opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                    .animate(
                                       CurvedAnimation(
                                         parent: _contentAnimationController,
                                         curve: Curves.easeOutCubic,
                                       ),
                                     ),
-                                child: _buildPageContent(),
-                              ),
-                            );
-                          },
+                                child: SlideTransition(
+                                  position:
+                                      Tween<Offset>(
+                                        begin: const Offset(0.1, 0.0),
+                                        end: Offset.zero,
+                                      ).animate(
+                                        CurvedAnimation(
+                                          parent: _contentAnimationController,
+                                          curve: Curves.easeOutCubic,
+                                        ),
+                                      ),
+                                  child: _buildPageContent(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (isDesktop)
+                      Positioned(
+                        top: 8,
+                        right: 12,
+                        child: DesktopWindowControls(),
+                      ),
+                    if (isDesktop)
+                      const Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 120,
+                        height: 56,
+                        child: DragToMoveArea(child: SizedBox.expand()),
+                      ),
+                    // 浮动聊天按钮（非大厅页面显示）
+                    if (isDesktop && _currentIndex != 2)
+                      const Positioned.fill(
+                        child: RepaintBoundary(child: FloatingChatButton()),
+                      ),
+                    // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
+                    if (isDesktop)
+                      Positioned(
+                        key: const ValueKey('bottom_right_overlay'),
+                        bottom: 16,
+                        right: 16,
+                        child: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            RepaintBoundary(child: GlobalBroadcastBar()),
+                            SizedBox(height: 8),
+                            RepaintBoundary(child: WarmupFloatingCard()),
+                            SizedBox(height: 8),
+                            RepaintBoundary(child: QueueFloatingCard()),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                  if (isDesktop)
-                    Positioned(
-                      top: 8,
-                      right: 12,
-                      child: DesktopWindowControls(),
-                    ),
-                  if (isDesktop)
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 120,
-                      height: 56,
-                      child: DragToMoveArea(child: SizedBox.expand()),
-                    ),
-                  // 浮动聊天按钮（非大厅页面显示）
-                  if (isDesktop && _currentIndex != 2)
-                    const Positioned.fill(child: RepaintBoundary(child: FloatingChatButton())),
-                  // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
-                  if (isDesktop)
-                    Positioned(
-                      key: const ValueKey('bottom_right_overlay'),
-                      bottom: 16,
-                      right: 16,
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          RepaintBoundary(child: GlobalBroadcastBar()),
-                          SizedBox(height: 8),
-                          RepaintBoundary(child: WarmupFloatingCard()),
-                          SizedBox(height: 8),
-                          RepaintBoundary(child: QueueFloatingCard()),
-                        ],
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
             ),
           ),
         ),

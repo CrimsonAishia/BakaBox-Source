@@ -212,7 +212,10 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         // 获取地图信息
         MapData? mapInfo;
         try {
-          mapInfo = await _serverApi.getMapInfo(sourceInfo.map, address: serverAddress);
+          mapInfo = await _serverApi.getMapInfo(
+            sourceInfo.map,
+            address: serverAddress,
+          );
         } catch (e) {
           LogService.d('[QueueBloc] 获取地图信息失败: $e');
         }
@@ -225,7 +228,9 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         if (maxTarget > 0) {
           var clamped = config.targetPlayers;
           if (clamped > maxTarget) clamped = maxTarget;
-          if (clamped < minTarget && minTarget <= maxTarget) clamped = minTarget;
+          if (clamped < minTarget && minTarget <= maxTarget) {
+            clamped = minTarget;
+          }
           if (clamped != config.targetPlayers) {
             config = config.copyWith(targetPlayers: clamped);
           }
@@ -281,9 +286,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       //"请先在设置中配置游戏路径"/"此服务器需要 CSGO 客户端"等原因盖掉。
       final serviceState = _statusService.state;
       final actualError =
-          serviceState.error ??
-          serviceState.message ??
-          '游戏未运行，请先启动游戏';
+          serviceState.error ?? serviceState.message ?? '游戏未运行，请先启动游戏';
       emit(state.copyWith(error: actualError));
       return;
     }
@@ -301,10 +304,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       usersBloc.add(QueueUsersConnect(serverAddress: serverAddress));
     }
     usersBloc.add(
-      QueueUsersJoin(
-        nickname: event.nickname,
-        avatarUrl: event.avatarUrl,
-      ),
+      QueueUsersJoin(nickname: event.nickname, avatarUrl: event.avatarUrl),
     );
   }
 
@@ -417,8 +417,9 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     } else {
       // 关闭捐助者：如果当前超过59，则设为59，且不低于 80%
       final maxNonDonator = 59;
-      final upperBound =
-          maxNonDonator < maxPlayers - 1 ? maxNonDonator : maxPlayers - 1;
+      final upperBound = maxNonDonator < maxPlayers - 1
+          ? maxNonDonator
+          : maxPlayers - 1;
       newTargetPlayers = state.config.targetPlayers.clamp(
         minTarget,
         upperBound,

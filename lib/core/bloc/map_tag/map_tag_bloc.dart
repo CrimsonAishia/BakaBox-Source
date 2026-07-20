@@ -28,7 +28,6 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     on<ChangeServerAddress>(_onChangeServerAddress);
   }
 
-
   /// 提取错误信息
   String _getErrorMessage(Object e) {
     return ErrorUtils.getErrorMessage(e);
@@ -289,10 +288,12 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     Emitter<MapTagState> emit,
   ) async {
     if (state.currentMapName != null) {
-      add(LoadMapTagList(
-        mapName: state.currentMapName!,
-        serverAddress: state.serverAddress,
-      ));
+      add(
+        LoadMapTagList(
+          mapName: state.currentMapName!,
+          serverAddress: state.serverAddress,
+        ),
+      );
     }
   }
 
@@ -303,7 +304,6 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   ) async {
     add(const LoadUserTags());
   }
-
 
   /// 加载地图服务器列表
   Future<void> _onLoadMapServers(
@@ -335,15 +335,19 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     ChangeServerAddress event,
     Emitter<MapTagState> emit,
   ) async {
-    emit(state.copyWith(
-      serverAddress: event.serverAddress,
-      clearServerAddress: event.serverAddress == null,
-    ));
-    if (state.currentMapName != null) {
-      add(LoadMapTagList(
-        mapName: state.currentMapName!,
+    emit(
+      state.copyWith(
         serverAddress: event.serverAddress,
-      ));
+        clearServerAddress: event.serverAddress == null,
+      ),
+    );
+    if (state.currentMapName != null) {
+      add(
+        LoadMapTagList(
+          mapName: state.currentMapName!,
+          serverAddress: event.serverAddress,
+        ),
+      );
     }
   }
 

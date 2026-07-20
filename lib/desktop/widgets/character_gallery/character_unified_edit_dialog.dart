@@ -578,7 +578,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           SizedBox(
             height: 250,
             child: RichTextEditor(
-              customToolbar: RichTextDialogToolbar(controller: _descriptionController),
+              customToolbar: RichTextDialogToolbar(
+                controller: _descriptionController,
+              ),
               imageMode: ImageMode.inline,
               controller: _descriptionController,
               hintText: '描述角色的背景、特点等...',

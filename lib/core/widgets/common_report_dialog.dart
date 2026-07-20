@@ -14,11 +14,8 @@ import 'rich_text_editor.dart';
 class ReportReasonItem<T> {
   final T value;
   final String label;
-  
-  const ReportReasonItem({
-    required this.value,
-    required this.label,
-  });
+
+  const ReportReasonItem({required this.value, required this.label});
 }
 
 /// 通用举报对话框
@@ -110,11 +107,12 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
 
   bool get _canSubmit {
     if (_selectedReason == null || _isSubmitting) return false;
-    
-    if (_isDescriptionRequired && _quillController.document.toPlainText().trim().isEmpty) {
+
+    if (_isDescriptionRequired &&
+        _quillController.document.toPlainText().trim().isEmpty) {
       return false;
     }
-    
+
     if (widget.showPenalties) {
       if (_banHours) {
         final hrs = _banHoursController.text.trim();
@@ -122,16 +120,19 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
           return false;
         }
       }
-      if (_penaltyOther && _penaltyOtherController.text.trim().isEmpty) return false;
+      if (_penaltyOther && _penaltyOtherController.text.trim().isEmpty) {
+        return false;
+      }
     }
-    
+
     return true;
   }
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
 
-    if (_isDescriptionRequired && _quillController.document.toPlainText().trim().isEmpty) {
+    if (_isDescriptionRequired &&
+        _quillController.document.toPlainText().trim().isEmpty) {
       ToastUtils.showWarning(context, '选择该项时请填写具体说明');
       return;
     }
@@ -183,7 +184,10 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
       LogService.e('提交举报失败', e);
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '提交举报失败，请稍后重试'));
+        ToastUtils.showError(
+          context,
+          ErrorUtils.getErrorMessage(e, defaultMessage: '提交举报失败，请稍后重试'),
+        );
       }
     }
   }
@@ -411,7 +415,10 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: const InputDecoration(
                     hintText: '小时数',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 0,
+                    ),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -447,7 +454,10 @@ class _CommonReportDialogState<T> extends State<CommonReportDialog<T>> {
                     enabled: !_isSubmitting,
                     decoration: const InputDecoration(
                       hintText: '具体惩罚说明',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 0,
+                      ),
                       border: OutlineInputBorder(),
                     ),
                   ),
