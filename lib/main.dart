@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:leak_tracker/leak_tracker.dart';
 
 import 'app/platform_app.dart';
 import 'core/utils/log_service.dart';
@@ -19,6 +20,9 @@ import 'core/utils/log_service.dart';
 /// - 尤其是退出流程中大量原生插件在 dispose，任何一处漏网的 async 异常都
 ///   可能升级为进程 crash，配合 WER 缺失的机器就变成 "Unknown Hard Error" 弹窗。
 Future<void> main(List<String> args) async {
+  if (kDebugMode || kProfileMode) {
+    LeakTracking.start();
+  }
   await runZonedGuarded<Future<void>>(
     () async {
       // Flutter 框架内的错误（build / layout / paint 等同步异常）
