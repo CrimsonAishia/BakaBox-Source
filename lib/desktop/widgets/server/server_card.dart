@@ -27,7 +27,7 @@ import 'server_card_components/server_card_marquee_text.dart';
 import 'server_card_components/server_card_overflow_tag_row.dart';
 import 'server_card_components/server_card_icon_buttons.dart';
 import 'server_card_components/hover_tag_popover.dart';
-import 'server_card_components/server_card_floating_yellow_dot.dart';
+import 'server_card_components/server_card_monitoring_badge.dart';
 import 'server_card_components/server_card_painters.dart';
 import '../../../core/utils/map_tag_utils.dart';
 
@@ -388,9 +388,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  /// 监控中浮动黄点（卡片右上角）
+  /// 监控中角标（卡片右上角倒三角）
   Widget _buildMonitoringIndicator() {
-    return Positioned(top: 8, right: 8, child: ServerCardFloatingYellowDot());
+    return const Positioned(top: 0, right: 0, child: ServerCardMonitoringBadge());
   }
 
   Widget _buildMapBackground() {
