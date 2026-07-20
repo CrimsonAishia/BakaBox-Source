@@ -129,6 +129,167 @@ class ServerCardMarchingAntsPainter extends CustomPainter {
   }
 }
 
+class ServerCardWarmupMarchingAntsPainter extends CustomPainter {
+  final double progress;
+  final double borderRadius;
+
+  ServerCardWarmupMarchingAntsPainter({
+    required this.progress,
+    required this.borderRadius,
+  });
+
+  Color _getRgbColor(double value) {
+    final colors = const [
+      Color(0xFFFF4444),
+      Color(0xFF44FF44),
+      Color(0xFF4488FF),
+      Color(0xFFFF8844),
+    ];
+    final index = (value * colors.length).floor() % colors.length;
+    final nextIndex = (index + 1) % colors.length;
+    final t = (value * colors.length) % 1.0;
+    return Color.lerp(colors[index], colors[nextIndex], t)!;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
+
+    final path = Path()..addRRect(rrect);
+    final pathMetrics = path.computeMetrics().first;
+    final totalLength = pathMetrics.length;
+
+    // 脉冲效果
+    final pulse = (0.5 + 0.5 * (progress * 2 * 3.14159).abs() % 1).clamp(
+      0.3,
+      1.0,
+    );
+
+    // 当前基础色（随 progress 缓慢变化）
+    final primaryColor = _getRgbColor(progress);
+    final glowColor = primaryColor;
+
+    // 1. 绘制底层发光边框（整圈微弱发光）
+    final baseGlowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..color = primaryColor.withValues(alpha: 0.2 * pulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawPath(path, baseGlowPaint);
+
+    // 2. 绘制底层实线边框
+    final basePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..color = primaryColor.withValues(alpha: 0.5);
+    canvas.drawPath(path, basePaint);
+
+    // 3. 绘制两道对向流光
+    _drawFlowingLight(
+      canvas,
+      pathMetrics,
+      totalLength,
+      progress,
+      primaryColor,
+      glowColor,
+    );
+    _drawFlowingLight(
+      canvas,
+      pathMetrics,
+      totalLength,
+      (progress + 0.5) % 1.0,
+      primaryColor,
+      glowColor,
+    );
+  }
+
+  void _drawFlowingLight(
+    Canvas canvas,
+    ui.PathMetric pathMetrics,
+    double totalLength,
+    double prog,
+    Color primaryColor,
+    Color glowColor,
+  ) {
+    const glowLength = 100.0;
+    const tailLength = 150.0;
+
+    final headPosition = prog * totalLength;
+
+    // 绘制拖尾
+    for (var i = 0.0; i < tailLength; i += 3) {
+      var pos = headPosition - i;
+      if (pos < 0) pos += totalLength;
+
+      final alpha = (1 - i / tailLength).clamp(0.0, 1.0) * 0.5;
+      final width = 3.0 * (1 - i / tailLength).clamp(0.3, 1.0);
+
+      final segmentEnd = (pos + 4).clamp(0.0, totalLength);
+      if (segmentEnd > pos) {
+        final tailPath = pathMetrics.extractPath(pos, segmentEnd);
+        final tailPaint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = width
+          ..color = glowColor.withValues(alpha: alpha);
+        canvas.drawPath(tailPath, tailPaint);
+      }
+    }
+
+    // 绘制流光头部
+    final glowStart = headPosition;
+    var glowEnd = headPosition + glowLength;
+
+    // 处理循环
+    if (glowEnd > totalLength) {
+      // 绘制到末尾
+      final path1 = pathMetrics.extractPath(glowStart, totalLength);
+      _drawGlowSegment(canvas, path1, primaryColor, glowColor);
+      // 从头开始
+      final path2 = pathMetrics.extractPath(0, glowEnd - totalLength);
+      _drawGlowSegment(canvas, path2, primaryColor, glowColor);
+    } else {
+      final glowPath = pathMetrics.extractPath(glowStart, glowEnd);
+      _drawGlowSegment(canvas, glowPath, primaryColor, glowColor);
+    }
+  }
+
+  void _drawGlowSegment(
+    Canvas canvas,
+    Path glowPath,
+    Color primaryColor,
+    Color glowColor,
+  ) {
+    // 外层大发光
+    final outerGlow = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12.0
+      ..color = primaryColor.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawPath(glowPath, outerGlow);
+
+    // 中层发光
+    final midGlow = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..color = glowColor.withValues(alpha: 0.7)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    canvas.drawPath(glowPath, midGlow);
+
+    // 核心亮线
+    final core = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..color = Colors.white.withValues(alpha: 0.95);
+    canvas.drawPath(glowPath, core);
+  }
+
+  @override
+  bool shouldRepaint(ServerCardWarmupMarchingAntsPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}
+
 class ServerCardDashedLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

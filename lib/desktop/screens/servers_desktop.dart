@@ -2576,8 +2576,17 @@ ExtendedServerItem? _getServerByAddress(List<ExtendedServerItem> servers, String
 }
 
 
-/// 封装的普通服务器卡片，独立监听自己的状态更新
-class _ServerCardItemContainer extends StatelessWidget {
+/// 交错渲染间隔（毫秒）：每张卡片根据 index 延迟此间隔后渲染，
+/// 避免所有卡片同时解码图片和渲染导致 GPU 瞬时峰值过高。
+const int _kStaggerIntervalMs = 80;
+
+/// 交错渲染最大延迟（毫秒）：超过此值后不再增加延迟
+const int _kStaggerMaxDelayMs = 800;
+
+/// 封装的普通服务器卡片，独立监听自己的状态更新。
+/// 使用交错渲染（staggered rendering）：根据 index 延迟渲染真实内容，
+/// 将 GPU 负载从瞬间峰值分散到 ~1s 的时间窗口内。
+class _ServerCardItemContainer extends StatefulWidget {
   final ExtendedServerItem initialServer;
   final int index;
   final bool isLast;
@@ -2591,36 +2600,105 @@ class _ServerCardItemContainer extends StatelessWidget {
   });
 
   @override
+  State<_ServerCardItemContainer> createState() =>
+      _ServerCardItemContainerState();
+}
+
+class _ServerCardItemContainerState extends State<_ServerCardItemContainer> {
+  /// 交错渲染：控制卡片是否准备好渲染真实内容
+  bool _isReadyToRender = false;
+  Timer? _staggerTimer;
+
+  /// 是否曾处于骨架屏状态（用于判断是否需要交错延迟）。
+  /// force refresh 保留了 serverData，不会触发骨架屏，无需交错。
+  bool _hasSeenSkeleton = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleStaggeredRender();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ServerCardItemContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 服务器身份改变（如分类切换复用 widget）时重置交错状态
+    final oldAddress = oldWidget.initialServer.serverItem.address ??
+        oldWidget.initialServer.serverItem.serverAddress;
+    final newAddress = widget.initialServer.serverItem.address ??
+        widget.initialServer.serverItem.serverAddress;
+    if (oldAddress != newAddress) {
+      _scheduleStaggeredRender();
+    }
+  }
+
+  @override
+  void dispose() {
+    _staggerTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 根据 index 计算交错延迟，错开卡片的图片解码和 GPU 渲染。
+  void _scheduleStaggeredRender() {
+    _isReadyToRender = false;
+    _hasSeenSkeleton = false;
+    _staggerTimer?.cancel();
+    final delayMs =
+        (widget.index * _kStaggerIntervalMs).clamp(0, _kStaggerMaxDelayMs);
+    if (delayMs == 0) {
+      _isReadyToRender = true;
+      return;
+    }
+    _staggerTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted) setState(() => _isReadyToRender = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final address = initialServer.serverItem.address ?? initialServer.serverItem.serverAddress;
-    
+    final address = widget.initialServer.serverItem.address ??
+        widget.initialServer.serverItem.serverAddress;
+
     return BlocBuilder<ServerBloc, ServerState>(
       buildWhen: (previous, current) {
         final p = _getServerByAddress(previous.servers, address);
         final c = _getServerByAddress(current.servers, address);
-        
+
         if (_shouldRebuildCard(p, c)) return true;
-        
+
         // 只有在骨架屏状态下，才关心 loadingPhase 的变化，用于更新文本
         final pIsSkeleton = p != null && p.isLoading && p.serverData == null;
         final cIsSkeleton = c != null && c.isLoading && c.serverData == null;
         if (pIsSkeleton || cIsSkeleton) {
           if (previous.loadingPhase != current.loadingPhase) return true;
         }
-        
+
         return false;
       },
       builder: (context, currentState) {
-        final server = _getServerByAddress(currentState.servers, address) ?? initialServer;
-        final showSkeleton = server.isLoading && server.serverData == null;
-        
+        final server =
+            _getServerByAddress(currentState.servers, address) ??
+            widget.initialServer;
+        final isNowSkeleton = server.isLoading && server.serverData == null;
+
+        // 记录是否曾处于骨架屏状态
+        if (isNowSkeleton) _hasSeenSkeleton = true;
+
+        // 交错渲染：
+        // - 当前确实是骨架屏状态 → 显示骨架屏
+        // - 曾是骨架屏，数据到了但交错延迟未到 → 继续显示骨架屏（错开 GPU 渲染）
+        // - 从未是骨架屏（force refresh 保留了数据）→ 立即显示真实内容
+        final showSkeleton =
+            isNowSkeleton || (_hasSeenSkeleton && !_isReadyToRender);
+
         final String? loadingText =
-            showSkeleton && currentState.loadingPhase == LoadingPhase.loadingA2S
+            showSkeleton &&
+                currentState.loadingPhase == LoadingPhase.loadingA2S
             ? '正在获取服务器数据...'
             : null;
 
         return Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
+          padding: EdgeInsets.only(bottom: widget.isLast ? 0 : 4),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: showSkeleton
@@ -2631,13 +2709,15 @@ class _ServerCardItemContainer extends StatelessWidget {
                 : ServerCard(
                     key: ValueKey(address),
                     server: server,
-                    categoryName: currentState.selectedCategory?.isCustom == true
+                    categoryName:
+                        currentState.selectedCategory?.isCustom == true
                         ? currentState.selectedCategory?.modelName
                         : null,
-                    onTap: () => onShowDetails(server),
+                    onTap: () => widget.onShowDetails(server),
                     onDelete: server.serverItem.isCustom
                         ? () {
-                            final categoryName = currentState.selectedCategory?.modelName;
+                            final categoryName =
+                                currentState.selectedCategory?.modelName;
                             if (categoryName != null && address != null) {
                               context.read<ServerBloc>().add(
                                 ServerDeleteServer(
@@ -2656,8 +2736,9 @@ class _ServerCardItemContainer extends StatelessWidget {
   }
 }
 
-/// 封装的可拖拽服务器卡片，独立监听自己的状态更新，保证 Key 传递正确
-class _DraggableServerCardItemContainer extends StatelessWidget {
+/// 封装的可拖拽服务器卡片，独立监听自己的状态更新，保证 Key 传递正确。
+/// 同样使用交错渲染以降低 GPU 峰值负载。
+class _DraggableServerCardItemContainer extends StatefulWidget {
   final ExtendedServerItem initialServer;
   final int index;
   final bool isLast;
@@ -2672,9 +2753,60 @@ class _DraggableServerCardItemContainer extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<_DraggableServerCardItemContainer> createState() =>
+      _DraggableServerCardItemContainerState();
+}
+
+class _DraggableServerCardItemContainerState
+    extends State<_DraggableServerCardItemContainer> {
+  bool _isReadyToRender = false;
+  Timer? _staggerTimer;
+  bool _hasSeenSkeleton = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleStaggeredRender();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DraggableServerCardItemContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldAddress = oldWidget.initialServer.serverItem.address ??
+        oldWidget.initialServer.serverItem.serverAddress;
+    final newAddress = widget.initialServer.serverItem.address ??
+        widget.initialServer.serverItem.serverAddress;
+    if (oldAddress != newAddress) {
+      _scheduleStaggeredRender();
+    }
+  }
+
+  @override
+  void dispose() {
+    _staggerTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleStaggeredRender() {
+    _isReadyToRender = false;
+    _hasSeenSkeleton = false;
+    _staggerTimer?.cancel();
+    final delayMs =
+        (widget.index * _kStaggerIntervalMs).clamp(0, _kStaggerMaxDelayMs);
+    if (delayMs == 0) {
+      _isReadyToRender = true;
+      return;
+    }
+    _staggerTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted) setState(() => _isReadyToRender = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final address = initialServer.serverItem.address ?? initialServer.serverItem.serverAddress;
-    
+    final address = widget.initialServer.serverItem.address ??
+        widget.initialServer.serverItem.serverAddress;
+
     return BlocBuilder<ServerBloc, ServerState>(
       buildWhen: (previous, current) {
         final p = _getServerByAddress(previous.servers, address);
@@ -2682,8 +2814,14 @@ class _DraggableServerCardItemContainer extends StatelessWidget {
         return _shouldRebuildCard(p, c);
       },
       builder: (context, currentState) {
-        final server = _getServerByAddress(currentState.servers, address) ?? initialServer;
-        final showSkeleton = server.isLoading && server.serverData == null;
+        final server =
+            _getServerByAddress(currentState.servers, address) ??
+            widget.initialServer;
+        final isNowSkeleton = server.isLoading && server.serverData == null;
+
+        if (isNowSkeleton) _hasSeenSkeleton = true;
+        final showSkeleton =
+            isNowSkeleton || (_hasSeenSkeleton && !_isReadyToRender);
 
         final Widget cardContent = showSkeleton
             ? const ServerCardSkeleton()
@@ -2691,9 +2829,10 @@ class _DraggableServerCardItemContainer extends StatelessWidget {
                 key: ValueKey('card_$address'),
                 server: server,
                 categoryName: currentState.selectedCategory?.modelName,
-                onTap: () => onShowDetails(server),
+                onTap: () => widget.onShowDetails(server),
                 onDelete: () {
-                  final categoryName = currentState.selectedCategory?.modelName;
+                  final categoryName =
+                      currentState.selectedCategory?.modelName;
                   if (categoryName != null && address != null) {
                     context.read<ServerBloc>().add(
                       ServerDeleteServer(
@@ -2707,8 +2846,11 @@ class _DraggableServerCardItemContainer extends StatelessWidget {
 
         return Padding(
           // 注意：不要在这里再次使用相同的 Key，外部的 Widget 已经持有该 Key。
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
-          child: _LongPressDraggableWrapper(index: index, child: cardContent),
+          padding: EdgeInsets.only(bottom: widget.isLast ? 0 : 4),
+          child: _LongPressDraggableWrapper(
+            index: widget.index,
+            child: cardContent,
+          ),
         );
       },
     );

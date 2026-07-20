@@ -173,10 +173,16 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                   width: 38,
                   height: 38,
                   child: _isRefreshing
-                      ? const CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation(Color(0xFFF0A020)),
-                        )
+                      ? (isWeakNetwork
+                          ? const CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation(Color(0xFFF0A020)),
+                            )
+                          : const CircularProgressIndicator(
+                              value: 1.0, // 普通模式下固定为完整的圆环，避免自动刷新导致的 GPU 占用
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation(Color(0xFFF0A020)),
+                            ))
                       : (isWeakNetwork
                             ? const SizedBox.shrink()
                             : CircularProgressIndicator(
@@ -187,16 +193,21 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                                 ),
                               )),
                 ),
-                // 文字（弱网模式下显示刷新图标，不再显示倒数秒数）
                 _isRefreshing
-                    ? const Text(
-                        '...',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFF0A020),
-                        ),
-                      )
+                    ? (isWeakNetwork
+                        ? const Text(
+                            '...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFF0A020),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.sync,
+                            size: 16,
+                            color: Color(0xFFF0A020),
+                          ))
                     : isWeakNetwork
                     ? const Icon(
                         Icons.refresh,

@@ -614,10 +614,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
                 ),
               );
             }
-            
+
             // 为了获取官方接口的 tag，我们也去请求官方的 MapInfo
             if (info.map != null &&
-                (mapChanged || currentServer.mapInfo == null || currentServer.mapInfo!.tags.isEmpty)) {
+                (mapChanged ||
+                    currentServer.mapInfo == null ||
+                    currentServer.mapInfo!.tags.isEmpty)) {
               _fetchMapInfoAsync(address, info.map!, requestId, serverApi);
             }
           } else {
@@ -681,21 +683,38 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 在发起 HTTP 详情查询前，先用实时频道的快照兜底（避免 N+1 HTTP 查询风暴）
     _applyMapRuntimeSnapshotForCurrentServers(emit);
 
-    // 并行执行 A2S 和 API
-    await Future.wait([
-      Future.wait(
-        a2sServerAddresses.map(
-          (address) => _fetchSingleServerInfo(
-            address: address,
-            requestId: requestId,
-            serverApi: serverApi,
-            emit: emit,
+    // 分批执行 A2S 查询，避免所有结果同时返回导致瞬间密集 emit
+    Future<void> fetchA2sServersBatched() async {
+      final addresses = a2sServerAddresses.toList();
+      const batchSize = 3; // 每批3个
+      for (var i = 0; i < addresses.length; i += batchSize) {
+        if (requestId != _currentRequestId || emit.isDone) break;
+        final end = (i + batchSize < addresses.length)
+            ? i + batchSize
+            : addresses.length;
+        final batch = addresses.sublist(i, end);
+
+        await Future.wait(
+          batch.map(
+            (address) => _fetchSingleServerInfo(
+              address: address,
+              requestId: requestId,
+              serverApi: serverApi,
+              emit: emit,
+            ),
           ),
-        ),
-        eagerError: false,
-      ),
-      fetchApiServers(),
-    ]);
+          eagerError: false,
+        );
+
+        // 批次间距 50ms
+        if (end < addresses.length) {
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
+      }
+    }
+
+    // 并行执行 A2S 和 API
+    await Future.wait([fetchA2sServersBatched(), fetchApiServers()]);
 
     // 比分数据由 `score.updates` WS 频道推送：
     // - 订阅时服务端会下发 snapshot
@@ -1264,10 +1283,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (event.mapInfoFetched == true && event.mapInfo != null) {
       // 官方接口返回的 MapInfo，需要和当前的合并，保留第三方提供的优质图片和中文名（如果官方没有的话）
       finalMapInfo = event.mapInfo!.copyWith(
-        mapUrl: (event.mapInfo!.mapUrl.isEmpty) && current.mapInfo?.mapUrl != null
+        mapUrl:
+            (event.mapInfo!.mapUrl.isEmpty) && current.mapInfo?.mapUrl != null
             ? current.mapInfo!.mapUrl
             : event.mapInfo!.mapUrl,
-        mapLabel: (event.mapInfo!.mapLabel.isEmpty) && current.mapInfo?.mapLabel != null
+        mapLabel:
+            (event.mapInfo!.mapLabel.isEmpty) &&
+                current.mapInfo?.mapLabel != null
             ? current.mapInfo!.mapLabel
             : event.mapInfo!.mapLabel,
       );
