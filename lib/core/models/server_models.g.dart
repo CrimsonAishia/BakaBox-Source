@@ -37,7 +37,9 @@ Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
 ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(
   address: json['address'] as String?,
   serverAddress: json['serverAddress'] as String?,
-  serverData: json['serverData'] as Map<String, dynamic>?,
+  serverData: json['serverData'] == null
+      ? null
+      : ServerInfo.fromJson(json['serverData'] as Map<String, dynamic>),
   isCustom: json['isCustom'] as bool? ?? false,
   nickname: json['nickname'] as String?,
   dataSourceMode: json['dataSourceMode'] as String?,

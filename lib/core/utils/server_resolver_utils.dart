@@ -26,9 +26,7 @@ class ServerResolverUtils {
             }
 
             // 如果没有备注名，收集可能有缓存的主机名
-            final hostName =
-                server.serverData?['name'] as String? ??
-                server.serverData?['hostName'] as String?;
+            final hostName = server.serverData?.hostName;
             if (hostName != null && hostName.isNotEmpty) {
               bestHostName = hostName;
             }
@@ -42,9 +40,7 @@ class ServerResolverUtils {
       for (final category in categories) {
         for (final server in category.serverList) {
           if (server.address == address || server.serverAddress == address) {
-            final hostName =
-                server.serverData?['name'] as String? ??
-                server.serverData?['hostName'] as String?;
+            final hostName = server.serverData?.hostName;
             if (hostName != null && hostName.isNotEmpty) {
               bestHostName = hostName;
             }

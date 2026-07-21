@@ -6,12 +6,7 @@ class ServerItemUtils {
 
   static ServerInfo? getServerInfo(ExtendedServerItem server) {
     if (server.serverData != null) return server.serverData;
-    if (server.serverItem.serverData == null) return null;
-    try {
-      return ServerInfo.fromJson(server.serverItem.serverData!);
-    } catch (e) {
-      return null;
-    }
+    return server.serverItem.serverData;
   }
 
   static String getServerName(ExtendedServerItem server) {

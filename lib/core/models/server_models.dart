@@ -101,7 +101,7 @@ class ServerCategory extends Equatable {
 class ServerItem extends Equatable {
   final String? address;
   final String? serverAddress;
-  final Map<String, dynamic>? serverData;
+  final ServerInfo? serverData;
   @JsonKey(defaultValue: false)
   final bool isCustom; // 标记是否为用户自定义服务器
   final String? nickname; // 自定义服务器备注名
@@ -135,7 +135,7 @@ class ServerItem extends Equatable {
   ServerItem copyWith({
     String? address,
     String? serverAddress,
-    Map<String, dynamic>? serverData,
+    ServerInfo? serverData,
     bool? isCustom,
     String? nickname,
     bool clearNickname = false,

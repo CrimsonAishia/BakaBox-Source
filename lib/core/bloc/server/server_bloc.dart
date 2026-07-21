@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/server_models.dart';
 import '../../models/server_score.dart';
@@ -1654,34 +1655,38 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             : addressList.length;
         final batch = addressList.sublist(i, end);
 
-        await Future.wait(
-          batch.map((address) async {
-            final count = await _fetchSingleServerPlayerCount(address);
-            serverPlayers[address] = count;
+        final batchServerPlayers = await Isolate.run(() => _fetchBatchPlayerCountsInIsolate(batch));
 
-            // 查完一台立即更新对应分类的人数（累加效果）
-            if (emit.isDone) return;
-            final categoryName = addressToCategoryName[address];
-            if (categoryName == null) return;
+        if (emit.isDone) break;
 
-            // 重新累加该分类当前已查完的所有服务器人数
-            final addressSet = categoryAddressesMap[categoryName]!;
-            int total = 0;
-            for (final addr in addressSet) {
-              total += serverPlayers[addr] ?? 0; // 未查完的地址贡献 0，查完后会再次更新
+        // 一整批（20台）查完后，统一合并数据并进行单次 emit
+        // 极大减少 Map 复制和 UI 刷新带来的内存分配压力 (虚胖)
+        bool hasChanges = false;
+        final latestCounts = Map<String, int>.from(state.categoryOnlineCounts);
+
+        for (final address in batch) {
+          final categoryName = addressToCategoryName[address];
+          if (categoryName == null) continue;
+
+          final addressSet = categoryAddressesMap[categoryName]!;
+          int total = 0;
+          for (final addr in addressSet) {
+            total += batchServerPlayers[addr] ?? serverPlayers[addr] ?? 0;
+            // 将新获取的结果存入全局累计 Map，防止后续批次覆盖时丢失之前批次的数据
+            if (batchServerPlayers.containsKey(addr)) {
+               serverPlayers[addr] = batchServerPlayers[addr]!;
             }
+          }
 
-            // 只有人数实际变化时才 emit，避免无意义的 UI 重建
-            final currentTotal = state.categoryOnlineCounts[categoryName] ?? 0;
-            if (total == currentTotal) return;
+          if (latestCounts[categoryName] != total) {
+            latestCounts[categoryName] = total;
+            hasChanges = true;
+          }
+        }
 
-            final latestCounts = Map<String, int>.from(
-              state.categoryOnlineCounts,
-            )..[categoryName] = total;
-            emit(state.copyWith(categoryOnlineCounts: latestCounts));
-          }),
-          eagerError: false,
-        );
+        if (hasChanges && !emit.isDone) {
+          emit(state.copyWith(categoryOnlineCounts: latestCounts));
+        }
       }
 
       // 所有查询完成，关闭加载状态（仅首次加载时需要）并记录刷新时间
@@ -1709,36 +1714,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
   /// 获取单个服务器人数（用于非选中分类的独立查询）
   /// 失败返回 0（服务器无响应即视为 0 人）
-  Future<int> _fetchSingleServerPlayerCount(String address) async {
-    final parts = address.split(':');
-    if (parts.length != 2) return 0;
-
-    final ip = parts[0];
-    final port = int.parse(parts[1]);
-
-    for (int retry = 0; retry < _singleServerMaxRetries; retry++) {
-      try {
-        final info = await SourceServerService.getServerInfo(
-          ip,
-          port,
-          timeout: _serverQueryTimeout,
-        );
-        if (info != null) {
-          return info.players;
-        }
-      } catch (e) {
-        // 捕获异常，准备重试
-      }
-
-      if (retry < _singleServerMaxRetries - 1) {
-        await Future.delayed(
-          const Duration(milliseconds: _singleServerRetryDelayMs),
-        );
-      }
-    }
-
-    return 0;
-  }
+  // 已通过 _fetchBatchPlayerCountsInIsolate 替代单次查询
 
   /// 计算当前选中分类的在线人数
   ///
@@ -3264,4 +3240,42 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   ) {
     emit(state.copyWith(clearPendingCategories: true));
   }
+}
+
+/// 在独立的后台 Isolate 中批量拉取 UDP 在线人数，杜绝主线程产生大量临时 Map/List 垃圾
+Future<Map<String, int>> _fetchBatchPlayerCountsInIsolate(List<String> addresses) async {
+  final Map<String, int> results = {};
+  
+  await Future.wait(
+    addresses.map((address) async {
+      final parts = address.split(':');
+      if (parts.length != 2) return;
+
+      final ip = parts[0];
+      final port = int.tryParse(parts[1]);
+      if (port == null) return;
+
+      for (int retry = 0; retry < 5; retry++) {
+        try {
+          final info = await SourceServerService.getServerInfo(
+            ip,
+            port,
+            timeout: 1000,
+          );
+          if (info != null) {
+            results[address] = info.players;
+            return;
+          }
+        } catch (_) {}
+
+        if (retry < 4) {
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
+      }
+      results[address] = 0;
+    }),
+    eagerError: false,
+  );
+  
+  return results;
 }

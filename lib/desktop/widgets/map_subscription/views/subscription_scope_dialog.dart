@@ -254,7 +254,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     if (hostName == null && !server.isCustom) {
       try {
         if (server.serverData != null) {
-          hostName = ServerInfo.fromJson(server.serverData!).hostName;
+          hostName = server.serverData!.hostName;
         }
       } catch (_) {}
     }
