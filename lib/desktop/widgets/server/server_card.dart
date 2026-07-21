@@ -346,8 +346,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     return MapBackground(
       mapName: widget.server.serverData?.map,
       imageUrl: mapUrl,
-      cacheWidth: 800, // 2x 显示宽度
-      cacheHeight: 330, // 2x 显示高度
+      cacheWidth: 600, // 1.5x 显示宽度
+      cacheHeight: 250, // 1.5x 显示高度
     );
   }
 

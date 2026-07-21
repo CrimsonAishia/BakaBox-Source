@@ -77,6 +77,8 @@ class ServerListItem extends StatelessWidget {
                   MapBackground.fromMap(
                     mapName: _serverInfo?.map,
                     mapUrl: server.mapInfo?.mapUrl,
+                    cacheWidth: 600,
+                    cacheHeight: 250,
                   ),
                   Container(
                     decoration: BoxDecoration(
