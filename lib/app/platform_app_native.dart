@@ -16,8 +16,8 @@ Future<void> runPlatformAppImpl(List<String> args) async {
     FlutterForegroundTask.initCommunicationPort();
   }
 
-  PaintingBinding.instance.imageCache.maximumSize = 50;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 30 << 20;
+  PaintingBinding.instance.imageCache.maximumSize = 30;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 10 << 20;
 
   if (PlatformUtils.isDesktopPlatform) {
     fvp.registerWith(
