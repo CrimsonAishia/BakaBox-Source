@@ -5,6 +5,7 @@ import 'package:leak_tracker/leak_tracker.dart';
 
 import 'app/platform_app.dart';
 import 'core/utils/log_service.dart';
+import 'core/utils/vm_memory_monitor.dart';
 
 /// 应用入口
 ///
@@ -22,6 +23,8 @@ import 'core/utils/log_service.dart';
 Future<void> main(List<String> args) async {
   if (kDebugMode || kProfileMode) {
     LeakTracking.start();
+    // 启动内存雷达：每 30 秒抓取一次前 20 的对象数量，存入 memory_monitor.log
+    VmMemoryMonitor.start(interval: const Duration(seconds: 30), topN: 20);
   }
   await runZonedGuarded<Future<void>>(
     () async {

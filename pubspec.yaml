@@ -143,6 +143,7 @@ dependencies:
   cached_network_image: ^3.4.1
   leak_tracker: ^11.0.2
   leak_tracker_flutter_testing: ^3.0.10
+  vm_service: ^15.2.0
 
 dev_dependencies:
   flutter_test:
