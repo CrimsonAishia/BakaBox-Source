@@ -25,7 +25,7 @@ class PreviewWindowLauncher {
       switch (call.method) {
         case 'window_close':
         case 'close_self':
-          await windowManager.destroy();
+          await windowManager.close();
           return true;
         case 'updatePosition':
           final args = call.arguments as Map<dynamic, dynamic>;

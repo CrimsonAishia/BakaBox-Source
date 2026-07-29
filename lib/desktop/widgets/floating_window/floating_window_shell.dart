@@ -237,28 +237,17 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     // 先通知主窗口，窗口即将关闭
     await _notifyMainWindowClosed();
 
-    // 尝试多种关闭方式，确保窗口一定关闭
+    // 尝试关闭窗口
     try {
       await windowManager.close();
       debugPrint('[FloatingWindowShell] Window closed via close()');
     } catch (e) {
-      debugPrint('[FloatingWindowShell] close() failed: $e, trying destroy()');
+      debugPrint('[FloatingWindowShell] close() failed: $e, trying hide()');
       try {
-        await windowManager.destroy();
-        debugPrint('[FloatingWindowShell] Window closed via destroy()');
-      } catch (e2) {
-        debugPrint(
-          '[FloatingWindowShell] destroy() also failed: $e2, trying hide()',
-        );
         // 最后尝试隐藏窗口
-        try {
-          await windowManager.hide();
-          // 隐藏后再尝试关闭
-          await Future.delayed(const Duration(milliseconds: 100));
-          await windowManager.close();
-        } catch (e3) {
-          debugPrint('[FloatingWindowShell] All close attempts failed: $e3');
-        }
+        await windowManager.hide();
+      } catch (e3) {
+        debugPrint('[FloatingWindowShell] All close attempts failed: $e3');
       }
     }
   }
