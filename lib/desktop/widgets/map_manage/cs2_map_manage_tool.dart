@@ -27,18 +27,16 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
   bool _canScrollUp = false;
   bool _canScrollDown = false;
 
-  final List<String> _mapTypes = [
-    '全部',
-    'ze_',
-    'zm_',
-    'mg_',
-    'surf_',
-    'bhop_',
-    'kz_',
-    'de_',
-    'cs_',
+  final List<(String, String)> _mapTypes = [
+    ('', '全部'),
+    ('ze_', '僵尸逃跑'),
+    ('zm_', '僵尸感染'),
+    ('surf_', '滑翔'),
+    ('bhop_', '连跳'),
+    ('mg_', '闯关'),
+    ('bkz_', '攀岩'),
   ];
-  String _selectedType = '全部';
+  String _selectedType = '';
 
   void _checkScroll() {
     if (!_listScrollController.hasClients) return;
@@ -80,7 +78,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
     context.read<MapManageBloc>().add(
       SetFilter(
         searchQuery: query,
-        filterType: _selectedType == '全部' ? '' : _selectedType,
+        filterType: _selectedType,
       ),
     );
   }
@@ -93,7 +91,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
     context.read<MapManageBloc>().add(
       SetFilter(
         searchQuery: _searchController.text,
-        filterType: type == '全部' ? '' : type,
+        filterType: type,
       ),
     );
   }
@@ -213,15 +211,16 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
               ),
             ),
             offset: const Offset(0, 44),
-            itemBuilder: (context) => _mapTypes.map((type) {
-              final isSelected = type == _selectedType;
+            itemBuilder: (context) => _mapTypes.map((typeItem) {
+              final (value, label) = typeItem;
+              final isSelected = value == _selectedType;
               return PopupMenuItem<String>(
-                value: type,
+                value: value,
                 height: 36,
                 child: Row(
                   children: [
                     Text(
-                      type,
+                      label,
                       style: TextStyle(
                         color: isSelected
                             ? AppColors.blue500
@@ -257,7 +256,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _selectedType,
+                    _mapTypes.firstWhere((t) => t.$1 == _selectedType).$2,
                     style: TextStyle(
                       color: isDark ? Colors.white70 : AppColors.gray700,
                       fontSize: 14,
