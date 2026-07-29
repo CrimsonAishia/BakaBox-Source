@@ -2303,17 +2303,31 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               '[LobbyBloc] presence.leave: 跨地图离线通知 serverUserId=$serverUserId',
             );
           }
-          // 跨地图用户虽然不在场景中，但可能在 allOnlineUsers 中，需要同步移除
+          // 跨地图用户虽然不在场景中，但可能在 allOnlineUsers 中。
+          // 如果是传送离开（targetMapId 非空），只更新其 mapId，不移除。
           if (state.allOnlineUsers.isNotEmpty) {
-            final crossMapUpdatedAll = state.allOnlineUsers
-                .where(
-                  (u) =>
-                      u.serverUserId != serverUserId &&
-                      u.userId != serverUserId,
-                )
-                .toList(growable: false);
-            if (crossMapUpdatedAll.length != state.allOnlineUsers.length) {
-              emit(state.copyWith(allOnlineUsers: crossMapUpdatedAll));
+            if (targetMapId.isNotEmpty) {
+              final targetUser = state.allOnlineUsers
+                  .where((u) => u.serverUserId == serverUserId || u.userId == serverUserId)
+                  .firstOrNull;
+              if (targetUser != null) {
+                final crossMapUpdatedAll = _upsertUserInList(
+                  state.allOnlineUsers,
+                  targetUser.copyWith(mapId: targetMapId),
+                );
+                emit(state.copyWith(allOnlineUsers: crossMapUpdatedAll));
+              }
+            } else {
+              final crossMapUpdatedAll = state.allOnlineUsers
+                  .where(
+                    (u) =>
+                        u.serverUserId != serverUserId &&
+                        u.userId != serverUserId,
+                  )
+                  .toList(growable: false);
+              if (crossMapUpdatedAll.length != state.allOnlineUsers.length) {
+                emit(state.copyWith(allOnlineUsers: crossMapUpdatedAll));
+              }
             }
           }
           break;
@@ -2355,12 +2369,20 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           newNotification,
         ].take(20).toList();
 
-        // 同步更新 allOnlineUsers：移除离开的用户
-        final updatedAllOnlineUsers = state.allOnlineUsers
-            .where(
-              (u) => u.serverUserId != serverUserId && u.userId != serverUserId,
-            )
-            .toList(growable: false);
+        // 同步更新 allOnlineUsers：移除离开的用户（如果只是传送，更新 mapId 即可）
+        List<LobbyUser> updatedAllOnlineUsers = state.allOnlineUsers;
+        if (targetMapId.isNotEmpty && leavingUser != null) {
+          updatedAllOnlineUsers = _upsertUserInList(
+            state.allOnlineUsers,
+            leavingUser.copyWith(mapId: targetMapId),
+          );
+        } else {
+          updatedAllOnlineUsers = state.allOnlineUsers
+              .where(
+                (u) => u.serverUserId != serverUserId && u.userId != serverUserId,
+              )
+              .toList(growable: false);
+        }
 
         emit(
           state.copyWith(
@@ -4632,10 +4654,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
       // 生成通知（自己不通知）
       if (!isSelfUser) {
+        // 判断是否是传送（如果该用户已在全服在线列表中，说明不是新上线，而是从其他地图传送过来的）
+        final wasOnline = state.allOnlineUsers.any((u) => u.serverUserId == rawUserId || u.userId == rawUserId);
         notifications.add(
           PlayerNotification(
             id: 'delta_join_${DateTime.now().microsecondsSinceEpoch}_$rawUserId',
-            type: PlayerNotificationType.online,
+            type: wasOnline ? PlayerNotificationType.teleportIn : PlayerNotificationType.online,
             playerName: user.displayName,
             createdAt: DateTime.now(),
           ),
@@ -4644,6 +4668,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     // 2. 批量移除离开的用户
+    // 预构建跨地图 leave 事件索引，用于判断离开用户是否在传送（O(1) 查找）
+    final crossMapLeaveIndex = <String, pb.CrossMapPresenceEvent>{};
+    for (final crossEvent in delta.crossMapEvents) {
+      if (crossEvent.eventType == 'leave' && crossEvent.userId.isNotEmpty) {
+        crossMapLeaveIndex[crossEvent.userId] = crossEvent;
+      }
+    }
+
     for (final leftUserId in delta.leftUserIds) {
       if (leftUserId.isEmpty) continue;
       // 跳过自己（登录时服务端会清理旧 session，产生自己的 leave 帧）
@@ -4661,14 +4693,33 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             )
             .toList(growable: false);
 
-        notifications.add(
-          PlayerNotification(
-            id: 'delta_leave_${DateTime.now().microsecondsSinceEpoch}_$leftUserId',
-            type: PlayerNotificationType.offline,
-            playerName: leavingUser.displayName,
-            createdAt: DateTime.now(),
-          ),
-        );
+        // 检查是否有对应的跨地图 leave 事件（传送场景）
+        final teleportEvent = crossMapLeaveIndex[leftUserId];
+        if (teleportEvent != null && teleportEvent.targetMapId.isNotEmpty) {
+          // 传送离开：显示"传送到 XX 地图"而非"下线"
+          final targetMapName =
+              state.assets.getMapById(teleportEvent.targetMapId)?.displayName ??
+              teleportEvent.targetMapId;
+          notifications.add(
+            PlayerNotification(
+              id: 'delta_leave_${DateTime.now().microsecondsSinceEpoch}_$leftUserId',
+              type: PlayerNotificationType.teleport,
+              playerName: leavingUser.displayName,
+              targetMapName: targetMapName,
+              createdAt: DateTime.now(),
+            ),
+          );
+        } else {
+          // 正常断线/登出
+          notifications.add(
+            PlayerNotification(
+              id: 'delta_leave_${DateTime.now().microsecondsSinceEpoch}_$leftUserId',
+              type: PlayerNotificationType.offline,
+              playerName: leavingUser.displayName,
+              createdAt: DateTime.now(),
+            ),
+          );
+        }
       } else {
         // 本地找不到该用户，说明之前可能漏收了 join 帧
         _onDeltaAnomaly();
@@ -4676,6 +4727,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     // 3. 跨地图通知
+    // 只处理 join 事件和「非本地用户」的 leave 事件。
+    // 本地用户的 leave 通知已在 step 2 中通过 crossMapLeaveIndex 处理，
+    // 避免同一用户产生重复的 offline + teleport 双通知。
     for (final crossEvent in delta.crossMapEvents) {
       if (crossEvent.isAnonymous) continue; // 匿名用户不通知
       final isSelf =
@@ -4687,15 +4741,38 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           ? crossEvent.nickname
           : crossEvent.userId;
       if (crossEvent.eventType == 'join') {
-        notifications.add(
-          PlayerNotification(
-            id: 'delta_cross_join_${DateTime.now().microsecondsSinceEpoch}_${crossEvent.userId}',
-            type: PlayerNotificationType.online,
-            playerName: displayName,
-            createdAt: DateTime.now(),
-          ),
+        // 判断是否是传送（如果该用户已在全服在线列表中，说明不是新上线，而是从其他地图传送过去的）
+        final wasOnline = state.allOnlineUsers.any(
+          (u) => u.serverUserId == crossEvent.userId || u.userId == crossEvent.userId
         );
+
+        if (wasOnline) {
+          final targetMapName = crossEvent.mapId.isNotEmpty
+              ? (state.assets.getMapById(crossEvent.mapId)?.displayName ?? crossEvent.mapId)
+              : null;
+          notifications.add(
+            PlayerNotification(
+              id: 'delta_cross_join_${DateTime.now().microsecondsSinceEpoch}_${crossEvent.userId}',
+              type: PlayerNotificationType.teleport,
+              playerName: displayName,
+              targetMapName: targetMapName,
+              createdAt: DateTime.now(),
+            ),
+          );
+        } else {
+          notifications.add(
+            PlayerNotification(
+              id: 'delta_cross_join_${DateTime.now().microsecondsSinceEpoch}_${crossEvent.userId}',
+              type: PlayerNotificationType.online,
+              playerName: displayName,
+              createdAt: DateTime.now(),
+            ),
+          );
+        }
       } else if (crossEvent.eventType == 'leave') {
+        // 跳过已在 step 2 中处理过的本地图用户（已在 leftUserIds 中）
+        if (delta.leftUserIds.contains(crossEvent.userId)) continue;
+
         final targetMapName = crossEvent.targetMapId.isNotEmpty
             ? (state.assets.getMapById(crossEvent.targetMapId)?.displayName ??
                   crossEvent.targetMapId)
@@ -4723,26 +4800,70 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 同步更新 allOnlineUsers（复用已解析的 joined 用户）
     var updatedAllOnline = List<LobbyUser>.from(state.allOnlineUsers);
     if (updatedAllOnline.isNotEmpty) {
+      // 1. 合并当前地图 join 的新用户
       for (final user in parsedJoined) {
         updatedAllOnline = _upsertUserInList(updatedAllOnline, user);
       }
+
+      // 2. 合并跨地图 join 事件中的用户（其他地图有新用户，需要同步到全服列表）
+      for (final crossEvent in delta.crossMapEvents) {
+        if (crossEvent.eventType == 'join' && !crossEvent.isAnonymous) {
+          // 尝试找到 allOnlineUsers 中已有的条目并更新 mapId
+          final existingUser = updatedAllOnline
+              .where((u) => u.serverUserId == crossEvent.userId || u.userId == crossEvent.userId)
+              .firstOrNull;
+          if (existingUser != null) {
+            updatedAllOnline = _upsertUserInList(
+              updatedAllOnline,
+              existingUser.copyWith(mapId: crossEvent.mapId),
+            );
+          }
+          // 如果不存在，不创建新条目（跨地图用户信息不完整，等 allOnlineUsers 整体刷新时补全）
+        }
+      }
+
+      // 3. 处理离开的用户
       for (final leftUserId in delta.leftUserIds) {
         if (leftUserId.isEmpty) continue;
-        // 跳过自己（与上面 step 2 保持一致）
         if (_selfServerUserId == leftUserId) continue;
-        // 兜底：检查 allOnlineUsers 中该用户是否标记为 isSelf
-        final leavingAllUser = updatedAllOnline
-            .where(
-              (u) => u.serverUserId == leftUserId || u.userId == leftUserId,
-            )
-            .firstOrNull;
-        if (leavingAllUser != null && leavingAllUser.isSelf) continue;
 
-        updatedAllOnline = updatedAllOnline
-            .where(
-              (u) => u.serverUserId != leftUserId && u.userId != leftUserId,
-            )
-            .toList(growable: false);
+        // 复用 step 2 已构建的索引，判断是传送还是下线
+        final teleportEvent = crossMapLeaveIndex[leftUserId];
+
+        if (teleportEvent != null && teleportEvent.targetMapId.isNotEmpty) {
+          // 传送场景：保留在 allOnlineUsers 中，只更新 mapId
+          final leavingAllUser = updatedAllOnline
+              .where((u) => u.serverUserId == leftUserId || u.userId == leftUserId)
+              .firstOrNull;
+          if (leavingAllUser != null && !leavingAllUser.isSelf) {
+            updatedAllOnline = _upsertUserInList(
+              updatedAllOnline,
+              leavingAllUser.copyWith(mapId: teleportEvent.targetMapId),
+            );
+          }
+        } else {
+          // 正常下线：移除
+          final leavingAllUser = updatedAllOnline
+              .where((u) => u.serverUserId == leftUserId || u.userId == leftUserId)
+              .firstOrNull;
+          if (leavingAllUser != null && leavingAllUser.isSelf) continue;
+
+          updatedAllOnline = updatedAllOnline
+              .where(
+                (u) => u.serverUserId != leftUserId && u.userId != leftUserId,
+              )
+              .toList(growable: false);
+        }
+      }
+
+      // 4. 处理跨地图的下线事件（其他地图玩家断线）
+      for (final crossEvent in delta.crossMapEvents) {
+        if (crossEvent.eventType == 'leave' && crossEvent.targetMapId.isEmpty) {
+          // targetMapId 为空代表真正下线，而不是传送
+          updatedAllOnline = updatedAllOnline
+              .where((u) => u.serverUserId != crossEvent.userId && u.userId != crossEvent.userId)
+              .toList(growable: false);
+        }
       }
     }
 
