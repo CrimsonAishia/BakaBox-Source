@@ -1546,7 +1546,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
     final address = server.address;
     if (address == null || address.isEmpty) return;
 
-    final uri = Uri.parse('steam://run/730//+connect $address');
+    final targetAppId = (server.appId != null && server.appId! > 0) ? server.appId.toString() : '730';
+    final uri = Uri.parse('steam://run/$targetAppId//+connect $address');
     await launchUrl(uri);
   }
 
@@ -1717,7 +1718,8 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
     final address = widget.server.address;
     if (address == null || address.isEmpty) return;
 
-    final uri = Uri.parse('steam://run/730//+connect $address');
+    final targetAppId = (widget.server.appId != null && widget.server.appId! > 0) ? widget.server.appId.toString() : '730';
+    final uri = Uri.parse('steam://run/$targetAppId//+connect $address');
     await launchUrl(uri);
   }
 

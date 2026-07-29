@@ -258,8 +258,9 @@ extension GameClientInfo on GameClient {
   }
 
   /// 构建连接服务器用的 Steam URL：`steam://run/<appId>//+connect <addr> [+password <pwd>]`
-  String buildConnectUrl(String serverAddress, [String? password]) {
-    final base = 'steam://run/$steamAppId//+connect $serverAddress';
+  String buildConnectUrl(String serverAddress, [String? password, int? dynamicAppId]) {
+    final targetAppId = (dynamicAppId != null && dynamicAppId > 0) ? dynamicAppId.toString() : steamAppId;
+    final base = 'steam://run/$targetAppId//+connect $serverAddress';
     if (password != null && password.isNotEmpty) {
       return '$base +password $password';
     }

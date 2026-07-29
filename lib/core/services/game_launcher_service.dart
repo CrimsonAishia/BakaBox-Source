@@ -554,13 +554,14 @@ class GameLauncherService {
     String serverAddress,
     String? password, {
     required GameClient client,
+    int? appId,
   }) async {
     try {
       LogService.d('使用命令行连接服务器: $serverAddress (${client.displayName})');
 
       // 构建Steam URL，使用目标游戏对应的 AppID，并将空格替换为 %20
       // （防止 Windows 注册表损坏导致带有空格的 URL 被截断）
-      final rawSteamUrl = client.buildConnectUrl(serverAddress, password);
+      final rawSteamUrl = client.buildConnectUrl(serverAddress, password, appId);
       final steamUrl = rawSteamUrl.replaceAll(' ', '%20');
 
       LogService.d('生成的Steam URL: $steamUrl');
@@ -790,7 +791,7 @@ class GameLauncherService {
     }
 
     // 使用Steam URL连接
-    return await _connectUsingSteamUrl(serverAddress, password, client: client);
+    return await _connectUsingSteamUrl(serverAddress, password, client: client, appId: appId);
   }
 
   /// 连接到密码服务器
@@ -834,7 +835,7 @@ class GameLauncherService {
       return csgoValidation; // 验证失败，返回错误
     }
 
-    return await _connectUsingSteamUrl(address, password, client: client);
+    return await _connectUsingSteamUrl(address, password, client: client, appId: appId);
   }
 
   /// 使用Steam URL连接服务器
@@ -846,6 +847,7 @@ class GameLauncherService {
     String serverAddress,
     String? password, {
     required GameClient client,
+    int? appId,
   }) async {
     // Windows使用命令行方式
     if (PlatformUtils.isWindows) {
@@ -853,6 +855,7 @@ class GameLauncherService {
         serverAddress,
         password,
         client: client,
+        appId: appId,
       );
     }
 
@@ -861,7 +864,7 @@ class GameLauncherService {
       LogService.d('使用Steam URL连接服务器: $serverAddress (${client.displayName})');
 
       // 构建Steam URL，使用目标游戏对应的 AppID
-      final steamUrl = client.buildConnectUrl(serverAddress, password);
+      final steamUrl = client.buildConnectUrl(serverAddress, password, appId);
 
       LogService.d('生成的Steam URL: $steamUrl');
 
@@ -954,6 +957,7 @@ class GameLauncherService {
       serverAddress,
       effectivePassword,
       client: client,
+      appId: appId,
     );
   }
 

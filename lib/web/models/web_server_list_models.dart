@@ -84,6 +84,7 @@ class WebServerItem {
   final bool isOffline;
   final bool isLoading;
   final bool isCustom;
+  final int? appId;
   final WebServerScore? score;
   final Color? accentColor;
 
@@ -103,6 +104,7 @@ class WebServerItem {
     this.isOffline = false,
     this.isLoading = false,
     this.isCustom = false,
+    this.appId,
     this.score,
     this.accentColor,
   });
@@ -128,6 +130,7 @@ class WebServerItem {
       isOffline: json['isOffline'] as bool? ?? false,
       isLoading: json['isLoading'] as bool? ?? false,
       isCustom: json['isCustom'] as bool? ?? false,
+      appId: _asInt(json['appId']),
       score: json['score'] is Map<String, dynamic>
           ? WebServerScore.fromJson(json['score'] as Map<String, dynamic>)
           : null,
