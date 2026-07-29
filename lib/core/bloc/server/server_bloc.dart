@@ -762,6 +762,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final addresses = <String>[];
     for (final s in state.servers) {
       if (s.serverData == null) continue;
+      
+      final isCustomServer = s.serverItem.isCustom;
+      final gameType = s.serverData!.gameType;
+      final isAllowedGame = gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
+      
+      if (isCustomServer && !isAllowedGame) continue;
+
       final addr = s.serverItem.address ?? s.serverItem.serverAddress;
       if (addr != null && addr.isNotEmpty) addresses.add(addr);
     }
@@ -1054,6 +1061,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         // graphics_settings 是服务器启动中的加载地图，不获取其背景图
         final isCustomServer = currentServer.serverItem.isCustom;
         final isValidMap = newMap != 'graphics_settings';
+        final isAllowedGame = info.gameType == 'CS2' || info.gameType == 'CSGO' || info.gameType == 'CSS';
+        final shouldFetchMapInfo = !isCustomServer || isAllowedGame;
 
         if (isValidMap) {
           // 需要获取背景图的情况：
@@ -1065,7 +1074,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               mapChanged ||
               !currentServer.mapInfoFetched ||
               (currentMapInInfo != null && currentMapInInfo != newMap);
-          if (needFetchMapInfo) {
+          if (needFetchMapInfo && shouldFetchMapInfo) {
             _fetchMapInfoAsync(address, info.map, requestId, serverApi);
           }
           // 自定义服务器不获取 mapRuntime（需要 API 交互）
@@ -2263,6 +2272,24 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       return;
     }
 
+    final serverIndex = state.servers.indexWhere(
+      (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.address,
+    );
+    if (serverIndex != -1) {
+      final s = state.servers[serverIndex];
+      if (s.serverItem.isCustom && s.serverData != null) {
+        final gameType = s.serverData!.gameType;
+        final isAllowedGame = gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
+        if (!isAllowedGame) {
+          emit(state.copyWith(error: '暂不支持获取该游戏类型的地图信息'));
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!emit.isDone) emit(state.copyWith(error: null));
+          });
+          return;
+        }
+      }
+    }
+
     // 频率限制检查
     final now = DateTime.now();
     final history = _refreshHistory[event.address] ?? [];
@@ -2554,7 +2581,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
         // 获取地图信息
         final mapName = info.map;
-        if (mapName != 'graphics_settings') {
+        final isAllowedGame = info.gameType == 'CS2' || info.gameType == 'CSGO' || info.gameType == 'CSS';
+        if (mapName != 'graphics_settings' && isAllowedGame) {
           final serverApi = ServerApi();
           serverApi
               .getMapInfo(mapName, address: serverAddress)
