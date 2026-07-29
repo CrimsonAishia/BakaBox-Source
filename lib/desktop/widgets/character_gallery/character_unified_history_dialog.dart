@@ -4,6 +4,7 @@ import '../../../core/api/character_api.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/services/image_url_service.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/services/quill_delta_codec.dart';
 import '../../../core/widgets/image_viewer_dialog.dart';
 import 'character_gallery_theme.dart';
 import '../../../core/constants/app_colors.dart';
@@ -721,6 +722,16 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   // 格式化显示值
   String _formatValueDisplay(String field, String? value) {
     if (value == null || value.isEmpty) return '(空)';
+
+    // 解析富文本字段，将其转换为纯文本显示以防显示 JSON 源码
+    if (field == 'description' || field == 'tips' || field == 'special' || field == 'acquisition') {
+      try {
+        final decoded = QuillDeltaCodec.decode(value).toPlainText().trim();
+        return decoded.isEmpty ? '(空)' : decoded;
+      } catch (_) {
+        return value;
+      }
+    }
 
     if (field == 'tier') {
       return switch (value.toLowerCase()) {

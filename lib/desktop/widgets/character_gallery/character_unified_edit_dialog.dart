@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/rich_text_editor.dart';
+import '../../../core/widgets/rich_text_viewer.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import '../../../core/services/quill_delta_codec.dart';
 import 'package:flutter/services.dart';
@@ -1480,9 +1481,10 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                             ),
                           ],
                         )
-                      : Text(
-                          editData?.description ?? card.description,
-                          style: TextStyle(
+                      : RichTextViewer(
+                          content: editData?.description ?? card.description,
+                          compact: true,
+                          textStyle: TextStyle(
                             color: inkColor.withValues(alpha: 0.9),
                             fontSize: 13,
                             height: 1.4,
@@ -1852,9 +1854,10 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   ),
 
                   // 描述
-                  Text(
-                    data.description ?? '暂无描述',
-                    style: TextStyle(
+                  RichTextViewer(
+                    content: data.description ?? '暂无描述',
+                    compact: true,
+                    textStyle: TextStyle(
                       color: inkColor.withValues(alpha: 0.9),
                       fontSize: 13,
                       height: 1.4,
@@ -2168,9 +2171,10 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                             ),
                           ],
                         )
-                      : Text(
-                          editData?.description ?? skill.description,
-                          style: TextStyle(
+                      : RichTextViewer(
+                          content: editData?.description ?? skill.description,
+                          compact: true,
+                          textStyle: TextStyle(
                             color: inkColor.withValues(alpha: 0.9),
                             fontSize: 13,
                             height: 1.4,
@@ -2442,9 +2446,10 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   ),
 
                   // 描述
-                  Text(
-                    data.description ?? '暂无描述',
-                    style: TextStyle(
+                  RichTextViewer(
+                    content: data.description ?? '暂无描述',
+                    compact: true,
+                    textStyle: TextStyle(
                       color: inkColor.withValues(alpha: 0.9),
                       fontSize: 13,
                       height: 1.4,

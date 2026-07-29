@@ -3,6 +3,7 @@ import '../../../core/models/character_models.dart';
 import 'character_gallery_theme.dart';
 import 'character_common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/rich_text_viewer.dart';
 
 /// 技能/符卡卡片
 class SkillCard extends StatelessWidget {
@@ -164,9 +165,10 @@ class SkillCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           // 描述
-          Text(
-            description,
-            style: TextStyle(
+          RichTextViewer(
+            content: description,
+            compact: true,
+            textStyle: TextStyle(
               color: inkColor.withValues(alpha: 0.7),
               fontSize: 13,
             ),

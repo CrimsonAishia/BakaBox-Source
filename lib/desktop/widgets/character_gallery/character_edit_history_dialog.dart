@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/api/character_api.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/services/quill_delta_codec.dart';
 import 'character_gallery_theme.dart';
 
 /// 编辑历史对话框（时间线风格）
@@ -734,6 +735,16 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
 
   String _formatValueDisplay(String field, String? value) {
     if (value == null || value.isEmpty) return '(空)';
+
+    // 解析富文本字段，将其转换为纯文本显示以防显示 JSON 源码
+    if (field == 'description' || field == 'tips' || field == 'special' || field == 'acquisition') {
+      try {
+        final decoded = QuillDeltaCodec.decode(value).toPlainText().trim();
+        return decoded.isEmpty ? '(空)' : decoded;
+      } catch (_) {
+        return value;
+      }
+    }
 
     if (field == 'tier') {
       return switch (value.toLowerCase()) {
