@@ -80,7 +80,7 @@ class NotificationWindowLauncher {
               );
             }
           }
-          await windowManager.close();
+          await windowManager.destroy();
           return true;
         case 'window_show':
           await windowManager.show();

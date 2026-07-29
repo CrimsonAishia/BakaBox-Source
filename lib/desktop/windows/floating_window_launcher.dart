@@ -98,7 +98,7 @@ class FloatingWindowLauncher {
         case 'close_self':
           _visibilityTimer?.cancel();
           try {
-            await windowManager.close();
+            await windowManager.destroy();
           } catch (e) {
             debugPrint('[FloatingWindow] Failed to close: $e');
           }
