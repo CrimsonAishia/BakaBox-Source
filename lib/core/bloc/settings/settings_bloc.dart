@@ -970,12 +970,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         state.copyWith(
           cacheDetails: newCacheDetails,
           isLoading: false,
-          needsRestart: clearedAppData, // 如果清理了应用数据，标记需要重启
+          needsRestart: false, // 只是清理普通缓存数据，不再需要强制重启
         ),
       );
 
       LogService.d(
-        '已清除选中的 ${event.cacheTypes.length} 种缓存${clearedAppData ? '，需要重启应用' : ''}',
+        '已清除选中的 ${event.cacheTypes.length} 种缓存',
       );
     } catch (e) {
       LogService.e('清除选中缓存失败', e);
@@ -1065,17 +1065,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         appDataSize += announcementReadIds.length;
       }
 
-      // 应用配置存储
-      final storageDir = Directory('${AppDirectoryService.basePath}/storage');
-      if (await storageDir.exists()) {
-        appDataSize += await _calculateDirectorySize(storageDir);
-      }
 
       details.add(
         CacheItemInfo(
           type: CacheType.appData,
           name: '应用数据',
-          description: '草稿、已读状态、游戏路径、主题等（清理后需重新设置）',
+          description: '草稿、已读状态等本地缓存数据',
           sizeInBytes: appDataSize,
         ),
       );
@@ -1112,6 +1107,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           if (await cacheDir.exists()) {
             await for (var entity in cacheDir.list()) {
               try {
+                // 跳过 webview2 目录，避免在 WebView 运行期间删除导致损坏和残留
+                if (entity is Directory && entity.path.endsWith('webview2')) {
+                  continue;
+                }
+                
                 if (entity is File) {
                   await entity.delete();
                 } else if (entity is Directory) {
@@ -1176,12 +1176,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         final announcementService = AnnouncementReadService();
         await announcementService.clearReadStatus();
 
-        // 彻底清空应用配置
-        await StorageUtils.clear();
-
         // 压缩数据库释放空间
         await StorageUtils.compact();
-        LogService.d('应用数据已彻底清空并压缩');
+        LogService.d('应用草稿和已读状态数据已清空');
         break;
 
       case CacheType.logs:
