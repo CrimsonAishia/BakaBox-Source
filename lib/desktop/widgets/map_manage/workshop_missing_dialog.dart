@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../../../core/widgets/image_viewer_dialog.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/game_path_service.dart';
+import '../../../../core/utils/storage_utils.dart';
 
 class WorkshopMissingDialog extends StatefulWidget {
   final String reason;
@@ -14,6 +15,10 @@ class WorkshopMissingDialog extends StatefulWidget {
   const WorkshopMissingDialog({super.key, required this.reason});
 
   static Future<void> checkAndShow(BuildContext context) async {
+    if (StorageUtils.getBool('ignore_workshop_missing_dialog', defaultValue: false)) {
+      return;
+    }
+
     final reason = await _checkWorkshopItem();
     if (reason != null && context.mounted) {
       showDialog(
@@ -271,6 +276,13 @@ class _WorkshopMissingDialogState extends State<WorkshopMissingDialog> {
       ),
       actionsPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       actions: [
+        TextButton(
+          onPressed: () {
+            StorageUtils.setBool('ignore_workshop_missing_dialog', true);
+            Navigator.of(context).pop();
+          },
+          child: const Text('不再提示', style: TextStyle(color: Colors.grey)),
+        ),
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
