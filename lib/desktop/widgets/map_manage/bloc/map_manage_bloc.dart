@@ -149,7 +149,7 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
     CheckSteamStatus event,
     Emitter<MapManageState> emit,
   ) async {
-    final isRunning = NativeProcessUtils.isAnyProcessRunning(['steam.exe']);
+    final isRunning = await NativeProcessUtils.isAnyProcessRunningAsync(['steam.exe']);
     emit(state.copyWith(isSteamRunning: isRunning));
   }
 
@@ -214,7 +214,7 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
     if (state.selectedMapIds.isEmpty) return;
 
     // 再次检测Steam状态
-    if (NativeProcessUtils.isAnyProcessRunning(['steam.exe'])) {
+    if (await NativeProcessUtils.isAnyProcessRunningAsync(['steam.exe'])) {
       emit(state.copyWith(error: 'Steam 正在运行，请先完全退出 Steam 后再进行地图管理操作。'));
       emit(state.copyWith(isSteamRunning: true));
       return;

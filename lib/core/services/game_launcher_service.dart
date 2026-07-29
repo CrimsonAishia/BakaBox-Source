@@ -152,7 +152,7 @@ class GameLauncherService {
   /// Windows平台检测CS2进程
   Future<bool> _isCS2RunningWindows() async {
     try {
-      final isRunning = NativeProcessUtils.isAnyProcessRunning(
+      final isRunning = await NativeProcessUtils.isAnyProcessRunningAsync(
         _gameProcessNames,
       );
       if (isRunning) {
@@ -251,13 +251,13 @@ class GameLauncherService {
     try {
       if (PlatformUtils.isWindows) {
         // 检测 cs2.exe
-        if (NativeProcessUtils.isAnyProcessRunning(['cs2.exe'])) {
+        if (await NativeProcessUtils.isAnyProcessRunningAsync(['cs2.exe'])) {
           LogService.d('检测到 CS2 正在运行');
           return 'cs2';
         }
 
         // 检测 csgo.exe
-        if (NativeProcessUtils.isAnyProcessRunning(['csgo.exe'])) {
+        if (await NativeProcessUtils.isAnyProcessRunningAsync(['csgo.exe'])) {
           LogService.d('检测到 CSGO 正在运行');
           return 'csgo';
         }
@@ -1120,7 +1120,7 @@ class GameLauncherService {
   /// 从进程查找Steam路径
   Future<String?> _findSteamPathFromProcess() async {
     try {
-      final executablePath = NativeProcessUtils.getProcessExecutablePath(
+      final executablePath = await NativeProcessUtils.getProcessExecutablePathAsync(
         'steam.exe',
       );
       if (executablePath != null && executablePath.isNotEmpty) {
@@ -1232,17 +1232,20 @@ class GameLauncherService {
   /// Steam 用户服务单例
   final SteamUserService _steamUserService = SteamUserService();
 
-  /// 查找匹配的右括号位置
+  /// 查找匹配的右括号位置（优化版，避免海量字符串分配）
   int _findMatchingBrace(String content, int openBracePos) {
     if (content[openBracePos] != '{') return -1;
 
     int depth = 1;
     int i = openBracePos + 1;
+    final codeUnits = content.codeUnits;
+    final openCode = 123; // '{'
+    final closeCode = 125; // '}'
 
-    while (i < content.length && depth > 0) {
-      if (content[i] == '{') {
+    while (i < codeUnits.length && depth > 0) {
+      if (codeUnits[i] == openCode) {
         depth++;
-      } else if (content[i] == '}') {
+      } else if (codeUnits[i] == closeCode) {
         depth--;
       }
       i++;
