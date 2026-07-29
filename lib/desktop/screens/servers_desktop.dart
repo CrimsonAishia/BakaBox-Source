@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dart_ping/dart_ping.dart';
+
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
 import '../../core/services/status_window_service.dart';
@@ -55,10 +54,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
   // 滚动指示器状态
   bool _canScrollUpServers = false;
   bool _canScrollDownServers = false;
-
-  // Ping 相关
-  int _lastPingRequestId = 0;
-  bool _isPingFetching = false; // 防止重复触发
 
   // 分类人数刷新定时器
   Timer? _categoryCountsRefreshTimer;
@@ -147,172 +142,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
     }
   }
 
-  /// 延迟获取所有服务器的 ping（防抖 + 并行获取）
-  void _scheduleDelayedPingFetch() {
-    // 沉浸模式下不触发 ping 获取
-    if (_isInImmersiveMode) return;
-    // 防止重复触发
-    if (_isPingFetching) return;
-
-    final requestId = ++_lastPingRequestId;
-
-    // 延迟 300ms 后获取 ping（等待服务器数据加载）
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted || requestId != _lastPingRequestId) return;
-      _fetchPingsIfNeeded(requestId);
-    });
-  }
-
-  /// 检查并获取缺失的 ping
-  void _fetchPingsIfNeeded(int requestId) {
-    final bloc = _serverBloc;
-    if (bloc == null || _isPingFetching) return;
-
-    final currentServers = bloc.state.servers;
-    // 只获取有数据但没有 ping 的服务器
-    final serversNeedingPing = currentServers
-        .where((s) => s.serverData != null && s.pingInfo == null)
-        .toList();
-
-    if (serversNeedingPing.isNotEmpty) {
-      _fetchAllServerPings(serversNeedingPing, requestId);
-    } else if (currentServers.any((s) => s.serverData == null && s.isLoading)) {
-      // 如果有服务器还在加载中，再等待 800ms 后重试
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (!mounted || requestId != _lastPingRequestId) return;
-        _fetchPingsIfNeeded(requestId);
-      });
-    }
-  }
-
-  /// 并行获取所有服务器的 ping
-  Future<void> _fetchAllServerPings(
-    List<ExtendedServerItem> servers,
-    int requestId,
-  ) async {
-    final bloc = _serverBloc;
-    if (bloc == null || servers.isEmpty || _isPingFetching) return;
-
-    _isPingFetching = true;
-
-    try {
-      // 并行获取所有服务器的 ping，限制并发数为 5
-      const maxConcurrent = 5;
-      final chunks = <List<ExtendedServerItem>>[];
-
-      for (var i = 0; i < servers.length; i += maxConcurrent) {
-        chunks.add(
-          servers.sublist(
-            i,
-            i + maxConcurrent > servers.length
-                ? servers.length
-                : i + maxConcurrent,
-          ),
-        );
-      }
-
-      for (final chunk in chunks) {
-        if (!mounted || requestId != _lastPingRequestId) break;
-
-        // 并行获取这一批服务器的 ping
-        await Future.wait(
-          chunk.map((server) => _fetchServerPing(server, bloc)),
-          eagerError: false, // 不因单个失败而中断
-        );
-      }
-    } finally {
-      _isPingFetching = false;
-    }
-  }
-
-  /// 获取单个服务器的 ping
-  Future<void> _fetchServerPing(
-    ExtendedServerItem server,
-    ServerBloc bloc,
-  ) async {
-    final address =
-        server.serverItem.address ?? server.serverItem.serverAddress;
-    if (address == null || address.isEmpty) return;
-
-    final ip = address.split(':')[0];
-    if (ip.isEmpty) return;
-
-    try {
-      // 发送 2 次 ping（减少次数加快速度）
-      // forceCodepage: true 解决 Windows 中文系统编码问题
-      // encoding: Utf8Codec(allowMalformed: true) 忽略非 UTF-8 字符
-      final ping = Ping(
-        ip,
-        count: 2,
-        timeout: 2, // 2秒超时
-        forceCodepage: true,
-        encoding: const Utf8Codec(allowMalformed: true),
-      );
-      final results = <Duration>[];
-
-      await for (final event in ping.stream) {
-        if (!mounted) break;
-        if (event.response != null && event.response!.time != null) {
-          results.add(event.response!.time!);
-        }
-      }
-
-      if (results.isNotEmpty && mounted) {
-        // 计算平均延迟
-        final avgMs =
-            results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/
-            results.length;
-
-        // 计算 ping 状态
-        String pingStatus;
-        if (avgMs < 50) {
-          pingStatus = 'excellent';
-        } else if (avgMs < 100) {
-          pingStatus = 'good';
-        } else if (avgMs < 150) {
-          pingStatus = 'fair';
-        } else if (avgMs < 300) {
-          pingStatus = 'poor';
-        } else {
-          pingStatus = 'bad';
-        }
-
-        final pingInfo = ServerPingInfo(
-          ip: ip,
-          ping: avgMs,
-          pingStatus: pingStatus,
-        );
-
-        bloc.add(
-          ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
-        );
-      } else if (mounted) {
-        // Ping 无结果（超时或离线），赋予一个失败的 PingInfo 避免无限重试
-        final pingInfo = ServerPingInfo(
-          ip: ip,
-          ping: -1,
-          pingStatus: 'bad',
-        );
-        bloc.add(
-          ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
-        );
-      }
-    } catch (e) {
-      // 忽略 ping 获取失败，但必须赋予失败标记避免死循环
-      LogService.d('Ping 获取失败 ($ip): $e');
-      if (mounted) {
-        final pingInfo = ServerPingInfo(
-          ip: ip,
-          ping: -1,
-          pingStatus: 'bad',
-        );
-        bloc.add(
-          ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
-        );
-      }
-    }
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -338,29 +167,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
             }
           }
           bloc.add(ServerStartPeriodicRefresh());
-
-          // 兜底：延迟检查是否有服务器缺少 ping（确保在所有初始化完成后）
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) _checkAndFetchMissingPings();
-          });
         }
       });
-    }
-  }
-
-  /// 兜底检查：如果有服务器有数据但缺少 ping，触发获取
-  void _checkAndFetchMissingPings() {
-    // 沉浸模式下不触发 ping 获取
-    if (_isInImmersiveMode) return;
-    final bloc = _serverBloc;
-    if (bloc == null) return;
-
-    final serversNeedingPing = bloc.state.servers
-        .where((s) => s.serverData != null && s.pingInfo == null)
-        .toList();
-
-    if (serversNeedingPing.isNotEmpty) {
-      _scheduleDelayedPingFetch();
     }
   }
 
@@ -529,39 +337,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
             }
           },
         ),
-        // 服务器数据变化时获取 ping（合并监听逻辑）
-        BlocListener<ServerBloc, ServerState>(
-          listenWhen: (previous, current) {
-            // 情况1：加载完成（首次加载或切换分类）
-            final loadingFinished =
-                previous.isLoadingServers && !current.isLoadingServers;
-            // 情况2：服务器列表变化
-            final serversChanged =
-                previous.servers.length != current.servers.length;
-            // 情况3：有新的服务器数据加载完成（比较前后状态）
-            final previousServersWithData = previous.servers
-                .where((s) => s.serverData != null)
-                .length;
-            final currentServersWithData = current.servers
-                .where((s) => s.serverData != null)
-                .length;
-            final newServerDataLoaded =
-                currentServersWithData > previousServersWithData;
-            // 情况4：定期刷新完成（lastRefreshTime 变化且有缺少 ping 的服务器）
-            final refreshCompleted =
-                previous.lastRefreshTime != current.lastRefreshTime &&
-                current.servers.any(
-                  (s) => s.serverData != null && s.pingInfo == null,
-                );
 
-            return current.servers.isNotEmpty &&
-                (loadingFinished ||
-                    serversChanged ||
-                    newServerDataLoaded ||
-                    refreshCompleted);
-          },
-          listener: (context, state) => _scheduleDelayedPingFetch(),
-        ),
         // 分类加载完成后自动选择第一个
         BlocListener<ServerBloc, ServerState>(
           listenWhen: (previous, current) =>
@@ -1062,8 +838,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
                       _startCategoryCountsRefreshTimer();
                       // 立即刷新一次，防止数据过旧
                       _serverBloc?.add(ServerRefreshServers());
-                      // 立即触发 ping 获取
-                      _scheduleDelayedPingFetch();
                     }
                   },
                   borderRadius: BorderRadius.circular(6),

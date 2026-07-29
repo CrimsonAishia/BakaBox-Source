@@ -106,9 +106,7 @@ dependencies:
   # Archive extraction (for TTS model tar.bz2)
   archive: ^4.0.2
   
-  # Network Ping (替代 Process.run，内存占用更低)
-  dart_ping: ^9.0.1
-  
+
   # Clipboard (支持图片复制)
   super_clipboard: ^0.8.0
   

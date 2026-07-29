@@ -583,8 +583,30 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               _mapRuntimeLastFetchedCache.remove(address);
             }
 
+            final ping = info.pingLatency ?? -1;
+            String pingStatus;
+            if (ping < 0) {
+              pingStatus = 'bad';
+            } else if (ping < 50) {
+              pingStatus = 'excellent';
+            } else if (ping < 100) {
+              pingStatus = 'good';
+            } else if (ping < 150) {
+              pingStatus = 'fair';
+            } else if (ping < 300) {
+              pingStatus = 'poor';
+            } else {
+              pingStatus = 'bad';
+            }
+            final newPingInfo = ServerPingInfo(
+              ip: address.split(':')[0],
+              ping: ping,
+              pingStatus: pingStatus,
+            );
+
             final updatedServer = currentServer.copyWith(
               serverData: info,
+              pingInfo: newPingInfo,
               updatedAt: DateTime.now(),
               recentlyUpdated:
                   hasDataChanged && currentServer.serverData != null,
@@ -1036,8 +1058,36 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         // 成功获取数据，重置失败计数
         // 注意：不再自动判定离线，离线状态在刷新周期结束后统一判定
         _failureCountCache[address] = 0; // 更新全局缓存
+        final newServerData = _convertSourceServerInfo(info);
+        final isA2s = currentServer.serverItem.dataSourceMode != 'api';
+        
+        ServerPingInfo? newPingInfo = currentServer.pingInfo;
+        if (isA2s) {
+          final ping = newServerData.pingLatency ?? -1;
+          String pingStatus;
+          if (ping < 0) {
+            pingStatus = 'bad';
+          } else if (ping < 50) {
+            pingStatus = 'excellent';
+          } else if (ping < 100) {
+            pingStatus = 'good';
+          } else if (ping < 150) {
+            pingStatus = 'fair';
+          } else if (ping < 300) {
+            pingStatus = 'poor';
+          } else {
+            pingStatus = 'bad';
+          }
+          newPingInfo = ServerPingInfo(
+            ip: address.split(':')[0],
+            ping: ping,
+            pingStatus: pingStatus,
+          );
+        }
+
         final updatedServer = currentServer.copyWith(
-          serverData: _convertSourceServerInfo(info),
+          serverData: newServerData,
+          pingInfo: newPingInfo,
           updatedAt: DateTime.now(),
           recentlyUpdated: hasDataChanged && currentServer.serverData != null,
           isLoading: false,

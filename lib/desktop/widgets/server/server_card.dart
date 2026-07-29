@@ -552,11 +552,13 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ),
             // 复制图标
             ServerCardCopyIconButton(onTap: () => _copyConnectCommand(address)),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: Text('|', style: TextStyle(color: Colors.white30)),
-            ),
-            RepaintBoundary(child: _buildPingBadge(address, ping)),
+            if (widget.server.serverItem.dataSourceMode != 'api') ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text('|', style: TextStyle(color: Colors.white30)),
+              ),
+              RepaintBoundary(child: _buildPingBadge(address, ping)),
+            ],
           ],
         ),
         // 地图标签（非 hover 时显示，hover 时隐藏，让位给底部操作层）

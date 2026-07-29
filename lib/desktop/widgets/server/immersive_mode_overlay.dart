@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:dart_ping/dart_ping.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -593,9 +593,31 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           appId: info.appId,
         );
 
+        final ping = serverData.pingLatency ?? -1;
+        String pingStatus;
+        if (ping < 0) {
+          pingStatus = 'bad';
+        } else if (ping < 50) {
+          pingStatus = 'excellent';
+        } else if (ping < 100) {
+          pingStatus = 'good';
+        } else if (ping < 150) {
+          pingStatus = 'fair';
+        } else if (ping < 300) {
+          pingStatus = 'poor';
+        } else {
+          pingStatus = 'bad';
+        }
+        final newPingInfo = ServerPingInfo(
+          ip: ip,
+          ping: ping,
+          pingStatus: pingStatus,
+        );
+
         // 更新服务器数据
         servers[index] = existingServer.copyWith(
           serverData: serverData,
+          pingInfo: newPingInfo,
           isLoading: false,
           hasError: false,
           consecutiveFailures: 0,
@@ -630,11 +652,6 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               serverApi,
             );
           }
-        }
-
-        // 获取 ping（如果还没有）
-        if (existingServer.pingInfo == null) {
-          _fetchPingAsync(categoryName, index, address, ip);
         }
       } else {
         // 查询失败，增加失败计数
@@ -744,59 +761,6 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           servers[index] = servers[index].copyWith(mapRuntimeError: true);
           setState(() {});
         });
-  }
-
-  /// 异步获取 ping
-  void _fetchPingAsync(
-    String categoryName,
-    int index,
-    String address,
-    String ip,
-  ) async {
-    try {
-      // forceCodepage: true 解决 Windows 中文系统编码问题
-      // encoding: Utf8Codec(allowMalformed: true) 忽略非 UTF-8 字符
-      final ping = Ping(
-        ip,
-        count: 2,
-        timeout: 2,
-        forceCodepage: true,
-        encoding: const Utf8Codec(allowMalformed: true),
-      );
-      final results = <Duration>[];
-
-      await for (final event in ping.stream) {
-        if (!mounted) break;
-        if (event.response != null && event.response!.time != null) {
-          results.add(event.response!.time!);
-        }
-      }
-
-      if (results.isNotEmpty && mounted) {
-        final servers = _categoryServersMap[categoryName];
-        if (servers == null || index >= servers.length) return;
-
-        final currentAddress =
-            servers[index].serverItem.address ??
-            servers[index].serverItem.serverAddress;
-        if (currentAddress != address) return;
-
-        // 计算平均延迟
-        final avgMs =
-            results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/
-            results.length;
-
-        final pingInfo = ServerPingInfo(
-          ip: ip,
-          ping: avgMs,
-          pingStatus: 'success',
-        );
-        servers[index] = servers[index].copyWith(pingInfo: pingInfo);
-        setState(() {});
-      }
-    } catch (e) {
-      LogService.w('获取 ping 失败 ($ip): $e');
-    }
   }
 
   /// 切换分类选中状态
@@ -3445,6 +3409,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   /// 构建简约模式延迟显示
   Widget _buildCompactPing(bool isDark, ExtendedServerItem server) {
+    if (server.serverItem.dataSourceMode == 'api') {
+      return const SizedBox.shrink();
+    }
     final ping = server.pingInfo?.ping ?? server.serverData?.pingLatency;
 
     if (ping == null) {
