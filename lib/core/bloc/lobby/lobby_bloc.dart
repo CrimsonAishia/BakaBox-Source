@@ -19,6 +19,7 @@ import '../../services/lobby_nakama_service.dart';
 import '../../services/network_mode_service.dart';
 import '../../services/notification_window_service.dart';
 import '../../services/broadcast_notification_service.dart';
+import '../../services/realtime/realtime_map_info_channel.dart';
 import '../../services/realtime/realtime_server_map_runtime_channel.dart';
 import '../../services/server_address_mapping_service.dart';
 import '../../services/status_window_service.dart';
@@ -86,6 +87,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (_isDisposed) return;
       // 收到 snapshot / changed 事件时，重新计算 statusText（_resolveMapNameForServer
       // 会从频道缓存读取最新地图名，因此无需关心事件具体内容）
+      add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
+    });
+
+    // 订阅 map.info 实时频道：地图信息（如译名）更新后，能实时刷新 statusText 中的地图名
+    _mapInfoChannel.subscribe();
+    _mapInfoSubscription = _mapInfoChannel.events.listen((event) {
+      if (_isDisposed) return;
+      _mapLabelCache.remove(event.mapName);
+      _lastSentStatusText = null; // 强制刷新状态文字
       add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
     });
 
@@ -191,6 +201,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   final RealtimeServerMapRuntimeChannel _serverMapRuntimeChannel =
       RealtimeServerMapRuntimeChannel();
   StreamSubscription<ServerMapRuntimeEvent>? _serverMapRuntimeSubscription;
+
+  /// `map.info` 频道适配器（单例）
+  final RealtimeMapInfoChannel _mapInfoChannel = RealtimeMapInfoChannel();
+  StreamSubscription<MapInfoChangedEvent>? _mapInfoSubscription;
+
   Timer? _movementTimer;
   Timer? _bubbleExpiryTimer;
   Timer? _chatCooldownTimer;
@@ -4057,6 +4072,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _serverMapRuntimeSubscription?.cancel();
     _serverMapRuntimeSubscription = null;
     _serverMapRuntimeChannel.unsubscribe();
+    _mapInfoSubscription?.cancel();
+    _mapInfoSubscription = null;
+    _mapInfoChannel.unsubscribe();
     _snapshotOnAssetsReceived?.cancel();
     _snapshotOnAssetsReceived = null;
     _assetsTimeoutTimer?.cancel();
