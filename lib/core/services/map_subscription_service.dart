@@ -471,17 +471,6 @@ class MapSubscriptionService {
       '[MapSubscription] 命中订阅: ${subscription.displayName} @ $serverName ($categoryName)',
     );
 
-    await _sendNotification(
-      subscription: subscription,
-      serverAddress: entry.serverAddress,
-      serverName: serverName,
-      categoryName: categoryName,
-      numPlayers: currentPlayers,
-      maxPlayers: entry.maxPlayers ?? 0,
-      queueCount: usersCount?.queueCount ?? 0,
-      warmupCount: usersCount?.warmupCount ?? 0,
-    );
-
     if (subscription.isAutoJoinEnabled) {
       _autoJoinController.add(MapSubscriptionAutoJoinEvent(
         serverAddress: entry.serverAddress,
@@ -492,6 +481,19 @@ class MapSubscriptionService {
         countdownSeconds: subscription.autoJoinCountdownSeconds,
       ));
     }
+
+    _sendNotification(
+      subscription: subscription,
+      serverAddress: entry.serverAddress,
+      serverName: serverName,
+      categoryName: categoryName,
+      numPlayers: currentPlayers,
+      maxPlayers: entry.maxPlayers ?? 0,
+      queueCount: usersCount?.queueCount ?? 0,
+      warmupCount: usersCount?.warmupCount ?? 0,
+    ).catchError((e) {
+      LogService.e('[MapSubscription] 发送通知异常', e);
+    });
   }
 
   Future<void> _sendNotification({
