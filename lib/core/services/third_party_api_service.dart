@@ -105,9 +105,18 @@ class ThirdPartyApiService {
 
         data.forEach((key, value) {
           if (value is List) {
-            result[key] = value
-                .map((e) => CS2ZeServerData.fromJson(e as Map<String, dynamic>))
-                .toList();
+            final list = <CS2ZeServerData>[];
+            for (final e in value) {
+              if (e is! Map<String, dynamic>) continue;
+              try {
+                list.add(CS2ZeServerData.fromJson(e));
+              } catch (err) {
+                LogService.w('解析 CS2ZE 服务器数据异常，已跳过单条: $err');
+              }
+            }
+            if (list.isNotEmpty) {
+              result[key] = list;
+            }
           }
         });
 

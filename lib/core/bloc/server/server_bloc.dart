@@ -786,7 +786,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (s.serverData == null) continue;
       
       final isCustomServer = s.serverItem.isCustom;
-      final gameType = s.serverData!.gameType;
+      final gameType = s.serverData!.gameType?.toUpperCase();
       final isAllowedGame = gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
       
       if (isCustomServer && !isAllowedGame) continue;
