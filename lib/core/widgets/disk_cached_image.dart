@@ -22,6 +22,7 @@ class DiskCachedImage extends StatefulWidget {
   final Widget? placeholder;
   final Color? color;
   final BlendMode? colorBlendMode;
+  final bool disableMemCache;
 
   const DiskCachedImage({
     super.key,
@@ -39,6 +40,7 @@ class DiskCachedImage extends StatefulWidget {
     this.placeholder,
     this.color,
     this.colorBlendMode,
+    this.disableMemCache = false,
   });
 
   @override
@@ -136,14 +138,19 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
       );
     }
 
-    final memSize = ImageUtils.calculateMemCacheSize(
-      context: context,
-      constraints: constraints,
-      width: widget.width,
-      height: widget.height,
-    );
-    int? memWidth = widget.cacheWidth ?? memSize.width;
-    int? memHeight = widget.cacheHeight ?? memSize.height;
+    int? memWidth = widget.cacheWidth;
+    int? memHeight = widget.cacheHeight;
+
+    if (!widget.disableMemCache) {
+      final memSize = ImageUtils.calculateMemCacheSize(
+        context: context,
+        constraints: constraints,
+        width: widget.width,
+        height: widget.height,
+      );
+      memWidth ??= memSize.width;
+      memHeight ??= memSize.height;
+    }
 
     return Image.file(
       _imageFile!,

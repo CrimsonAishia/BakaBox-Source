@@ -159,6 +159,7 @@ class _CharacterImageViewerDialogState
         child: DiskCachedImage(
           imageUrl: widget.images[0],
           fit: BoxFit.contain,
+          disableMemCache: true,
           placeholder: const Center(child: CircularProgressIndicator()),
           errorWidget: const Center(
             child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
@@ -182,6 +183,7 @@ class _CharacterImageViewerDialogState
             child: DiskCachedImage(
               imageUrl: widget.images[index],
               fit: BoxFit.contain,
+              disableMemCache: true,
               placeholder: const Center(child: CircularProgressIndicator()),
               errorWidget: const Center(
                 child: Icon(Icons.broken_image, size: 64, color: Colors.grey),

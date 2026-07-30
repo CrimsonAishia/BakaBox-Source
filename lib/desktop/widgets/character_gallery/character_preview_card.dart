@@ -70,6 +70,7 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
                       ? DiskCachedImage(
                           imageUrl: widget.imageUrl!,
                           fit: BoxFit.cover,
+                          disableMemCache: true,
                           placeholder: Container(
                             color: washiColor,
                             child: Center(
