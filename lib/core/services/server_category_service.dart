@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../api/api.dart';
 import '../constants/api_constants.dart';
 import '../constants/fallback_data.dart';
@@ -18,6 +20,9 @@ class ServerCategoryService {
 
   /// 内存缓存：本次运行中最后一次成功获取的 API 分类列表
   List<ServerCategory>? _lastSuccessfulList;
+
+  final _categoriesChangedController = StreamController<void>.broadcast();
+  Stream<void> get onCategoriesChanged => _categoriesChangedController.stream;
 
   /// 正在进行中的请求（防重入）
   Future<List<ServerCategory>>? _inFlightRequest;
@@ -71,6 +76,7 @@ class ServerCategoryService {
           );
           _lastSuccessfulList = result;
           await CacheService.cacheServerList(result);
+          _categoriesChangedController.add(null);
           return result;
         }
       } catch (e) {

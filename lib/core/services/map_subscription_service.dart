@@ -102,8 +102,18 @@ class MapSubscriptionService {
   /// 服务器地址 → 显示名（来自分类列表）
   final Map<String, String> _serverNameMap = {};
 
+  /// 官方 API 提供的服务器 IP 列表，用于区分私服
+  final Set<String> _apiServers = {};
+
+  /// 本地私服轮询定时器
+  Timer? _localPollTimer;
+
+  /// 私服上一张地图缓存 (IP -> MapName)
+  final Map<String, String> _localServerLastMaps = {};
+
   /// 是否已加载分类
   bool _categoriesLoaded = false;
+  Future<void>? _loadingCategoriesFuture;
 
   /// 状态变化流
   final _stateController = StreamController<void>.broadcast();
@@ -154,6 +164,19 @@ class MapSubscriptionService {
 
     await _loadNotificationCooldown();
     await _loadServerCategoryMap();
+
+    // 监听分类列表变化，及时更新分类映射缓存
+    CustomServerService.onCategoriesChanged.listen((_) {
+      LogService.d('[MapSubscription] 收到自定义分类变更，使缓存失效并预加载');
+      _categoriesLoaded = false;
+      _loadServerCategoryMap();
+    });
+
+    ServerCategoryService.instance.onCategoriesChanged.listen((_) {
+      LogService.d('[MapSubscription] 收到API分类变更，使缓存失效并预加载');
+      _categoriesLoaded = false;
+      _loadServerCategoryMap();
+    });
 
     _isInitialized = true;
 
@@ -338,6 +361,11 @@ class MapSubscriptionService {
     _cooldownSeconds = seconds.clamp(minCooldownSeconds, maxCooldownSeconds);
     await StorageUtils.setInt(_storageKeyCooldownSeconds, _cooldownSeconds);
     _notifyStateChange();
+    
+    // 如果启用了本地私服轮询，重新启动定时器以应用新的时间间隔
+    if (_localPollTimer != null) {
+      _startLocalPolling();
+    }
   }
 
 
@@ -347,6 +375,7 @@ class MapSubscriptionService {
     _realtimeChannel.subscribe();
     _realtimeSubscription = _realtimeChannel.events.listen(_onRealtimeEvent);
     LogService.d('[MapSubscription] 实时通道已启动');
+    _startLocalPolling();
   }
 
   void _stopRealtime() {
@@ -356,6 +385,116 @@ class MapSubscriptionService {
     _realtimeSubscription = null;
     _realtimeChannel.unsubscribe();
     LogService.d('[MapSubscription] 实时通道已停止');
+    _stopLocalPolling();
+  }
+
+
+  void _startLocalPolling() {
+    _stopLocalPolling();
+    if (!_isEnabled || _subscriptions.isEmpty) return;
+    
+    LogService.d('[MapSubscription] 启动私服本地轮询机制，间隔 $_cooldownSeconds 秒');
+    // 使用用户设置的冷却时间作为轮询频率
+    _localPollTimer = Timer.periodic(Duration(seconds: _cooldownSeconds), (_) {
+      _pollLocalServers();
+    });
+    // 立即执行一次
+    _pollLocalServers();
+  }
+
+  void _stopLocalPolling() {
+    if (_localPollTimer != null) {
+      LogService.d('[MapSubscription] 停止私服本地轮询机制');
+      _localPollTimer?.cancel();
+      _localPollTimer = null;
+    }
+  }
+
+  Future<void> _pollLocalServers() async {
+    if (!_isEnabled || _subscriptions.isEmpty) return;
+
+    final privateServers = <String>{};
+
+    // 收集所有在订阅范围内，且不属于官方 API 的私服地址
+    for (final sub in _subscriptions) {
+      if (!sub.isAllServers) {
+        // 用户单独勾选的服务器
+        for (final addr in sub.serverAddresses) {
+          if (!_apiServers.contains(addr)) {
+            privateServers.add(addr);
+          }
+        }
+      } else {
+        // 如果是全服或者范围分类监控，需要从分类中找出所有私服
+        final targetCategories = sub.isAllCategories ? _globalCategories : sub.categoryNames;
+        for (final entry in _serverCategoryMap.entries) {
+          final addr = entry.key;
+          final cat = entry.value;
+          if ((sub.isAllCategories && _globalCategories.isEmpty) || targetCategories.contains(cat)) {
+            if (!_apiServers.contains(addr)) {
+              privateServers.add(addr);
+            }
+          }
+        }
+      }
+    }
+
+    if (privateServers.isEmpty) return;
+
+    final serverList = privateServers.toList();
+    final results = <String, SourceServerInfo?>{};
+
+    // 每次最多并发查询 10 个服务器，极度保守的网络防洪，确保打游戏时绝对 0 影响
+    const chunkSize = 10;
+    for (var i = 0; i < serverList.length; i += chunkSize) {
+      final end = (i + chunkSize > serverList.length) ? serverList.length : i + chunkSize;
+      final chunk = serverList.sublist(i, end);
+      
+      final chunkResults = await SourceServerService.batchQuery(
+        chunk,
+        timeout: 3000,
+      );
+      results.addAll(chunkResults);
+      
+      // 如果还有下一批，稍微延迟一下让网络喘口气 (300ms)
+      if (end < serverList.length) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
+
+    final entries = <ServerMapRuntimeEntry>[];
+
+    for (final entry in results.entries) {
+      final addr = entry.key;
+      final info = entry.value;
+      if (info == null) continue;
+
+      final newMap = info.map;
+      if (newMap.isEmpty) continue;
+
+      final oldMap = _localServerLastMaps[addr];
+      if (oldMap != newMap) {
+        _localServerLastMaps[addr] = newMap;
+        
+        // 首次获取（oldMap == null）不需要触发换图通知，只是记录
+        if (oldMap != null) {
+          entries.add(ServerMapRuntimeEntry(
+            serverAddress: addr,
+            mapName: newMap,
+            oldMapName: oldMap,
+            maxPlayers: info.maxPlayers,
+            hostName: info.name,
+          ));
+        }
+      }
+    }
+
+    if (entries.isNotEmpty) {
+      LogService.d('[MapSubscription] 本地轮询发现 ${entries.length} 台私服换图，注入虚拟事件');
+      for (final entry in entries) {
+        _evaluateChange(entry);
+      }
+    }
   }
 
   void _onRealtimeEvent(ServerMapRuntimeEvent event) {
@@ -387,7 +526,9 @@ class MapSubscriptionService {
       return;
     }
 
-    if (oldMap == null || oldMap == newMap) return;
+    if (oldMap == null || oldMap == newMap) {
+      return;
+    }
 
     final lowerNewMap = newMap.toLowerCase();
     final subscription = _subscriptions.cast<MapSubscription?>().firstWhere(
@@ -395,7 +536,9 @@ class MapSubscriptionService {
       orElse: () => null,
     );
 
-    if (subscription == null) return;
+    if (subscription == null) {
+      return;
+    }
 
     // 服务器分类映射可能因为分类列表更新而变化，按需懒加载
     if (!_categoriesLoaded) {
@@ -408,35 +551,41 @@ class MapSubscriptionService {
         _serverNameMap[entry.serverAddress] ??
         entry.serverAddress;
 
-    if (categoryName == null) {
-      // 不在我们维护的分类列表里（比如自定义分组中的私人服务器），跳过
-      LogService.d('[MapSubscription] 服务器不在已知分类，跳过: ${entry.serverAddress}');
+    final isExplicitlySelected = !subscription.isAllServers &&
+        subscription.serverAddresses.contains(entry.serverAddress);
+
+    if (categoryName == null && !isExplicitlySelected) {
+      // 不在我们维护的分类列表里（比如自定义分组中的私人服务器），且没有明确单独勾选它，跳过
       return;
     }
 
-    // 范围检查
-    if (!subscription.isAllServers &&
-        !subscription.serverAddresses.contains(entry.serverAddress)) {
+    final resolvedCategoryName = categoryName ?? '指定服务器';
+
+    // 服务器列表范围检查：如果没有明确勾选这台服务器，且也不是监控全部服务器，则跳过
+    if (!subscription.isAllServers && !isExplicitlySelected) {
       return;
     }
 
-    if (!subscription.isAllCategories) {
-      if (!subscription.categoryNames.contains(categoryName)) return;
-    } else if (!isAllCategories) {
-      if (!_globalCategories.contains(categoryName)) return;
+    // 分类范围检查：如果明确勾选了这台服务器，则无视分类条件。只有在没单独勾选时才检查分类
+    if (!isExplicitlySelected) {
+      if (!subscription.isAllCategories) {
+        if (!subscription.categoryNames.contains(categoryName)) {
+          return;
+        }
+      } else if (!isAllCategories) {
+        if (!_globalCategories.contains(categoryName)) {
+          return;
+        }
+      }
     }
 
     // 冷却
+    final now = DateTime.now().millisecondsSinceEpoch;
     final cooldownKey = '${newMap}_${entry.serverAddress}';
     final lastNotifyMs = _notificationCooldown[cooldownKey];
     if (lastNotifyMs != null) {
-      final elapsed = DateTime.now()
-          .difference(DateTime.fromMillisecondsSinceEpoch(lastNotifyMs))
-          .inSeconds;
+      final elapsed = (now - lastNotifyMs) ~/ 1000;
       if (elapsed < _cooldownSeconds) {
-        LogService.d(
-          '[MapSubscription] 冷却中，跳过通知: $cooldownKey (${_cooldownSeconds - elapsed}s 剩余)',
-        );
         return;
       }
     }
@@ -468,7 +617,7 @@ class MapSubscriptionService {
     final usersCount = usersCountSnapshot[entry.serverAddress];
 
     LogService.i(
-      '[MapSubscription] 命中订阅: ${subscription.displayName} @ $serverName ($categoryName)',
+      '[MapSubscription] 命中订阅: ${subscription.displayName} @ $serverName ($resolvedCategoryName)',
     );
 
     if (subscription.isAutoJoinEnabled) {
@@ -486,7 +635,7 @@ class MapSubscriptionService {
       subscription: subscription,
       serverAddress: entry.serverAddress,
       serverName: serverName,
-      categoryName: categoryName,
+      categoryName: resolvedCategoryName,
       numPlayers: currentPlayers,
       maxPlayers: entry.maxPlayers ?? 0,
       queueCount: usersCount?.queueCount ?? 0,
@@ -598,8 +747,29 @@ class MapSubscriptionService {
     return categories;
   }
 
-  Future<void> _loadServerCategoryMap() async {
+  Future<void> _loadServerCategoryMap() {
+    if (_categoriesLoaded && _loadingCategoriesFuture == null) {
+      return Future.value();
+    }
+    
+    _loadingCategoriesFuture ??= _loadServerCategoryMapInternal().whenComplete(() {
+      _loadingCategoriesFuture = null;
+    });
+    
+    return _loadingCategoriesFuture!;
+  }
+
+  Future<void> _loadServerCategoryMapInternal() async {
     try {
+      final apiCategories = await ServerCategoryService.instance.getApiCategories();
+      _apiServers.clear();
+      for (final cat in apiCategories) {
+        for (final server in cat.serverList) {
+          final addr = server.address ?? server.serverAddress ?? '';
+          if (addr.isNotEmpty) _apiServers.add(addr);
+        }
+      }
+
       final categories = await _loadAndMergeCategories();
       _serverCategoryMap.clear();
       _serverNameMap.clear();

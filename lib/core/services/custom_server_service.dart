@@ -9,6 +9,9 @@ import '../utils/storage_utils.dart';
 class CustomServerService {
   static const String _customCategoriesKey = 'custom_server_categories';
 
+  static final _categoriesChangedController = StreamController<void>.broadcast();
+  static Stream<void> get onCategoriesChanged => _categoriesChangedController.stream;
+
   static Future<dynamic> _lock = Future.value();
 
   static Future<T> _synchronized<T>(Future<T> Function() action) async {
@@ -35,6 +38,7 @@ class CustomServerService {
       final jsonList = categories.map((c) => c.toJson()).toList();
       await StorageUtils.setString(_customCategoriesKey, jsonEncode(jsonList));
       LogService.d('保存自定义分类成功，共 ${categories.length} 个');
+      _categoriesChangedController.add(null);
     } catch (e) {
       LogService.e('保存自定义分类失败: $e', e);
     }
@@ -451,6 +455,7 @@ class CustomServerService {
     return _synchronized(() async {
       await StorageUtils.remove(_customCategoriesKey);
       LogService.i('清除所有自定义分类和服务器');
+      _categoriesChangedController.add(null);
     });
   }
 }
