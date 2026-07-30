@@ -254,3 +254,63 @@ class _MapSubscriptionTtsPhaseUpdate extends MapSubscriptionEvent {
   @override
   List<Object?> get props => [phase];
 }
+
+/// 更新自动加入设置
+class MapSubscriptionUpdateAutoJoin extends MapSubscriptionEvent {
+  final String mapName;
+  final bool isEnabled;
+  final int countdownSeconds;
+
+  const MapSubscriptionUpdateAutoJoin({
+    required this.mapName,
+    required this.isEnabled,
+    required this.countdownSeconds,
+  });
+
+  @override
+  List<Object?> get props => [mapName, isEnabled, countdownSeconds];
+}
+
+/// 触发自动加入倒计时
+class MapSubscriptionTriggerAutoJoin extends MapSubscriptionEvent {
+  final String serverAddress;
+  final String serverName;
+  final String mapName;
+  final String mapLabel;
+  final String? mapBackground;
+  final int countdownSeconds;
+
+  const MapSubscriptionTriggerAutoJoin({
+    required this.serverAddress,
+    required this.serverName,
+    required this.mapName,
+    required this.mapLabel,
+    this.mapBackground,
+    required this.countdownSeconds,
+  });
+
+  @override
+  List<Object?> get props => [
+        serverAddress,
+        serverName,
+        mapName,
+        mapLabel,
+        mapBackground,
+        countdownSeconds,
+      ];
+}
+
+/// 自动加入倒计时滴答
+class MapSubscriptionAutoJoinTick extends MapSubscriptionEvent {
+  const MapSubscriptionAutoJoinTick();
+}
+
+/// 取消自动加入
+class MapSubscriptionCancelAutoJoin extends MapSubscriptionEvent {
+  const MapSubscriptionCancelAutoJoin();
+}
+
+/// 启动游戏并加入服务器
+class MapSubscriptionLaunchGame extends MapSubscriptionEvent {
+  const MapSubscriptionLaunchGame();
+}

@@ -14,6 +14,25 @@ import 'server_category_service.dart';
 import 'source_server_service.dart';
 import 'tts_service.dart';
 
+/// 自动加入事件数据
+class MapSubscriptionAutoJoinEvent {
+  final String serverAddress;
+  final String serverName;
+  final String mapName;
+  final String mapLabel;
+  final String? mapBackground;
+  final int countdownSeconds;
+
+  MapSubscriptionAutoJoinEvent({
+    required this.serverAddress,
+    required this.serverName,
+    required this.mapName,
+    required this.mapLabel,
+    this.mapBackground,
+    required this.countdownSeconds,
+  });
+}
+
 /// 地图订阅监控服务（单例）
 ///
 /// 通过 `server.map.runtime` WS 频道接收换图事件：
@@ -25,7 +44,6 @@ class MapSubscriptionService {
   factory MapSubscriptionService() => _instance;
   MapSubscriptionService._internal();
 
-  // ======== 存储 Key ========
   static const String _storageKeySubscriptions = 'map_subscriptions';
   static const String _storageKeyEnabled = 'map_subscription_enabled';
   static const String _storageKeyNotificationEnabled =
@@ -38,7 +56,6 @@ class MapSubscriptionService {
   static const String _storageKeyNotificationCooldown =
       'map_subscription_notification_cooldown';
 
-  // ======== 常量 ========
 
   /// 默认通知冷却时间（秒）
   static const int _defaultCooldownSeconds = 15;
@@ -49,7 +66,6 @@ class MapSubscriptionService {
   /// 最大冷却时间（秒）
   static const int maxCooldownSeconds = 60;
 
-  // ======== 依赖服务 ========
 
   final ServerApi _serverApi = ServerApi();
   final NotificationWindowService _notificationService =
@@ -58,7 +74,6 @@ class MapSubscriptionService {
   final RealtimeServerMapRuntimeChannel _realtimeChannel =
       RealtimeServerMapRuntimeChannel();
 
-  // ======== 状态字段 ========
 
   /// 订阅列表
   List<MapSubscription> _subscriptions = [];
@@ -94,6 +109,10 @@ class MapSubscriptionService {
   final _stateController = StreamController<void>.broadcast();
   Stream<void> get stateStream => _stateController.stream;
 
+  /// 自动加入事件流
+  final _autoJoinController = StreamController<MapSubscriptionAutoJoinEvent>.broadcast();
+  Stream<MapSubscriptionAutoJoinEvent> get autoJoinStream => _autoJoinController.stream;
+
   /// 是否已初始化
   bool _isInitialized = false;
 
@@ -101,7 +120,6 @@ class MapSubscriptionService {
   bool _realtimeSubscribed = false;
   StreamSubscription<ServerMapRuntimeEvent>? _realtimeSubscription;
 
-  // ======== 公开属性 ========
 
   List<MapSubscription> get subscriptions => List.unmodifiable(_subscriptions);
   bool get isEnabled => _isEnabled;
@@ -115,7 +133,6 @@ class MapSubscriptionService {
   bool isSubscribed(String mapName) =>
       _subscriptions.any((s) => s.mapName == mapName);
 
-  // ======== 初始化 ========
 
   Future<void> initialize() async {
     if (_isInitialized) {
@@ -151,7 +168,6 @@ class MapSubscriptionService {
     }
   }
 
-  // ======== 订阅管理 ========
 
   Future<void> addSubscription(MapSubscription subscription) async {
     if (isSubscribed(subscription.mapName)) {
@@ -217,6 +233,21 @@ class MapSubscriptionService {
     if (index == -1) return;
     _subscriptions[index] = _subscriptions[index].copyWith(
       serverAddresses: List.from(serverAddresses),
+    );
+    await _saveSubscriptions();
+    _notifyStateChange();
+  }
+
+  Future<void> updateSubscriptionAutoJoin(
+    String mapName,
+    bool isEnabled,
+    int countdownSeconds,
+  ) async {
+    final index = _subscriptions.indexWhere((s) => s.mapName == mapName);
+    if (index == -1) return;
+    _subscriptions[index] = _subscriptions[index].copyWith(
+      isAutoJoinEnabled: isEnabled,
+      autoJoinCountdownSeconds: countdownSeconds,
     );
     await _saveSubscriptions();
     _notifyStateChange();
@@ -309,7 +340,6 @@ class MapSubscriptionService {
     _notifyStateChange();
   }
 
-  // ======== 实时频道 ========
 
   void _startRealtime() {
     if (_realtimeSubscribed) return;
@@ -451,6 +481,17 @@ class MapSubscriptionService {
       queueCount: usersCount?.queueCount ?? 0,
       warmupCount: usersCount?.warmupCount ?? 0,
     );
+
+    if (subscription.isAutoJoinEnabled) {
+      _autoJoinController.add(MapSubscriptionAutoJoinEvent(
+        serverAddress: entry.serverAddress,
+        serverName: serverName,
+        mapName: subscription.mapName,
+        mapLabel: subscription.mapLabel,
+        mapBackground: subscription.mapBackground,
+        countdownSeconds: subscription.autoJoinCountdownSeconds,
+      ));
+    }
   }
 
   Future<void> _sendNotification({
@@ -503,7 +544,6 @@ class MapSubscriptionService {
     }
   }
 
-  // ======== 分类映射 ========
 
   Future<List<ServerCategory>> _loadAndMergeCategories() async {
     final customCategories = await CustomServerService.loadCustomCategories();
@@ -582,7 +622,6 @@ class MapSubscriptionService {
     }
   }
 
-  // ======== 持久化 ========
 
   Future<void> _saveSubscriptions() async {
     try {
@@ -656,5 +695,6 @@ class MapSubscriptionService {
     _subscriptions.clear();
     _notificationCooldown.clear();
     _stateController.close();
+    _autoJoinController.close();
   }
 }

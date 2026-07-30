@@ -18,6 +18,12 @@ class MapSubscription extends Equatable {
   /// 格式: "IP:端口"，如 "123.45.67.89:27015"
   final List<String> serverAddresses;
 
+  /// 是否开启自动加入
+  final bool isAutoJoinEnabled;
+
+  /// 自动加入的倒计时秒数
+  final int autoJoinCountdownSeconds;
+
   /// 创建时间
   final DateTime createdAt;
 
@@ -33,6 +39,8 @@ class MapSubscription extends Equatable {
     this.mapBackground,
     this.categoryNames = const [],
     this.serverAddresses = const [],
+    this.isAutoJoinEnabled = false,
+    this.autoJoinCountdownSeconds = 60,
     required this.createdAt,
     this.cachedAt,
   });
@@ -58,6 +66,8 @@ class MapSubscription extends Equatable {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      isAutoJoinEnabled: json['isAutoJoinEnabled'] as bool? ?? false,
+      autoJoinCountdownSeconds: json['autoJoinCountdownSeconds'] as int? ?? 60,
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
@@ -74,6 +84,8 @@ class MapSubscription extends Equatable {
     'mapBackground': mapBackground,
     'categoryNames': categoryNames,
     'serverAddresses': serverAddresses,
+    'isAutoJoinEnabled': isAutoJoinEnabled,
+    'autoJoinCountdownSeconds': autoJoinCountdownSeconds,
     'createdAt': createdAt.toIso8601String(),
     'cachedAt': cachedAt?.toIso8601String(),
   };
@@ -85,6 +97,8 @@ class MapSubscription extends Equatable {
     String? mapBackground,
     List<String>? categoryNames,
     List<String>? serverAddresses,
+    bool? isAutoJoinEnabled,
+    int? autoJoinCountdownSeconds,
     DateTime? createdAt,
     DateTime? cachedAt,
     bool clearCachedAt = false,
@@ -95,6 +109,8 @@ class MapSubscription extends Equatable {
       mapBackground: mapBackground ?? this.mapBackground,
       categoryNames: categoryNames ?? this.categoryNames,
       serverAddresses: serverAddresses ?? this.serverAddresses,
+      isAutoJoinEnabled: isAutoJoinEnabled ?? this.isAutoJoinEnabled,
+      autoJoinCountdownSeconds: autoJoinCountdownSeconds ?? this.autoJoinCountdownSeconds,
       createdAt: createdAt ?? this.createdAt,
       cachedAt: clearCachedAt ? null : (cachedAt ?? this.cachedAt),
     );
@@ -125,6 +141,8 @@ class MapSubscription extends Equatable {
     mapBackground,
     categoryNames,
     serverAddresses,
+    isAutoJoinEnabled,
+    autoJoinCountdownSeconds,
     createdAt,
     cachedAt,
   ];

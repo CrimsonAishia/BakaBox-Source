@@ -9,7 +9,9 @@ import '../../models/map_subscription_models.dart';
 import '../../services/custom_server_service.dart';
 import '../../services/map_subscription_service.dart';
 import '../../services/server_category_service.dart';
+import '../../services/status_window_service.dart';
 import '../../services/tts_service.dart';
+import '../../services/audio_service.dart';
 import '../../utils/log_service.dart';
 
 part 'map_subscription_event.dart';
@@ -20,10 +22,13 @@ class MapSubscriptionBloc
     extends Bloc<MapSubscriptionEvent, MapSubscriptionState> {
   final MapSubscriptionService _service = MapSubscriptionService();
   final TtsService _ttsService = TtsService();
+  final AudioService _audioService = AudioService();
   final MapContributionApi _mapApi = MapContributionApi();
 
   StreamSubscription<void>? _serviceSubscription;
   StreamSubscription<TtsDownloadProgress>? _ttsProgressSubscription;
+  StreamSubscription<MapSubscriptionAutoJoinEvent>? _autoJoinSubscription;
+  Timer? _autoJoinTimer;
 
   MapSubscriptionBloc() : super(const MapSubscriptionState()) {
     on<MapSubscriptionLoad>(_onLoad);
@@ -51,10 +56,27 @@ class MapSubscriptionBloc
     on<MapSubscriptionTestTts>(_onTestTts);
     on<MapSubscriptionSetCooldown>(_onSetCooldown);
     on<_MapSubscriptionTtsPhaseUpdate>(_onTtsPhaseUpdate);
+    on<MapSubscriptionUpdateAutoJoin>(_onUpdateAutoJoin);
+    on<MapSubscriptionTriggerAutoJoin>(_onTriggerAutoJoin);
+    on<MapSubscriptionAutoJoinTick>(_onAutoJoinTick);
+    on<MapSubscriptionCancelAutoJoin>(_onCancelAutoJoin);
+    on<MapSubscriptionLaunchGame>(_onLaunchGame);
 
     // 监听服务状态变化
     _serviceSubscription = _service.stateStream.listen((_) {
       add(const MapSubscriptionLoad());
+    });
+    
+    // 监听自动加入事件
+    _autoJoinSubscription = _service.autoJoinStream.listen((event) {
+      add(MapSubscriptionTriggerAutoJoin(
+        serverAddress: event.serverAddress,
+        serverName: event.serverName,
+        mapName: event.mapName,
+        mapLabel: event.mapLabel,
+        mapBackground: event.mapBackground,
+        countdownSeconds: event.countdownSeconds,
+      ));
     });
   }
 
@@ -509,10 +531,180 @@ class MapSubscriptionBloc
     emit(state.copyWith(ttsTestingPhase: event.phase));
   }
 
+  Future<void> _onUpdateAutoJoin(
+    MapSubscriptionUpdateAutoJoin event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    try {
+      await _service.updateSubscriptionAutoJoin(
+        event.mapName,
+        event.isEnabled,
+        event.countdownSeconds,
+      );
+      emit(state.copyWith(subscriptions: _service.subscriptions));
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] 更新订阅自动加入设置失败', e);
+    }
+  }
+
+  void _onTriggerAutoJoin(
+    MapSubscriptionTriggerAutoJoin event,
+    Emitter<MapSubscriptionState> emit,
+  ) {
+    // 边界情况 1：防覆盖，如果已经在倒计时中，忽略新请求（保持专注）
+    if (state.isAutoJoinCountdownActive) {
+      LogService.d('[MapSubscriptionBloc] 已经在自动加入倒计时中，忽略新请求: ${event.mapName}');
+      return;
+    }
+
+    // 边界情况 2：暖服/连接优先，如果当前正在进行挤服、暖服、启动、连接等操作，忽略自动加入
+    if (StatusWindowService().state.type != OperationType.none) {
+      LogService.d('[MapSubscriptionBloc] 当前有其他连接/暖服操作正在进行，忽略自动加入: ${event.mapName}');
+      return;
+    }
+
+    // 触发倒计时
+    emit(
+      state.copyWith(
+        isAutoJoinCountdownActive: true,
+        currentAutoJoinSeconds: event.countdownSeconds,
+        autoJoinServerAddress: event.serverAddress,
+        autoJoinServerName: event.serverName,
+        autoJoinMapInfo: MapSearchResult(
+          mapName: event.mapName,
+          mapLabel: event.mapLabel,
+          mapBackground: event.mapBackground,
+          isSubscribed: true,
+        ),
+        error: null,
+      ),
+    );
+
+    _startAutoJoinCountdown();
+    // 播放音效
+    _audioService.playWarmupCountdownSound();
+  }
+
+  void _startAutoJoinCountdown() {
+    _stopAutoJoinCountdown();
+    _autoJoinTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      add(const MapSubscriptionAutoJoinTick());
+    });
+  }
+
+  void _stopAutoJoinCountdown() {
+    _autoJoinTimer?.cancel();
+    _autoJoinTimer = null;
+  }
+
+  void _onAutoJoinTick(
+    MapSubscriptionAutoJoinTick event,
+    Emitter<MapSubscriptionState> emit,
+  ) {
+    if (!state.isAutoJoinCountdownActive) return;
+
+    // 边界情况 3：在倒计时期间，如果用户手动发起了挤服、暖服或连接操作，则自动中止本次自动加入
+    if (StatusWindowService().state.type != OperationType.none) {
+      LogService.d('[MapSubscriptionBloc] 倒计时期间检测到其他连接操作，自动中止自动加入');
+      _stopAutoJoinCountdown();
+      _audioService.stop();
+      emit(
+        state.copyWith(
+          isAutoJoinCountdownActive: false,
+          currentAutoJoinSeconds: 0,
+        ),
+      );
+      return;
+    }
+
+    // 边界情况 4：如果在倒计时期间，玩家关闭了地图订阅的全局开关，中止倒计时
+    if (!state.isEnabled) {
+      LogService.d('[MapSubscriptionBloc] 倒计时期间全局开关被关闭，自动中止自动加入');
+      _stopAutoJoinCountdown();
+      _audioService.stop();
+      emit(
+        state.copyWith(
+          isAutoJoinCountdownActive: false,
+          currentAutoJoinSeconds: 0,
+        ),
+      );
+      return;
+    }
+
+    final remaining = state.currentAutoJoinSeconds - 1;
+    if (remaining <= 0) {
+      // 倒计时结束，启动游戏
+      _stopAutoJoinCountdown();
+      add(const MapSubscriptionLaunchGame());
+      return;
+    }
+
+    emit(state.copyWith(currentAutoJoinSeconds: remaining));
+  }
+
+  void _onCancelAutoJoin(
+    MapSubscriptionCancelAutoJoin event,
+    Emitter<MapSubscriptionState> emit,
+  ) {
+    LogService.d('[MapSubscriptionBloc] 取消自动加入');
+    _stopAutoJoinCountdown();
+    _audioService.stop();
+
+    emit(
+      state.copyWith(
+        isAutoJoinCountdownActive: false,
+        currentAutoJoinSeconds: 0,
+      ),
+    );
+  }
+
+  Future<void> _onLaunchGame(
+    MapSubscriptionLaunchGame event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    LogService.d('[MapSubscriptionBloc] 启动游戏加入服务器');
+
+    _stopAutoJoinCountdown();
+    _audioService.stop();
+
+    final serverAddress = state.autoJoinServerAddress;
+    final serverName = state.autoJoinServerName ?? '';
+    final mapInfo = state.autoJoinMapInfo;
+
+    emit(
+      state.copyWith(
+        isAutoJoinCountdownActive: false,
+        currentAutoJoinSeconds: 0,
+      ),
+    );
+
+    if (serverAddress == null) return;
+
+    // 连接服务器
+    final success = await StatusWindowService().connectToServer(
+      serverAddress: serverAddress,
+      serverName: serverName,
+      mapName: mapInfo?.mapName,
+      mapNameCn: mapInfo?.mapLabel,
+      mapBackground: mapInfo?.mapBackground,
+    );
+
+    if (!success) {
+      final currentState = StatusWindowService().state;
+      emit(
+        state.copyWith(
+          error: currentState.message ?? '连接失败',
+        ),
+      );
+    }
+  }
+
   @override
   Future<void> close() {
     _serviceSubscription?.cancel();
     _ttsProgressSubscription?.cancel();
+    _autoJoinSubscription?.cancel();
+    _stopAutoJoinCountdown();
     return super.close();
   }
 }

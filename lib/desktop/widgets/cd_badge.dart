@@ -13,11 +13,13 @@ import '../../core/constants/app_colors.dart';
 class MapCdBadge extends StatelessWidget {
   final String mapName;
   final bool triggerOnHover;
+  final bool isCompact;
 
   const MapCdBadge({
     super.key,
     required this.mapName,
     this.triggerOnHover = true,
+    this.isCompact = false,
   });
 
   void _load(BuildContext context) {
@@ -50,18 +52,20 @@ class MapCdBadge extends StatelessWidget {
             return _CdBadgeShell(
               borderColor: Colors.white.withValues(alpha: 0.25),
               glowColor: Colors.transparent,
+              isCompact: isCompact,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.schedule,
-                    size: 18,
+                    size: isCompact ? 16 : 18,
                     color: Colors.white.withValues(alpha: 0.5),
                   ),
                   const SizedBox(width: 5),
                   _CdBadgeText(
                     label: 'CD: ?',
                     color: Colors.white.withValues(alpha: 0.5),
+                    isCompact: isCompact,
                   ),
                 ],
               ),
@@ -74,18 +78,20 @@ class MapCdBadge extends StatelessWidget {
                 borderColor: AppColors.indigo500.withValues(alpha: 0.5),
                 glowColor: AppColors.indigo500.withValues(alpha: 0.15),
                 clickable: true,
+                isCompact: isCompact,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.touch_app_rounded,
-                      size: 18,
+                      size: isCompact ? 16 : 18,
                       color: const Color(0xFF818CF8),
                     ),
                     const SizedBox(width: 5),
                     _CdBadgeText(
                       label: '点击获取CD',
                       color: const Color(0xFF818CF8),
+                      isCompact: isCompact,
                     ),
                   ],
                 ),
@@ -99,12 +105,13 @@ class MapCdBadge extends StatelessWidget {
           return _CdBadgeShell(
             borderColor: Colors.blue.withValues(alpha: 0.6),
             glowColor: Colors.blue.withValues(alpha: 0.25),
+            isCompact: isCompact,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: isCompact ? 14 : 16,
+                  height: isCompact ? 14 : 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -113,7 +120,7 @@ class MapCdBadge extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                _CdBadgeText(label: '获取中', color: Colors.blue.shade300),
+                _CdBadgeText(label: '获取中', color: Colors.blue.shade300, isCompact: isCompact),
               ],
             ),
           );
@@ -127,16 +134,17 @@ class MapCdBadge extends StatelessWidget {
               borderColor: Colors.orange.withValues(alpha: 0.6),
               glowColor: Colors.orange.withValues(alpha: 0.2),
               clickable: true,
+              isCompact: isCompact,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.warning_amber_rounded,
-                    size: 18,
+                    size: isCompact ? 16 : 18,
                     color: Colors.orange.shade300,
                   ),
                   const SizedBox(width: 5),
-                  _CdBadgeText(label: '失败', color: Colors.orange.shade300),
+                  _CdBadgeText(label: '失败', color: Colors.orange.shade300, isCompact: isCompact),
                 ],
               ),
             ),
@@ -148,18 +156,20 @@ class MapCdBadge extends StatelessWidget {
           return _CdBadgeShell(
             borderColor: Colors.white.withValues(alpha: 0.2),
             glowColor: Colors.transparent,
+            isCompact: isCompact,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.remove_circle_outline,
-                  size: 18,
+                  size: isCompact ? 16 : 18,
                   color: Colors.white38,
                 ),
                 const SizedBox(width: 5),
                 _CdBadgeText(
                   label: '无数据',
                   color: Colors.white.withValues(alpha: 0.4),
+                  isCompact: isCompact,
                 ),
               ],
             ),
@@ -179,18 +189,20 @@ class MapCdBadge extends StatelessWidget {
             borderColor: accentColor.withValues(alpha: 0.8),
             glowColor: accentColor.withValues(alpha: 0.3),
             clickable: true,
+            isCompact: isCompact,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   isAvailable ? Icons.check_circle_rounded : Icons.schedule,
-                  size: 18,
+                  size: isCompact ? 16 : 18,
                   color: accentColor,
                 ),
                 const SizedBox(width: 5),
                 _CdBadgeText(
                   label: isAvailable ? '可预订' : 'CD：$cd',
                   color: accentColor,
+                  isCompact: isCompact,
                 ),
               ],
             ),
@@ -207,12 +219,14 @@ class _CdBadgeShell extends StatefulWidget {
   final Color borderColor;
   final Color glowColor;
   final bool clickable;
+  final bool isCompact;
 
   const _CdBadgeShell({
     required this.child,
     required this.borderColor,
     required this.glowColor,
     this.clickable = false,
+    this.isCompact = false,
   });
 
   @override
@@ -237,7 +251,9 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          padding: widget.isCompact 
+              ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
+              : const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: hovered
                 ? Colors.black.withValues(alpha: 0.55)
@@ -274,16 +290,18 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               widget.child,
-              const SizedBox(height: 3),
-              Text(
-                's.zombieden.cn',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white.withValues(alpha: 0.35),
-                  letterSpacing: 0.3,
-                  height: 1,
+              if (!widget.isCompact) ...[
+                const SizedBox(height: 3),
+                Text(
+                  's.zombieden.cn',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.35),
+                    letterSpacing: 0.3,
+                    height: 1,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -296,16 +314,17 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
 class _CdBadgeText extends StatelessWidget {
   final String label;
   final Color color;
+  final bool isCompact;
 
-  const _CdBadgeText({required this.label, required this.color});
+  const _CdBadgeText({required this.label, required this.color, this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       label,
       style: TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
+        fontSize: isCompact ? 13 : 15,
+        fontWeight: isCompact ? FontWeight.w600 : FontWeight.bold,
         color: color,
         letterSpacing: 0.5,
         height: 1,

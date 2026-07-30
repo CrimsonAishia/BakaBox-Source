@@ -34,6 +34,7 @@ import '../widgets/warmup/warmup_countdown_dialog.dart';
 import '../../core/widgets/csgo_manual_launch_dialog.dart';
 import '../../core/bloc/warmup/warmup_bloc.dart';
 import '../../core/bloc/warmup/warmup_state.dart';
+import '../widgets/map_subscription/map_subscription_countdown_dialog.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -53,6 +54,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   bool _shownObsWarningForCurrentGame = false;
   late final FloatingChatCubit _floatingChatCubit;
   Route? _warmupCountdownRoute;
+  Route? _autoJoinCountdownRoute;
 
   // 攻略模块 GlobalKey，供 DesktopNavigator 调用
   final GlobalKey<CommunityGuideScreenState> _guideHostKey = GlobalKey();
@@ -266,6 +268,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     if (_warmupCountdownRoute != null) {
       Navigator.of(context).removeRoute(_warmupCountdownRoute!);
       _warmupCountdownRoute = null;
+    }
+    if (_autoJoinCountdownRoute != null) {
+      Navigator.of(context).removeRoute(_autoJoinCountdownRoute!);
+      _autoJoinCountdownRoute = null;
     }
     _floatingChatCubit.close();
     super.dispose();
@@ -493,6 +499,38 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                 if (state.error != null) {
                   ToastUtils.showError(context, state.error!);
                   return;
+                }
+              },
+            ),
+            BlocListener<MapSubscriptionBloc, MapSubscriptionState>(
+              listenWhen: (previous, current) {
+                return previous.isAutoJoinCountdownActive !=
+                    current.isAutoJoinCountdownActive;
+              },
+              listener: (context, state) {
+                if (state.isAutoJoinCountdownActive && _autoJoinCountdownRoute == null) {
+                  final mapSubscriptionBloc = context.read<MapSubscriptionBloc>();
+                  _autoJoinCountdownRoute = DialogRoute(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (dialogContext) {
+                      return BlocProvider.value(
+                        value: mapSubscriptionBloc,
+                        child: BlocBuilder<MapSubscriptionBloc, MapSubscriptionState>(
+                          builder: (context, dialogState) {
+                            return Material(
+                              color: Colors.transparent,
+                              child: MapSubscriptionCountdownDialog(state: dialogState),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                  Navigator.of(context).push(_autoJoinCountdownRoute!);
+                } else if (!state.isAutoJoinCountdownActive && _autoJoinCountdownRoute != null) {
+                  Navigator.of(context).removeRoute(_autoJoinCountdownRoute!);
+                  _autoJoinCountdownRoute = null;
                 }
               },
             ),

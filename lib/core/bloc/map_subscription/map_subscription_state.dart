@@ -80,6 +80,21 @@ class MapSubscriptionState extends Equatable {
   /// 错误信息
   final String? error;
 
+  /// 是否正在显示自动加入倒计时
+  final bool isAutoJoinCountdownActive;
+
+  /// 当前自动加入倒计时剩余秒数
+  final int currentAutoJoinSeconds;
+
+  /// 自动加入的目标服务器地址
+  final String? autoJoinServerAddress;
+
+  /// 自动加入的目标服务器名称
+  final String? autoJoinServerName;
+
+  /// 自动加入的目标地图信息
+  final MapSearchResult? autoJoinMapInfo;
+
   const MapSubscriptionState({
     this.subscriptions = const [],
     this.isEnabled = false,
@@ -107,6 +122,11 @@ class MapSubscriptionState extends Equatable {
     this.isTtsTesting = false,
     this.ttsTestingPhase,
     this.error,
+    this.isAutoJoinCountdownActive = false,
+    this.currentAutoJoinSeconds = 0,
+    this.autoJoinServerAddress,
+    this.autoJoinServerName,
+    this.autoJoinMapInfo,
   });
 
   MapSubscriptionState copyWith({
@@ -136,6 +156,11 @@ class MapSubscriptionState extends Equatable {
     bool? isTtsTesting,
     String? ttsTestingPhase,
     String? error,
+    bool? isAutoJoinCountdownActive,
+    int? currentAutoJoinSeconds,
+    String? autoJoinServerAddress,
+    String? autoJoinServerName,
+    MapSearchResult? autoJoinMapInfo,
   }) {
     return MapSubscriptionState(
       subscriptions: subscriptions ?? this.subscriptions,
@@ -165,6 +190,11 @@ class MapSubscriptionState extends Equatable {
       isTtsTesting: isTtsTesting ?? this.isTtsTesting,
       ttsTestingPhase: ttsTestingPhase,
       error: error,
+      isAutoJoinCountdownActive: isAutoJoinCountdownActive ?? this.isAutoJoinCountdownActive,
+      currentAutoJoinSeconds: currentAutoJoinSeconds ?? this.currentAutoJoinSeconds,
+      autoJoinServerAddress: autoJoinServerAddress ?? this.autoJoinServerAddress,
+      autoJoinServerName: autoJoinServerName ?? this.autoJoinServerName,
+      autoJoinMapInfo: autoJoinMapInfo ?? this.autoJoinMapInfo,
     );
   }
 
@@ -196,6 +226,11 @@ class MapSubscriptionState extends Equatable {
     isTtsTesting,
     ttsTestingPhase,
     error,
+    isAutoJoinCountdownActive,
+    currentAutoJoinSeconds,
+    autoJoinServerAddress,
+    autoJoinServerName,
+    autoJoinMapInfo,
   ];
 }
 

@@ -341,15 +341,32 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       },
       onDelete: () => _showDeleteConfirmDialog(context, isDark, sub),
       editBeforeDelete: true,
-      // 使用自定义 trailing 显示CD徽章 + 范围设置按钮
-      trailing: Row(
+      // 使用自定义 bottomActions 显示在第二行：CD徽章 + 自动加入设置按钮 + 范围设置按钮
+      bottomActions: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          MapCdBadge(mapName: sub.mapName, triggerOnHover: false),
+          MapCdBadge(mapName: sub.mapName, triggerOnHover: false, isCompact: true),
+          const SizedBox(width: 8),
+          _buildAutoJoinButton(context, isDark, sub),
           const SizedBox(width: 8),
           _buildScopeButtons(context, isDark, sub, categoryText, serverText),
         ],
       ),
+    );
+  }
+
+  /// 构建自动加入按钮
+  Widget _buildAutoJoinButton(
+    BuildContext context,
+    bool isDark,
+    MapSubscription sub,
+  ) {
+    return _ActionButton(
+      icon: sub.isAutoJoinEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+      label: sub.isAutoJoinEnabled ? '${sub.autoJoinCountdownSeconds}s' : '自动加入',
+      baseColor: const Color(0xFF818CF8), // indigo400
+      isActive: sub.isAutoJoinEnabled,
+      onTap: () => _showAutoJoinDialog(context, isDark, sub),
     );
   }
 
@@ -376,43 +393,146 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       scopeDesc = parts.join(' · ');
     }
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(6),
-        onTap: () => _showSubscriptionScopeDialog(context, isDark, sub),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : AppColors.gray200,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : AppColors.gray300,
-            ),
+    return _ActionButton(
+      icon: Icons.tune_rounded,
+      label: scopeDesc,
+      baseColor: Colors.white,
+      isActive: false, // 范围设置按钮作为普通按钮，不上色发光
+      onTap: () => _showSubscriptionScopeDialog(context, isDark, sub),
+    );
+  }
+
+  void _showAutoJoinDialog(
+    BuildContext context,
+    bool isDark,
+    MapSubscription sub,
+  ) {
+    bool isEnabled = sub.isAutoJoinEnabled;
+    int seconds = sub.autoJoinCountdownSeconds;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          title: Row(
             children: [
               Icon(
-                Icons.tune_rounded,
-                size: 14,
-                color: isDark ? Colors.white70 : AppColors.gray500,
+                Icons.flash_on_rounded,
+                color: AppColors.indigo500,
+                size: 20,
               ),
-              const SizedBox(width: 6),
-              Text(
-                scopeDesc,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : AppColors.gray500,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '自动加入设置',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.gray800,
+                  ),
                 ),
               ),
             ],
           ),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  value: isEnabled,
+                  onChanged: (v) {
+                    setDialogState(() {
+                      isEnabled = v;
+                    });
+                  },
+                  title: Text(
+                    '开启自动加入',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white : AppColors.gray800,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '当检测到地图时，自动触发倒计时并加入服务器',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : AppColors.gray400,
+                    ),
+                  ),
+                  activeTrackColor: AppColors.indigo500.withValues(alpha: 0.5),
+                  activeThumbColor: AppColors.indigo500,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                if (isEnabled) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    '加入倒计时：$seconds 秒',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white54 : AppColors.gray500,
+                    ),
+                  ),
+                  SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 3,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      activeTrackColor: AppColors.indigo500,
+                      inactiveTrackColor: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : AppColors.gray200,
+                      thumbColor: AppColors.indigo500,
+                    ),
+                    child: Slider(
+                      value: seconds.toDouble(),
+                      min: 5,
+                      max: 120,
+                      divisions: 23, // 5 到 120, 步长 5 
+                      onChanged: (v) {
+                        setDialogState(() {
+                          seconds = v.round();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
+              ),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<MapSubscriptionBloc>().add(
+                  MapSubscriptionUpdateAutoJoin(
+                    mapName: sub.mapName,
+                    isEnabled: isEnabled,
+                    countdownSeconds: seconds,
+                  ),
+                );
+                Navigator.of(ctx).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.indigo500,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('保存'),
+            ),
+          ],
         ),
       ),
     );
@@ -688,5 +808,102 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     MapSubscription sub,
   ) {
     SubscriptionScopeDialog.show(context, subscription: sub);
+  }
+}
+
+/// 底部操作栏统一样式的按钮（带 Hover 和发光效果，与 CD 徽章对齐）
+class _ActionButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color baseColor;
+  final VoidCallback onTap;
+  final bool isActive;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.baseColor,
+    required this.onTap,
+    this.isActive = false,
+  });
+
+  @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hovered = _isHovered;
+    final color = widget.isActive ? widget.baseColor : Colors.white.withValues(alpha: 0.5);
+    final borderColor = widget.isActive ? widget.baseColor.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.25);
+    final hoverBorderColor = widget.isActive ? widget.baseColor : Colors.white.withValues(alpha: 0.5);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: hovered
+                ? Colors.black.withValues(alpha: 0.55)
+                : Colors.black.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: hovered ? hoverBorderColor : borderColor,
+              width: hovered ? 2.0 : 1.5,
+            ),
+            boxShadow: [
+              if (widget.isActive)
+                BoxShadow(
+                  color: hovered
+                      ? widget.baseColor.withValues(alpha: 0.3)
+                      : widget.baseColor.withValues(alpha: 0.15),
+                  blurRadius: hovered ? 14 : 10,
+                  spreadRadius: hovered ? 2 : 1,
+                ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    widget.icon,
+                    size: 16,
+                    color: color,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                      letterSpacing: 0.5,
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

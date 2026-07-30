@@ -43,6 +43,9 @@ class MapSubscriptionCard extends StatefulWidget {
   /// 右侧自定义操作区域（完全替代默认操作区域）
   final Widget? trailing;
 
+  /// 底部自定义操作区域（如放在地图名下方的新行）
+  final Widget? bottomActions;
+
   const MapSubscriptionCard({
     super.key,
     required this.displayName,
@@ -57,6 +60,7 @@ class MapSubscriptionCard extends StatefulWidget {
     this.onDelete,
     this.editBeforeDelete = false,
     this.trailing,
+    this.bottomActions,
   });
 
   @override
@@ -70,7 +74,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasBackground = widget.mapBackground != null;
-    final cardHeight = widget.isCompact ? 64.0 : 72.0;
+    final cardHeight = widget.isCompact ? 64.0 : (widget.bottomActions != null ? 100.0 : 72.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: widget.isCompact ? 3 : 4),
@@ -154,62 +158,118 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                           horizontal: 16,
                           vertical: 12,
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              children: [
                             // 地图名
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    widget.displayName,
-                                    style: TextStyle(
-                                      fontSize: widget.isCompact ? 14 : 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: hasBackground
-                                          ? Colors.white
-                                          : (isDark
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 20,
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          Icons.map_outlined,
+                                          size: widget.isCompact ? 16 : 18,
+                                          color: hasBackground
+                                              ? Colors.white
+                                              : (isDark
+                                                    ? Colors.white70
+                                                    : AppColors.gray500),
+                                          shadows: hasBackground
+                                              ? [
+                                                  Shadow(
+                                                    color: Colors.black.withValues(alpha: 0.5),
+                                                    blurRadius: 4,
+                                                  ),
+                                                ]
+                                              : null,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          widget.displayName,
+                                          style: TextStyle(
+                                            fontSize: widget.isCompact ? 14 : 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: hasBackground
                                                 ? Colors.white
-                                                : AppColors.gray800),
-                                      shadows: hasBackground
-                                          ? [
-                                              Shadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                                blurRadius: 4,
-                                              ),
-                                            ]
-                                          : null,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                                : (isDark
+                                                      ? Colors.white
+                                                      : AppColors.gray800),
+                                            shadows: hasBackground
+                                                ? [
+                                                    Shadow(
+                                                      color: Colors.black.withValues(alpha: 0.5),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   // 副标题：显示 mapName（仅当与 displayName 不同时）
                                   if (widget.displayName != widget.mapName) ...[
                                     const SizedBox(height: 2),
-                                    Text(
-                                      widget.mapName,
-                                      style: TextStyle(
-                                        fontSize: widget.isCompact ? 11 : 12,
-                                        color: hasBackground
-                                            ? Colors.white70
-                                            : (isDark
-                                                  ? Colors.white54
-                                                  : AppColors.gray500),
-                                        shadows: hasBackground
-                                            ? [
-                                                Shadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.5),
-                                                  blurRadius: 4,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 20,
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.translate,
+                                            size: widget.isCompact ? 12 : 14,
+                                            color: hasBackground
+                                                ? Colors.white70
+                                                : (isDark
+                                                      ? Colors.white54
+                                                      : AppColors.gray400),
+                                            shadows: hasBackground
+                                                ? [
+                                                    Shadow(
+                                                      color: Colors.black.withValues(alpha: 0.5),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            widget.mapName,
+                                            style: TextStyle(
+                                              fontSize: widget.isCompact ? 11 : 12,
+                                              color: hasBackground
+                                                  ? Colors.white70
+                                                  : (isDark
+                                                        ? Colors.white54
+                                                        : AppColors.gray500),
+                                              shadows: hasBackground
+                                                  ? [
+                                                      Shadow(
+                                                        color: Colors.black.withValues(alpha: 0.5),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ]
+                                                  : null,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ],
@@ -227,55 +287,25 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                 widget.onDelete == null &&
                                 widget.onScopeTap == null)
                               _buildSubscribedBadge(isDark, hasBackground),
-                            // 编辑按钮（editBeforeDelete=true 时在删除按钮前显示，仅已订阅时）
                             if (widget.onEdit != null &&
                                 widget.editBeforeDelete &&
                                 widget.isSubscribed) ...[
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: '编辑地图信息',
-                                child: IconButton(
-                                  onPressed: widget.onEdit,
-                                  icon: Icon(
-                                    Icons.edit_rounded,
-                                    size: 16,
-                                    color: hasBackground
-                                        ? Colors.white70
-                                        : (isDark
-                                              ? Colors.white38
-                                              : AppColors.gray400),
-                                  ),
-                                  iconSize: 16,
-                                  splashRadius: 14,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 28,
-                                    minHeight: 28,
-                                  ),
-                                ),
+                              const SizedBox(width: 6),
+                              _MiniActionButton(
+                                icon: Icons.edit_rounded,
+                                tooltip: '编辑地图信息',
+                                baseColor: Colors.white,
+                                onTap: widget.onEdit!,
                               ),
                             ],
                             // 删除按钮
                             if (widget.onDelete != null) ...[
-                              const SizedBox(width: 4),
-                              IconButton(
-                                onPressed: widget.onDelete,
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  size: 18,
-                                  color: hasBackground
-                                      ? Colors.white70
-                                      : (isDark
-                                            ? Colors.white38
-                                            : AppColors.gray400),
-                                ),
-                                iconSize: 18,
-                                splashRadius: 14,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 28,
-                                  minHeight: 28,
-                                ),
+                              const SizedBox(width: 6),
+                              _MiniActionButton(
+                                icon: Icons.delete_outline_rounded,
+                                tooltip: '删除订阅',
+                                baseColor: Colors.red.shade400,
+                                onTap: widget.onDelete!,
                               ),
                             ],
                             // 编辑按钮（editBeforeDelete=false 时在删除按钮后显示，仅已订阅且有背景图时）
@@ -283,36 +313,26 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                 !widget.editBeforeDelete &&
                                 hasBackground &&
                                 widget.isSubscribed) ...[
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: '编辑地图信息',
-                                child: IconButton(
-                                  onPressed: widget.onEdit,
-                                  icon: Icon(
-                                    Icons.edit_rounded,
-                                    size: 16,
-                                    color: hasBackground
-                                        ? Colors.white70
-                                        : (isDark
-                                              ? Colors.white30
-                                              : AppColors.gray300),
-                                  ),
-                                  iconSize: 16,
-                                  splashRadius: 14,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 28,
-                                    minHeight: 28,
-                                  ),
-                                ),
+                              const SizedBox(width: 6),
+                              _MiniActionButton(
+                                icon: Icons.edit_rounded,
+                                tooltip: '编辑地图信息',
+                                baseColor: Colors.white,
+                                onTap: widget.onEdit!,
                               ),
                             ],
                           ],
                         ),
-                      ),
+                        if (widget.bottomActions != null) ...[
+                          const Spacer(),
+                          widget.bottomActions!,
+                        ],
+                      ],
                     ),
                   ),
-                ],
+                ),
+              ),
+            ],
               ),
             ),
           ),
@@ -410,3 +430,77 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
     );
   }
 }
+
+/// 右上角小图标按钮（带 Hover 和发光效果）
+class _MiniActionButton extends StatefulWidget {
+  final IconData icon;
+  final String tooltip;
+  final Color baseColor;
+  final VoidCallback onTap;
+
+  const _MiniActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.baseColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_MiniActionButton> createState() => _MiniActionButtonState();
+}
+
+class _MiniActionButtonState extends State<_MiniActionButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hovered = _isHovered;
+    final color = hovered ? widget.baseColor : Colors.white.withValues(alpha: 0.6);
+    final borderColor = hovered ? widget.baseColor.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.2);
+
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: hovered
+                  ? Colors.black.withValues(alpha: 0.55)
+                  : Colors.black.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: borderColor,
+                width: hovered ? 2.0 : 1.5,
+              ),
+              boxShadow: [
+                if (hovered)
+                  BoxShadow(
+                    color: widget.baseColor.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              widget.icon,
+              size: 16,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
