@@ -1546,7 +1546,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
     final address = server.address;
     if (address == null || address.isEmpty) return;
 
-    final targetAppId = (server.appId != null && server.appId! > 0) ? server.appId.toString() : '730';
+    final targetAppId = (server.appId != null && server.appId! > 0)
+        ? server.appId.toString()
+        : '730';
     final uri = Uri.parse('steam://run/$targetAppId//+connect $address');
     await launchUrl(uri);
   }
@@ -1718,7 +1720,10 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
     final address = widget.server.address;
     if (address == null || address.isEmpty) return;
 
-    final targetAppId = (widget.server.appId != null && widget.server.appId! > 0) ? widget.server.appId.toString() : '730';
+    final targetAppId =
+        (widget.server.appId != null && widget.server.appId! > 0)
+        ? widget.server.appId.toString()
+        : '730';
     final uri = Uri.parse('steam://run/$targetAppId//+connect $address');
     await launchUrl(uri);
   }
@@ -2368,7 +2373,7 @@ class _RuntimeBadge extends StatelessWidget {
                   color: AppColors.gray500,
                 ),
                 children: [
-                  const TextSpan(text: '近7天'),
+                  const TextSpan(text: '近七天出现'),
                   TextSpan(
                     text: ' $weeklyOccurrences ',
                     style: const TextStyle(

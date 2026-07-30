@@ -168,7 +168,7 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
 
   String _getMapRunCountDisplay() {
     final weeklyOccurrences = server.weeklyOccurrences;
-    if (weeklyOccurrences != null) return '7天内出现${weeklyOccurrences + 1}次';
+    if (weeklyOccurrences != null) return '七天内出现$weeklyOccurrences次';
     return '未知';
   }
 
