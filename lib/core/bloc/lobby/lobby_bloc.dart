@@ -2371,7 +2371,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
         // 同步更新 allOnlineUsers：移除离开的用户（如果只是传送，更新 mapId 即可）
         List<LobbyUser> updatedAllOnlineUsers = state.allOnlineUsers;
-        if (targetMapId.isNotEmpty && leavingUser != null) {
+        if (targetMapId.isNotEmpty) {
           updatedAllOnlineUsers = _upsertUserInList(
             state.allOnlineUsers,
             leavingUser.copyWith(mapId: targetMapId),

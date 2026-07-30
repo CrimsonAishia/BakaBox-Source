@@ -955,9 +955,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     emit(state.copyWith(isLoading: true));
     try {
-      // 检查是否包含应用数据清理
-      final bool clearedAppData = event.cacheTypes.contains(CacheType.appData);
-
       // 清除选中类型的缓存
       for (final cacheType in event.cacheTypes) {
         await _clearCacheByType(cacheType);
