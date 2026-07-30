@@ -38,6 +38,56 @@ class WarmupCountdownDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            if (state.mapInfo != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          state.mapInfo!.mapLabel.isNotEmpty &&
+                                  state.mapInfo!.mapLabel != state.mapInfo!.mapName
+                              ? Icons.translate
+                              : Icons.map_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          state.mapInfo!.mapLabel.isNotEmpty
+                              ? state.mapInfo!.mapLabel
+                              : state.mapInfo!.mapName,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (state.mapInfo!.mapLabel.isNotEmpty &&
+                        state.mapInfo!.mapLabel != state.mapInfo!.mapName) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.map_outlined, color: Colors.white70, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            state.mapInfo!.mapName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             const Text(
               '游戏即将启动并加入服务器',
               style: TextStyle(fontSize: 16, color: Colors.white70),

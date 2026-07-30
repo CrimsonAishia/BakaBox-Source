@@ -36,6 +36,56 @@ class MapSubscriptionCountdownDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            if (state.autoJoinMapInfo != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          state.autoJoinMapInfo!.mapLabel.isNotEmpty &&
+                                  state.autoJoinMapInfo!.mapLabel != state.autoJoinMapInfo!.mapName
+                              ? Icons.translate
+                              : Icons.map_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          state.autoJoinMapInfo!.mapLabel.isNotEmpty
+                              ? state.autoJoinMapInfo!.mapLabel
+                              : state.autoJoinMapInfo!.mapName,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (state.autoJoinMapInfo!.mapLabel.isNotEmpty &&
+                        state.autoJoinMapInfo!.mapLabel != state.autoJoinMapInfo!.mapName) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.map_outlined, color: Colors.white70, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            state.autoJoinMapInfo!.mapName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             const Text(
               '游戏即将启动并加入服务器',
               style: TextStyle(fontSize: 16, color: Colors.white70),
