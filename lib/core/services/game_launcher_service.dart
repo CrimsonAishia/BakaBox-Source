@@ -590,6 +590,11 @@ class GameLauncherService {
   /// - null: 验证通过或无需验证
   /// - ServerConnectResult: 验证失败，返回错误结果
   Future<ServerConnectResult?> _validateGameTypeMatch(GameClient client) async {
+    // 仅发送连接指令的游戏（如 CS:Source 和其他游戏）不参与进程排他校验
+    if (client.isConnectOnly) {
+      return null;
+    }
+
     // 检查是否有任意受支持的游戏正在运行
     final isRunning = await isCS2Running();
     if (!isRunning) {

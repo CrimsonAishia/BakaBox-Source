@@ -156,7 +156,9 @@ class ServerItemUtils {
               ? GameClient.csgoLegacy
               : GameClient.cs2;
       }
-      return GameClient.other;
+      // 不匹配已知 appId 时，不要直接 return GameClient.other，
+      // 而是向下继续 fallback，通过 gameType 字符串做最后判定，
+      // 因为部分社区服会返回 0 或者异常的 appId。
     }
 
     // 无 appId（或非已知 AppID），回退到 gameType 字符串判断
