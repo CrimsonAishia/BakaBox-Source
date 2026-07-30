@@ -143,6 +143,7 @@ enum CacheType {
   serverData, // 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
   appData, // 应用数据（草稿、已读状态、游戏路径、主题、音量等）
   logs, // 日志文件
+  builtInData, // 内置数据（不可清理的组件或资源缓存）
 }
 
 /// 移动端缓存类型枚举
@@ -215,6 +216,7 @@ class CacheItemInfo extends Equatable {
   final String description;
   final int sizeInBytes;
   final bool isClearing;
+  final bool canClear;
 
   const CacheItemInfo({
     required this.type,
@@ -222,6 +224,7 @@ class CacheItemInfo extends Equatable {
     required this.description,
     this.sizeInBytes = 0,
     this.isClearing = false,
+    this.canClear = true,
   });
 
   String get formattedSize {
@@ -238,6 +241,7 @@ class CacheItemInfo extends Equatable {
     String? description,
     int? sizeInBytes,
     bool? isClearing,
+    bool? canClear,
   }) {
     return CacheItemInfo(
       type: type ?? this.type,
@@ -245,11 +249,12 @@ class CacheItemInfo extends Equatable {
       description: description ?? this.description,
       sizeInBytes: sizeInBytes ?? this.sizeInBytes,
       isClearing: isClearing ?? this.isClearing,
+      canClear: canClear ?? this.canClear,
     );
   }
 
   @override
-  List<Object?> get props => [type, name, description, sizeInBytes, isClearing];
+  List<Object?> get props => [type, name, description, sizeInBytes, isClearing, canClear];
 }
 
 /// 被拉黑的用户信息

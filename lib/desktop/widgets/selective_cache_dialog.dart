@@ -36,7 +36,7 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
   bool _isClearing = false;
 
   List<CacheItemInfo> get _availableCacheItems =>
-      widget.cacheDetails.where((item) => item.sizeInBytes > 0).toList();
+      widget.cacheDetails.where((item) => item.sizeInBytes > 0 && item.canClear).toList();
 
   int get _selectedTotalSize => widget.cacheDetails
       .where((item) => _selectedTypes.contains(item.type))
@@ -80,6 +80,8 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
         return Colors.purple;
       case CacheType.logs:
         return Colors.amber;
+      case CacheType.builtInData:
+        return Colors.grey;
     }
   }
 
@@ -93,6 +95,8 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
         return MdiIcons.databaseOutline;
       case CacheType.logs:
         return MdiIcons.textBoxOutline;
+      case CacheType.builtInData:
+        return MdiIcons.shieldHalfFull;
     }
   }
 
@@ -270,11 +274,12 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
     final isSelected = _selectedTypes.contains(item.type);
     final color = _getCacheTypeColor(item.type);
     final hasData = item.sizeInBytes > 0;
+    final canBeSelected = hasData && item.canClear;
 
     return Opacity(
-      opacity: hasData ? 1.0 : 0.5,
+      opacity: canBeSelected ? 1.0 : 0.5,
       child: InkWell(
-        onTap: hasData ? () => _toggleCacheType(item.type) : null,
+        onTap: canBeSelected ? () => _toggleCacheType(item.type) : null,
         borderRadius: BorderRadius.circular(6),
         child: Container(
           margin: const EdgeInsets.only(bottom: 6),
@@ -297,7 +302,7 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
                 height: 20,
                 child: Checkbox(
                   value: isSelected,
-                  onChanged: hasData
+                  onChanged: canBeSelected
                       ? (v) => _toggleCacheType(item.type)
                       : null,
                   activeColor: color,

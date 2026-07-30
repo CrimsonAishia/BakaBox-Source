@@ -11,6 +11,7 @@ import '../../utils/app_directory_service.dart';
 import '../../utils/platform_utils.dart';
 import '../../utils/storage_utils.dart';
 import '../../services/disk_image_cache_service.dart';
+import '../../services/lobby_image_cache_service.dart';
 import '../../services/network_mode_service.dart';
 import '../../services/realtime_service.dart';
 import '../../services/realtime/realtime_map_info_invalidator.dart';
@@ -253,7 +254,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (PlatformUtils.isDesktopPlatform) {
         // 桌面端：使用 AppDirectoryService 的缓存目录
         final cacheDir = Directory(AppDirectoryService.cachePath);
-        totalSize = await _calculateDirectorySize(cacheDir);
+        totalSize = await _calculateDirectorySize(
+          cacheDir,
+          excludeSuffixes: ['webview2'],
+        );
       } else {
         // 移动端：统计 AppDirectoryService 缓存目录（包含 lobby_images、images 等）
         final appCacheDir = Directory(AppDirectoryService.cachePath);
@@ -271,21 +275,49 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<int> _calculateDirectorySize(Directory directory) async {
+  Future<int> _calculateDirectorySize(
+    Directory directory, {
+    List<String>? excludeSuffixes,
+  }) async {
     int size = 0;
     try {
       if (directory.existsSync()) {
-        await for (var entity in directory.list(
-          recursive: true,
-          followLinks: false,
-        )) {
-          try {
-            if (entity is File) {
-              size += await entity.length();
+        if (excludeSuffixes != null && excludeSuffixes.isNotEmpty) {
+          await for (var entity in directory.list(followLinks: false)) {
+            try {
+              if (entity is Directory) {
+                bool shouldExclude = false;
+                for (final suffix in excludeSuffixes) {
+                  if (entity.path.endsWith(suffix)) {
+                    shouldExclude = true;
+                    break;
+                  }
+                }
+                if (shouldExclude) continue;
+                size += await _calculateDirectorySize(
+                  entity,
+                  excludeSuffixes: excludeSuffixes,
+                );
+              } else if (entity is File) {
+                size += await entity.length();
+              }
+            } catch (e) {
+              LogService.d('无法访问文件: ${entity.path}');
             }
-          } catch (e) {
-            // 忽略单个文件的访问错误，继续计算其他文件
-            LogService.d('无法访问文件: ${entity.path}');
+          }
+        } else {
+          await for (var entity in directory.list(
+            recursive: true,
+            followLinks: false,
+          )) {
+            try {
+              if (entity is File) {
+                size += await entity.length();
+              }
+            } catch (e) {
+              // 忽略单个文件的访问错误，继续计算其他文件
+              LogService.d('无法访问文件: ${entity.path}');
+            }
           }
         }
       }
@@ -990,7 +1022,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (PlatformUtils.isDesktopPlatform) {
         final cacheDir = Directory(AppDirectoryService.cachePath);
         if (await cacheDir.exists()) {
-          cacheFilesSize = await _calculateDirectorySize(cacheDir);
+          cacheFilesSize = await _calculateDirectorySize(
+            cacheDir,
+            excludeSuffixes: ['webview2'],
+          );
         }
       } else {
         // 移动端：统计 AppDirectoryService 缓存目录（包含 lobby_images、images 等）
@@ -1086,6 +1121,28 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           sizeInBytes: logsSize,
         ),
       );
+
+      // 5. 内置数据 (仅桌面端展示，不可清理)
+      if (PlatformUtils.isDesktopPlatform) {
+        int builtInSize = 0;
+        final webviewDir = Directory('${AppDirectoryService.cachePath}${Platform.pathSeparator}webview2');
+        if (await webviewDir.exists()) {
+          builtInSize += await _calculateDirectorySize(webviewDir);
+        }
+        final lobbyDir = Directory('${AppDirectoryService.cachePath}${Platform.pathSeparator}lobby_images');
+        if (await lobbyDir.exists()) {
+          builtInSize += await _calculateDirectorySize(lobbyDir);
+        }
+        details.add(
+          CacheItemInfo(
+            type: CacheType.builtInData,
+            name: '内置数据',
+            description: '应用运行必需的基础数据',
+            sizeInBytes: builtInSize,
+            canClear: false,
+          ),
+        );
+      }
     } catch (e) {
       LogService.e('计算详细缓存信息失败', e);
     }
@@ -1099,14 +1156,19 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       case CacheType.cacheFiles:
         // 清理磁盘图片缓存
         await DiskImageCacheService.instance.clearCache();
+        // 大厅图片缓存 (lobby_images) 已移至不可清理的内置数据分类中，不再随图片缓存被清理
+        
         if (PlatformUtils.isDesktopPlatform) {
           final cacheDir = Directory(AppDirectoryService.cachePath);
           if (await cacheDir.exists()) {
             await for (var entity in cacheDir.list()) {
               try {
-                // 跳过 webview2 目录，避免在 WebView 运行期间删除导致损坏和残留
-                if (entity is Directory && entity.path.endsWith('webview2')) {
-                  continue;
+                // 跳过 webview2 避免损坏，跳过 images/lobby_images 避免破坏专门清理逻辑后重建的目录
+                if (entity is Directory) {
+                  final p = entity.path;
+                  if (p.endsWith('webview2') || p.endsWith('images') || p.endsWith('lobby_images')) {
+                    continue;
+                  }
                 }
                 
                 if (entity is File) {
@@ -1120,11 +1182,18 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
             }
           }
         } else {
-          // 移动端：清理 AppDirectoryService 缓存目录（lobby_images、images 等）
+          // 移动端：清理 AppDirectoryService 缓存目录（跳过由其他逻辑负责或禁用的目录）
           final appCacheDir = Directory(AppDirectoryService.cachePath);
           if (appCacheDir.existsSync()) {
             await for (var entity in appCacheDir.list()) {
               try {
+                if (entity is Directory) {
+                  final p = entity.path;
+                  if (p.endsWith('images') || p.endsWith('lobby_images')) {
+                    continue;
+                  }
+                }
+                
                 if (entity is File) {
                   await entity.delete();
                 } else if (entity is Directory) {
@@ -1180,6 +1249,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
       case CacheType.logs:
         await LogService.clearLogs();
+        break;
+      case CacheType.builtInData:
+        // 内置数据不支持直接清理
         break;
     }
   }
