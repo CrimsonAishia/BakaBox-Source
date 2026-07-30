@@ -939,7 +939,7 @@ class GameLauncherService {
     // CS2 / 独立版 CSGO / CS:Source，正常启动并连接
     // 纯启动场景（无服务器地址）：仅通过 steam://run/<appId> 拉起游戏
     if (address.isEmpty) {
-      return await _runGameWithoutConnect(client);
+      return await _runGameWithoutConnect(client, appId: appId);
     }
 
     // 解析地址和密码
@@ -962,8 +962,12 @@ class GameLauncherService {
   }
 
   /// 仅启动游戏（不连接服务器），用于独立版 CSGO / CS:Source 的纯启动场景
-  Future<ServerConnectResult> _runGameWithoutConnect(GameClient client) async {
-    final steamUrl = 'steam://run/${client.steamAppId}';
+  Future<ServerConnectResult> _runGameWithoutConnect(GameClient client, {int? appId}) async {
+    final targetAppId = (appId != null && appId > 0) ? appId.toString() : client.steamAppId;
+    if (targetAppId.isEmpty) {
+      return ServerConnectResult.failure('无法启动游戏：未知的 AppID');
+    }
+    final steamUrl = 'steam://run/$targetAppId';
     LogService.d('仅启动游戏（不连接）: $steamUrl (${client.displayName})');
 
     try {

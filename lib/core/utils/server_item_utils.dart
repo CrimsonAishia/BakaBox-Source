@@ -156,6 +156,7 @@ class ServerItemUtils {
               ? GameClient.csgoLegacy
               : GameClient.cs2;
       }
+      return GameClient.other;
     }
 
     // 无 appId（或非已知 AppID），回退到 gameType 字符串判断
@@ -165,6 +166,12 @@ class ServerItemUtils {
     if (isCsgoServer(gameType)) {
       return GameClient.csgoLegacy;
     }
+    
+    // 如果不是已知类型的字符串，也认为是其他游戏
+    if (gameType != null && gameType.isNotEmpty && gameType.toLowerCase() != 'cs2') {
+      return GameClient.other;
+    }
+    
     return GameClient.cs2;
   }
 
@@ -199,6 +206,9 @@ enum GameClient {
 
   /// Counter-Strike: Source（AppID 240，进程 hl2.exe）
   css,
+
+  /// 其他非CS游戏
+  other,
 }
 
 extension GameClientInfo on GameClient {
@@ -212,6 +222,8 @@ extension GameClientInfo on GameClient {
         return '${ServerItemUtils.csgoStandaloneAppId}';
       case GameClient.css:
         return '${ServerItemUtils.cssAppId}';
+      case GameClient.other:
+        return '';
     }
   }
 
@@ -229,7 +241,7 @@ extension GameClientInfo on GameClient {
   ///
   /// 因此凡是涉及"是否需要监控 / 是否要求游戏在运行"的判断，
   /// 都应先用本 getter 把 CS:Source 短路掉。
-  bool get isConnectOnly => this == GameClient.css;
+  bool get isConnectOnly => this == GameClient.css || this == GameClient.other;
 
   /// 简短类型标识，与 GameStatusService.runningGameType 对齐
   String get shortType {
@@ -241,6 +253,8 @@ extension GameClientInfo on GameClient {
         return 'csgo';
       case GameClient.css:
         return 'css';
+      case GameClient.other:
+        return 'other';
     }
   }
 
@@ -254,12 +268,17 @@ extension GameClientInfo on GameClient {
         return 'CSGO';
       case GameClient.css:
         return 'CS:Source';
+      case GameClient.other:
+        return '其他游戏';
     }
   }
 
   /// 构建连接服务器用的 Steam URL：`steam://run/<appId>//+connect <addr> [+password <pwd>]`
   String buildConnectUrl(String serverAddress, [String? password, int? dynamicAppId]) {
     final targetAppId = (dynamicAppId != null && dynamicAppId > 0) ? dynamicAppId.toString() : steamAppId;
+    if (targetAppId.isEmpty) {
+      throw ArgumentError('无法构建连接 URL：未知的 AppID');
+    }
     final base = 'steam://run/$targetAppId//+connect $serverAddress';
     if (password != null && password.isNotEmpty) {
       return '$base +password $password';
