@@ -296,11 +296,11 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                           ),
                           const SizedBox(width: 12),
                           // 类型筛选
-                          _buildDropdown<String?>(
-                            value: state.currentType,
+                          _buildDropdown<String>(
+                            value: state.currentType ?? 'all',
                             options: [
                               const _DropdownOption(
-                                null,
+                                'all',
                                 '全部类型',
                                 icon: Icons.filter_list_rounded,
                               ),
@@ -317,7 +317,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                               ),
                             ],
                             onChanged: (type) => context.read<IssueBloc>().add(
-                              IssueFilterType(type),
+                              IssueFilterType(type == 'all' ? null : type),
                             ),
                             defaultIcon: Icons.filter_list_rounded,
                           ),
@@ -2065,20 +2065,63 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                           color: isDark ? Colors.white70 : AppColors.gray700,
                         ),
                       ),
+                      if (issue != null && comment.authorId == issue.authorId) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF064E3B).withValues(alpha: 0.5)
+                                : const Color(0xFFD1FAE5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF065F46)
+                                  : const Color(0xFFA7F3D0),
+                            ),
+                          ),
+                          child: Text(
+                            '作者',
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFF6EE7B7)
+                                  : const Color(0xFF059669),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (comment.isAdmin) ...[
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
+                            horizontal: 8,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(4),
+                            color: isDark
+                                ? const Color(0xFF4C1D95).withValues(alpha: 0.5)
+                                : const Color(0xFFEDE9FE),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF5B21B6)
+                                  : const Color(0xFFDDD6FE),
+                            ),
                           ),
-                          child: const Text(
+                          child: Text(
                             '管理员',
-                            style: TextStyle(color: Colors.white, fontSize: 10),
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFFC4B5FD)
+                                  : const Color(0xFF7C3AED),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
