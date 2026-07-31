@@ -737,7 +737,10 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
     if (value == null || value.isEmpty) return '(空)';
 
     // 解析富文本字段，将其转换为纯文本显示以防显示 JSON 源码
-    if (field == 'description' || field == 'tips' || field == 'special' || field == 'acquisition') {
+    if (field == 'description' ||
+        field == 'tips' ||
+        field == 'special' ||
+        field == 'acquisition') {
       try {
         final decoded = QuillDeltaCodec.decode(value).toPlainText().trim();
         return decoded.isEmpty ? '(空)' : decoded;

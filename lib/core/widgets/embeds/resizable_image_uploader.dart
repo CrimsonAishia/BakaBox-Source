@@ -285,6 +285,11 @@ class ResizableImageUploader {
     int index = controller.selection.baseOffset;
     int length = controller.selection.extentOffset - index;
 
+    if (length < 0) {
+      index = index + length;
+      length = -length;
+    }
+
     // 防御：选区无效时插入到文档末尾
     // （文档末尾保留的 '\n' 占 1 个长度，插入位置取 docLength - 1）
     if (index < 0 || index > docLength) {

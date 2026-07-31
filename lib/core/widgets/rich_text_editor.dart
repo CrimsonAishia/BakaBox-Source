@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
@@ -119,9 +120,38 @@ class RichTextEditor extends StatefulWidget {
 
   @override
   State<RichTextEditor> createState() => RichTextEditorState();
+
+  /// 建议通过此方法创建 QuillController 以获得「粘贴图片上传」支持。
+  static QuillController createController({
+    Document? document,
+    TextSelection? selection,
+    QuillClipboardConfig? clipboardConfig,
+  }) {
+    late QuillController controller;
+    controller = QuillController(
+      document: document ?? Document(),
+      selection: selection ?? const TextSelection.collapsed(offset: 0),
+      config: QuillControllerConfig(
+        clipboardConfig:
+            clipboardConfig ??
+            QuillClipboardConfig(
+              onImagePaste: (bytes) async {
+                final state = RichTextEditorState.registry[controller];
+                if (state != null) {
+                  await state.handleImagePaste(bytes);
+                }
+                return null;
+              },
+            ),
+      ),
+    );
+    return controller;
+  }
 }
 
 class RichTextEditorState extends State<RichTextEditor> {
+  static final Map<QuillController, RichTextEditorState> registry = {};
+
   final FileUploadService _uploadService = FileUploadService();
   final DraftService _draftService = DraftService();
 
@@ -170,6 +200,7 @@ class RichTextEditorState extends State<RichTextEditor> {
   @override
   void initState() {
     super.initState();
+    registry[widget.controller] = this;
     widget.controller.addListener(_onTextChanged);
   }
 
@@ -221,12 +252,73 @@ class RichTextEditorState extends State<RichTextEditor> {
 
   @override
   void dispose() {
+    registry.remove(widget.controller);
     widget.controller.removeListener(_onTextChanged);
     _focusNode.dispose();
     _scrollController.dispose();
     _draftService.dispose();
     _imageController.dispose();
     super.dispose();
+  }
+
+  /// 处理从剪贴板粘贴的图片
+  Future<void> handleImagePaste(Uint8List bytes) async {
+    if (_isUploading) {
+      _showWarning('请等待当前上传完成');
+      return;
+    }
+
+    if (widget.imageMode != ImageMode.inline &&
+        _uploadedImages.length >= widget.maxImages) {
+      _showError('图片数量已达上限（最多 ${widget.maxImages} 张）');
+      return;
+    }
+
+    File? tempFile;
+    try {
+      final tempDir = await getTemporaryDirectory();
+      String extension = 'png';
+      if (bytes.length >= 4) {
+        if (bytes[0] == 0x89 &&
+            bytes[1] == 0x50 &&
+            bytes[2] == 0x4E &&
+            bytes[3] == 0x47) {
+          extension = 'png';
+        } else if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+          extension = 'jpg';
+        } else if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46) {
+          extension = 'gif';
+        } else if (bytes.length >= 12 &&
+            bytes[8] == 0x57 &&
+            bytes[9] == 0x45 &&
+            bytes[10] == 0x42 &&
+            bytes[11] == 0x50) {
+          extension = 'webp';
+        }
+      }
+
+      tempFile = File(
+        '${tempDir.path}/rte_paste_${DateTime.now().millisecondsSinceEpoch}.$extension',
+      );
+      await tempFile.writeAsBytes(bytes);
+
+      if (widget.enableAdvancedEmbeds) {
+        // 如果开启了高级套餐，直接调用 _uploadBytes（内部使用 ResizableImageUploader）
+        await _uploadBytes(bytes, extension);
+      } else {
+        // 走普通附件/内联的上传流程
+        await _performUpload(tempFile);
+      }
+    } catch (e) {
+      LogService.e('粘贴图片失败', e);
+      if (mounted) _showError('粘贴图片失败');
+    } finally {
+      if (tempFile != null) {
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
+    }
   }
 
   @override
@@ -1222,7 +1314,7 @@ class RichTextEditorState extends State<RichTextEditor> {
 
       if (imageData == null || imageData.isEmpty) return;
 
-      await _uploadBytes(imageData, extension);
+      await handleImagePaste(imageData);
     } catch (e) {
       LogService.e('处理拖入图片失败', e);
       if (mounted) {
@@ -1335,9 +1427,27 @@ class RichTextEditorState extends State<RichTextEditor> {
       final imageRef = ImageUrlService.createFileIdRef(uploadResult.fileId);
 
       if (widget.imageMode == ImageMode.inline) {
-        // inline 模式：直接在光标位置插入图片节点
-        final index = widget.controller.selection.baseOffset;
-        widget.controller.document.insert(index, BlockEmbed.image(imageRef));
+        // inline 模式：替换选中的文本，或在光标位置插入图片节点
+        final docLength = widget.controller.document.length;
+        int index = widget.controller.selection.baseOffset;
+        int length = widget.controller.selection.extentOffset - index;
+
+        if (length < 0) {
+          index = index + length;
+          length = -length;
+        }
+
+        if (index < 0 || index > docLength) {
+          index = docLength > 0 ? docLength - 1 : 0;
+          length = 0;
+        }
+
+        if (length > 0) {
+          widget.controller.replaceText(index, length, BlockEmbed.image(imageRef), null);
+        } else {
+          widget.controller.document.insert(index, BlockEmbed.image(imageRef));
+        }
+        
         // 将光标移到图片节点之后
         widget.controller.updateSelection(
           TextSelection.collapsed(offset: index + 1),

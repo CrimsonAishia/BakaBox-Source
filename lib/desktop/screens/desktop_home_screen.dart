@@ -508,27 +508,36 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                     current.isAutoJoinCountdownActive;
               },
               listener: (context, state) {
-                if (state.isAutoJoinCountdownActive && _autoJoinCountdownRoute == null) {
-                  final mapSubscriptionBloc = context.read<MapSubscriptionBloc>();
+                if (state.isAutoJoinCountdownActive &&
+                    _autoJoinCountdownRoute == null) {
+                  final mapSubscriptionBloc = context
+                      .read<MapSubscriptionBloc>();
                   _autoJoinCountdownRoute = DialogRoute(
                     context: context,
                     barrierDismissible: false,
                     builder: (dialogContext) {
                       return BlocProvider.value(
                         value: mapSubscriptionBloc,
-                        child: BlocBuilder<MapSubscriptionBloc, MapSubscriptionState>(
-                          builder: (context, dialogState) {
-                            return Material(
-                              color: Colors.transparent,
-                              child: MapSubscriptionCountdownDialog(state: dialogState),
-                            );
-                          },
-                        ),
+                        child:
+                            BlocBuilder<
+                              MapSubscriptionBloc,
+                              MapSubscriptionState
+                            >(
+                              builder: (context, dialogState) {
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: MapSubscriptionCountdownDialog(
+                                    state: dialogState,
+                                  ),
+                                );
+                              },
+                            ),
                       );
                     },
                   );
                   Navigator.of(context).push(_autoJoinCountdownRoute!);
-                } else if (!state.isAutoJoinCountdownActive && _autoJoinCountdownRoute != null) {
+                } else if (!state.isAutoJoinCountdownActive &&
+                    _autoJoinCountdownRoute != null) {
                   Navigator.of(context).removeRoute(_autoJoinCountdownRoute!);
                   _autoJoinCountdownRoute = null;
                 }

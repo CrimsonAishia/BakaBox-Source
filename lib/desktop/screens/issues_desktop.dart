@@ -1,10 +1,10 @@
-import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
+﻿import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
+
 import '../../core/core.dart';
 import '../../core/services/app_info_service.dart';
 import '../../core/services/quill_delta_codec.dart';
@@ -2065,7 +2065,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                           color: isDark ? Colors.white70 : AppColors.gray700,
                         ),
                       ),
-                      if (issue != null && comment.authorId == issue.authorId) ...[
+                      if (issue != null &&
+                          comment.authorId == issue.authorId) ...[
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -2304,7 +2305,7 @@ class _IssueCreateView extends StatefulWidget {
 class _IssueCreateViewState extends State<_IssueCreateView> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _contentController = quill.QuillController.basic();
+  final _contentController = RichTextEditor.createController();
   final _scrollController = ScrollController();
   final _titleFieldKey = GlobalKey();
   IssueType _selectedType = IssueType.bug;
@@ -2894,7 +2895,7 @@ class _IssueBottomCommentComposer extends StatefulWidget {
 
 class _IssueBottomCommentComposerState
     extends State<_IssueBottomCommentComposer> {
-  final _commentController = quill.QuillController.basic();
+  final _commentController = RichTextEditor.createController();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   final FocusNode _focusNode = FocusNode();
 

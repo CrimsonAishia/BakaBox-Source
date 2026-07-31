@@ -59,7 +59,7 @@ class GuideBottomCommentComposerState
   @override
   void initState() {
     super.initState();
-    _editorController = QuillController.basic();
+    _editorController = RichTextEditor.createController();
   }
 
   @override

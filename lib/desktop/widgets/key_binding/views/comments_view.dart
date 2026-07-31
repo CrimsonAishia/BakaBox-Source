@@ -27,7 +27,7 @@ class ConfigCommentsView extends StatefulWidget {
 }
 
 class _ConfigCommentsViewState extends State<ConfigCommentsView> {
-  final QuillController _commentController = QuillController.basic();
+  final QuillController _commentController = RichTextEditor.createController();
   final GlobalKey<RichTextEditorState> _editorKey = GlobalKey();
   final GlobalKey _commentInputKey = GlobalKey();
   List<String> _commentImageUrls = [];

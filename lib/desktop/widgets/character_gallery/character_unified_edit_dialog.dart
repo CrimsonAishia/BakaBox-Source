@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/widgets/rich_text_editor.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -114,7 +114,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         : widget.character.description;
     if (pendingDescription != null) {
       final initialDoc = QuillDeltaCodec.decode(pendingDescription);
-      _descriptionController = QuillController(
+      _descriptionController = RichTextEditor.createController(
         document: initialDoc,
         selection: const TextSelection.collapsed(offset: 0),
       );
@@ -130,7 +130,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       _descriptionChanged = true; // 标记为已修改
     } else {
       final initialDoc = QuillDeltaCodec.decode(currentDescription);
-      _descriptionController = QuillController(
+      _descriptionController = RichTextEditor.createController(
         document: initialDoc,
         selection: const TextSelection.collapsed(offset: 0),
       );

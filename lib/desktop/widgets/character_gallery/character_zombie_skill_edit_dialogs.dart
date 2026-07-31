@@ -1,4 +1,4 @@
-import 'package:flutter_quill/flutter_quill.dart';
+﻿import 'package:flutter_quill/flutter_quill.dart';
 import '../../../core/services/quill_delta_codec.dart';
 import '../../../core/widgets/rich_text_editor.dart';
 import 'package:flutter/material.dart';
@@ -86,7 +86,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
   @override
   void initState() {
     super.initState();
-    _descriptionController = QuillController(
+    _descriptionController = RichTextEditor.createController(
       document: QuillDeltaCodec.decode(
         widget.existingEdit?.description ?? widget.skill.description,
       ),
@@ -693,7 +693,7 @@ class _ZombieSkillCreateSubDialogState
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _descriptionController = QuillController(
+    _descriptionController = RichTextEditor.createController(
       document: QuillDeltaCodec.decode(''),
       selection: const TextSelection.collapsed(offset: 0),
     );
@@ -1325,7 +1325,7 @@ class _NewZombieSkillEditSubDialogState
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.data.name);
-    _descriptionController = QuillController(
+    _descriptionController = RichTextEditor.createController(
       document: QuillDeltaCodec.decode(widget.data.description ?? ''),
       selection: const TextSelection.collapsed(offset: 0),
     );
