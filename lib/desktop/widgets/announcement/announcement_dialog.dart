@@ -71,11 +71,11 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        width: _viewingDetail != null ? 600 : 480,
-        height: _viewingDetail != null ? 520 : null,
+        width: _viewingDetail != null ? 860 : 640,
+        height: _viewingDetail != null ? 800 : null,
         constraints: _viewingDetail != null
             ? null
-            : const BoxConstraints(maxHeight: 540),
+            : const BoxConstraints(maxHeight: 720),
         decoration: BoxDecoration(
           color: isDark ? AppColors.slate800 : Colors.white,
           borderRadius: BorderRadius.circular(12),

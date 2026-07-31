@@ -354,8 +354,8 @@ class _AnnouncementDetailDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       child: Container(
-        width: 560,
-        constraints: const BoxConstraints(maxHeight: 560),
+        width: 860,
+        constraints: const BoxConstraints(maxHeight: 800),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
