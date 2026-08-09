@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:leak_tracker/leak_tracker.dart';
 
@@ -63,3 +62,4 @@ void _safeLogError(String message, Object error, StackTrace? stack) {
     debugPrint('$message: $error\n$stack');
   }
 }
+

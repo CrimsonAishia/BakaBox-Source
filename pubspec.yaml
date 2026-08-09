@@ -170,6 +170,7 @@ flutter:
     - assets/icons/
     - assets/icons/guide/
     - assets/audio/
+    - assets/certs/
 
 
 # MSIX Configuration for Microsoft Store
