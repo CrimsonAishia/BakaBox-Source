@@ -102,7 +102,11 @@ class StatsCardsRow extends StatelessWidget {
     );
   }
 
-  String _getServerCount(ServerState state) {
+  String? _getServerCount(ServerState state) {
+    if (state.isLoading && state.serverCategories.isEmpty) {
+      return null;
+    }
+    
     final officialCategories = state.serverCategories.where(
       (cat) => !cat.isCustom,
     );
@@ -113,7 +117,12 @@ class StatsCardsRow extends StatelessWidget {
     return totalServers.toString();
   }
 
-  String _getTotalOnlinePlayers(ServerState state) {
+  String? _getTotalOnlinePlayers(ServerState state) {
+    // 只有在至少成功获取过一次批次数据（或完全加载完）后才显示具体数字
+    if (!state.hasEverLoadedOnlineCounts) {
+      return null;
+    }
+
     // 只累加官方分类（排除自定义服务器）的在线人数
     final officialCategories = state.serverCategories.where(
       (cat) => !cat.isCustom,
@@ -123,6 +132,7 @@ class StatsCardsRow extends StatelessWidget {
       (sum, cat) =>
           sum + (state.categoryOnlineCounts[cat.modelName ?? ''] ?? 0),
     );
+
     return total.toString();
   }
 

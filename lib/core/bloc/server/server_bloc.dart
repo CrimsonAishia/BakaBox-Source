@@ -1650,7 +1650,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           state.copyWith(
             categoryOnlineCounts: currentCounts,
             isLoadingOnlineCounts: true,
-            hasEverLoadedOnlineCounts: true,
           ),
         );
       }
@@ -1743,8 +1742,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           }
         }
 
-        if (hasChanges && !emit.isDone) {
-          emit(state.copyWith(categoryOnlineCounts: latestCounts));
+        final bool shouldEmitFirstBatch = isFirstLoad && !state.hasEverLoadedOnlineCounts;
+        if ((hasChanges || shouldEmitFirstBatch) && !emit.isDone) {
+          emit(state.copyWith(
+            categoryOnlineCounts: latestCounts,
+            hasEverLoadedOnlineCounts: true,
+          ));
         }
       }
 
@@ -1755,6 +1758,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             state.copyWith(
               isLoadingOnlineCounts: false,
               onlineCountsLastFetched: DateTime.now(),
+              hasEverLoadedOnlineCounts: true,
             ),
           );
         } else {
