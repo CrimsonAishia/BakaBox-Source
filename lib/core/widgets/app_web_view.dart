@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -22,6 +23,7 @@ class AppWebView extends StatelessWidget {
     super.key,
     this.initialUrlRequest,
     this.initialSettings,
+    this.initialUserScripts,
     this.onWebViewCreated,
     this.onLoadStart,
     this.onLoadStop,
@@ -36,6 +38,9 @@ class AppWebView extends StatelessWidget {
 
   /// WebView 设置。
   final InAppWebViewSettings? initialSettings;
+
+  /// 初始注入的脚本。
+  final UnmodifiableListView<UserScript>? initialUserScripts;
 
   /// WebView 创建完成回调。
   final void Function(InAppWebViewController controller)? onWebViewCreated;
@@ -85,6 +90,7 @@ class AppWebView extends StatelessWidget {
       webViewEnvironment: WebViewEnvironmentService.environment,
       initialUrlRequest: initialUrlRequest,
       initialSettings: initialSettings,
+      initialUserScripts: initialUserScripts,
       onWebViewCreated: onWebViewCreated,
       onLoadStart: onLoadStart,
       onLoadStop: onLoadStop,

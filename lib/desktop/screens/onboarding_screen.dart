@@ -1,8 +1,5 @@
-import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:file_picker/file_picker.dart';
@@ -13,8 +10,6 @@ import '../../core/services/game_launcher_service.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/services/policy_service.dart';
 import '../../core/services/game_path_service.dart';
-import '../widgets/captcha_dialog.dart';
-import '../widgets/qq_login_dialog.dart';
 
 /// 引导完成回调
 typedef OnOnboardingComplete = void Function();
@@ -37,7 +32,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final GameLauncherService _gameLauncherService = GameLauncherService();
 
   int _currentPage = 0;
-  static const int _totalPages = 4; // 恢复到4页
+  static const int _totalPages = 3; // 恢复到3页
 
   // 隐私政策同意状态（在完成页使用）
   bool _agreedToPrivacy = false;
@@ -47,12 +42,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _gamePath;
   String? _gamePathError;
   bool _isDetectingPath = false;
-
-  // 登录状态
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoggingIn = false;
-  String? _captchaToken;
   bool _isHoveringPath = false;
 
   @override
@@ -72,8 +61,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -180,7 +167,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: [
                     _buildWelcomePage(isDark),
                     _buildGamePathPage(isDark),
-                    _buildLoginPage(isDark),
                     _buildCompletePage(isDark),
                   ],
                 ),
@@ -789,461 +775,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  Widget _buildLoginPage(bool isDark) {
-    final bgColor = isDark ? AppColors.slate800 : Colors.white;
-    final inputBgColor = isDark ? AppColors.slate700 : AppColors.slate100;
-    final textColor = isDark ? Colors.white : AppColors.slate800;
-    final secondaryTextColor = isDark ? Colors.white54 : AppColors.slate500;
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.08);
-
-    return BlocConsumer<AuthBloc, AuthState>(
-      listener: (context, state) {
-        setState(() {
-          _isLoggingIn = state.status == AuthStatus.loading;
-          if (state.status == AuthStatus.error) {
-            _captchaToken = null;
-          }
-        });
-
-        // 登录成功后触发每日任务状态检查
-        if (state.isAuthenticated && state.userInfo != null) {
-          context.read<DailyTaskBloc>().add(
-            const DailyTaskCheckStatusRequested(),
-          );
-        }
-        // 登录成功后不自动跳转，让用户看到成功状态后手动点击下一步
-      },
-      builder: (context, state) {
-        final isLoggedIn = state.status == AuthStatus.authenticated;
-
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 论坛 Logo
-                if (isLoggedIn)
-                  Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.emerald500.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Icon(
-                          MdiIcons.accountCheck,
-                          size: 48,
-                          color: AppColors.emerald500,
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .scale(begin: const Offset(0.8, 0.8), duration: 500.ms)
-                else
-                  Image.asset(
-                        'assets/images/zed-logo.png',
-                        width: 120,
-                        height: 69,
-                        errorBuilder: (_, __, ___) => Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF8B5CF6,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(
-                            MdiIcons.accountCircle,
-                            size: 48,
-                            color: AppColors.violet500,
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .scale(begin: const Offset(0.8, 0.8), duration: 500.ms),
-                const SizedBox(height: 32),
-                // 标题
-                Text(
-                  isLoggedIn ? '关联成功' : '关联论坛账号',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
-                const SizedBox(height: 12),
-                // 副标题
-                Text(
-                  isLoggedIn ? '你已准备好开始使用 BakaBox' : '关联后可解锁更多功能（可选）',
-                  style: TextStyle(fontSize: 15, color: secondaryTextColor),
-                ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
-                const SizedBox(height: 40),
-                // 登录表单或成功状态
-                if (isLoggedIn)
-                  _buildLoginSuccessCard(isDark, state)
-                else
-                  _buildLoginForm(
-                    isDark,
-                    bgColor,
-                    inputBgColor,
-                    textColor,
-                    secondaryTextColor,
-                    borderColor,
-                    state,
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// 构建登录成功卡片
-  Widget _buildLoginSuccessCard(bool isDark, AuthState state) {
-    return Container(
-          width: 400,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.slate800 : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.emerald500.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Column(
-            children: [
-              // 头像
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: AppColors.emerald500.withValues(alpha: 0.1),
-                child:
-                    state.userInfo?.avatar != null &&
-                        state.userInfo!.avatar.isNotEmpty
-                    ? ClipOval(
-                        child: BakaCachedImage(
-                          state.userInfo!.avatar,
-                          width: 64,
-                          height: 64,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
-                            MdiIcons.account,
-                            size: 32,
-                            color: AppColors.emerald500,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        MdiIcons.account,
-                        size: 32,
-                        color: AppColors.emerald500,
-                      ),
-              ),
-              const SizedBox(height: 16),
-              // 用户名
-              Text(
-                state.userInfo?.username ?? '用户',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : AppColors.slate800,
-                ),
-              ),
-              // 用户组
-              if (state.userInfo?.userGroup != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  state.userInfo!.userGroup!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white54 : AppColors.slate500,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .scale(begin: const Offset(0.95, 0.95), duration: 300.ms);
-  }
-
-  /// 构建登录表单
-  Widget _buildLoginForm(
-    bool isDark,
-    Color bgColor,
-    Color inputBgColor,
-    Color textColor,
-    Color secondaryTextColor,
-    Color borderColor,
-    AuthState state,
-  ) {
-    return Container(
-          width: 400,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 错误提示
-              if (state.errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.red500.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.red500.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 16,
-                        color: AppColors.red500,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          state.errorMessage!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.red500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              // 用户名输入
-              TextField(
-                controller: _usernameController,
-                enabled: !_isLoggingIn,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: '用户名',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  filled: true,
-                  fillColor: inputBgColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.violet500),
-                  ),
-                  prefixIcon: Icon(
-                    MdiIcons.account,
-                    color: secondaryTextColor,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // 密码输入
-              TextField(
-                controller: _passwordController,
-                enabled: !_isLoggingIn,
-                obscureText: true,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: '密码',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  filled: true,
-                  fillColor: inputBgColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.violet500),
-                  ),
-                  prefixIcon: Icon(
-                    MdiIcons.lock,
-                    color: secondaryTextColor,
-                    size: 20,
-                  ),
-                ),
-                onSubmitted: (_) => _handleLogin(),
-              ),
-              const SizedBox(height: 12),
-              // 获取验证码按钮
-              SizedBox(
-                height: 36,
-                child: OutlinedButton.icon(
-                  onPressed: _isLoggingIn ? null : _handleGetCaptcha,
-                  icon: Icon(
-                    _captchaToken != null ? Icons.check_circle : Icons.security,
-                    size: 20,
-                    color: _captchaToken != null ? Colors.green : null,
-                  ),
-                  label: Text(
-                    _captchaToken != null ? '验证码已获取' : '获取验证码',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: _captchaToken != null ? Colors.green : null,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: textColor,
-                    side: BorderSide(
-                      color: _captchaToken != null ? Colors.green : borderColor,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // 登录按钮
-              SizedBox(
-                height: 36,
-                child: ElevatedButton(
-                  onPressed:
-                      (_isLoggingIn ||
-                          _captchaToken == null ||
-                          _captchaToken!.isEmpty)
-                      ? null
-                      : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.violet500,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    disabledBackgroundColor: const Color(
-                      0xFF8B5CF6,
-                    ).withValues(alpha: 0.5),
-                  ),
-                  child: _isLoggingIn
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          '关联账号',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-              ),
-              // QQ 登录（仅 Windows）
-              if (Platform.isWindows) ...[
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: borderColor)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        '或',
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: borderColor)),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                SizedBox(
-                  height: 36,
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoggingIn
-                        ? null
-                        : () => QQLoginDialog.show(context),
-                    icon: Image.asset(
-                      'assets/icons/qq.png',
-                      width: 20,
-                      height: 20,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.chat_bubble, size: 20),
-                    ),
-                    label: const Text('QQ 登录', style: TextStyle(fontSize: 15)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: textColor,
-                      side: BorderSide(color: borderColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 400.ms, delay: 200.ms)
-        .slideY(begin: 0.1, duration: 400.ms);
-  }
-
-  /// 处理登录
-  void _handleLogin() {
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text;
-
-    if (username.isEmpty || password.isEmpty) {
-      ToastUtils.showWarning(context, '请输入用户名和密码');
-      return;
-    }
-
-    if (_captchaToken == null || _captchaToken!.isEmpty) {
-      ToastUtils.showWarning(context, '请先获取验证码');
-      return;
-    }
-
-    context.read<AuthBloc>().add(
-      AuthLoginRequested(
-        username: username,
-        password: password,
-        captchaToken: _captchaToken,
-      ),
-    );
-  }
-
-  Future<void> _handleGetCaptcha() async {
-    final captchaToken = await CaptchaDialog.show(context);
-
-    if (!mounted) return;
-
-    if (captchaToken != null && captchaToken.isNotEmpty) {
-      setState(() {
-        _captchaToken = captchaToken;
-      });
-      ToastUtils.showSuccess(context, '验证成功');
-    } else {
-      ToastUtils.showWarning(context, '验证失败或已取消');
-    }
-  }
-
   Widget _buildCompletePage(bool isDark) {
     // 检查是否已同意协议
     final canComplete = _agreedToPrivacy && _agreedToTerms;
@@ -1601,14 +1132,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  /// 构建下一步按钮（第3页根据登录状态显示不同文字）
+  /// 构建下一步按钮
   Widget _buildNextButton(bool isDark) {
-    // 第3页（账号关联）根据登录状态显示不同文字
     String buttonText = '下一步';
-    if (_currentPage == 2) {
-      final authState = context.watch<AuthBloc>().state;
-      buttonText = authState.status == AuthStatus.authenticated ? '下一步' : '跳过';
-    }
 
     return ElevatedButton(
       onPressed: _nextPage,
