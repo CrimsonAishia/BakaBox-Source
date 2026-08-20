@@ -24,6 +24,7 @@ import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../common_scroll_indicator.dart';
 import '../queue/queue_window.dart';
+import '../warmup/warmup_window.dart';
 import 'server_card.dart';
 import 'server_card_skeleton.dart';
 import 'server_detail_dialog.dart';
@@ -3188,6 +3189,15 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     final isOtherServerQueueing =
         isQueueing && globalState.serverAddress != address;
 
+    // 检查暖服状态
+    final isWarming =
+        globalState.type == OperationType.warming &&
+        globalState.status == OperationStatus.running;
+    final isCurrentServerWarming =
+        isWarming && globalState.serverAddress == address;
+    final isOtherServerWarming =
+        isWarming && globalState.serverAddress != address;
+
     // 检查连接状态
     final isConnecting =
         globalState.type == OperationType.connecting &&
@@ -3198,6 +3208,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             globalState.type == OperationType.launching) &&
         globalState.status == OperationStatus.running &&
         globalState.serverAddress != address;
+
+    final isCustomServer = server.serverItem.isCustom;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -3220,7 +3232,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           color: isCurrentServerQueueing
               ? AppColors.green500
               : const Color(0xFFFF6E6E),
-          isDisabled: isOtherServerQueueing,
+          isDisabled: isOtherServerQueueing || isOtherServerWarming,
           isActive: isCurrentServerQueueing,
           onTap: () => _handleCompactQueue(
             server,
@@ -3229,6 +3241,24 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             isOtherServerQueueing,
           ),
         ),
+        // 暖服按钮（自定义服务器隐藏）
+        if (!isCustomServer) ...[
+          const SizedBox(width: 6),
+          _buildCompactIconButton(
+            icon: MdiIcons.fire,
+            tooltip: isCurrentServerWarming ? '暖服中' : '暖服',
+            color: AppColors.amber500,
+            isDisabled: isOtherServerWarming || isOtherServerQueueing || isCurrentServerQueueing,
+            isActive: isCurrentServerWarming,
+            onTap: () => _handleCompactWarmup(
+              server,
+              address,
+              isCurrentServerWarming,
+              isOtherServerWarming,
+              isOtherServerQueueing,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -3341,6 +3371,39 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         child: QueueWindow(
           serverAddress: address,
           isCustomServer: server.serverItem.isCustom,
+          initialServerInfo: server.serverData,
+          initialMapInfo: server.mapInfo,
+          onClose: () => Navigator.of(dialogContext).pop(),
+        ),
+      ),
+    );
+  }
+
+  /// 处理简约模式暖服
+  void _handleCompactWarmup(
+    ExtendedServerItem server,
+    String address,
+    bool isCurrentServerWarming,
+    bool isOtherServerWarming,
+    bool isOtherServerQueueing,
+  ) {
+    if (isOtherServerWarming) {
+      ToastUtils.showWarning(context, '正在暖服中，无法切换服务器');
+      return;
+    }
+    if (isOtherServerQueueing) {
+      ToastUtils.showWarning(context, '正在挤服中，无法暖服');
+      return;
+    }
+
+    // 打开暖服对话框
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: WarmupWindow(
+          serverAddress: address,
           initialServerInfo: server.serverData,
           initialMapInfo: server.mapInfo,
           onClose: () => Navigator.of(dialogContext).pop(),
