@@ -170,6 +170,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerReorderCategories>(_onReorderCategories);
     on<ServerForceRefresh>(_onForceRefresh);
     on<ServerRefreshCategoriesInternal>(_onRefreshCategories);
+    on<ServerApplyPendingCategories>(_onApplyPendingCategories);
     on<ServerDismissPendingCategories>(_onDismissPendingCategories);
     on<ServerApplyScoreUpdates>(_onApplyScoreUpdates);
     on<ServerApplyUsersCountUpdates>(_onApplyUsersCountUpdates);
@@ -3312,6 +3313,39 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.i('检测到分类列表有更新，等待用户确认');
     } catch (e) {
       LogService.w('定时检测分类列表失败（静默忽略）: $e');
+    }
+  }
+
+  /// 用户同意应用待更新的分类列表
+  void _onApplyPendingCategories(
+    ServerApplyPendingCategories event,
+    Emitter<ServerState> emit,
+  ) {
+    if (state.pendingCategories == null) return;
+
+    final pending = state.pendingCategories!;
+    
+    // 如果当前有选中的分类，尝试在新的列表中找到对应的分类并更新选中状态
+    ServerCategory? newSelectedCategory = state.selectedCategory;
+    if (newSelectedCategory != null) {
+      try {
+        newSelectedCategory = pending.firstWhere(
+          (c) => c.modelName == newSelectedCategory!.modelName && c.isCustom == newSelectedCategory.isCustom,
+        );
+      } catch (_) {
+        // 如果找不到（例如被移除了），保持原样，用户之后可以手动选择其他分类
+      }
+    }
+
+    emit(state.copyWith(
+      serverCategories: pending,
+      clearPendingCategories: true,
+      selectedCategory: newSelectedCategory,
+    ));
+
+    // 如果选中的分类在新列表中仍然存在，触发一次强制刷新以加载其服务器信息
+    if (newSelectedCategory != null) {
+      add(ServerSelectCategory(newSelectedCategory, forceRefresh: true));
     }
   }
 
