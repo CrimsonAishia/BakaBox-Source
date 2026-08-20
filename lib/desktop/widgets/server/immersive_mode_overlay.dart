@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -3145,12 +3144,25 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       );
     }
 
-    // 检查是否有有效比分
     final teamScores = server.teamScores;
+    final mapName = server.serverData?.map;
+
+    final isWarmingUp = server.serverItem.isCustom
+        ? false
+        : MapRuntimeUtils.isWarmingUp(
+            server.mapRuntime,
+            fetchedAt: server.mapRuntimeLastFetched,
+            mapName: mapName,
+            hasError: server.mapRuntimeError,
+          );
+
+    // 检查是否有有效比分
     final hasValidScore =
+        !isWarmingUp &&
         teamScores != null &&
         teamScores.ctScore != null &&
         teamScores.tScore != null &&
+        teamScores.matchesMap(mapName) &&
         (teamScores.ctScore! > 0 || teamScores.tScore! > 0);
 
     if (!hasValidScore) {
@@ -3248,7 +3260,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             icon: MdiIcons.fire,
             tooltip: isCurrentServerWarming ? '暖服中' : '暖服',
             color: AppColors.amber500,
-            isDisabled: isOtherServerWarming || isOtherServerQueueing || isCurrentServerQueueing,
+            isDisabled:
+                isOtherServerWarming ||
+                isOtherServerQueueing ||
+                isCurrentServerQueueing,
             isActive: isCurrentServerWarming,
             onTap: () => _handleCompactWarmup(
               server,
