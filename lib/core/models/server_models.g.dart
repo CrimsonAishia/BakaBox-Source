@@ -19,6 +19,7 @@ ServerCategory _$ServerCategoryFromJson(Map<String, dynamic> json) =>
       isFromApi: json['isFromApi'] as bool? ?? false,
       sourceApiUrl: json['sourceApiUrl'] as String?,
       sourceApiCategoryName: json['sourceApiCategoryName'] as String?,
+      isOld: json['isOld'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
@@ -32,6 +33,7 @@ Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
       'isFromApi': instance.isFromApi,
       'sourceApiUrl': instance.sourceApiUrl,
       'sourceApiCategoryName': instance.sourceApiCategoryName,
+      'isOld': instance.isOld,
     };
 
 ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(

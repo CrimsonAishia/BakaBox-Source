@@ -74,6 +74,8 @@ ServerStatsResponse _$ServerStatsResponseFromJson(Map<String, dynamic> json) =>
               ?.map((e) => TopMap.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      currentPlayers: (json['currentPlayers'] as num?)?.toInt() ?? 0,
+      totalServerCount: (json['totalServerCount'] as num?)?.toInt() ?? 0,
       peakHour: (json['peakHour'] as num).toInt(),
       todayMax: (json['todayMax'] as num).toInt(),
       todayAvg: (json['todayAvg'] as num).toInt(),
@@ -88,6 +90,8 @@ Map<String, dynamic> _$ServerStatsResponseToJson(
   'hourlyStats': instance.hourlyStats,
   'topServers': instance.topServers,
   'topMaps': instance.topMaps,
+  'currentPlayers': instance.currentPlayers,
+  'totalServerCount': instance.totalServerCount,
   'peakHour': instance.peakHour,
   'todayMax': instance.todayMax,
   'todayAvg': instance.todayAvg,

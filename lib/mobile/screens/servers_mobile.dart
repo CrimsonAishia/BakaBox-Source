@@ -160,7 +160,8 @@ class _ServersMobileState extends State<ServersMobile>
       subtitle = '${state.servers.length} 台服务器在线';
     } else {
       title = '服务器列表';
-      subtitle = '${state.serverCategories.length} 个分类 · 选择开始浏览';
+      final displayCount = state.serverCategories.where((c) => !c.isOld).length;
+      subtitle = '$displayCount 个分类 · 选择开始浏览';
     }
 
     return SliverAppBar(
@@ -472,6 +473,8 @@ class _ServersMobileState extends State<ServersMobile>
   }
 
   Widget _buildCategoryGrid(BuildContext context, ServerState state) {
+    final displayCategories = state.serverCategories.where((c) => !c.isOld).toList();
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: GridView.builder(
@@ -484,9 +487,9 @@ class _ServersMobileState extends State<ServersMobile>
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
-        itemCount: state.serverCategories.length,
+        itemCount: displayCategories.length,
         itemBuilder: (context, index) {
-          final category = state.serverCategories[index];
+          final category = displayCategories[index];
           return AnimationConfiguration.staggeredGrid(
             position: index,
             duration: const Duration(milliseconds: 600),

@@ -210,21 +210,10 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
   }
 
   Widget _buildLiveStats(BuildContext context, bool isDark) {
-    return BlocBuilder<ServerBloc, ServerState>(
-      builder: (context, serverState) {
-        final officialCategories = serverState.serverCategories.where(
-          (cat) => !cat.isCustom,
-        );
-        final totalServers = officialCategories.fold<int>(
-          0,
-          (sum, cat) => sum + cat.serverList.length,
-        );
-        final totalOnlinePlayers = officialCategories.fold<int>(
-          0,
-          (sum, cat) =>
-              sum +
-              (serverState.categoryOnlineCounts[cat.modelName ?? ''] ?? 0),
-        );
+    return BlocBuilder<ServerStatsBloc, ServerStatsState>(
+      builder: (context, statsState) {
+        final totalServers = statsState.stats?.totalServerCount ?? 0;
+        final totalOnlinePlayers = statsState.stats?.currentPlayers ?? 0;
 
         return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

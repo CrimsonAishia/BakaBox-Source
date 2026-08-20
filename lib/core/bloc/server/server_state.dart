@@ -31,8 +31,8 @@ class ServerState extends Equatable {
   final DateTime? lastRefreshTime; // 最后一次刷新时间
   final LoadingPhase loadingPhase; // 当前加载阶段
   final DateTime? loadingStartTime; // 加载开始时间（用于计算倒计时）
-  /// 待应用的新分类列表（定时检测到变化后暂存，等用户确认后再应用）
   final List<ServerCategory>? pendingCategories;
+  final bool isOldCategoriesExpanded; // 旧版服务器是否展开
 
   /// 每个服务器地址的最后已知在线人数缓存（累加模式：离线时保留上次成功的值）
   final Map<String, int> serverPlayerCache;
@@ -61,6 +61,7 @@ class ServerState extends Equatable {
     this.loadingPhase = LoadingPhase.idle,
     this.loadingStartTime,
     this.pendingCategories,
+    this.isOldCategoriesExpanded = false,
     this.serverPlayerCache = const {},
   });
 
@@ -90,6 +91,7 @@ class ServerState extends Equatable {
     DateTime? loadingStartTime,
     Object? pendingCategories = _sentinel,
     bool clearPendingCategories = false,
+    bool? isOldCategoriesExpanded,
     Map<String, int>? serverPlayerCache,
   }) {
     return ServerState(
@@ -125,6 +127,8 @@ class ServerState extends Equatable {
           : identical(pendingCategories, _sentinel)
           ? this.pendingCategories
           : pendingCategories as List<ServerCategory>?,
+      isOldCategoriesExpanded:
+          isOldCategoriesExpanded ?? this.isOldCategoriesExpanded,
       serverPlayerCache: serverPlayerCache ?? this.serverPlayerCache,
     );
   }
@@ -173,6 +177,7 @@ class ServerState extends Equatable {
     loadingPhase,
     loadingStartTime,
     pendingCategories,
+    isOldCategoriesExpanded,
     serverPlayerCache,
   ];
 }

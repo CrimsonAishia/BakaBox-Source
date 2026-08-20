@@ -41,6 +41,9 @@ class ServerCategory extends Equatable {
   final bool isFromApi; // 标记是否来源于第三方API
   final String? sourceApiUrl; // 第三方接口URL
   final String? sourceApiCategoryName; // 第三方接口的原始分类键名（用于找回数据源，防改名失效）
+  
+  @JsonKey(defaultValue: false)
+  final bool isOld; // 标记是否为旧版服务器
 
   const ServerCategory({
     this.id,
@@ -52,6 +55,7 @@ class ServerCategory extends Equatable {
     this.isFromApi = false,
     this.sourceApiUrl,
     this.sourceApiCategoryName,
+    this.isOld = false,
   });
 
   factory ServerCategory.fromJson(Map<String, dynamic> json) =>
@@ -68,6 +72,7 @@ class ServerCategory extends Equatable {
     bool? isFromApi,
     String? sourceApiUrl,
     String? sourceApiCategoryName,
+    bool? isOld,
   }) {
     return ServerCategory(
       id: id ?? this.id,
@@ -80,6 +85,7 @@ class ServerCategory extends Equatable {
       sourceApiUrl: sourceApiUrl ?? this.sourceApiUrl,
       sourceApiCategoryName:
           sourceApiCategoryName ?? this.sourceApiCategoryName,
+      isOld: isOld ?? this.isOld,
     );
   }
 
@@ -94,6 +100,7 @@ class ServerCategory extends Equatable {
     isFromApi,
     sourceApiUrl,
     sourceApiCategoryName,
+    isOld,
   ];
 }
 

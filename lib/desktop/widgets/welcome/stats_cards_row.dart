@@ -14,126 +14,87 @@ class StatsCardsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWeakNetwork = NetworkModeService.instance.weakNetwork;
-    return BlocBuilder<ServerBloc, ServerState>(
+    return BlocBuilder<ServerStatsBloc, ServerStatsState>(
       buildWhen: (previous, current) =>
-          _getServerCount(previous) != _getServerCount(current) ||
-          _getTotalOnlinePlayers(previous) != _getTotalOnlinePlayers(current),
-      builder: (context, serverState) {
-        return BlocBuilder<ServerStatsBloc, ServerStatsState>(
+          previous.stats?.todayMax != current.stats?.todayMax ||
+          previous.stats?.peakHour != current.stats?.peakHour ||
+          previous.stats?.currentPlayers != current.stats?.currentPlayers ||
+          previous.stats?.totalServerCount != current.stats?.totalServerCount,
+      builder: (context, statsState) {
+        return BlocBuilder<LobbyBloc, LobbyState>(
           buildWhen: (previous, current) =>
-              previous.stats?.todayMax != current.stats?.todayMax ||
-              previous.stats?.peakHour != current.stats?.peakHour,
-          builder: (context, statsState) {
-            return BlocBuilder<LobbyBloc, LobbyState>(
-              buildWhen: (previous, current) =>
-                  previous.serverOnlineCount != current.serverOnlineCount,
-              builder: (context, lobbyState) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        icon: MdiIcons.server,
-                        iconColor: AppColors.blue500,
-                        label: '服务器',
-                        value: _getServerCount(serverState),
-                        suffix: '台',
-                        isDark: isDark,
-                        delay: 0,
-                      ),
+              previous.serverOnlineCount != current.serverOnlineCount,
+          builder: (context, lobbyState) {
+            return Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: MdiIcons.server,
+                    iconColor: AppColors.blue500,
+                    label: '服务器',
+                    value: statsState.stats?.totalServerCount.toString(),
+                    suffix: '台',
+                    isDark: isDark,
+                    delay: 0,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: MdiIcons.accountGroup,
+                    iconColor: AppColors.emerald500,
+                    label: '今日峰值',
+                    value: statsState.stats?.todayMax.toString(),
+                    suffix: '人',
+                    isDark: isDark,
+                    delay: 100,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: MdiIcons.castle,
+                    iconColor: AppColors.violet500,
+                    label: '大厅',
+                    value: lobbyState.serverOnlineCount.toString(),
+                    suffix: '人',
+                    isDark: isDark,
+                    delay: 200,
+                  ),
+                ),
+                // 弱网模式下不显示「服务器总人数」（数据不再自动获取，显示 0 会误导）
+                if (!isWeakNetwork) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _StatCard(
+                      icon: MdiIcons.accountMultiple,
+                      iconColor: AppColors.amber500,
+                      label: '服务器总人数',
+                      value: statsState.stats?.currentPlayers.toString(),
+                      suffix: '人',
+                      isDark: isDark,
+                      delay: 300,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: MdiIcons.accountGroup,
-                        iconColor: AppColors.emerald500,
-                        label: '今日峰值',
-                        value: statsState.stats?.todayMax.toString(),
-                        suffix: '人',
-                        isDark: isDark,
-                        delay: 100,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: MdiIcons.castle,
-                        iconColor: AppColors.violet500,
-                        label: '大厅',
-                        value: lobbyState.serverOnlineCount.toString(),
-                        suffix: '人',
-                        isDark: isDark,
-                        delay: 200,
-                      ),
-                    ),
-                    // 弱网模式下不显示「服务器总人数」（数据不再自动获取，显示 0 会误导）
-                    if (!isWeakNetwork) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _StatCard(
-                          icon: MdiIcons.accountMultiple,
-                          iconColor: AppColors.amber500,
-                          label: '服务器总人数',
-                          value: _getTotalOnlinePlayers(serverState),
-                          suffix: '人',
-                          isDark: isDark,
-                          delay: 300,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: MdiIcons.clockOutline,
-                        iconColor: const Color(0xFFEC4899),
-                        label: '峰值时段',
-                        value: _formatPeakHour(statsState.stats?.peakHour),
-                        suffix: '',
-                        isDark: isDark,
-                        delay: 400,
-                      ),
-                    ),
-                  ],
-                );
-              },
+                  ),
+                ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: MdiIcons.clockOutline,
+                    iconColor: const Color(0xFFEC4899),
+                    label: '峰值时段',
+                    value: _formatPeakHour(statsState.stats?.peakHour),
+                    suffix: '',
+                    isDark: isDark,
+                    delay: 400,
+                  ),
+                ),
+              ],
             );
           },
         );
       },
     );
-  }
-
-  String? _getServerCount(ServerState state) {
-    if (state.isLoading && state.serverCategories.isEmpty) {
-      return null;
-    }
-    
-    final officialCategories = state.serverCategories.where(
-      (cat) => !cat.isCustom,
-    );
-    final totalServers = officialCategories.fold<int>(
-      0,
-      (sum, cat) => sum + cat.serverList.length,
-    );
-    return totalServers.toString();
-  }
-
-  String? _getTotalOnlinePlayers(ServerState state) {
-    // 只有在至少成功获取过一次批次数据（或完全加载完）后才显示具体数字
-    if (!state.hasEverLoadedOnlineCounts) {
-      return null;
-    }
-
-    // 只累加官方分类（排除自定义服务器）的在线人数
-    final officialCategories = state.serverCategories.where(
-      (cat) => !cat.isCustom,
-    );
-    final total = officialCategories.fold<int>(
-      0,
-      (sum, cat) =>
-          sum + (state.categoryOnlineCounts[cat.modelName ?? ''] ?? 0),
-    );
-
-    return total.toString();
   }
 
   String _formatPeakHour(int? hour) {

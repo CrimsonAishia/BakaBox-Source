@@ -2077,7 +2077,8 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
           previous.categoryOnlineCounts != current.categoryOnlineCounts ||
           previous.hasEverLoadedOnlineCounts !=
               current.hasEverLoadedOnlineCounts ||
-          previous.isLoadingOnlineCounts != current.isLoadingOnlineCounts,
+          previous.isLoadingOnlineCounts != current.isLoadingOnlineCounts ||
+          previous.isOldCategoriesExpanded != current.isOldCategoriesExpanded,
       builder: (context, state) {
         // 首次加载且没有分类数据时显示加载指示器
         if (state.isLoading && state.serverCategories.isEmpty) {
@@ -2186,6 +2187,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
     List<ServerCategory> filteredCategories,
   ) {
     final isCustomTab = state.selectedTabIndex == 1;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (isCustomTab && filteredCategories.isNotEmpty) {
       return ReorderableListView.builder(
@@ -2202,72 +2204,164 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
           }
         },
         itemBuilder: (context, index) {
-          final category = filteredCategories[index];
-          final categoryName = category.modelName ?? '';
-          final isSelected = state.selectedCategory?.modelName == categoryName;
-          final onlineCount = state.getCategoryOnlineCount(categoryName);
-          final hasOnlineCountData = state.hasCategoryOnlineCount(categoryName);
-          final isLoadingOnlineCount =
-              !state.hasEverLoadedOnlineCounts &&
-              state.isLoadingOnlineCounts &&
-              !hasOnlineCountData;
-
           return ReorderableDragStartListener(
             index: index,
-            key: ValueKey('category_$categoryName'),
-            child: CategoryCard(
-              category: category,
-              isSelected: isSelected,
-              onlineCount: onlineCount,
-              isLoadingOnlineCount: isLoadingOnlineCount,
-              hasOnlineCountData: hasOnlineCountData,
-              onTap: () => widget.onCategoryTap(category),
-              onEdit: category.isCustom
-                  ? () => widget.onEditCategory(category)
-                  : null,
-              onDelete: category.isCustom
-                  ? () => context.read<ServerBloc>().add(
-                      ServerDeleteCategory(categoryName),
-                    )
-                  : null,
+            key: ValueKey('category_${filteredCategories[index].modelName}'),
+            child: _buildCategoryCard(
+              context,
+              state,
+              filteredCategories[index],
             ),
           );
         },
       );
     }
 
-    return ListView.builder(
+    final standardCategories = filteredCategories
+        .where((c) => !c.isOld)
+        .toList();
+    final oldCategories = filteredCategories.where((c) => c.isOld).toList();
+
+    return ListView(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-      itemCount: filteredCategories.length,
-      itemBuilder: (context, index) {
-        final category = filteredCategories[index];
-        final categoryName = category.modelName ?? '';
-        final isSelected = state.selectedCategory?.modelName == categoryName;
-        final onlineCount = state.getCategoryOnlineCount(categoryName);
-        final hasOnlineCountData = state.hasCategoryOnlineCount(categoryName);
-        final isLoadingOnlineCount =
-            !state.hasEverLoadedOnlineCounts &&
-            state.isLoadingOnlineCounts &&
-            !hasOnlineCountData;
+      children: [
+        ...standardCategories.map(
+          (category) => _buildCategoryCard(context, state, category),
+        ),
+        if (oldCategories.isNotEmpty) ...[
+          if (standardCategories.isNotEmpty) const SizedBox(height: 8),
+          Material(
+            color: isDark
+                ? AppColors.amber900.withValues(alpha: 0.15)
+                : AppColors.amber50,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: isDark
+                    ? AppColors.amber900.withValues(alpha: 0.5)
+                    : AppColors.amber300,
+                width: 1,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                context.read<ServerBloc>().add(
+                  const ServerToggleOldCategoriesExpanded(),
+                );
+              },
+              hoverColor: isDark
+                  ? AppColors.amber900.withValues(alpha: 0.3)
+                  : AppColors.amber100,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.amber900.withValues(alpha: 0.4)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          if (!isDark)
+                            BoxShadow(
+                              color: AppColors.amber500.withValues(alpha: 0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.history_rounded,
+                        size: 16,
+                        color: isDark ? AppColors.amber400 : AppColors.amber600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'CS:GO服务器',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.amber200 : AppColors.amber900,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      state.isOldCategoriesExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: isDark ? AppColors.amber400 : AppColors.amber600,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (state.isOldCategoriesExpanded)
+            Container(
+              margin: const EdgeInsets.only(left: 6.0, top: 2.0),
+              padding: const EdgeInsets.only(left: 12.0),
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: isDark
+                        ? AppColors.amber900.withValues(alpha: 0.5)
+                        : AppColors.amber300,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: oldCategories
+                    .map(
+                      (category) =>
+                          _buildCategoryCard(context, state, category),
+                    )
+                    .toList(),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
 
-        return CategoryCard(
-          category: category,
-          isSelected: isSelected,
-          onlineCount: onlineCount,
-          isLoadingOnlineCount: isLoadingOnlineCount,
-          hasOnlineCountData: hasOnlineCountData,
-          onTap: () => widget.onCategoryTap(category),
-          onEdit: category.isCustom
-              ? () => widget.onEditCategory(category)
-              : null,
-          onDelete: category.isCustom
-              ? () => context.read<ServerBloc>().add(
-                  ServerDeleteCategory(categoryName),
-                )
-              : null,
-        );
-      },
+  Widget _buildCategoryCard(
+    BuildContext context,
+    ServerState state,
+    ServerCategory category,
+  ) {
+    final categoryName = category.modelName ?? '';
+    final isSelected = state.selectedCategory?.modelName == categoryName;
+    final onlineCount = state.getCategoryOnlineCount(categoryName);
+    final hasOnlineCountData = state.hasCategoryOnlineCount(categoryName);
+    final isLoadingOnlineCount =
+        !state.hasEverLoadedOnlineCounts &&
+        state.isLoadingOnlineCounts &&
+        !hasOnlineCountData;
+
+    return CategoryCard(
+      key: ValueKey('category_$categoryName'),
+      category: category,
+      isSelected: isSelected,
+      onlineCount: onlineCount,
+      isLoadingOnlineCount: isLoadingOnlineCount,
+      hasOnlineCountData: hasOnlineCountData,
+      onTap: () => widget.onCategoryTap(category),
+      onEdit: category.isCustom ? () => widget.onEditCategory(category) : null,
+      onDelete: category.isCustom
+          ? () => context.read<ServerBloc>().add(
+              ServerDeleteCategory(categoryName),
+            )
+          : null,
     );
   }
 

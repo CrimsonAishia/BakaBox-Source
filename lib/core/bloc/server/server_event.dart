@@ -376,3 +376,12 @@ class ServerApplyUsersCountUpdates extends ServerEvent {
 /// 清除所有服务器卡片上通过 Realtime 推送获得的数据（比分、人数等），
 /// 避免推送停止后卡片仍显示过期的实时数据。
 class ServerClearRealtimeData extends ServerEvent {}
+
+/// 切换旧版服务器分类展开/折叠状态
+class ServerToggleOldCategoriesExpanded extends ServerEvent {
+  final bool? expanded;
+  const ServerToggleOldCategoriesExpanded({this.expanded});
+  @override
+  List<Object?> get props => [expanded];
+}
+

@@ -85,6 +85,12 @@ class ServerStatsResponse {
   @JsonKey(defaultValue: [])
   final List<TopMap> topMaps;
 
+  @JsonKey(defaultValue: 0)
+  final int currentPlayers;
+
+  @JsonKey(defaultValue: 0)
+  final int totalServerCount;
+
   final int peakHour;
   final int todayMax;
   final int todayAvg;
@@ -96,6 +102,8 @@ class ServerStatsResponse {
     required this.hourlyStats,
     required this.topServers,
     required this.topMaps,
+    required this.currentPlayers,
+    required this.totalServerCount,
     required this.peakHour,
     required this.todayMax,
     required this.todayAvg,
@@ -113,6 +121,8 @@ class ServerStatsResponse {
     hourlyStats: [],
     topServers: [],
     topMaps: [],
+    currentPlayers: 0,
+    totalServerCount: 0,
     peakHour: 0,
     todayMax: 0,
     todayAvg: 0,

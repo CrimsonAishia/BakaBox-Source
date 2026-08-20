@@ -178,6 +178,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerApplyMapRuntimeSnapshot>(_onApplyMapRuntimeSnapshot);
     on<ServerApplyMapInfoChange>(_onApplyMapInfoChange);
     on<ServerClearRealtimeData>(_onClearRealtimeData);
+    on<ServerToggleOldCategoriesExpanded>(_onToggleOldCategoriesExpanded);
 
     // 实时频道订阅与弱网模式联动：仅在非弱网模式下订阅，
     // 弱网模式下从源头切断实时数据流（不订阅 = 不可能有残留推送）。
@@ -1676,6 +1677,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               emit(state.copyWith(categoryOnlineCounts: latestCounts));
             }
           }
+          continue;
+        }
+
+        // 如果是旧版分类且未展开，跳过人数刷新
+        if (category.isOld && !state.isOldCategoriesExpanded) {
           continue;
         }
 
@@ -3229,6 +3235,31 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     if (!changed || isClosed) return;
     emit(state.copyWith(servers: updatedServers));
+  }
+
+  void _onToggleOldCategoriesExpanded(
+    ServerToggleOldCategoriesExpanded event,
+    Emitter<ServerState> emit,
+  ) {
+    final expanded = event.expanded ?? !state.isOldCategoriesExpanded;
+
+    // 如果折叠被关闭，并且当前选中的是旧版分类，则清空当前选择
+    final shouldClearSelection = !expanded && state.selectedCategory?.isOld == true;
+
+    if (shouldClearSelection) {
+      emit(state.copyWith(
+        isOldCategoriesExpanded: expanded,
+        clearSelectedCategory: true,
+        servers: const [], // 清空服务器列表，防止残留数据
+      ));
+    } else {
+      emit(state.copyWith(isOldCategoriesExpanded: expanded));
+    }
+
+    // 展开时立即刷新一下被忽略的旧版分类人数
+    if (expanded) {
+      add(ServerUpdateCategoryOnlineCounts());
+    }
   }
 
   /// 清除所有服务器卡片上的实时推送数据（比分、排队/暖服人数）
