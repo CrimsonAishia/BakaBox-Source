@@ -9,6 +9,7 @@ class SubModelCard extends StatefulWidget {
   final String name;
   final String thumbnailUrl;
   final AcquisitionInfo? acquisition;
+  final List<ItemTagData>? tags;
   final bool isSelected;
   final bool isDefault;
   final VoidCallback onTap;
@@ -18,6 +19,7 @@ class SubModelCard extends StatefulWidget {
     required this.name,
     required this.thumbnailUrl,
     this.acquisition,
+    this.tags,
     this.isSelected = false,
     this.isDefault = false,
     required this.onTap,
@@ -35,6 +37,7 @@ class SubModelCard extends StatefulWidget {
       name: subModel.name,
       thumbnailUrl: subModel.thumbnailUrl,
       acquisition: subModel.acquisition,
+      tags: subModel.tags,
       isSelected: isSelected,
       isDefault: subModel.isDefault,
       onTap: onTap,
@@ -52,6 +55,7 @@ class SubModelCard extends StatefulWidget {
       name: model.name,
       thumbnailUrl: model.thumbnailUrl ?? '',
       acquisition: model.acquisition,
+      tags: model.tags,
       isSelected: false,
       isDefault: false,
       onTap: onTap,
@@ -69,6 +73,7 @@ class SubModelCard extends StatefulWidget {
       name: model.name,
       thumbnailUrl: model.thumbnailUrl ?? '',
       acquisition: model.acquisition,
+      tags: model.tags,
       isSelected: false,
       isDefault: false,
       onTap: onTap,
@@ -86,6 +91,7 @@ class SubModelCard extends StatefulWidget {
       name: model.name,
       thumbnailUrl: model.thumbnailUrl ?? '',
       acquisition: model.acquisition,
+      tags: model.tags,
       isSelected: false,
       isDefault: false,
       onTap: onTap,

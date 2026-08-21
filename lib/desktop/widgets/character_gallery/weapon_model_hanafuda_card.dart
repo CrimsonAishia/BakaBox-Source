@@ -4,6 +4,7 @@ import '../../../core/models/character_models.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import 'character_gallery_theme.dart';
 import 'character_hanafuda_card.dart';
+import 'character_common_widgets.dart';
 
 /// 刀枪模花札风格卡片（和角色卡片一模一样的样式）
 class WeaponModelHanafudaCard extends StatefulWidget {
@@ -11,6 +12,7 @@ class WeaponModelHanafudaCard extends StatefulWidget {
   final String? thumbnailUrl;
   final String? characterName;
   final AcquisitionInfo? acquisition;
+  final List<ItemTagData>? tags;
   final bool isKnife;
   final bool isMenuSkin;
   final bool isSelected;
@@ -22,6 +24,7 @@ class WeaponModelHanafudaCard extends StatefulWidget {
     this.thumbnailUrl,
     this.characterName,
     this.acquisition,
+    this.tags,
     this.isKnife = false,
     this.isMenuSkin = false,
     required this.isSelected,
@@ -41,6 +44,7 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       thumbnailUrl: model.thumbnailUrl,
       characterName: model.characterName,
       acquisition: model.acquisition,
+      tags: model.tags,
       isKnife: true,
       isSelected: isSelected,
       onTap: onTap,
@@ -60,6 +64,7 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       thumbnailUrl: model.thumbnailUrl,
       characterName: model.characterName,
       acquisition: model.acquisition,
+      tags: model.tags,
       isKnife: false,
       isSelected: isSelected,
       onTap: onTap,
@@ -79,6 +84,7 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       thumbnailUrl: model.thumbnailUrl,
       characterName: model.characterName,
       acquisition: model.acquisition,
+      tags: model.tags,
       isMenuSkin: true,
       isSelected: isSelected,
       onTap: onTap,
@@ -227,6 +233,24 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
                     const SizedBox(height: 4),
                     // 获取方式
                     AcquisitionTag(acquisition: widget.acquisition),
+                    if (widget.tags != null && widget.tags!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        alignment: WrapAlignment.center,
+                        children: widget.tags!.map((t) {
+                          // 使用 Transform 缩小组件
+                          return Transform.scale(
+                            scale: 0.85,
+                            child: CharacterTagWidget(
+                              text: t.name,
+                              colorHex: t.color,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/character_api.dart';
 import '../../models/character_models.dart';
+import '../../services/auth_service.dart';
 import '../../utils/log_service.dart';
 import 'character_gallery_event.dart';
 import 'character_gallery_state.dart';
@@ -235,8 +236,8 @@ class CharacterGalleryBloc
           ),
         );
 
-        // 检查待审核状态
-        if (defaultSubModelId != null) {
+        // 检查待审核状态（仅登录用户需要，该接口需要认证）
+        if (defaultSubModelId != null && AuthService.instance.isLoggedIn) {
           add(CheckPendingRequest(defaultSubModelId));
         }
 
@@ -280,8 +281,10 @@ class CharacterGalleryBloc
       ),
     );
 
-    // 检查新子模型的待审核状态
-    add(CheckPendingRequest(event.subModelId));
+    // 检查新子模型的待审核状态（仅登录用户需要，该接口需要认证）
+    if (AuthService.instance.isLoggedIn) {
+      add(CheckPendingRequest(event.subModelId));
+    }
 
     final currentSubModel = character.subModels?.firstWhere(
       (s) => s.id == event.subModelId,
@@ -307,6 +310,7 @@ class CharacterGalleryBloc
                 preview: subModelDetail.preview,
                 glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
                 acquisition: subModelDetail.acquisition ?? s.acquisition,
+                tags: subModelDetail.tags ?? s.tags,
                 isDefault: s.isDefault,
                 sortOrder: s.sortOrder,
               );
@@ -479,6 +483,16 @@ class CharacterGalleryBloc
     SubmitUnifiedEdit event,
     Emitter<CharacterGalleryState> emit,
   ) async {
+    if (!AuthService.instance.isLoggedIn) {
+      emit(
+        state.copyWith(
+          submitEditState: LoadState.failure,
+          submitEditError: '请先登录后再提交编辑',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         submitEditState: LoadState.loading,
@@ -553,6 +567,16 @@ class CharacterGalleryBloc
     LoadMyEditRequests event,
     Emitter<CharacterGalleryState> emit,
   ) async {
+    if (!AuthService.instance.isLoggedIn) {
+      emit(
+        state.copyWith(
+          myEditRequestsLoadState: LoadState.failure,
+          error: '请先登录后再查看编辑申请',
+        ),
+      );
+      return;
+    }
+
     emit(state.copyWith(myEditRequestsLoadState: LoadState.loading));
 
     try {
@@ -592,6 +616,9 @@ class CharacterGalleryBloc
     CheckPendingRequest event,
     Emitter<CharacterGalleryState> emit,
   ) async {
+    // 兜底检查：该接口需要登录权限，未登录时直接跳过，静默忽略
+    if (!AuthService.instance.isLoggedIn) return;
+
     try {
       final response = await _api.checkPendingRequest(event.subModelId);
       if (response != null) {
@@ -617,6 +644,16 @@ class CharacterGalleryBloc
     DeleteEditRequest event,
     Emitter<CharacterGalleryState> emit,
   ) async {
+    if (!AuthService.instance.isLoggedIn) {
+      emit(
+        state.copyWith(
+          deleteRequestState: LoadState.failure,
+          deleteRequestError: '请先登录后再撤销申请',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         deleteRequestState: LoadState.loading,
@@ -663,6 +700,16 @@ class CharacterGalleryBloc
     UpdateEditRequest event,
     Emitter<CharacterGalleryState> emit,
   ) async {
+    if (!AuthService.instance.isLoggedIn) {
+      emit(
+        state.copyWith(
+          submitEditState: LoadState.failure,
+          submitEditError: '请先登录后再修改申请',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         submitEditState: LoadState.loading,
@@ -865,6 +912,7 @@ class CharacterGalleryBloc
                       preview: subModelDetail.preview,
                       glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
                       acquisition: subModelDetail.acquisition ?? s.acquisition,
+                      tags: subModelDetail.tags ?? s.tags,
                       isDefault: s.isDefault,
                       sortOrder: s.sortOrder,
                     );
@@ -899,8 +947,8 @@ class CharacterGalleryBloc
           }
         }
 
-        // 检查待审核状态
-        if (targetSubModelId != null) {
+        // 检查待审核状态（仅登录用户需要，该接口需要认证）
+        if (targetSubModelId != null && AuthService.instance.isLoggedIn) {
           add(CheckPendingRequest(targetSubModelId));
         }
 
@@ -1343,8 +1391,8 @@ class CharacterGalleryBloc
           ),
         );
 
-        // 检查待审核状态
-        if (defaultSubModelId != null) {
+        // 检查待审核状态（仅登录用户需要，该接口需要认证）
+        if (defaultSubModelId != null && AuthService.instance.isLoggedIn) {
           add(CheckPendingRequest(defaultSubModelId));
         }
 
