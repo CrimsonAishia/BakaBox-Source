@@ -211,18 +211,7 @@ class CharacterGalleryBloc
         // 更新列表中对应角色的浏览量 +1
         final updatedCharacters = state.characters.map((c) {
           if (c.id == event.characterId) {
-            return CharacterListItem(
-              id: c.id,
-              name: c.name,
-              nameEn: c.nameEn,
-              category: c.category,
-              thumbnailUrl: c.thumbnailUrl,
-              acquisition: c.acquisition,
-              viewCount: c.viewCount + 1,
-              hasSpellCards: c.hasSpellCards,
-              hasZombieSkills: c.hasZombieSkills,
-              subModelCount: c.subModelCount,
-            );
+            return c.copyWith(viewCount: c.viewCount + 1);
           }
           return c;
         }).toList();
@@ -300,43 +289,19 @@ class CharacterGalleryBloc
         if (subModelDetail != null && subModelDetail.preview != null) {
           final updatedSubModels = character.subModels?.map((s) {
             if (s.id == event.subModelId) {
-              return CharacterSubModel(
-                id: s.id,
-                characterId: s.characterId,
-                name: s.name,
-                type: s.type,
+              return s.copyWith(
                 description: subModelDetail.description ?? s.description,
-                thumbnailUrl: s.thumbnailUrl,
                 preview: subModelDetail.preview,
                 glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
                 acquisition: subModelDetail.acquisition ?? s.acquisition,
                 tags: subModelDetail.tags ?? s.tags,
-                isDefault: s.isDefault,
-                sortOrder: s.sortOrder,
               );
             }
             return s;
           }).toList();
 
           if (updatedSubModels != null) {
-            final updatedCharacter = CharacterModel(
-              id: character.id,
-              name: character.name,
-              nameEn: character.nameEn,
-              category: character.category,
-              description: character.description,
-              thumbnailUrl: character.thumbnailUrl,
-              preview: character.preview,
-              glbModelUrl: character.glbModelUrl,
-              acquisition: character.acquisition,
-              subModels: updatedSubModels,
-              defaultSubModelId: character.defaultSubModelId,
-              spellCards: character.spellCards,
-              zombieSkills: character.zombieSkills,
-              createdAt: character.createdAt,
-              viewCount: character.viewCount,
-              contributorCount: character.contributorCount,
-            );
+            final updatedCharacter = character.copyWith(subModels: updatedSubModels);
 
             emit(state.copyWith(selectedCharacter: updatedCharacter));
           }
@@ -902,42 +867,18 @@ class CharacterGalleryBloc
               if (subModelDetail != null && subModelDetail.preview != null) {
                 final updatedSubModels = character.subModels!.map((s) {
                   if (s.id == event.subModelId) {
-                    return CharacterSubModel(
-                      id: s.id,
-                      characterId: s.characterId,
-                      name: s.name,
-                      type: s.type,
+                    return s.copyWith(
                       description: subModelDetail.description ?? s.description,
-                      thumbnailUrl: s.thumbnailUrl,
                       preview: subModelDetail.preview,
                       glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
                       acquisition: subModelDetail.acquisition ?? s.acquisition,
                       tags: subModelDetail.tags ?? s.tags,
-                      isDefault: s.isDefault,
-                      sortOrder: s.sortOrder,
                     );
                   }
                   return s;
                 }).toList();
 
-                final updatedCharacter = CharacterModel(
-                  id: character.id,
-                  name: character.name,
-                  nameEn: character.nameEn,
-                  category: character.category,
-                  description: character.description,
-                  thumbnailUrl: character.thumbnailUrl,
-                  preview: character.preview,
-                  glbModelUrl: character.glbModelUrl,
-                  acquisition: character.acquisition,
-                  subModels: updatedSubModels,
-                  defaultSubModelId: character.defaultSubModelId,
-                  spellCards: character.spellCards,
-                  zombieSkills: character.zombieSkills,
-                  createdAt: character.createdAt,
-                  viewCount: character.viewCount,
-                  contributorCount: character.contributorCount,
-                );
+                final updatedCharacter = character.copyWith(subModels: updatedSubModels);
 
                 emit(state.copyWith(selectedCharacter: updatedCharacter));
               }

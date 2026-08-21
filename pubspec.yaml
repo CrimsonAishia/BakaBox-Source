@@ -142,6 +142,7 @@ dependencies:
   leak_tracker: ^11.0.2
   leak_tracker_flutter_testing: ^3.0.10
   vm_service: ^15.2.0
+  copy_with_extension: ^17.0.0
 
 dev_dependencies:
   flutter_test:

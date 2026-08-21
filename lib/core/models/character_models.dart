@@ -420,6 +420,36 @@ class CharacterSubModel extends Equatable {
     isDefault,
     sortOrder,
   ];
+
+  CharacterSubModel copyWith({
+    int? id,
+    int? characterId,
+    String? name,
+    SubModelType? type,
+    String? description,
+    String? thumbnailUrl,
+    CharacterPreviewImages? preview,
+    String? glbModelUrl,
+    AcquisitionInfo? acquisition,
+    List<ItemTagData>? tags,
+    bool? isDefault,
+    int? sortOrder,
+  }) {
+    return CharacterSubModel(
+      id: id ?? this.id,
+      characterId: characterId ?? this.characterId,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      description: description ?? this.description,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      preview: preview ?? this.preview,
+      glbModelUrl: glbModelUrl ?? this.glbModelUrl,
+      acquisition: acquisition ?? this.acquisition,
+      tags: tags ?? this.tags,
+      isDefault: isDefault ?? this.isDefault,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
 }
 
 /// 角色模型
@@ -487,6 +517,44 @@ class CharacterModel extends Equatable {
     viewCount,
     contributorCount,
   ];
+
+  CharacterModel copyWith({
+    int? id,
+    String? name,
+    String? nameEn,
+    CharacterCategory? category,
+    String? description,
+    String? thumbnailUrl,
+    CharacterPreviewImages? preview,
+    String? glbModelUrl,
+    AcquisitionInfo? acquisition,
+    List<CharacterSubModel>? subModels,
+    int? defaultSubModelId,
+    List<SpellCard>? spellCards,
+    List<ZombieSkill>? zombieSkills,
+    DateTime? createdAt,
+    int? viewCount,
+    int? contributorCount,
+  }) {
+    return CharacterModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameEn: nameEn ?? this.nameEn,
+      category: category ?? this.category,
+      description: description ?? this.description,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      preview: preview ?? this.preview,
+      glbModelUrl: glbModelUrl ?? this.glbModelUrl,
+      acquisition: acquisition ?? this.acquisition,
+      subModels: subModels ?? this.subModels,
+      defaultSubModelId: defaultSubModelId ?? this.defaultSubModelId,
+      spellCards: spellCards ?? this.spellCards,
+      zombieSkills: zombieSkills ?? this.zombieSkills,
+      createdAt: createdAt ?? this.createdAt,
+      viewCount: viewCount ?? this.viewCount,
+      contributorCount: contributorCount ?? this.contributorCount,
+    );
+  }
 }
 
 /// 角色列表项（简化版，用于列表展示）
@@ -533,6 +601,32 @@ class CharacterListItem extends Equatable {
     hasZombieSkills,
     subModelCount,
   ];
+
+  CharacterListItem copyWith({
+    int? id,
+    String? name,
+    String? nameEn,
+    CharacterCategory? category,
+    String? thumbnailUrl,
+    AcquisitionInfo? acquisition,
+    int? viewCount,
+    bool? hasSpellCards,
+    bool? hasZombieSkills,
+    int? subModelCount,
+  }) {
+    return CharacterListItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameEn: nameEn ?? this.nameEn,
+      category: category ?? this.category,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      acquisition: acquisition ?? this.acquisition,
+      viewCount: viewCount ?? this.viewCount,
+      hasSpellCards: hasSpellCards ?? this.hasSpellCards,
+      hasZombieSkills: hasZombieSkills ?? this.hasZombieSkills,
+      subModelCount: subModelCount ?? this.subModelCount,
+    );
+  }
 }
 
 /// 角色列表响应

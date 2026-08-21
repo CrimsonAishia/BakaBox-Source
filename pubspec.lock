@@ -305,6 +305,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  copy_with_extension:
+    dependency: "direct main"
+    description:
+      name: copy_with_extension
+      sha256: f8d465fab12f83d597a56aa1b1dc7e493cf7579509f75fc4929b355612293f07
+      url: "https://pub.dev"
+    source: hosted
+    version: "17.0.0"
   coverage:
     dependency: transitive
     description:
