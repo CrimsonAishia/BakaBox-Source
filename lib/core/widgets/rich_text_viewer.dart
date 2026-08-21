@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/quill_delta_codec.dart';
+import '../services/image_url_service.dart';
+import 'disk_cached_image.dart';
 import 'embeds/divider_embed_builder.dart';
 import 'embeds/hover_info_embed_builder.dart';
 import 'embeds/resizable_image_embed_builder.dart';
@@ -237,10 +239,11 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? AppColors.slate200 : AppColors.gray700,
         );
 
-    // 合并 embed builders：传入的 + 始终注册 resizableImage / hoverInfo / divider 只读版
+    // 合并 embed builders：传入的 + 始终注册 resizableImage / legacy image / hoverInfo / divider 只读版
     final List<EmbedBuilder> mergedEmbedBuilders = [
       if (widget.embedBuilders != null) ...widget.embedBuilders!,
       const ResizableImageEmbedBuilder(readOnly: true),
+      const _LegacyImageEmbedBuilder(),
       const HoverInfoEmbedBuilder(),
       const DividerEmbedBuilder(),
     ];
@@ -467,6 +470,83 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontSize: 14,
           color: isDark ? const Color(0xFFE879F9) : AppColors.red600,
         ),
+      ),
+    );
+  }
+}
+
+/// 兼容标准的 "image" Embed 类型（后台历史数据可能包含标准图片类型）
+class _LegacyImageEmbedBuilder extends EmbedBuilder {
+  const _LegacyImageEmbedBuilder();
+
+  @override
+  String get key => 'image';
+
+  @override
+  bool get expanded => true;
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) {
+    final String url = embedContext.node.value.data.toString();
+    return _LegacyImageWidget(url: url);
+  }
+}
+
+class _LegacyImageWidget extends StatefulWidget {
+  final String url;
+  const _LegacyImageWidget({required this.url});
+  @override
+  State<_LegacyImageWidget> createState() => _LegacyImageWidgetState();
+}
+
+class _LegacyImageWidgetState extends State<_LegacyImageWidget> {
+  String? _signedUrl;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSignedUrl();
+  }
+
+  Future<void> _loadSignedUrl() async {
+    try {
+      final url = await ImageUrlService.instance.getSignedUrl(widget.url);
+      if (mounted) {
+        setState(() {
+          _signedUrl = url;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.0),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_signedUrl == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: DiskCachedImage(imageUrl: _signedUrl!, fit: BoxFit.contain),
       ),
     );
   }

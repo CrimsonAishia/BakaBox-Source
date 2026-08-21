@@ -22,6 +22,7 @@ class RealtimeChannels {
   static const String notifications = 'notifications';
   static const String announcements = 'announcements';
   static const String workshopChangelog = 'workshop.changelog';
+  static const String activities = 'activities';
 
   /// 所有支持的频道
   static const List<String> all = [
@@ -32,6 +33,7 @@ class RealtimeChannels {
     notifications,
     announcements,
     workshopChangelog,
+    activities,
   ];
 
   /// 需要登录的用户级频道
@@ -98,6 +100,10 @@ class RealtimeEventTypes {
   static const String announcementDeleted = 'deleted';
   // workshop.changelog
   static const String workshopChangelogNew = 'new';
+  // activities
+  static const String activityCreated = 'created';
+  static const String activityUpdated = 'updated';
+  static const String activityDeleted = 'deleted';
 }
 
 /// 服务端 → 客户端原始消息封装

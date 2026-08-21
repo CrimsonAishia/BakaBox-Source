@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/core.dart';
+import '../../core/bloc/activity/activity_bloc.dart';
 import '../widgets/welcome/stats_cards_row.dart';
 import '../widgets/welcome/announcements_panel.dart';
 import '../widgets/welcome/update_logs_panel.dart';
 import '../widgets/welcome/online_trend_chart.dart';
 import '../widgets/welcome/live_rooms_section.dart';
 import '../widgets/welcome/videos_section.dart';
+import '../widgets/welcome/activity_banner_carousel.dart';
 
 /// 欢迎界面回调类型
 typedef OnNavigateToServers = void Function();
@@ -37,6 +39,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   static const _announcementsTtl = Duration(minutes: 30);
   static const _updateLogsTtl = Duration(hours: 1);
   static const _bilibiliTtl = Duration(minutes: 10);
+  static const _activitiesTtl = Duration(minutes: 30);
 
   bool _isStale(DateTime? lastFetched, Duration ttl) {
     if (lastFetched == null) return true;
@@ -58,6 +61,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final announcementBloc = context.read<AnnouncementBloc>();
     final updateLogBloc = context.read<UpdateLogBloc>();
     final bilibiliBloc = context.read<BilibiliContentBloc>();
+    final activityBloc = context.read<ActivityBloc>();
 
     // 服务器列表：没有就加载
     if (serverBloc.state.serverCategories.isEmpty &&
@@ -91,6 +95,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     if (_shouldFetch(bilibiliBloc.state.videosLastFetched, _bilibiliTtl) &&
         bilibiliBloc.state.status != BilibiliContentStatus.loading) {
       bilibiliBloc.add(const BilibiliContentFetchRequested(tabIndex: 1));
+    }
+
+    // 活动：每 30 分钟刷新一次（弱网模式下仅首次拉取）
+    if (_shouldFetch(activityBloc.state.lastFetched, _activitiesTtl) &&
+        activityBloc.state.status != ActivityStatus.loading) {
+      activityBloc.add(const ActivityFetch());
     }
   }
 
@@ -129,8 +139,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               // 顶部欢迎语 + 数据卡片行
               _WelcomeHeader(isDark: isDark),
               const SizedBox(height: 12),
+
               StatsCardsRow(isDark: isDark),
               const SizedBox(height: 12),
+
+              // 活动轮播图
+              const ActivityBannerCarousel(),
 
               // 上半区：在线趋势（左）+ 公告/更新日志（右）
               SizedBox(

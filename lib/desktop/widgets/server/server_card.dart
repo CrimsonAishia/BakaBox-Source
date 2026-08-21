@@ -10,6 +10,9 @@ import '../../../core/constants/operation_colors.dart';
 import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_event.dart';
 import '../../../core/bloc/server/server_state.dart';
+import '../../../core/bloc/activity/activity_bloc.dart';
+import '../../../core/models/activity_model.dart';
+import '../activity/activity_detail_dialog.dart';
 import '../../../core/utils/map_runtime_utils.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/services/status_window_service.dart';
@@ -28,6 +31,7 @@ import 'server_card_components/server_card_overflow_tag_row.dart';
 import 'server_card_components/server_card_icon_buttons.dart';
 import 'server_card_components/hover_tag_popover.dart';
 import 'server_card_components/server_card_monitoring_badge.dart';
+import 'server_card_components/server_card_activity_badge.dart';
 import 'server_card_components/server_card_painters.dart';
 import 'server_card_components/server_card_warmup_border.dart';
 import '../../../core/utils/map_tag_utils.dart';
@@ -299,6 +303,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 RepaintBoundary(child: _buildRefreshIndicator()),
                 // 内容，频繁变动的部分内部也有 RepaintBoundary
                 _buildContent(),
+                // 活动角标
+                if (widget.server.serverItem.address != null ||
+                    widget.server.serverItem.serverAddress != null)
+                  ServerCardActivityBadge(
+                    serverAddress:
+                        widget.server.serverItem.address ??
+                        widget.server.serverItem.serverAddress!,
+                  ),
                 // 监控黄点
                 if (_isMonitoring) _buildMonitoringIndicator(),
                 // Hover 时的毛玻璃操作层
@@ -891,6 +903,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 child: Wrap(
                   spacing: 6,
                   children: [
+                    _buildActivityActionBtn(context, address),
                     if (isCustomServer)
                       _buildSecondaryBtn(
                         icon: MdiIcons.pencilOutline,
@@ -983,6 +996,39 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (isOtherServerWarming) return () => _showWarmupBusyTip(context);
     if (isOtherServerQueueing) return () => _showQueueBusyTip(context);
     return () => _showWarmupWindow(context);
+  }
+
+  Widget _buildActivityActionBtn(BuildContext context, String? address) {
+    if (address == null) return const SizedBox.shrink();
+
+    final serverName = widget.server.serverItem.getDisplayName(
+      widget.server.serverData?.hostName,
+    );
+
+    return BlocBuilder<ActivityBloc, ActivityState>(
+      buildWhen: (previous, current) {
+        return _getActivities(previous.activities, address).length !=
+            _getActivities(current.activities, address).length;
+      },
+      builder: (context, state) {
+        final activities = _getActivities(state.activities, address);
+        if (activities.isEmpty) return const SizedBox.shrink();
+
+        return _AnimatedActivityBtn(
+          activities: activities,
+          serverName: serverName,
+        );
+      },
+    );
+  }
+
+  List<ActivityModel> _getActivities(
+    List<ActivityModel> allActivities,
+    String address,
+  ) {
+    return allActivities
+        .where((a) => a.serverAddresses.contains(address))
+        .toList();
   }
 
   Widget _buildActionBtn({
@@ -1664,8 +1710,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       textColor = AppColors.gray800;
     }
 
-    final weeklyOccurrences = server.mapRuntime?.weeklyOccurrences;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1687,30 +1731,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ),
           ],
         ),
-        // 周出现次数
-        if (weeklyOccurrences != null) ...[
-          const SizedBox(height: 2),
-          RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.gray500,
-              ),
-              children: [
-                const TextSpan(text: '近七天出现'),
-                TextSpan(
-                  text: ' $weeklyOccurrences ',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.blue500,
-                  ),
-                ),
-                const TextSpan(text: '次'),
-              ],
-            ),
-          ),
-        ],
         // 比分显示（非热身且有有效比分数据时，0:0不显示）
         if (!isWarmingUp &&
             server.teamScores?.ctScore != null &&
@@ -2033,6 +2053,253 @@ class _LiveRuntimeTextState extends State<_LiveRuntimeText> {
 
     return Text(displayText, style: widget.style);
   }
+}
+
+class _AnimatedActivityBtn extends StatefulWidget {
+  final List<ActivityModel> activities;
+  final String serverName;
+
+  const _AnimatedActivityBtn({
+    required this.activities,
+    required this.serverName,
+  });
+
+  @override
+  State<_AnimatedActivityBtn> createState() => _AnimatedActivityBtnState();
+}
+
+class _AnimatedActivityBtnState extends State<_AnimatedActivityBtn>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.activities.length == 1
+          ? '活动进行中'
+          : '${widget.activities.length}个活动进行中',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 底部发光与基础背景
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5722).withValues(alpha: 0.5),
+                          blurRadius: 6,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  );
+                },
+                child: const Center(
+                  child: Icon(
+                    Icons.card_giftcard_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              // 流光效果层
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return FractionalTranslation(
+                        translation: Offset(-1.0 + 2 * _controller.value, 0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.0),
+                                Colors.white.withValues(alpha: 0.4),
+                                Colors.white.withValues(alpha: 0.0),
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // 点击波纹层
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(4),
+                    onTap: () {
+                      if (widget.activities.length == 1) {
+                        ActivityDetailDialog.show(
+                          context,
+                          widget.activities.first,
+                        );
+                      } else {
+                        _showActivitiesDialog(
+                          context,
+                          widget.activities,
+                          widget.serverName,
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _showActivitiesDialog(
+  BuildContext context,
+  List<ActivityModel> activities,
+  String serverName,
+) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$serverName 的活动',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.slate900,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: activities.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final activity = activities[index];
+                    return Material(
+                      color: AppColors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ActivityDetailDialog.show(context, activity);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.orange.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.card_giftcard_rounded,
+                                color: AppColors.orange,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      activity.title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? Colors.white
+                                            : AppColors.slate900,
+                                      ),
+                                    ),
+                                    if (activity.description.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        activity.description,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark
+                                              ? AppColors.slate400
+                                              : AppColors.slate500,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('关闭'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 /// 滚动文本组件 - 文本过长时自动滚动

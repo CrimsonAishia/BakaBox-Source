@@ -167,4 +167,50 @@ class TimeUtils {
     final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     return formatDateTimeRelative(dateTime);
   }
+
+  /// 格式化活动时间（如：今天 10:00 - 18:00, 8月21日 - 8月25日）
+  static String formatActivityTime(int startMs, int? endMs) {
+    final start = DateTime.fromMillisecondsSinceEpoch(startMs);
+    final now = DateTime.now();
+
+    String formatDateTime(DateTime dt, {bool showYear = false}) {
+      final diffDays = DateTime.utc(
+        dt.year,
+        dt.month,
+        dt.day,
+      ).difference(DateTime.utc(now.year, now.month, now.day)).inDays;
+
+      final timeStr = DateFormat('HH:mm').format(dt);
+
+      if (diffDays == 0) return '今天 $timeStr';
+      if (diffDays == 1) return '明天 $timeStr';
+      if (diffDays == 2) return '后天 $timeStr';
+      if (diffDays == -1) return '昨天 $timeStr';
+
+      if (showYear) return DateFormat('yyyy年M月d日 HH:mm').format(dt);
+      return DateFormat('M月d日 HH:mm').format(dt);
+    }
+
+    if (endMs == null) {
+      return formatDateTime(start, showYear: start.year != now.year);
+    }
+
+    final end = DateTime.fromMillisecondsSinceEpoch(endMs);
+    final bool sameYear = start.year == end.year && start.year == now.year;
+
+    if (start.year == end.year &&
+        start.month == end.month &&
+        start.day == end.day) {
+      final startStr = formatDateTime(
+        start,
+        showYear: start.year != now.year,
+      );
+      final endStr = DateFormat('HH:mm').format(end);
+      return '$startStr - $endStr';
+    } else {
+      final startStr = formatDateTime(start, showYear: !sameYear);
+      final endStr = formatDateTime(end, showYear: !sameYear);
+      return '$startStr - $endStr';
+    }
+  }
 }

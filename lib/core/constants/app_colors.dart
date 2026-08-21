@@ -45,6 +45,17 @@ class AppColors {
   static const Color red800 = Color(0xFF991B1B);
   static const Color red900 = Color(0xFF7F1D1D);
 
+  static const Color rose50 = Color(0xFFFFF1F2);
+  static const Color rose100 = Color(0xFFFFE4E6);
+  static const Color rose200 = Color(0xFFFECDD3);
+  static const Color rose300 = Color(0xFFFDA4AF);
+  static const Color rose400 = Color(0xFFFB7185);
+  static const Color rose500 = Color(0xFFF43F5E);
+  static const Color rose600 = Color(0xFFE11D48);
+  static const Color rose700 = Color(0xFFBE123C);
+  static const Color rose800 = Color(0xFF9F1239);
+  static const Color rose900 = Color(0xFF881337);
+
   static const Color blue50 = Color(0xFFEFF6FF);
   static const Color blue100 = Color(0xFFDBEAFE);
   static const Color blue200 = Color(0xFFBFDBFE);

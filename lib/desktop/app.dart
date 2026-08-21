@@ -24,6 +24,7 @@ import '../core/services/map_change_monitor_service.dart';
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
 import '../core/utils/windows_priority_utils.dart';
+import '../core/bloc/activity/activity_bloc.dart';
 import 'theme/desktop_theme.dart';
 import 'screens/desktop_home_screen.dart';
 import 'widgets/exit_dialog.dart';
@@ -116,6 +117,7 @@ class _DesktopAppState extends State<DesktopApp>
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
         BlocProvider(create: (_) => AnnouncementBloc()),
+        BlocProvider(create: (_) => ActivityBloc()),
         BlocProvider(create: (_) => DailyTaskBloc()),
         BlocProvider(create: (_) => CharacterGalleryBloc()),
         BlocProvider(create: (_) => BilibiliContentBloc()),
