@@ -269,7 +269,7 @@ class LoadCharacterWeaponModels extends CharacterGalleryEvent {
 /// 加载全部刀模/枪模列表（刀枪图鉴视图）
 class LoadAllWeaponModels extends CharacterGalleryEvent {
   final String? keyword;
-  final int? tabIndex; // 0=刀模, 1=枪模
+  final int? tabIndex; // 0=刀模, 1=枪模, 2=菜单皮肤
 
   const LoadAllWeaponModels({this.keyword, this.tabIndex});
 
@@ -290,12 +290,12 @@ class ChangeWeaponModelTab extends CharacterGalleryEvent {
 /// 选中刀枪模（显示详情）
 class SelectWeaponModel extends CharacterGalleryEvent {
   final int id;
-  final bool isKnife;
+  final WeaponModelType type;
 
-  const SelectWeaponModel({required this.id, required this.isKnife});
+  const SelectWeaponModel({required this.id, required this.type});
 
   @override
-  List<Object?> get props => [id, isKnife];
+  List<Object?> get props => [id, type];
 }
 
 /// 清除选中的刀枪模
@@ -314,12 +314,12 @@ class ChangeWeaponPreviewPosition extends CharacterGalleryEvent {
 /// 从角色详情跳转到刀枪图鉴并选中指定刀枪模
 class NavigateToWeaponModel extends CharacterGalleryEvent {
   final int id;
-  final bool isKnife;
+  final WeaponModelType type;
 
-  const NavigateToWeaponModel({required this.id, required this.isKnife});
+  const NavigateToWeaponModel({required this.id, required this.type});
 
   @override
-  List<Object?> get props => [id, isKnife];
+  List<Object?> get props => [id, type];
 }
 
 /// 在刀枪图鉴视图中加载角色详情（保持左侧列表不变，只切换右侧详情面板）
@@ -335,15 +335,15 @@ class LoadCharacterDetailInWeaponView extends CharacterGalleryEvent {
 /// 在角色图鉴视图中加载刀枪模详情（保持左侧列表不变，只切换右侧详情面板）
 class LoadWeaponModelDetailInCharacterView extends CharacterGalleryEvent {
   final int id;
-  final bool isKnife;
+  final WeaponModelType type;
 
   const LoadWeaponModelDetailInCharacterView({
     required this.id,
-    required this.isKnife,
+    required this.type,
   });
 
   @override
-  List<Object?> get props => [id, isKnife];
+  List<Object?> get props => [id, type];
 }
 
 /// 切换排序方式

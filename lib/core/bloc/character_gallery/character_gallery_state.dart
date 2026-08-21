@@ -26,12 +26,14 @@ class CharacterGalleryState extends Equatable {
   // 刀枪图鉴当前标签页 (0=刀模, 1=枪模)
   final int weaponModelTab;
 
-  // 全部刀模/枪模列表状态
+  // 全部刀模/枪模/菜单皮肤列表状态
   final LoadState allWeaponModelsLoadState;
   final List<KnifeModel> allKnifeModels;
   final List<GunModel> allGunModels;
+  final List<MenuSkinModel> allMenuSkins;
   final int allKnifeTotalCount;
   final int allGunTotalCount;
+  final int allMenuSkinTotalCount;
   final String? weaponModelKeyword;
 
   // 符卡评级列表状态
@@ -74,18 +76,20 @@ class CharacterGalleryState extends Equatable {
   // 符卡评级展开状态（key: tier字符串, value: 是否展开）
   final Set<String> expandedTiers;
 
-  // 刀模/枪模状态
+  // 刀模/枪模/菜单皮肤状态
   final LoadState weaponModelsLoadState;
   final List<KnifeModel> knifeModels;
   final List<GunModel> gunModels;
+  final List<MenuSkinModel> menuSkins;
 
   // 选中的刀枪模（用于详情显示）
   final int? selectedWeaponModelId;
-  final bool selectedWeaponIsKnife; // true=刀模, false=枪模
+  final WeaponModelType selectedWeaponType;
   final int weaponPreviewPosition; // 0=front, 1=left, 2=right, 3=back, 4=hand
   final LoadState weaponDetailLoadState; // 刀枪模详情加载状态
   final KnifeModel? selectedKnifeModelDetail; // 刀模详情（通过 API 获取）
   final GunModel? selectedGunModelDetail; // 枪模详情（通过 API 获取）
+  final MenuSkinModel? selectedMenuSkinDetail; // 菜单皮肤详情（通过 API 获取）
 
   // 刀枪模专属角色信息（通过 API 获取）
   final LoadState weaponCharacterLoadState;
@@ -111,8 +115,10 @@ class CharacterGalleryState extends Equatable {
     this.allWeaponModelsLoadState = LoadState.initial,
     this.allKnifeModels = const [],
     this.allGunModels = const [],
+    this.allMenuSkins = const [],
     this.allKnifeTotalCount = 0,
     this.allGunTotalCount = 0,
+    this.allMenuSkinTotalCount = 0,
     this.weaponModelKeyword,
     this.spellCardTierLoadState = LoadState.initial,
     this.spellCardTierGroups = const [],
@@ -139,12 +145,14 @@ class CharacterGalleryState extends Equatable {
     this.weaponModelsLoadState = LoadState.initial,
     this.knifeModels = const [],
     this.gunModels = const [],
+    this.menuSkins = const [],
     this.selectedWeaponModelId,
-    this.selectedWeaponIsKnife = true,
+    this.selectedWeaponType = WeaponModelType.knife,
     this.weaponPreviewPosition = 0,
     this.weaponDetailLoadState = LoadState.initial,
     this.selectedKnifeModelDetail,
     this.selectedGunModelDetail,
+    this.selectedMenuSkinDetail,
     this.weaponCharacterLoadState = LoadState.initial,
     this.weaponCharacterThumbnailUrl,
     this.weaponCharacterAcquisition,
@@ -169,8 +177,10 @@ class CharacterGalleryState extends Equatable {
     LoadState? allWeaponModelsLoadState,
     List<KnifeModel>? allKnifeModels,
     List<GunModel>? allGunModels,
+    List<MenuSkinModel>? allMenuSkins,
     int? allKnifeTotalCount,
     int? allGunTotalCount,
+    int? allMenuSkinTotalCount,
     String? weaponModelKeyword,
     bool clearWeaponModelKeyword = false,
     LoadState? spellCardTierLoadState,
@@ -206,13 +216,15 @@ class CharacterGalleryState extends Equatable {
     LoadState? weaponModelsLoadState,
     List<KnifeModel>? knifeModels,
     List<GunModel>? gunModels,
+    List<MenuSkinModel>? menuSkins,
     int? selectedWeaponModelId,
     bool clearSelectedWeaponModel = false,
-    bool? selectedWeaponIsKnife,
+    WeaponModelType? selectedWeaponType,
     int? weaponPreviewPosition,
     LoadState? weaponDetailLoadState,
     KnifeModel? selectedKnifeModelDetail,
     GunModel? selectedGunModelDetail,
+    MenuSkinModel? selectedMenuSkinDetail,
     LoadState? weaponCharacterLoadState,
     String? weaponCharacterThumbnailUrl,
     AcquisitionInfo? weaponCharacterAcquisition,
@@ -239,8 +251,10 @@ class CharacterGalleryState extends Equatable {
           allWeaponModelsLoadState ?? this.allWeaponModelsLoadState,
       allKnifeModels: allKnifeModels ?? this.allKnifeModels,
       allGunModels: allGunModels ?? this.allGunModels,
+      allMenuSkins: allMenuSkins ?? this.allMenuSkins,
       allKnifeTotalCount: allKnifeTotalCount ?? this.allKnifeTotalCount,
       allGunTotalCount: allGunTotalCount ?? this.allGunTotalCount,
+      allMenuSkinTotalCount: allMenuSkinTotalCount ?? this.allMenuSkinTotalCount,
       weaponModelKeyword: clearWeaponModelKeyword
           ? null
           : (weaponModelKeyword ?? this.weaponModelKeyword),
@@ -291,11 +305,12 @@ class CharacterGalleryState extends Equatable {
           weaponModelsLoadState ?? this.weaponModelsLoadState,
       knifeModels: knifeModels ?? this.knifeModels,
       gunModels: gunModels ?? this.gunModels,
+      menuSkins: menuSkins ?? this.menuSkins,
       selectedWeaponModelId: clearSelectedWeaponModel
           ? null
           : (selectedWeaponModelId ?? this.selectedWeaponModelId),
-      selectedWeaponIsKnife:
-          selectedWeaponIsKnife ?? this.selectedWeaponIsKnife,
+      selectedWeaponType:
+          selectedWeaponType ?? this.selectedWeaponType,
       weaponPreviewPosition: clearSelectedWeaponModel
           ? 0
           : (weaponPreviewPosition ?? this.weaponPreviewPosition),
@@ -308,6 +323,9 @@ class CharacterGalleryState extends Equatable {
       selectedGunModelDetail: clearSelectedWeaponModel
           ? null
           : (selectedGunModelDetail ?? this.selectedGunModelDetail),
+      selectedMenuSkinDetail: clearSelectedWeaponModel
+          ? null
+          : (selectedMenuSkinDetail ?? this.selectedMenuSkinDetail),
       weaponCharacterLoadState: clearWeaponCharacter
           ? LoadState.initial
           : (weaponCharacterLoadState ?? this.weaponCharacterLoadState),
@@ -352,7 +370,7 @@ class CharacterGalleryState extends Equatable {
 
   /// 获取当前选中的刀模（优先使用详情数据）
   KnifeModel? get selectedKnifeModel {
-    if (selectedWeaponModelId == null || !selectedWeaponIsKnife) return null;
+    if (selectedWeaponModelId == null || selectedWeaponType != WeaponModelType.knife) return null;
     // 优先使用详情 API 返回的数据
     if (selectedKnifeModelDetail != null) return selectedKnifeModelDetail;
     // 回退到列表数据
@@ -364,12 +382,24 @@ class CharacterGalleryState extends Equatable {
 
   /// 获取当前选中的枪模（优先使用详情数据）
   GunModel? get selectedGunModel {
-    if (selectedWeaponModelId == null || selectedWeaponIsKnife) return null;
+    if (selectedWeaponModelId == null || selectedWeaponType != WeaponModelType.gun) return null;
     // 优先使用详情 API 返回的数据
     if (selectedGunModelDetail != null) return selectedGunModelDetail;
     // 回退到列表数据
     return allGunModels.cast<GunModel?>().firstWhere(
       (g) => g?.id == selectedWeaponModelId,
+      orElse: () => null,
+    );
+  }
+
+  /// 获取当前选中的菜单皮肤（优先使用详情数据）
+  MenuSkinModel? get selectedMenuSkin {
+    if (selectedWeaponModelId == null || selectedWeaponType != WeaponModelType.menuSkin) return null;
+    // 优先使用详情 API 返回的数据
+    if (selectedMenuSkinDetail != null) return selectedMenuSkinDetail;
+    // 回退到列表数据
+    return allMenuSkins.cast<MenuSkinModel?>().firstWhere(
+      (m) => m?.id == selectedWeaponModelId,
       orElse: () => null,
     );
   }
@@ -405,8 +435,10 @@ class CharacterGalleryState extends Equatable {
     allWeaponModelsLoadState,
     allKnifeModels,
     allGunModels,
+    allMenuSkins,
     allKnifeTotalCount,
     allGunTotalCount,
+    allMenuSkinTotalCount,
     weaponModelKeyword,
     spellCardTierLoadState,
     spellCardTierGroups,
@@ -433,12 +465,14 @@ class CharacterGalleryState extends Equatable {
     weaponModelsLoadState,
     knifeModels,
     gunModels,
+    menuSkins,
     selectedWeaponModelId,
-    selectedWeaponIsKnife,
+    selectedWeaponType,
     weaponPreviewPosition,
     weaponDetailLoadState,
     selectedKnifeModelDetail,
     selectedGunModelDetail,
+    selectedMenuSkinDetail,
     weaponCharacterLoadState,
     weaponCharacterThumbnailUrl,
     weaponCharacterAcquisition,

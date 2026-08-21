@@ -17,7 +17,27 @@ class CharacterApi {
     throw UnimplementedError('Stub');
   }
 
+  Future<List<CharacterModel>?> getCharacters({bool includeSkins = false}) async {
+    throw UnimplementedError('Stub');
+  }
+
   Future<CharacterModel?> getCharacterDetail(int characterId) async {
+    throw UnimplementedError('Stub');
+  }
+
+  Future<List<VoiceItem>?> getCheerSounds() async {
+    throw UnimplementedError('Stub');
+  }
+
+  Future<MenuSkinListResponse?> getCharacterMenuSkins(int characterId) async {
+    throw UnimplementedError('Stub');
+  }
+
+  Future<AllMenuSkinsResponse?> getAllMenuSkins({String? keyword}) async {
+    throw UnimplementedError('Stub');
+  }
+
+  Future<MenuSkinModel?> getMenuSkinDetail(int id) async {
     throw UnimplementedError('Stub');
   }
 

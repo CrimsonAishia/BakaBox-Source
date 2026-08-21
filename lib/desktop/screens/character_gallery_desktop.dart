@@ -285,9 +285,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 },
               ),
               const SizedBox(width: 8),
-              // 刀枪图鉴按钮
+              // 装备/外观图鉴按钮
               CategoryButton(
-                label: '刀枪',
+                label: '装备',
                 isSelected: state.showWeaponModelView,
                 onTap: () {
                   PaintingBinding.instance.imageCache.clear();
@@ -698,19 +698,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       return const WeaponModelDetailSkeleton();
     }
 
-    // 获取选中的刀枪模
+    // 获取选中的刀枪模/菜单皮肤
     final knife = state.selectedKnifeModel;
     final gun = state.selectedGunModel;
+    final menuSkin = state.selectedMenuSkin;
 
-    if (knife == null && gun == null) {
+    if (knife == null && gun == null && menuSkin == null) {
       return _buildWeaponModelSelectHint(state);
     }
 
-    final name = knife?.name ?? gun?.name ?? '';
-    final characterId = knife?.characterId ?? gun?.characterId;
-    final characterName = knife?.characterName ?? gun?.characterName;
-    final description = knife?.description ?? gun?.description;
-    final acquisition = knife?.acquisition ?? gun?.acquisition;
+    final name = knife?.name ?? gun?.name ?? menuSkin?.name ?? '';
+    final characterId = knife?.characterId ?? gun?.characterId ?? menuSkin?.characterId;
+    final characterName = knife?.characterName ?? gun?.characterName ?? menuSkin?.characterName;
+    final description = knife?.description ?? gun?.description ?? menuSkin?.description;
+    final acquisition = knife?.acquisition ?? gun?.acquisition ?? menuSkin?.acquisition;
+    final tags = knife?.tags ?? gun?.tags ?? menuSkin?.tags;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateDetailScrollIndicators();
@@ -728,7 +730,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               _buildWeaponPreviewSection(state),
               const SizedBox(height: 20),
               // 名称区域
-              _buildWeaponNameSection(name, acquisition),
+              _buildWeaponNameSection(
+                name,
+                acquisition,
+                tags,
+              ),
               const SizedBox(height: 16),
               // 专属角色区域（参照人物详情中专属刀模/枪模的布局）
               if (characterId != null &&
@@ -778,13 +784,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  /// 刀枪模预览区域（和角色详情一样的布局）
+  /// 刀枪模/菜单皮肤预览区域（和角色详情一样的布局）
   Widget _buildWeaponPreviewSection(CharacterGalleryState state) {
     final previewUrl = state.currentWeaponPreviewImage;
     final knife = state.selectedKnifeModel;
     final gun = state.selectedGunModel;
+    final menuSkin = state.selectedMenuSkin;
     final preview = knife?.preview ?? gun?.preview;
-    final name = knife?.name ?? gun?.name ?? '';
+    final name = knife?.name ?? gun?.name ?? menuSkin?.name ?? '';
 
     return Column(
       children: [
@@ -797,52 +804,54 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               ? () => _showWeaponImageViewer(previewUrl, preview, name)
               : null,
         ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            PreviewPositionButton(
-              position: 0,
-              label: '正',
-              isSelected: state.weaponPreviewPosition == 0,
-              onTap: () => context.read<CharacterGalleryBloc>().add(
-                const ChangeWeaponPreviewPosition(0),
+        if (state.selectedWeaponType != WeaponModelType.menuSkin) ...[
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              PreviewPositionButton(
+                position: 0,
+                label: '正',
+                isSelected: state.weaponPreviewPosition == 0,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponPreviewPosition(0),
+                ),
               ),
-            ),
-            PreviewPositionButton(
-              position: 1,
-              label: '左',
-              isSelected: state.weaponPreviewPosition == 1,
-              onTap: () => context.read<CharacterGalleryBloc>().add(
-                const ChangeWeaponPreviewPosition(1),
+              PreviewPositionButton(
+                position: 1,
+                label: '左',
+                isSelected: state.weaponPreviewPosition == 1,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponPreviewPosition(1),
+                ),
               ),
-            ),
-            PreviewPositionButton(
-              position: 2,
-              label: '右',
-              isSelected: state.weaponPreviewPosition == 2,
-              onTap: () => context.read<CharacterGalleryBloc>().add(
-                const ChangeWeaponPreviewPosition(2),
+              PreviewPositionButton(
+                position: 2,
+                label: '右',
+                isSelected: state.weaponPreviewPosition == 2,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponPreviewPosition(2),
+                ),
               ),
-            ),
-            PreviewPositionButton(
-              position: 3,
-              label: '背',
-              isSelected: state.weaponPreviewPosition == 3,
-              onTap: () => context.read<CharacterGalleryBloc>().add(
-                const ChangeWeaponPreviewPosition(3),
+              PreviewPositionButton(
+                position: 3,
+                label: '背',
+                isSelected: state.weaponPreviewPosition == 3,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponPreviewPosition(3),
+                ),
               ),
-            ),
-            PreviewPositionButton(
-              position: 4,
-              label: '手',
-              isSelected: state.weaponPreviewPosition == 4,
-              onTap: () => context.read<CharacterGalleryBloc>().add(
-                const ChangeWeaponPreviewPosition(4),
+              PreviewPositionButton(
+                position: 4,
+                label: '手',
+                isSelected: state.weaponPreviewPosition == 4,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponPreviewPosition(4),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -858,6 +867,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final allImages = <String>[];
     if (preview != null) {
       allImages.addAll(preview.validUrls);
+    }
+    
+    if (allImages.isEmpty && imageUrl.isNotEmpty) {
+      allImages.add(imageUrl);
     }
 
     if (allImages.isEmpty) return;
@@ -877,7 +890,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   }
 
   /// 刀枪模名称区域
-  Widget _buildWeaponNameSection(String name, AcquisitionInfo? acquisition) {
+  Widget _buildWeaponNameSection(String name, AcquisitionInfo? acquisition, List<ItemTagData>? tags) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
 
     return Row(
@@ -892,14 +905,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            name,
-            style: TextStyle(
-              color: inkColor,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: TextStyle(
+                  color: inkColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              if (tags != null && tags.isNotEmpty)
+                _buildTagsSection(tags, context),
+            ],
           ),
         ),
         // 来源途径徽章
@@ -950,20 +970,23 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   Widget _buildWeaponModelSelectHint(CharacterGalleryState state) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    final isKnife = state.weaponModelTab == 0;
+    
+    final tabIndex = state.weaponModelTab;
+    final icon = tabIndex == 0 ? MdiIcons.knife : tabIndex == 1 ? MdiIcons.pistol : MdiIcons.wallpaper;
+    final text = tabIndex == 0 ? '刀模' : tabIndex == 1 ? '枪模' : '菜单皮肤';
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isKnife ? MdiIcons.knife : MdiIcons.pistol,
+            icon,
             size: 64,
             color: scrollBrown.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
-            '请从左侧选择${isKnife ? '刀模' : '枪模'}',
+            '请从左侧选择$text',
             style: TextStyle(
               color: inkColor.withValues(alpha: 0.6),
               fontSize: 16,
@@ -2473,10 +2496,19 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   const ChangeWeaponModelTab(1),
                 ),
               ),
+              const SizedBox(width: 8),
+              _buildWeaponTabButton(
+                label: '菜单皮肤',
+                icon: MdiIcons.wallpaper,
+                isSelected: state.weaponModelTab == 2,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponModelTab(2),
+                ),
+              ),
               const Spacer(),
               // 统计信息
               Text(
-                '共 ${state.weaponModelTab == 0 ? state.allKnifeTotalCount : state.allGunTotalCount} 个',
+                '共 ${state.weaponModelTab == 0 ? state.allKnifeTotalCount : state.weaponModelTab == 1 ? state.allGunTotalCount : state.allMenuSkinTotalCount} 个',
                 style: TextStyle(
                   color: inkColor.withValues(alpha: 0.6),
                   fontSize: 12,
@@ -2555,7 +2587,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
     final items = state.weaponModelTab == 0
         ? state.allKnifeModels
-        : state.allGunModels;
+        : state.weaponModelTab == 1
+            ? state.allGunModels
+            : state.allMenuSkins;
 
     if (items.isEmpty) {
       return Center(
@@ -2563,13 +2597,17 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              state.weaponModelTab == 0 ? MdiIcons.knife : MdiIcons.pistol,
+              state.weaponModelTab == 0 
+                  ? MdiIcons.knife 
+                  : state.weaponModelTab == 1 
+                      ? MdiIcons.pistol 
+                      : MdiIcons.wallpaper,
               size: 48,
               color: scrollBrown.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
-              '暂无${state.weaponModelTab == 0 ? '刀模' : '枪模'}数据',
+              '暂无${state.weaponModelTab == 0 ? '刀模' : state.weaponModelTab == 1 ? '枪模' : '菜单皮肤'}数据',
               style: TextStyle(
                 color: inkColor.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -2596,24 +2634,36 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           final knife = items[index] as KnifeModel;
           final isSelected =
               state.selectedWeaponModelId == knife.id &&
-              state.selectedWeaponIsKnife;
+              state.selectedWeaponType == WeaponModelType.knife;
           return WeaponModelHanafudaCard.fromKnifeModel(
             model: knife,
             isSelected: isSelected,
             onTap: () => context.read<CharacterGalleryBloc>().add(
-              SelectWeaponModel(id: knife.id, isKnife: true),
+              SelectWeaponModel(id: knife.id, type: WeaponModelType.knife),
             ),
           );
-        } else {
+        } else if (state.weaponModelTab == 1) {
           final gun = items[index] as GunModel;
           final isSelected =
               state.selectedWeaponModelId == gun.id &&
-              !state.selectedWeaponIsKnife;
+              state.selectedWeaponType == WeaponModelType.gun;
           return WeaponModelHanafudaCard.fromGunModel(
             model: gun,
             isSelected: isSelected,
             onTap: () => context.read<CharacterGalleryBloc>().add(
-              SelectWeaponModel(id: gun.id, isKnife: false),
+              SelectWeaponModel(id: gun.id, type: WeaponModelType.gun),
+            ),
+          );
+        } else {
+          final menuSkin = items[index] as MenuSkinModel;
+          final isSelected =
+              state.selectedWeaponModelId == menuSkin.id &&
+              state.selectedWeaponType == WeaponModelType.menuSkin;
+          return WeaponModelHanafudaCard.fromMenuSkinModel(
+            model: menuSkin,
+            isSelected: isSelected,
+            onTap: () => context.read<CharacterGalleryBloc>().add(
+              SelectWeaponModel(id: menuSkin.id, type: WeaponModelType.menuSkin),
             ),
           );
         }
@@ -2625,10 +2675,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   Widget _buildWeaponModelsSection(CharacterGalleryState state) {
     final knifeModels = state.knifeModels;
     final gunModels = state.gunModels;
+    final menuSkins = state.menuSkins;
     final isLoading = state.weaponModelsLoadState == LoadState.loading;
 
-    // 如果没有刀模和枪模，不显示此区域
-    if (!isLoading && knifeModels.isEmpty && gunModels.isEmpty) {
+    // 如果没有刀模、枪模、菜单皮肤，不显示此区域
+    if (!isLoading && knifeModels.isEmpty && gunModels.isEmpty && menuSkins.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -2648,7 +2699,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               count: knifeModels.length,
             ),
             const SizedBox(height: 10),
-            _buildWeaponModelsWrap(knifeModels, true),
+            _buildWeaponModelsWrap(knifeModels, 0),
             const SizedBox(height: 16),
           ],
           // 枪模区域
@@ -2659,7 +2710,18 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               count: gunModels.length,
             ),
             const SizedBox(height: 10),
-            _buildWeaponModelsWrap(gunModels, false),
+            _buildWeaponModelsWrap(gunModels, 1),
+            const SizedBox(height: 16),
+          ],
+          // 菜单皮肤区域
+          if (menuSkins.isNotEmpty) ...[
+            _WeaponSectionTitle(
+              title: '专属菜单皮肤',
+              icon: MdiIcons.wallpaper,
+              count: menuSkins.length,
+            ),
+            const SizedBox(height: 10),
+            _buildWeaponModelsWrap(menuSkins, 2),
           ],
         ],
       ],
@@ -2677,13 +2739,13 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  /// 刀模/枪模 Wrap 布局
-  Widget _buildWeaponModelsWrap(List<dynamic> models, bool isKnife) {
+  /// 刀模/枪模/菜单皮肤 Wrap 布局
+  Widget _buildWeaponModelsWrap(List<dynamic> models, int type) {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
       children: models.map((model) {
-        if (isKnife) {
+        if (type == 0) {
           final knife = model as KnifeModel;
           return SizedBox(
             height: 120,
@@ -2692,12 +2754,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               onTap: () => context.read<CharacterGalleryBloc>().add(
                 LoadWeaponModelDetailInCharacterView(
                   id: knife.id,
-                  isKnife: true,
+                  type: WeaponModelType.knife,
                 ),
               ),
             ),
           );
-        } else {
+        } else if (type == 1) {
           final gun = model as GunModel;
           return SizedBox(
             height: 120,
@@ -2706,7 +2768,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               onTap: () => context.read<CharacterGalleryBloc>().add(
                 LoadWeaponModelDetailInCharacterView(
                   id: gun.id,
-                  isKnife: false,
+                  type: WeaponModelType.gun,
+                ),
+              ),
+            ),
+          );
+        } else {
+          final menuSkin = model as MenuSkinModel;
+          return SizedBox(
+            height: 120,
+            child: SubModelCard.fromMenuSkinModel(
+              model: menuSkin,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                LoadWeaponModelDetailInCharacterView(
+                  id: menuSkin.id,
+                  type: WeaponModelType.menuSkin,
                 ),
               ),
             ),
@@ -2836,6 +2912,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     // 获取当前子模型的来源信息
     final acquisition = currentSubModel?.acquisition ?? character.acquisition;
 
+    // 获取当前子模型的标签
+    final tags = currentSubModel?.tags;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2871,6 +2950,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                         fontSize: 12,
                       ),
                     ),
+                  _buildTagsSection(tags, context),
                 ],
               );
             },
@@ -2879,6 +2959,24 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         // 来源途径显示在角色名右侧
         _buildAcquisitionBadge(acquisition, character, currentSubModel),
       ],
+    );
+  }
+
+  Widget _buildTagsSection(List<ItemTagData>? tags, BuildContext context) {
+    if (tags == null || tags.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: tags.map((tag) {
+          return CharacterTagWidget(
+            text: tag.name,
+            colorHex: tag.color,
+          );
+        }).toList(),
+      ),
     );
   }
 

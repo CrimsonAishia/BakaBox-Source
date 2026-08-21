@@ -950,25 +950,29 @@ class CharacterGalleryBloc
       final results = await Future.wait([
         _api.getCharacterKnifeModels(event.characterId),
         _api.getCharacterGunModels(event.characterId),
+        _api.getCharacterMenuSkins(event.characterId),
       ]);
 
       final knifeResponse = results[0] as KnifeModelListResponse?;
       final gunResponse = results[1] as GunModelListResponse?;
+      final menuSkinResponse = results[2] as MenuSkinListResponse?;
 
       emit(
         state.copyWith(
           weaponModelsLoadState: LoadState.success,
           knifeModels: knifeResponse?.items ?? [],
           gunModels: gunResponse?.items ?? [],
+          menuSkins: menuSkinResponse?.items ?? [],
         ),
       );
     } catch (e) {
-      LogService.e('加载刀模/枪模失败: $e', e);
+      LogService.e('加载刀模/枪模/菜单皮肤失败: $e', e);
       emit(
         state.copyWith(
           weaponModelsLoadState: LoadState.failure,
           knifeModels: [],
           gunModels: [],
+          menuSkins: [],
         ),
       );
     }
@@ -1016,7 +1020,7 @@ class CharacterGalleryBloc
             ),
           );
         }
-      } else {
+      } else if (tabIndex == 1) {
         // 加载枪模
         final response = await _api.getAllGunModels(keyword: event.keyword);
         if (response != null) {
@@ -1032,6 +1036,25 @@ class CharacterGalleryBloc
             state.copyWith(
               allWeaponModelsLoadState: LoadState.failure,
               error: '获取枪模列表失败',
+            ),
+          );
+        }
+      } else if (tabIndex == 2) {
+        // 加载菜单皮肤
+        final response = await _api.getAllMenuSkins(keyword: event.keyword);
+        if (response != null) {
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.success,
+              allMenuSkins: response.items,
+              allMenuSkinTotalCount: response.totalCount,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.failure,
+              error: '获取菜单皮肤列表失败',
             ),
           );
         }
@@ -1070,7 +1093,7 @@ class CharacterGalleryBloc
     emit(
       state.copyWith(
         selectedWeaponModelId: event.id,
-        selectedWeaponIsKnife: event.isKnife,
+        selectedWeaponType: event.type,
         weaponDetailLoadState: LoadState.loading,
         weaponPreviewPosition: 0, // 重置预览位置
         clearWeaponCharacter: true,
@@ -1082,18 +1105,24 @@ class CharacterGalleryBloc
       // 调用详情 API 获取完整数据
       KnifeModel? knifeDetail;
       GunModel? gunDetail;
+      MenuSkinModel? menuSkinDetail;
       int? characterId;
 
       final results = await Future.wait([
-        event.isKnife
+        event.type == WeaponModelType.knife
             ? _api.getKnifeModelDetail(event.id)
-            : _api.getGunModelDetail(event.id),
+            : event.type == WeaponModelType.menuSkin 
+                ? _api.getMenuSkinDetail(event.id) 
+                : _api.getGunModelDetail(event.id),
         Future.delayed(const Duration(milliseconds: 400)), // 最小加载时间
       ]);
 
-      if (event.isKnife) {
+      if (event.type == WeaponModelType.knife) {
         knifeDetail = results[0] as KnifeModel?;
         characterId = knifeDetail?.characterId;
+      } else if (event.type == WeaponModelType.menuSkin) {
+        menuSkinDetail = results[0] as MenuSkinModel?;
+        characterId = menuSkinDetail?.characterId;
       } else {
         gunDetail = results[0] as GunModel?;
         characterId = gunDetail?.characterId;
@@ -1104,6 +1133,7 @@ class CharacterGalleryBloc
         state.copyWith(
           selectedKnifeModelDetail: knifeDetail,
           selectedGunModelDetail: gunDetail,
+          selectedMenuSkinDetail: menuSkinDetail,
         ),
       );
 
@@ -1178,7 +1208,7 @@ class CharacterGalleryBloc
     Emitter<CharacterGalleryState> emit,
   ) async {
     // 切换到刀枪图鉴视图，并选中指定的刀枪模
-    final tabIndex = event.isKnife ? 0 : 1;
+    final tabIndex = event.type.index;
 
     emit(
       state.copyWith(
@@ -1190,13 +1220,13 @@ class CharacterGalleryBloc
         clearCategory: true,
         clearSelectedCharacter: true,
         selectedWeaponModelId: event.id,
-        selectedWeaponIsKnife: event.isKnife,
+        selectedWeaponType: event.type,
         weaponPreviewPosition: 0,
       ),
     );
 
     try {
-      if (event.isKnife) {
+      if (event.type == WeaponModelType.knife) {
         final response = await _api.getAllKnifeModels();
         if (response != null) {
           emit(
@@ -1211,6 +1241,24 @@ class CharacterGalleryBloc
             state.copyWith(
               allWeaponModelsLoadState: LoadState.failure,
               error: '获取刀模列表失败',
+            ),
+          );
+        }
+      } else if (event.type == WeaponModelType.menuSkin) {
+        final response = await _api.getAllMenuSkins();
+        if (response != null) {
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.success,
+              allMenuSkins: response.items,
+              allMenuSkinTotalCount: response.totalCount,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.failure,
+              error: '获取菜单皮肤列表失败',
             ),
           );
         }
@@ -1334,7 +1382,7 @@ class CharacterGalleryBloc
     emit(
       state.copyWith(
         selectedWeaponModelId: event.id,
-        selectedWeaponIsKnife: event.isKnife,
+        selectedWeaponType: event.type,
         weaponDetailLoadState: LoadState.loading,
         weaponPreviewPosition: 0,
         clearSelectedCharacter: true,
@@ -1352,18 +1400,24 @@ class CharacterGalleryBloc
       // 调用详情 API 获取完整数据
       KnifeModel? knifeDetail;
       GunModel? gunDetail;
+      MenuSkinModel? menuSkinDetail;
       int? characterId;
 
       final results = await Future.wait([
-        event.isKnife
+        event.type == WeaponModelType.knife
             ? _api.getKnifeModelDetail(event.id)
-            : _api.getGunModelDetail(event.id),
+            : event.type == WeaponModelType.menuSkin 
+                ? _api.getMenuSkinDetail(event.id)
+                : _api.getGunModelDetail(event.id),
         Future.delayed(const Duration(milliseconds: 400)),
       ]);
 
-      if (event.isKnife) {
+      if (event.type == WeaponModelType.knife) {
         knifeDetail = results[0] as KnifeModel?;
         characterId = knifeDetail?.characterId;
+      } else if (event.type == WeaponModelType.menuSkin) {
+        menuSkinDetail = results[0] as MenuSkinModel?;
+        characterId = menuSkinDetail?.characterId;
       } else {
         gunDetail = results[0] as GunModel?;
         characterId = gunDetail?.characterId;
@@ -1374,6 +1428,7 @@ class CharacterGalleryBloc
         state.copyWith(
           selectedKnifeModelDetail: knifeDetail,
           selectedGunModelDetail: gunDetail,
+          selectedMenuSkinDetail: menuSkinDetail,
         ),
       );
 

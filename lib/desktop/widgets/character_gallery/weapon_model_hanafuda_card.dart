@@ -12,6 +12,7 @@ class WeaponModelHanafudaCard extends StatefulWidget {
   final String? characterName;
   final AcquisitionInfo? acquisition;
   final bool isKnife;
+  final bool isMenuSkin;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -21,7 +22,8 @@ class WeaponModelHanafudaCard extends StatefulWidget {
     this.thumbnailUrl,
     this.characterName,
     this.acquisition,
-    required this.isKnife,
+    this.isKnife = false,
+    this.isMenuSkin = false,
     required this.isSelected,
     required this.onTap,
   });
@@ -59,6 +61,25 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       characterName: model.characterName,
       acquisition: model.acquisition,
       isKnife: false,
+      isSelected: isSelected,
+      onTap: onTap,
+    );
+  }
+
+  /// 从 MenuSkinModel 创建
+  factory WeaponModelHanafudaCard.fromMenuSkinModel({
+    Key? key,
+    required MenuSkinModel model,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return WeaponModelHanafudaCard(
+      key: key,
+      name: model.name,
+      thumbnailUrl: model.thumbnailUrl,
+      characterName: model.characterName,
+      acquisition: model.acquisition,
+      isMenuSkin: true,
       isSelected: isSelected,
       onTap: onTap,
     );
@@ -232,7 +253,7 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
     return Container(
       color: washiColor,
       child: Icon(
-        widget.isKnife ? MdiIcons.knife : MdiIcons.pistol,
+        widget.isKnife ? MdiIcons.knife : (widget.isMenuSkin ? MdiIcons.monitor : MdiIcons.pistol),
         size: 40,
         color: scrollBrown.withValues(alpha: 0.3),
       ),

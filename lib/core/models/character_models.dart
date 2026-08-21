@@ -16,6 +16,13 @@ enum CharacterCategory {
   normal,
 }
 
+/// 模型类型
+enum WeaponModelType {
+  knife,      // 刀模 (0)
+  gun,        // 枪模 (1)
+  menuSkin,   // 菜单皮肤 (2)
+}
+
 /// 获取途径类型
 enum AcquisitionType {
   @JsonValue('gold')
@@ -373,6 +380,7 @@ class CharacterSubModel extends Equatable {
   final CharacterPreviewImages? preview;
   final String? glbModelUrl;
   final AcquisitionInfo? acquisition;
+  final List<ItemTagData>? tags;
   @JsonKey(defaultValue: false)
   final bool isDefault;
   @JsonKey(defaultValue: 0)
@@ -388,6 +396,7 @@ class CharacterSubModel extends Equatable {
     this.preview,
     this.glbModelUrl,
     this.acquisition,
+    this.tags,
     this.isDefault = false,
     this.sortOrder = 0,
   });
@@ -407,6 +416,7 @@ class CharacterSubModel extends Equatable {
     preview,
     glbModelUrl,
     acquisition,
+    tags,
     isDefault,
     sortOrder,
   ];
@@ -1829,6 +1839,7 @@ class KnifeModel extends Equatable {
   final WeaponModelPreview? preview; // 多角度预览图
   final String? glbModelUrl;
   final AcquisitionInfo? acquisition;
+  final List<ItemTagData>? tags;
 
   const KnifeModel({
     required this.id,
@@ -1840,6 +1851,7 @@ class KnifeModel extends Equatable {
     this.preview,
     this.glbModelUrl,
     this.acquisition,
+    this.tags,
   });
 
   factory KnifeModel.fromJson(Map<String, dynamic> json) =>
@@ -1872,6 +1884,7 @@ class GunModel extends Equatable {
   final WeaponModelPreview? preview; // 多角度预览图
   final String? glbModelUrl;
   final AcquisitionInfo? acquisition;
+  final List<ItemTagData>? tags;
 
   const GunModel({
     required this.id,
@@ -1883,6 +1896,7 @@ class GunModel extends Equatable {
     this.preview,
     this.glbModelUrl,
     this.acquisition,
+    this.tags,
   });
 
   factory GunModel.fromJson(Map<String, dynamic> json) =>
@@ -1964,3 +1978,98 @@ class AllGunModelsResponse extends Equatable {
   @override
   List<Object?> get props => [items, totalCount];
 }
+
+/// 菜单皮肤
+@JsonSerializable()
+class MenuSkinModel extends Equatable {
+  final int id;
+  final int? characterId;
+  final String? characterName;
+  final String name;
+  final String? description;
+  final String? thumbnailUrl;
+  final String? previewUrl;
+  final AcquisitionInfo? acquisition;
+  final List<ItemTagData>? tags;
+
+  const MenuSkinModel({
+    required this.id,
+    this.characterId,
+    this.characterName,
+    required this.name,
+    this.description,
+    this.thumbnailUrl,
+    this.previewUrl,
+    this.acquisition,
+    this.tags,
+  });
+
+  factory MenuSkinModel.fromJson(Map<String, dynamic> json) =>
+      _$MenuSkinModelFromJson(json);
+  Map<String, dynamic> toJson() => _$MenuSkinModelToJson(this);
+
+  @override
+  List<Object?> get props => [
+    id,
+    characterId,
+    characterName,
+    name,
+    description,
+    thumbnailUrl,
+    previewUrl,
+    acquisition,
+    tags,
+  ];
+}
+
+/// 菜单皮肤列表响应（角色专属/通用）
+@JsonSerializable()
+class MenuSkinListResponse extends Equatable {
+  final List<MenuSkinModel> items;
+
+  const MenuSkinListResponse({required this.items});
+
+  factory MenuSkinListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MenuSkinListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MenuSkinListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items];
+}
+
+/// 所有菜单皮肤列表响应（带总数）
+@JsonSerializable()
+class AllMenuSkinsResponse extends Equatable {
+  final List<MenuSkinModel> items;
+  final int totalCount;
+
+  const AllMenuSkinsResponse({required this.items, required this.totalCount});
+
+  factory AllMenuSkinsResponse.fromJson(Map<String, dynamic> json) =>
+      _$AllMenuSkinsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$AllMenuSkinsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items, totalCount];
+}
+
+/// 标签模型
+@JsonSerializable()
+class ItemTagData extends Equatable {
+  final int? id;
+  final String name;
+  final String color;
+
+  const ItemTagData({
+    this.id,
+    required this.name,
+    required this.color,
+  });
+
+  factory ItemTagData.fromJson(Map<String, dynamic> json) => _$ItemTagDataFromJson(json);
+  Map<String, dynamic> toJson() => _$ItemTagDataToJson(this);
+
+  @override
+  List<Object?> get props => [id, name, color];
+}
+

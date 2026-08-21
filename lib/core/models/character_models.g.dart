@@ -244,6 +244,9 @@ CharacterSubModel _$CharacterSubModelFromJson(Map<String, dynamic> json) =>
           : AcquisitionInfo.fromJson(
               json['acquisition'] as Map<String, dynamic>,
             ),
+      tags: (json['tags'] as List<dynamic>?)
+          ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
+          .toList(),
       isDefault: json['isDefault'] as bool? ?? false,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
     );
@@ -259,6 +262,7 @@ Map<String, dynamic> _$CharacterSubModelToJson(CharacterSubModel instance) =>
       'preview': instance.preview,
       'glbModelUrl': instance.glbModelUrl,
       'acquisition': instance.acquisition,
+      'tags': instance.tags,
       'isDefault': instance.isDefault,
       'sortOrder': instance.sortOrder,
     };
@@ -1261,6 +1265,9 @@ KnifeModel _$KnifeModelFromJson(Map<String, dynamic> json) => KnifeModel(
   acquisition: json['acquisition'] == null
       ? null
       : AcquisitionInfo.fromJson(json['acquisition'] as Map<String, dynamic>),
+  tags: (json['tags'] as List<dynamic>?)
+      ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$KnifeModelToJson(KnifeModel instance) =>
@@ -1274,6 +1281,7 @@ Map<String, dynamic> _$KnifeModelToJson(KnifeModel instance) =>
       'preview': instance.preview,
       'glbModelUrl': instance.glbModelUrl,
       'acquisition': instance.acquisition,
+      'tags': instance.tags,
     };
 
 GunModel _$GunModelFromJson(Map<String, dynamic> json) => GunModel(
@@ -1290,6 +1298,9 @@ GunModel _$GunModelFromJson(Map<String, dynamic> json) => GunModel(
   acquisition: json['acquisition'] == null
       ? null
       : AcquisitionInfo.fromJson(json['acquisition'] as Map<String, dynamic>),
+  tags: (json['tags'] as List<dynamic>?)
+      ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$GunModelToJson(GunModel instance) => <String, dynamic>{
@@ -1302,6 +1313,7 @@ Map<String, dynamic> _$GunModelToJson(GunModel instance) => <String, dynamic>{
   'preview': instance.preview,
   'glbModelUrl': instance.glbModelUrl,
   'acquisition': instance.acquisition,
+  'tags': instance.tags,
 };
 
 KnifeModelListResponse _$KnifeModelListResponseFromJson(
@@ -1359,3 +1371,76 @@ Map<String, dynamic> _$AllGunModelsResponseToJson(
   'items': instance.items,
   'totalCount': instance.totalCount,
 };
+
+MenuSkinModel _$MenuSkinModelFromJson(Map<String, dynamic> json) =>
+    MenuSkinModel(
+      id: (json['id'] as num).toInt(),
+      characterId: (json['characterId'] as num?)?.toInt(),
+      characterName: json['characterName'] as String?,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      previewUrl: json['previewUrl'] as String?,
+      acquisition: json['acquisition'] == null
+          ? null
+          : AcquisitionInfo.fromJson(
+              json['acquisition'] as Map<String, dynamic>,
+            ),
+      tags: (json['tags'] as List<dynamic>?)
+          ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$MenuSkinModelToJson(MenuSkinModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'characterId': instance.characterId,
+      'characterName': instance.characterName,
+      'name': instance.name,
+      'description': instance.description,
+      'thumbnailUrl': instance.thumbnailUrl,
+      'previewUrl': instance.previewUrl,
+      'acquisition': instance.acquisition,
+      'tags': instance.tags,
+    };
+
+MenuSkinListResponse _$MenuSkinListResponseFromJson(
+  Map<String, dynamic> json,
+) => MenuSkinListResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => MenuSkinModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$MenuSkinListResponseToJson(
+  MenuSkinListResponse instance,
+) => <String, dynamic>{'items': instance.items};
+
+AllMenuSkinsResponse _$AllMenuSkinsResponseFromJson(
+  Map<String, dynamic> json,
+) => AllMenuSkinsResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => MenuSkinModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  totalCount: (json['totalCount'] as num).toInt(),
+);
+
+Map<String, dynamic> _$AllMenuSkinsResponseToJson(
+  AllMenuSkinsResponse instance,
+) => <String, dynamic>{
+  'items': instance.items,
+  'totalCount': instance.totalCount,
+};
+
+ItemTagData _$ItemTagDataFromJson(Map<String, dynamic> json) => ItemTagData(
+  id: (json['id'] as num?)?.toInt(),
+  name: json['name'] as String,
+  color: json['color'] as String,
+);
+
+Map<String, dynamic> _$ItemTagDataToJson(ItemTagData instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'color': instance.color,
+    };

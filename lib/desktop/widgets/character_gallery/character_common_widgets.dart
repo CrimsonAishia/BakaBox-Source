@@ -231,3 +231,146 @@ class SectionDivider extends StatelessWidget {
     );
   }
 }
+
+/// 虚线边框绘制器
+class DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+  final double radius;
+
+  DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.0,
+    this.dashWidth = 4.0,
+    this.dashSpace = 4.0,
+    this.radius = 4.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+    final dashedPath = Path();
+
+    for (final metric in metrics) {
+      double distance = 0.0;
+      bool draw = true;
+      while (distance < metric.length) {
+        final length = draw ? dashWidth : dashSpace;
+        if (draw) {
+          dashedPath.addPath(
+            metric.extractPath(distance, distance + length),
+            Offset.zero,
+          );
+        }
+        distance += length;
+        draw = !draw;
+      }
+    }
+    canvas.drawPath(dashedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant DashedBorderPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashWidth != dashWidth ||
+        oldDelegate.dashSpace != dashSpace ||
+        oldDelegate.radius != radius;
+  }
+}
+
+/// 角色图鉴通用标签组件
+class CharacterTagWidget extends StatelessWidget {
+  final String text;
+  final String colorHex;
+
+  const CharacterTagWidget({
+    super.key,
+    required this.text,
+    required this.colorHex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final color = Color(int.parse(colorHex.replaceAll('#', '0xFF')));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      // 外层描边 (Solid stroke)
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
+        boxShadow: [
+          // 极淡的描边阴影
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 2,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: CustomPaint(
+        // 内层虚线 (Dashed border)
+        painter: DashedBorderPainter(
+          color: color.withValues(alpha: 0.6),
+          strokeWidth: 1,
+          dashWidth: 4,
+          dashSpace: 3,
+          radius: 3,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark ? Colors.white24 : Colors.black12, 
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                text,
+                style: TextStyle(
+                  color: inkColor.withValues(alpha: 0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  // 文字描边
+                  shadows: [
+                    Shadow(
+                      color: isDark ? Colors.black87 : Colors.white,
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

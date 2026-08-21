@@ -75,6 +75,23 @@ class SubModelCard extends StatefulWidget {
     );
   }
 
+  /// 从 MenuSkinModel 创建
+  factory SubModelCard.fromMenuSkinModel({
+    Key? key,
+    required MenuSkinModel model,
+    required VoidCallback onTap,
+  }) {
+    return SubModelCard(
+      key: key,
+      name: model.name,
+      thumbnailUrl: model.thumbnailUrl ?? '',
+      acquisition: model.acquisition,
+      isSelected: false,
+      isDefault: false,
+      onTap: onTap,
+    );
+  }
+
   @override
   State<SubModelCard> createState() => _SubModelCardState();
 }
