@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../models/map_tag_category_models.dart';
 import '../../models/map_tag_models.dart';
 
 class MapTagState extends Equatable {
@@ -13,6 +14,12 @@ class MapTagState extends Equatable {
 
   /// 我的标签变更申请列表
   final List<MapTagChangeRequest> myChangeRequests;
+
+  /// 标签分类列表
+  final List<MapTagCategory> categories;
+
+  /// 是否正在加载标签分类
+  final bool isLoadingCategories;
 
   /// 是否正在加载全局标签列表
   final bool isLoadingTagList;
@@ -58,6 +65,8 @@ class MapTagState extends Equatable {
     this.userTags = const [],
     this.mapTagVotes = const [],
     this.myChangeRequests = const [],
+    this.categories = const [],
+    this.isLoadingCategories = false,
     this.isLoadingTagList = false,
     this.isLoadingUserTags = false,
     this.isLoadingMapTagVotes = false,
@@ -136,6 +145,8 @@ class MapTagState extends Equatable {
     List<MapTag>? userTags,
     List<MapTagVoteSimple>? mapTagVotes,
     List<MapTagChangeRequest>? myChangeRequests,
+    List<MapTagCategory>? categories,
+    bool? isLoadingCategories,
     bool? isLoadingTagList,
     bool? isLoadingUserTags,
     bool? isLoadingMapTagVotes,
@@ -157,6 +168,8 @@ class MapTagState extends Equatable {
       userTags: userTags ?? this.userTags,
       mapTagVotes: mapTagVotes ?? this.mapTagVotes,
       myChangeRequests: myChangeRequests ?? this.myChangeRequests,
+      categories: categories ?? this.categories,
+      isLoadingCategories: isLoadingCategories ?? this.isLoadingCategories,
       isLoadingTagList: isLoadingTagList ?? this.isLoadingTagList,
       isLoadingUserTags: isLoadingUserTags ?? this.isLoadingUserTags,
       isLoadingMapTagVotes: isLoadingMapTagVotes ?? this.isLoadingMapTagVotes,
@@ -181,6 +194,8 @@ class MapTagState extends Equatable {
     userTags,
     mapTagVotes,
     myChangeRequests,
+    categories,
+    isLoadingCategories,
     isLoadingTagList,
     isLoadingUserTags,
     isLoadingMapTagVotes,

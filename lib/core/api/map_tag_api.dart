@@ -3,11 +3,15 @@
 // See: https://github.com/CrimsonAishia/BakaBox-Core (private)
 // ============================================================
 
+import '../models/map_tag_category_models.dart';
 import '../models/map_tag_models.dart';
 import '../models/report_models.dart';
 
 /// 地图标签 API 服务
 class MapTagApi {
+  Future<List<MapTagCategory>> getCategoryList() async {
+    throw UnimplementedError('Stub');
+  }
   Future<List<MapTag>> getTagList() async { throw UnimplementedError('Stub'); }
 
   Future<MapTag?> submitTag(
@@ -15,6 +19,8 @@ class MapTagApi {
     String? mapName,
     String? color,
     String? address,
+    List<int>? categoryIds,
+    String? reason,
   }) async { throw UnimplementedError('Stub'); }
 
   Future<MapTagServerListResponse?> getMapTagServers(String mapName) async {
@@ -37,6 +43,7 @@ class MapTagApi {
     int tagId,
     String name, {
     String? color,
+    List<int>? categoryIds,
     String? editReason,
   }) async { throw UnimplementedError('Stub'); }
 

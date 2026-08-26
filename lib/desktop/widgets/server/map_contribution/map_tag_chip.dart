@@ -531,42 +531,94 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
     final auditRemark = tag.auditRemark ?? '';
     // 被拒绝时，有 remark 显示原因，没有 remark 也显示兜底文字
     final showRejectReason = tag.isRejected;
+    final hasTextContent =
+        showRejectReason || (tag.submitReason?.isNotEmpty ?? false);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 拒绝原因行
-        if (showRejectReason) ...[
+        // 顶部文本信息行（申请理由、拒绝原因等）
+        if (hasTextContent) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 1),
-                  child: Icon(
-                    Icons.cancel_outlined,
-                    size: 13,
-                    color: AppColors.red500,
+                if (tag.submitReason?.isNotEmpty ?? false)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 1),
+                        child: Icon(
+                          Icons.info_outline,
+                          size: 13,
+                          color: Colors.white54,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: Text(
+                          '申请理由：${tag.submitReason}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                            height: 1.3,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 4),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 220),
-                  child: Text(
-                    auditRemark.isNotEmpty ? '拒绝原因：$auditRemark' : '审核未通过',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.red500,
-                      height: 1.3,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+                if (showRejectReason) ...[
+                  if (tag.submitReason?.isNotEmpty ?? false)
+                    const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 1),
+                        child: Icon(
+                          Icons.cancel_outlined,
+                          size: 13,
+                          color: AppColors.red500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: Text(
+                          auditRemark.isNotEmpty
+                              ? '拒绝原因：$auditRemark'
+                              : '审核未通过',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.red500,
+                            height: 1.3,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                ],
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: CustomPaint(
+              size: const Size(0, 1),
+              painter: _DashedLinePainter(),
             ),
           ),
         ],
@@ -590,13 +642,15 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
                       },
               ),
               const SizedBox(width: 4),
-              // 反打按钮
+              // 反对按钮
               _buildTagVoteButton(
                 icon: hasDownvoted
                     ? MdiIcons.thumbDown
                     : MdiIcons.thumbDownOutline,
                 isActive: hasDownvoted,
                 isUpvote: false,
+                label: '${widget.downCount}',
+                tooltip: '反对',
                 onTap: widget.isVoting
                     ? null
                     : () {
@@ -879,4 +933,30 @@ class _VotedTagsFloatingPanelState extends State<VotedTagsFloatingPanel> {
       ),
     );
   }
+}
+
+class _DashedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.25)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    double startX = 0;
+    const dashWidth = 4.0;
+    const dashSpace = 4.0;
+
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, size.height / 2),
+        Offset(startX + dashWidth, size.height / 2),
+        paint,
+      );
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -49,6 +49,12 @@ class MapTag extends Equatable {
   /// 难度类型 ('difficulty', 'tier')
   final String? difficultyType;
 
+  /// 所属分类ID列表
+  final List<int>? categoryIds;
+
+  /// 提交理由
+  final String? submitReason;
+
   const MapTag({
     required this.id,
     required this.name,
@@ -61,6 +67,8 @@ class MapTag extends Equatable {
     this.isPinned,
     this.isDifficulty,
     this.difficultyType,
+    this.categoryIds,
+    this.submitReason,
   });
 
   /// 将十六进制颜色字符串转换为 Color
@@ -105,6 +113,8 @@ class MapTag extends Equatable {
     isPinned,
     isDifficulty,
     difficultyType,
+    categoryIds,
+    submitReason,
   ];
 }
 

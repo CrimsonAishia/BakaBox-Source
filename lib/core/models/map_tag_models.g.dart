@@ -20,6 +20,10 @@ MapTag _$MapTagFromJson(Map<String, dynamic> json) => MapTag(
   isPinned: json['isPinned'] as bool?,
   isDifficulty: json['isDifficulty'] as bool?,
   difficultyType: json['difficultyType'] as String?,
+  categoryIds: (json['categoryIds'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList(),
+  submitReason: json['submitReason'] as String?,
 );
 
 Map<String, dynamic> _$MapTagToJson(MapTag instance) => <String, dynamic>{
@@ -34,6 +38,8 @@ Map<String, dynamic> _$MapTagToJson(MapTag instance) => <String, dynamic>{
   'isPinned': instance.isPinned,
   'isDifficulty': instance.isDifficulty,
   'difficultyType': instance.difficultyType,
+  'categoryIds': instance.categoryIds,
+  'submitReason': instance.submitReason,
 };
 
 const _$AuditStatusEnumMap = {

@@ -12,6 +12,7 @@ import 'map_tag_state.dart';
 class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   final MapTagApi _api = MapTagApi();
   MapTagBloc() : super(const MapTagState()) {
+    on<LoadCategories>(_onLoadCategories);
     on<LoadTagList>(_onLoadTagList);
     on<LoadMapTagList>(_onLoadMapTagList);
     on<LoadUserTags>(_onLoadUserTags);
@@ -31,6 +32,24 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   /// 提取错误信息
   String _getErrorMessage(Object e) {
     return ErrorUtils.getErrorMessage(e);
+  }
+
+  /// 加载标签分类列表
+  Future<void> _onLoadCategories(
+    LoadCategories event,
+    Emitter<MapTagState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingCategories: true, clearError: true));
+
+    try {
+      final categories = await _api.getCategoryList();
+      emit(state.copyWith(categories: categories, isLoadingCategories: false));
+    } catch (e) {
+      emit(
+        state.copyWith(error: _getErrorMessage(e), isLoadingCategories: false),
+      );
+      LogService.e('加载标签分类列表失败', e);
+    }
   }
 
   /// 加载全局标签列表
@@ -261,6 +280,8 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         mapName: mapName,
         color: event.color,
         address: state.serverAddress,
+        categoryIds: event.categoryIds,
+        reason: event.reason,
       );
       if (tag != null) {
         // 将新标签添加到列表（但可能还在审核中，不显示在全局列表）

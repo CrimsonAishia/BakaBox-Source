@@ -38,6 +38,7 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
   final _scrollController = ScrollController();
   bool _canScrollUp = false;
   bool _canScrollDown = false;
+  int _selectedTagFilter = -1; // -1: 全部, -2: 我的标签, 0: 未分类, >0: 具体分类ID
 
   @override
   void initState() {
@@ -74,6 +75,7 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
   }
 
   void _loadTagData() {
+    context.read<MapTagBloc>().add(const LoadCategories());
     context.read<MapTagBloc>().add(const LoadTagList());
 
     if (widget.serverAddress == null) {
@@ -108,6 +110,10 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapTagBloc = context.read<MapTagBloc>();
     final isApproved = tag.isApproved;
+    final isRejected = tag.isRejected;
+    final needsReason = isApproved || isRejected;
+    final reasonLabel = isApproved ? '变更理由' : '重新申请理由';
+    final reasonHint = isApproved ? '请输入申请变更的理由' : '请输入重新申请的理由';
 
     showDialog(
       context: context,
@@ -174,20 +180,22 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                       setDialogState(() => selectedColor = color),
                   enabled: true,
                 ),
-                if (isApproved) ...[
+                if (needsReason) ...[
                   const SizedBox(height: 16),
                   TextField(
                     controller: reasonController,
-                    maxLength: 100,
+                    maxLength: 50,
+                    maxLines: 4,
+                    minLines: 4,
                     style: TextStyle(
                       color: isDark ? Colors.white : AppColors.gray800,
                     ),
                     decoration: InputDecoration(
-                      labelText: '变更理由',
+                      labelText: reasonLabel,
                       labelStyle: TextStyle(
                         color: isDark ? Colors.white54 : AppColors.gray500,
                       ),
-                      hintText: '请输入申请变更的理由',
+                      hintText: reasonHint,
                       hintStyle: TextStyle(
                         color: isDark ? Colors.white38 : AppColors.gray500,
                       ),
@@ -228,8 +236,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                   return;
                 }
                 final reason = reasonController.text.trim();
-                if (isApproved && reason.isEmpty) {
-                  ToastUtils.showError(dialogContext, '变更理由不能为空');
+                if (needsReason && reason.isEmpty) {
+                  ToastUtils.showError(dialogContext, '$reasonLabel不能为空');
                   return;
                 }
                 Navigator.of(dialogContext).pop();
@@ -238,7 +246,7 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                     tagId: tag.id,
                     name: newName,
                     color: selectedColor,
-                    editReason: isApproved ? reason : null,
+                    editReason: needsReason ? reason : null,
                   ),
                 );
               },
@@ -292,7 +300,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
               const SizedBox(height: 16),
               TextField(
                 controller: reasonController,
-                maxLength: 100,
+                maxLength: 50,
+                maxLines: 4,
+                minLines: 4,
                 style: TextStyle(
                   color: isDark ? Colors.white : AppColors.gray800,
                 ),
@@ -442,10 +452,13 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
   void _showAddTagDialog() {
     if (!checkLogin()) return;
     final controller = TextEditingController();
+    final reasonController = TextEditingController();
     String? selectedColor;
+    List<int> selectedCategoryIds = [];
     bool autoVote = false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapTagBloc = context.read<MapTagBloc>();
+    final categories = mapTagBloc.state.categories;
 
     showDialog(
       context: context,
@@ -512,6 +525,84 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                       setDialogState(() => selectedColor = color),
                 ),
                 const SizedBox(height: 16),
+                if (categories.isNotEmpty) ...[
+                  Text(
+                    '所属分类',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white70 : AppColors.gray700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories.map((cat) {
+                      final isSelected = selectedCategoryIds.contains(cat.id);
+                      return FilterChip(
+                        label: Text(
+                          cat.name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.white70 : AppColors.gray700),
+                          ),
+                        ),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setDialogState(() {
+                            if (selected) {
+                              selectedCategoryIds.add(cat.id);
+                            } else {
+                              selectedCategoryIds.remove(cat.id);
+                            }
+                          });
+                        },
+                        selectedColor: AppColors.primary,
+                        checkmarkColor: Colors.white,
+                        backgroundColor: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.grey.shade100,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TextField(
+                  controller: reasonController,
+                  maxLength: 50,
+                  maxLines: 4,
+                  minLines: 4,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.gray800,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: '申请理由',
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.white54 : AppColors.gray500,
+                    ),
+                    hintText: '请解释标签作用/意义',
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white38 : AppColors.gray500,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     SizedBox(
@@ -561,12 +652,17 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                   ToastUtils.showError(dialogContext, '标签名称不能为空');
                   return;
                 }
+                final reason = reasonController.text.trim();
                 Navigator.of(dialogContext).pop();
                 mapTagBloc.add(
                   SubmitTag(
                     name: name,
                     color: selectedColor,
                     autoVote: autoVote,
+                    categoryIds: selectedCategoryIds.isNotEmpty
+                        ? selectedCategoryIds
+                        : null,
+                    reason: reason.isNotEmpty ? reason : null,
                   ),
                 );
               },
@@ -771,59 +867,285 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
   Widget _buildTagSearchBar(MapTagState state, bool isDark) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: TextField(
-        controller: _tagSearchController,
-        style: TextStyle(
-          fontSize: 13,
-          color: isDark ? Colors.white : AppColors.gray800,
-        ),
-        decoration: InputDecoration(
-          hintText: '搜索标签...',
-          hintStyle: TextStyle(
-            fontSize: 13,
-            color: isDark ? Colors.white38 : AppColors.gray400,
-          ),
-          prefixIcon: Icon(
-            MdiIcons.magnify,
-            size: 18,
-            color: isDark ? Colors.white38 : AppColors.gray400,
-          ),
-          suffixIcon: _tagSearchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    MdiIcons.close,
-                    size: 16,
-                    color: isDark ? Colors.white38 : AppColors.gray400,
+      height: 36,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _tagSearchController,
+              textAlignVertical: TextAlignVertical.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white : AppColors.gray800,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: '搜索标签...',
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white38 : AppColors.gray400,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 36,
+                  minHeight: 36,
+                ),
+                prefixIcon: Icon(
+                  MdiIcons.magnify,
+                  size: 18,
+                  color: isDark ? Colors.white38 : AppColors.gray400,
+                ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 36,
+                  minHeight: 36,
+                ),
+                suffixIcon: _tagSearchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          MdiIcons.close,
+                          size: 16,
+                          color: isDark ? Colors.white38 : AppColors.gray400,
+                        ),
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          _tagSearchController.clear();
+                        },
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 0,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.black12,
                   ),
-                  onPressed: () {
-                    _tagSearchController.clear();
-                  },
-                )
-              : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black12,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: const BorderSide(color: AppColors.primary),
+                ),
+                filled: true,
+                fillColor: isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.grey[100],
+              ),
             ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black12,
+          const SizedBox(width: 12),
+          _buildFilterDropdown(state, isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown(MapTagState state, bool isDark) {
+    String currentText = '全部标签';
+    if (_selectedTagFilter == -2) {
+      currentText = '我的标签';
+    } else if (_selectedTagFilter == 0) {
+      currentText = '未分类';
+    } else if (_selectedTagFilter > 0) {
+      final cat = state.categories
+          .where((c) => c.id == _selectedTagFilter)
+          .firstOrNull;
+      if (cat != null) currentText = cat.name;
+    }
+
+    final items = <DropdownMenuItem<int>>[
+      DropdownMenuItem(
+        value: -1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.all_inclusive,
+              size: 16,
+              color: _selectedTagFilter == -1
+                  ? AppColors.primary
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '全部标签',
+              style: TextStyle(
+                color: _selectedTagFilter == -1
+                    ? AppColors.primary
+                    : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+          ],
+        ),
+      ),
+      DropdownMenuItem(
+        value: -2,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: 16,
+              color: _selectedTagFilter == -2
+                  ? AppColors.primary
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '我的标签',
+              style: TextStyle(
+                color: _selectedTagFilter == -2
+                    ? AppColors.primary
+                    : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    for (final cat in state.categories) {
+      items.add(
+        DropdownMenuItem(
+          value: cat.id,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.category_outlined,
+                size: 16,
+                color: _selectedTagFilter == cat.id
+                    ? AppColors.primary
+                    : (isDark ? Colors.white70 : Colors.black54),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                cat.name,
+                style: TextStyle(
+                  color: _selectedTagFilter == cat.id
+                      ? AppColors.primary
+                      : (isDark ? Colors.white : Colors.black87),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    items.add(
+      DropdownMenuItem(
+        value: 0,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.device_unknown_outlined,
+              size: 16,
+              color: _selectedTagFilter == 0
+                  ? AppColors.primary
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '未分类',
+              style: TextStyle(
+                color: _selectedTagFilter == 0
+                    ? AppColors.primary
+                    : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05),
+                ]
+              : [Colors.white, Colors.grey.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? Colors.white24 : Colors.grey.shade300,
+          width: 1,
+        ),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: _selectedTagFilter,
+          isDense: true,
+          icon: Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: isDark ? Colors.white54 : Colors.black45,
             ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.primary),
+          dropdownColor: isDark ? AppColors.slate800 : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          elevation: 8,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white : Colors.black87,
           ),
-          filled: true,
-          fillColor: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.grey[100],
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedTagFilter = value;
+              });
+            }
+          },
+          selectedItemBuilder: (context) {
+            return items.map((item) {
+              return Container(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.filter_list,
+                      size: 16,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      currentText,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList();
+          },
+          items: items,
         ),
       ),
     );
@@ -835,51 +1157,52 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
       context.read<AuthBloc>().state.userInfo?.uid ?? '',
     );
 
-    final userGlobalTags = currentUserId != null
-        ? state.tagList
-              .where((t) => t.contributor?.userId == currentUserId)
-              .toList()
-        : <MapTag>[];
-    final otherGlobalTags = currentUserId != null
-        ? state.tagList
-              .where((t) => t.contributor?.userId != currentUserId)
-              .toList()
-        : state.tagList;
-
     final seen = <int>{};
-    List<MapTag> allUserTags = [
-      ...state.userTags,
-      ...userGlobalTags,
+    final allTags = <MapTag>[
+      ...state.userTags, // pending/rejected (always mine)
+      ...state.tagList, // approved (global)
     ].where((t) => seen.add(t.id)).toList();
 
-    List<MapTag> filteredUserTags = allUserTags.toList();
-    List<MapTag> filteredTagList = otherGlobalTags.toList();
-    if (query.isNotEmpty) {
-      filteredUserTags = allUserTags
-          .where((t) => t.name.toLowerCase().contains(query))
+    var filtered = allTags
+        .where((t) => query.isEmpty || t.name.toLowerCase().contains(query))
+        .toList();
+
+    if (_selectedTagFilter == -2) {
+      filtered = filtered.where((t) {
+        final isContributor =
+            currentUserId != null && t.contributor?.userId == currentUserId;
+        final isUserTag = state.userTags.any((ut) => ut.id == t.id);
+        return isContributor || isUserTag;
+      }).toList();
+    } else if (_selectedTagFilter > 0) {
+      filtered = filtered
+          .where((t) => t.categoryIds?.contains(_selectedTagFilter) ?? false)
           .toList();
-      filteredTagList = otherGlobalTags
-          .where((t) => t.name.toLowerCase().contains(query))
-          .toList();
+    } else if (_selectedTagFilter == 0) {
+      filtered = filtered.where((t) {
+        if (t.isDifficulty == true &&
+            (t.difficultyType == 'difficulty' || t.difficultyType == 'tier')) {
+          return false;
+        }
+        return t.categoryIds == null || t.categoryIds!.isEmpty;
+      }).toList();
     }
 
-    int byVoteCountDesc(MapTag a, MapTag b) {
+    filtered.sort((a, b) {
       final av = state.getMapTagVoteByTagId(a.id)?.voteCount ?? 0;
       final bv = state.getMapTagVoteByTagId(b.id)?.voteCount ?? 0;
       return bv.compareTo(av);
-    }
+    });
 
-    filteredTagList.sort(byVoteCountDesc);
-
-    final difficultyTags = filteredTagList
+    final difficultyTags = filtered
         .where(
           (t) => t.isDifficulty == true && t.difficultyType == 'difficulty',
         )
         .toList();
-    final tierTags = filteredTagList
+    final tierTags = filtered
         .where((t) => t.isDifficulty == true && t.difficultyType == 'tier')
         .toList();
-    final otherTags = filteredTagList
+    final normalTags = filtered
         .where(
           (t) =>
               !(t.isDifficulty == true &&
@@ -888,11 +1211,29 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
         )
         .toList();
 
+    final Map<int, List<MapTag>> tagsByCategory = {};
+    for (final cat in state.categories) {
+      tagsByCategory[cat.id] = [];
+    }
+    final List<MapTag> uncategorizedTags = [];
+
+    for (final tag in normalTags) {
+      if (tag.categoryIds != null && tag.categoryIds!.isNotEmpty) {
+        bool placed = false;
+        for (final cid in tag.categoryIds!) {
+          if (tagsByCategory.containsKey(cid)) {
+            tagsByCategory[cid]!.add(tag);
+            placed = true;
+          }
+        }
+        if (!placed) uncategorizedTags.add(tag);
+      } else {
+        uncategorizedTags.add(tag);
+      }
+    }
+
     final hasNoTags =
-        filteredUserTags.isEmpty &&
-        filteredTagList.isEmpty &&
-        !state.isLoadingTagList &&
-        !state.isLoadingUserTags;
+        filtered.isEmpty && !state.isLoadingTagList && !state.isLoadingUserTags;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateScrollIndicators();
@@ -910,7 +1251,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
             ),
             const SizedBox(height: 16),
             Text(
-              query.isNotEmpty ? '没有找到匹配的标签' : '暂无标签',
+              query.isNotEmpty || _selectedTagFilter != -1
+                  ? '没有找到匹配的标签'
+                  : '暂无标签',
               style: TextStyle(
                 fontSize: 16,
                 color: isDark ? Colors.white54 : AppColors.gray500,
@@ -918,7 +1261,9 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
             ),
             const SizedBox(height: 8),
             Text(
-              query.isNotEmpty ? '试试其他关键词吧' : '成为第一个贡献者吧！',
+              query.isNotEmpty || _selectedTagFilter != -1
+                  ? '试试其他条件吧'
+                  : '成为第一个贡献者吧！',
               style: TextStyle(
                 fontSize: 14,
                 color: isDark
@@ -937,31 +1282,11 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (filteredUserTags.isNotEmpty || state.isLoadingUserTags)
-            _buildTagSection(
-              title: '我的标签',
-              tags: filteredUserTags,
-              isLoading: state.isLoadingUserTags,
-              isDark: isDark,
-              state: state,
-              isUserSection: true,
-              mapName: widget.mapName,
-            ),
           if (state.isLoadingTagList)
             _buildTagSection(
               title: '全局标签',
               tags: const [],
               isLoading: true,
-              isDark: isDark,
-              state: state,
-              isUserSection: false,
-              mapName: widget.mapName,
-            )
-          else if (filteredTagList.isEmpty)
-            _buildTagSection(
-              title: '其他标签',
-              tags: const [],
-              isLoading: false,
               isDark: isDark,
               state: state,
               isUserSection: false,
@@ -988,10 +1313,21 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                 isUserSection: false,
                 mapName: widget.mapName,
               ),
-            if (otherTags.isNotEmpty)
+            for (final cat in state.categories)
+              if (tagsByCategory[cat.id]!.isNotEmpty)
+                _buildTagSection(
+                  title: cat.name,
+                  tags: tagsByCategory[cat.id]!,
+                  isLoading: false,
+                  isDark: isDark,
+                  state: state,
+                  isUserSection: false,
+                  mapName: widget.mapName,
+                ),
+            if (uncategorizedTags.isNotEmpty)
               _buildTagSection(
-                title: '其他标签',
-                tags: otherTags,
+                title: '未分类标签',
+                tags: uncategorizedTags,
                 isLoading: false,
                 isDark: isDark,
                 state: state,
@@ -1110,6 +1446,8 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
     final votedTags = allUniqueTags
         .where((t) => (state.getMapTagVoteByTagId(t.id)?.voteCount ?? 0) > 0)
         .toList();
+
+    if (votedTags.isEmpty) return const SizedBox.shrink();
 
     votedTags.sort((a, b) {
       final av = state.getMapTagVoteByTagId(a.id)?.voteCount ?? 0;

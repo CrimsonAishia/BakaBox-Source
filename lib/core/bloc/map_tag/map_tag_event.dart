@@ -66,10 +66,24 @@ class SubmitTag extends MapTagEvent {
   /// 审核通过后自动为该地图投一票
   final bool autoVote;
 
-  const SubmitTag({required this.name, this.color, this.autoVote = false});
+  final List<int>? categoryIds;
+  final String? reason;
+
+  const SubmitTag({
+    required this.name,
+    this.color,
+    this.autoVote = false,
+    this.categoryIds,
+    this.reason,
+  });
 
   @override
-  List<Object?> get props => [name, color, autoVote];
+  List<Object?> get props => [name, color, autoVote, categoryIds, reason];
+}
+
+/// 加载分类列表
+class LoadCategories extends MapTagEvent {
+  const LoadCategories();
 }
 
 /// 刷新标签列表
