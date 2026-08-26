@@ -326,11 +326,6 @@ class _AppliedCardState extends State<_AppliedCard> {
                       ),
                     ),
                   ),
-                  if (widget.config.keyBindings.isNotEmpty)
-                    common.Badge(
-                      label: widget.config.keyBindings.values.join(' / '),
-                      color: AppColors.primary,
-                    ),
                   const SizedBox(width: 8),
                   Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,

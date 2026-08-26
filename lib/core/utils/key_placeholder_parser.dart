@@ -3,8 +3,8 @@
 /// 占位符格式: {{KEY:标签名}}
 /// 例如: bind "{{KEY:跳投}}" "+jump; -attack"
 class KeyPlaceholderParser {
-  /// 占位符正则表达式
-  static final RegExp placeholderPattern = RegExp(r'\{\{KEY:([^}]+)\}\}');
+  /// 占位符正则表达式，支持带默认值格式: {{KEY:标签名|默认按键}}
+  static final RegExp placeholderPattern = RegExp(r'\{\{KEY:([^}|]+)(?:\|([^}]+))?\}\}');
 
   /// 解析配置脚本，提取所有占位符
   ///
@@ -16,11 +16,13 @@ class KeyPlaceholderParser {
 
     for (final match in matches) {
       final label = match.group(1)!;
+      final defaultKey = match.group(2);
       if (!seen.contains(label)) {
         seen.add(label);
         placeholders.add(
           KeyPlaceholder(
             label: label,
+            defaultKey: defaultKey,
             startIndex: match.start,
             endIndex: match.end,
           ),
@@ -48,38 +50,51 @@ class KeyPlaceholderParser {
   }) {
     return script.replaceAllMapped(placeholderPattern, (match) {
       final label = match.group(1)!;
+      final defaultKey = match.group(2);
       final key = keyBindings[label];
+      
+      // 如果用户绑定了按键，则优先使用绑定的按键
       if (key != null && key.isNotEmpty) {
         return key;
       }
+      
+      // 如果没有绑定，但存在默认按键，则使用默认按键
+      if (defaultKey != null && defaultKey.isNotEmpty) {
+        return defaultKey;
+      }
+      
       return showLabelOnMissing ? '[$label:未绑定]' : '';
     });
   }
 
-  /// 验证所有占位符是否都有对应的按键
+  /// 验证所有无默认值的占位符是否都有对应的按键
   ///
-  /// 返回 true 表示所有占位符都有对应的按键
+  /// 返回 true 表示验证通过
   static bool validate(String script, Map<String, String> keyBindings) {
-    final labels = getUniqueLabels(script);
-    for (final label in labels) {
-      if (!keyBindings.containsKey(label) || keyBindings[label]!.isEmpty) {
+    final placeholders = parse(script);
+    for (final p in placeholders) {
+      // 如果没有默认值，且用户没有绑定，则验证失败
+      if ((p.defaultKey == null || p.defaultKey!.isEmpty) && 
+          (!keyBindings.containsKey(p.label) || keyBindings[p.label]!.isEmpty)) {
         return false;
       }
     }
     return true;
   }
 
-  /// 获取缺失的按键绑定标签
+  /// 获取缺失的按键绑定标签（即没有绑定也没有默认值的）
   static List<String> getMissingBindings(
     String script,
     Map<String, String> keyBindings,
   ) {
-    final labels = getUniqueLabels(script);
-    return labels
+    final placeholders = parse(script);
+    return placeholders
         .where(
-          (label) =>
-              !keyBindings.containsKey(label) || keyBindings[label]!.isEmpty,
+          (p) =>
+              (p.defaultKey == null || p.defaultKey!.isEmpty) &&
+              (!keyBindings.containsKey(p.label) || keyBindings[p.label]!.isEmpty),
         )
+        .map((p) => p.label)
         .toList();
   }
 
@@ -103,28 +118,31 @@ class KeyPlaceholderParser {
 /// 按键占位符
 class KeyPlaceholder {
   final String label;
+  final String? defaultKey;
   final int startIndex;
   final int endIndex;
 
   const KeyPlaceholder({
     required this.label,
+    this.defaultKey,
     required this.startIndex,
     required this.endIndex,
   });
 
   @override
   String toString() =>
-      'KeyPlaceholder(label: $label, start: $startIndex, end: $endIndex)';
+      'KeyPlaceholder(label: $label, defaultKey: $defaultKey, start: $startIndex, end: $endIndex)';
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is KeyPlaceholder &&
         other.label == label &&
+        other.defaultKey == defaultKey &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex;
   }
 
   @override
-  int get hashCode => Object.hash(label, startIndex, endIndex);
+  int get hashCode => Object.hash(label, defaultKey, startIndex, endIndex);
 }

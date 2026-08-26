@@ -115,7 +115,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
 }
 
 /// 搜索框
-class SearchField extends StatelessWidget {
+class SearchField extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
 
@@ -126,12 +126,33 @@ class SearchField extends StatelessWidget {
   });
 
   @override
+  State<SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<SearchField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 36,
       child: TextField(
-        controller: controller,
+        controller: widget.controller,
         style: TextStyle(
           fontSize: 12,
           color: isDark ? Colors.white : const Color(0xFF1a1a2e),
@@ -147,15 +168,30 @@ class SearchField extends StatelessWidget {
             size: 18,
             color: isDark ? Colors.white38 : Colors.grey[400],
           ),
+          suffixIcon: widget.controller.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 16),
+                  color: isDark ? Colors.white38 : Colors.grey[400],
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    widget.controller.clear();
+                    widget.onChanged('');
+                  },
+                )
+              : null,
           filled: true,
           fillColor: isDark ? AppColors.slate700 : Colors.grey[100],
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: 16,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide.none,
           ),
         ),
-        onChanged: onChanged,
+        onChanged: widget.onChanged,
       ),
     );
   }

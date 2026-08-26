@@ -168,6 +168,7 @@ flutter:
     - assets/images/character_gallery/
     - assets/images/queue/
     - assets/images/guide/
+    - assets/images/key_binding/
     - assets/icons/
     - assets/icons/guide/
     - assets/audio/

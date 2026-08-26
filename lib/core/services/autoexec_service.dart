@@ -166,8 +166,19 @@ class AutoexecService {
         if (currentConfigId != null) {
           final keyBindings = <String, String>{};
           if (currentBindKey != null && currentBindKey != 'AUTO') {
-            // 旧格式：单个按键绑定
-            keyBindings['default'] = currentBindKey;
+            if (currentBindKey.contains('=')) {
+              // 新格式：多键绑定 (label=key,label=key)
+              final pairs = currentBindKey.split(',');
+              for (final pair in pairs) {
+                final parts = pair.split('=');
+                if (parts.length == 2) {
+                  keyBindings[parts[0]] = parts[1];
+                }
+              }
+            } else {
+              // 旧格式：单个按键绑定，默认标签为 '按键'
+              keyBindings['按键'] = currentBindKey;
+            }
           }
 
           blocks.add(
@@ -223,7 +234,11 @@ class AutoexecService {
     );
 
     // 生成按键标识（用于标记）
-    final keyLabel = keyBindings.isNotEmpty ? keyBindings.values.first : 'AUTO';
+    // 修改为支持多键格式：label1=key1,label2=key2
+    String keyLabel = 'AUTO';
+    if (keyBindings.isNotEmpty) {
+      keyLabel = keyBindings.entries.map((e) => '${e.key}=${e.value}').join(',');
+    }
 
     // 构建配置块
     final buffer = StringBuffer();

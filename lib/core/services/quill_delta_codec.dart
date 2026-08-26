@@ -23,7 +23,8 @@ class QuillDeltaCodec {
       }
     } catch (_) {
       // 解码失败，返回纯文本文档
-      return Document()..insert(0, encoded);
+      final text = encoded.endsWith('\n') ? encoded : '$encoded\n';
+      return Document()..insert(0, text);
     }
 
     return Document();

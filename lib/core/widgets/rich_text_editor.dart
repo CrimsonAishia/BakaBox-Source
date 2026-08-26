@@ -388,7 +388,7 @@ class RichTextEditorState extends State<RichTextEditor> {
           Row(
             children: [
               // 左侧：添加按钮 + 图片附件列表（仅 attachment 模式）
-              if (!isInlineMode)
+              if (!isInlineMode && widget.maxImages > 0)
                 Expanded(
                   child: SizedBox(
                     height: 48,
@@ -438,14 +438,14 @@ class RichTextEditorState extends State<RichTextEditor> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!isInlineMode)
+                  if (!isInlineMode && widget.maxImages > 0)
                     _buildStatusChip(
                       icon: Icons.image_rounded,
                       text: '$imageCount/${widget.maxImages}',
                       isWarning: isImageLimit,
                       isDark: isDark,
                     ),
-                  if (!isInlineMode) const SizedBox(height: 4),
+                  if (!isInlineMode && widget.maxImages > 0) const SizedBox(height: 4),
                   _buildStatusChip(
                     icon: null,
                     text: '$count/${widget.maxLength}',
@@ -1296,20 +1296,15 @@ class RichTextEditorState extends State<RichTextEditor> {
   Future<void> _handleDroppedImage(DataReader reader) async {
     try {
       Uint8List? imageData;
-      String extension = 'png';
 
       if (reader.canProvide(Formats.png)) {
         imageData = await _readDataFromReader(reader, Formats.png);
-        extension = 'png';
       } else if (reader.canProvide(Formats.jpeg)) {
         imageData = await _readDataFromReader(reader, Formats.jpeg);
-        extension = 'jpg';
       } else if (reader.canProvide(Formats.gif)) {
         imageData = await _readDataFromReader(reader, Formats.gif);
-        extension = 'gif';
       } else if (reader.canProvide(Formats.webp)) {
         imageData = await _readDataFromReader(reader, Formats.webp);
-        extension = 'webp';
       }
 
       if (imageData == null || imageData.isEmpty) return;

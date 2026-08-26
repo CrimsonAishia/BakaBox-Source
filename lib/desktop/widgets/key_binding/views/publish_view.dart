@@ -11,16 +11,14 @@ import '../../../../core/constants/credit_constants.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
 import '../components/form_widgets.dart';
+import '../components/floating_stepper.dart';
+import '../components/section_card.dart';
 import '../../login_dialog.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/rich_text_editor.dart';
+import '../../../../core/services/quill_delta_codec.dart';
 
 /// 发布视图
-///
-/// 包括：
-/// - 登录提示
-/// - 发布表单（名称、描述、分类、类型、脚本）
-/// - 积分检查
-/// - 按键占位符插入
 class PublishView extends StatefulWidget {
   const PublishView({super.key});
 
@@ -31,25 +29,66 @@ class PublishView extends StatefulWidget {
 class _PublishViewState extends State<PublishView> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _scriptCtrl = TextEditingController();
+  final _descCtrl = RichTextEditor.createController();
+  final _scriptCtrl = RichScriptEditingController();
+  final _scrollController = ScrollController();
+  final _section1Key = GlobalKey();
+  final _section2Key = GlobalKey();
+  final _section3Key = GlobalKey();
+
   int? _categoryId;
-  bool _needsKey = false;
+  int _activeStepIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _nameCtrl.addListener(() => setState(() {}));
+    _descCtrl.addListener(() => setState(() {}));
+    _scriptCtrl.addListener(() => setState(() {}));
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshUserCredits();
     });
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final offset = _scrollController.offset;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+
+    int newIndex = 0;
+    if (maxScroll > 0 && offset >= maxScroll - 20) {
+      // 触底时如果不够高，直接选中最后一个步骤
+      newIndex = 2;
+    } else if (offset > 600) {
+      newIndex = 2;
+    } else if (offset > 200) {
+      newIndex = 1;
+    }
+
+    if (newIndex != _activeStepIndex) {
+      setState(() => _activeStepIndex = newIndex);
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.dispose();
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _scriptCtrl.dispose();
     super.dispose();
+  }
+
+  void _scrollToSection(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void _refreshUserCredits() {
@@ -211,209 +250,143 @@ class _PublishViewState extends State<PublishView> {
     final credits = int.tryParse(authState.userInfo?.credits ?? '0') ?? 0;
     final hasEnoughCredits = credits >= CreditConstants.minCredits;
 
-    return BlocBuilder<KeyBindingBloc, KeyBindingState>(
-      builder: (context, state) {
-        if (_categoryId == null && state.categories.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && _categoryId == null) {
-              setState(() => _categoryId = state.categories.first.id);
-            }
-          });
+    return BlocConsumer<KeyBindingBloc, KeyBindingState>(
+      listenWhen: (previous, current) =>
+          previous.isPublishing && !current.isPublishing,
+      listener: (context, state) {
+        if (state.error == null) {
+          Navigator.of(context).pop();
         }
-
-        final placeholders = KeyPlaceholderParser.parse(_scriptCtrl.text);
+      },
+      builder: (context, state) {
+        final hasName = _nameCtrl.text.trim().isNotEmpty;
+        final hasDesc = _descCtrl.document.toPlainText().trim().isNotEmpty;
+        final hasScript = _scriptCtrl.text.trim().isNotEmpty;
+        final hasCategory = _categoryId != null;
 
         return Column(
           children: [
-            _buildHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ConfigFormInput(
-                        label: '配置名称',
-                        hint: '给配置起个名字',
-                        controller: _nameCtrl,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 12),
-                      ConfigFormInput(
-                        label: '配置描述',
-                        hint: '简单描述功能',
-                        controller: _descCtrl,
-                        maxLines: 2,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 16),
-                      // 分类选择
-                      _buildSectionLabel('选择分类'),
-                      const SizedBox(height: 8),
-                      CategoryChips(
-                        categories: state.categories,
-                        selectedId: _categoryId,
-                        onSelected: (id) => setState(() => _categoryId = id),
-                      ),
-                      const SizedBox(height: 16),
-                      // 类型选择
-                      _buildSectionLabel('配置类型'),
-                      const SizedBox(height: 8),
-                      ConfigTypeSelector(
-                        needsKey: _needsKey,
-                        onChanged: (v) => setState(() => _needsKey = v),
-                      ),
-                      const SizedBox(height: 16),
-                      // 脚本编辑
-                      _buildScriptHeader(),
-                      const SizedBox(height: 8),
-                      ScriptEditor(
-                        controller: _scriptCtrl,
-                        needsKey: _needsKey,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      if (_needsKey && placeholders.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        PlaceholderTagList(
-                          placeholders: placeholders,
-                          scriptController: _scriptCtrl,
-                          onChanged: () => setState(() {}),
-                        ),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 200),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionCard(
+                            cardKey: _section1Key,
+                            icon: MdiIcons.informationOutline,
+                            title: '1. 基本信息',
+                            subtitle: '好的名称和详细描述能帮助别人更好地了解这个配置。',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ConfigFormInput(
+                                  label: '配置名称',
+                                  hint: '给配置起个名字（建议简单明了）',
+                                  controller: _nameCtrl,
+                                  maxLength: 10,
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                                const SizedBox(height: 16),
+                                const SectionLabel('配置描述'),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  height: 240,
+                                  child: RichTextEditor(
+                                    controller: _descCtrl,
+                                    maxLength: 200,
+                                    maxImages: 0, // 禁止上传图片
+                                    hintText: '简单描述配置的用途和功能...',
+                                    compactMode: true,
+                                    draftId: null,
+                                    enableDraftManualSave: false,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SectionCard(
+                            cardKey: _section2Key,
+                            icon: MdiIcons.shapeOutline,
+                            title: '2. 分类与标签',
+                            subtitle: '选择最适合这个配置的分类。',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CategoryChips(
+                                  categories: state.categories,
+                                  selectedId: _categoryId,
+                                  onSelected: (id) =>
+                                      setState(() => _categoryId = id),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SectionCard(
+                            cardKey: _section3Key,
+                            icon: MdiIcons.codeJson,
+                            title: '3. 脚本编辑',
+                            subtitle: '在此编写你的配置代码。点击右上角按钮可以插入占位符，让用户能够自定义按键。',
+                            headerTrailing: InsertPlaceholderButton(
+                              onPressed: () =>
+                                  PlaceholderInsertHelper.showInsertDialog(
+                                    context,
+                                    scriptController: _scriptCtrl,
+                                    onInserted: () => setState(() {}),
+                                  ),
+                            ),
+                            child: ScriptEditor(
+                              controller: _scriptCtrl,
+                              needsKey: true,
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ], // closes children
+                      ), // closes Column
+                    ), // closes Form
+                  ), // closes SingleChildScrollView
+                  Positioned(
+                    bottom: 24,
+                    right: 24,
+                    child: FloatingStepper(
+                      activeIndex: _activeStepIndex,
+                      steps: const ['基本信息', '分类与标签', '脚本编辑'],
+                      completedSteps: [
+                        hasName && hasDesc,
+                        hasCategory,
+                        hasScript,
                       ],
-                    ],
+                      onStepTapped: (index) {
+                        if (index == 0) _scrollToSection(_section1Key);
+                        if (index == 1) _scrollToSection(_section2Key);
+                        if (index == 2) _scrollToSection(_section3Key);
+                      },
+                    ),
                   ),
-                ),
-              ),
-            ),
+                ], // closes Stack children
+              ), // closes Stack
+            ), // closes Expanded
             _buildBottomBar(state, hasEnoughCredits),
-          ],
-        );
+          ], // closes Column children
+        ); // closes Column
       },
-    );
-  }
-
-  Widget _buildSectionLabel(String text) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: isDark ? Colors.white54 : Colors.grey[600],
-      ),
-    );
-  }
-
-  Widget _buildScriptHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      children: [
-        Text(
-          '配置脚本',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.grey[600],
-          ),
-        ),
-        if (_needsKey) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.amber500.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              '需要按键绑定',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: AppColors.amber500,
-              ),
-            ),
-          ),
-        ],
-        const Spacer(),
-        if (_needsKey)
-          InsertPlaceholderButton(
-            onPressed: () => PlaceholderInsertHelper.showInsertDialog(
-              context,
-              scriptController: _scriptCtrl,
-              onInserted: () => setState(() {}),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary.withValues(alpha: 0.06),
-            isDark ? AppColors.slate800 : Colors.white,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              MdiIcons.rocketLaunchOutline,
-              size: 18,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '发布新配置',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1a1a2e),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '分享给社区',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.white54 : AppColors.gray500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildBottomBar(KeyBindingState state, bool hasEnoughCredits) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasName = _nameCtrl.text.trim().isNotEmpty;
-    final hasDesc = _descCtrl.text.trim().isNotEmpty;
+    final hasDesc = _descCtrl.document.toPlainText().trim().isNotEmpty;
     final hasScript = _scriptCtrl.text.trim().isNotEmpty;
     final hasCategory = _categoryId != null;
-    final hasPlaceholders = KeyPlaceholderParser.hasPlaceholders(
-      _scriptCtrl.text,
-    );
-    const double fixedHeight = 44.0;
+    const double fixedHeight = 48.0;
 
     String? hint;
     if (!hasEnoughCredits) {
@@ -426,21 +399,21 @@ class _PublishViewState extends State<PublishView> {
       hint = '请选择分类';
     } else if (!hasScript) {
       hint = '请输入配置脚本';
-    } else if (_needsKey && !hasPlaceholders) {
-      hint = '请在脚本中插入按键绑定';
     }
 
     final hintColor = !hasEnoughCredits ? AppColors.red500 : AppColors.amber500;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.slate700 : Colors.grey[50],
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppColors.slate600 : Colors.grey[200]!,
+        color: isDark ? AppColors.slate800 : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
-        ),
+        ],
       ),
       child: Row(
         children: [
@@ -448,7 +421,7 @@ class _PublishViewState extends State<PublishView> {
             Expanded(
               child: Container(
                 height: fixedHeight,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: hintColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -459,7 +432,7 @@ class _PublishViewState extends State<PublishView> {
                   children: [
                     Icon(
                       MdiIcons.informationOutline,
-                      size: 18,
+                      size: 20,
                       color: hintColor,
                     ),
                     const SizedBox(width: 10),
@@ -467,8 +440,8 @@ class _PublishViewState extends State<PublishView> {
                       child: Text(
                         hint,
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                           color: hintColor,
                         ),
                       ),
@@ -479,23 +452,33 @@ class _PublishViewState extends State<PublishView> {
             )
           else
             const Spacer(),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           SizedBox(
             height: fixedHeight,
             child: TextButton(
               onPressed: _clear,
-              child: const Text('清空', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+              ),
+              child: Text(
+                '清空内容',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white54 : Colors.grey[600],
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           SizedBox(
             height: fixedHeight,
             child: FilledButton.icon(
               onPressed: (state.isPublishing || hint != null) ? null : _submit,
               icon: state.isPublishing
                   ? const SizedBox(
-                      width: 14,
-                      height: 14,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.white,
@@ -503,16 +486,22 @@ class _PublishViewState extends State<PublishView> {
                     )
                   : Icon(
                       MdiIcons.rocketLaunchOutline,
-                      size: 14,
+                      size: 18,
                       color: Colors.white,
                     ),
               label: Text(
-                state.isPublishing ? '发布中' : '发布',
-                style: const TextStyle(fontSize: 12),
+                state.isPublishing ? '发布中...' : '发布配置',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
@@ -527,7 +516,6 @@ class _PublishViewState extends State<PublishView> {
     _scriptCtrl.clear();
     setState(() {
       _categoryId = null;
-      _needsKey = false;
     });
   }
 
@@ -543,10 +531,12 @@ class _PublishViewState extends State<PublishView> {
           KeyConfigCreateRequest(
             configId: configId,
             name: _nameCtrl.text.trim(),
-            description: _descCtrl.text.trim(),
+            description: QuillDeltaCodec.encode(_descCtrl.document),
             categoryId: _categoryId!,
             config: _scriptCtrl.text,
-            needsKeybind: _needsKey,
+            needsKeybind: KeyPlaceholderParser.hasPlaceholders(
+              _scriptCtrl.text,
+            ),
           ),
         ),
       );

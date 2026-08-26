@@ -24,6 +24,9 @@ class RichTextViewer extends StatefulWidget {
   /// 是否紧凑模式（减少间距）
   final bool compact;
 
+  /// 是否可滚动
+  final bool scrollable;
+
   /// 自定义 Embed 渲染器列表（如 BilibiliEmbedBuilder）
   final List<EmbedBuilder>? embedBuilders;
 
@@ -44,6 +47,7 @@ class RichTextViewer extends StatefulWidget {
     required this.content,
     this.textStyle,
     this.compact = false,
+    this.scrollable = true,
     this.embedBuilders,
     this.sliceForToc = false,
     this.onOutlineChanged,
@@ -278,6 +282,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
       controller: controller,
       scrollController: scrollController,
       config: QuillEditorConfig(
+        scrollable: widget.scrollable,
         showCursor: false,
         autoFocus: false,
         expands: false,

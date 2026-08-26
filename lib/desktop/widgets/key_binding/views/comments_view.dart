@@ -16,11 +16,22 @@ import '../../../../core/widgets/rich_text_editor.dart';
 import '../../../../core/widgets/rich_text_viewer.dart';
 import '../../../../core/constants/app_colors.dart';
 
-/// 配置评论视图（复用 issue 评论模式）
+/// 配置评论视图
 class ConfigCommentsView extends StatefulWidget {
   final KeyConfig config;
+  final Widget content;
+  final ScrollController scrollController;
+  final Widget? topIndicator;
+  final Widget? bottomIndicator;
 
-  const ConfigCommentsView({super.key, required this.config});
+  const ConfigCommentsView({
+    super.key,
+    required this.config,
+    required this.content,
+    required this.scrollController,
+    this.topIndicator,
+    this.bottomIndicator,
+  });
 
   @override
   State<ConfigCommentsView> createState() => _ConfigCommentsViewState();
@@ -29,7 +40,6 @@ class ConfigCommentsView extends StatefulWidget {
 class _ConfigCommentsViewState extends State<ConfigCommentsView> {
   final QuillController _commentController = RichTextEditor.createController();
   final GlobalKey<RichTextEditorState> _editorKey = GlobalKey();
-  final GlobalKey _commentInputKey = GlobalKey();
   List<String> _commentImageUrls = [];
 
   // 回复相关
@@ -38,6 +48,9 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
   final Map<int, GlobalKey> _commentKeys = {};
   // 高亮的评论 ID，用于跳转时进行动画提示
   int? _highlightedCommentId;
+
+  // 底栏展开状态
+  bool _expanded = false;
 
   @override
   void initState() {
@@ -56,7 +69,12 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       context.read<KeyBindingBloc>().add(
         KeyBindingLoadComments(configId: widget.config.id),
       );
-      setState(() => _replyToComment = null);
+      setState(() {
+        _replyToComment = null;
+        _expanded = false;
+        _commentController.clear();
+        _commentImageUrls = [];
+      });
     }
   }
 
@@ -66,28 +84,77 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     super.dispose();
   }
 
-  void _setReplyTo(KeyConfigComment comment) {
-    setState(() {
-      _replyToComment = comment;
-    });
-    // 滚动到评论输入区域
+  bool _isLoggedIn() => context.read<AuthBloc>().state.isAuthenticated;
+
+  String? _avatarUrl() {
+    final info = context.read<AuthBloc>().state.userInfo;
+    if (info == null || info.avatar.isEmpty) return null;
+    return info.avatar;
+  }
+
+  String _displayName() {
+    final info = context.read<AuthBloc>().state.userInfo;
+    return info?.username ?? '游客';
+  }
+
+  void _expand() {
+    if (!_isLoggedIn()) {
+      ToastUtils.showInfo(context, '登录后才能参与评论');
+      return;
+    }
+    if (_expanded) return;
+    setState(() => _expanded = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _commentInputKey.currentContext;
-      if (context != null) {
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: 0.1,
-        );
+      if (mounted) {
+        _editorKey.currentState?.focus();
+
+        if (widget.scrollController.hasClients) {
+          if (_replyToComment == null) {
+            // 如果是普通评论，展开时稍微向下滚动，确保能看到底部的内容
+            widget.scrollController.animateTo(
+              widget.scrollController.offset + 250,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+            );
+          } else {
+            // 如果是回复某人，确保被回复的评论在可视区域内
+            final commentCtx =
+                _commentKeys[_replyToComment!.id]?.currentContext;
+            if (commentCtx != null) {
+              Scrollable.ensureVisible(
+                commentCtx,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                alignment: 0.3,
+              );
+            }
+          }
+        }
       }
     });
   }
 
-  void _cancelReply() {
+  void _collapse() {
+    if (!_expanded) return;
+    setState(() => _expanded = false);
+    _editorKey.currentState?.unfocus();
+  }
+
+  void _handleCancel() {
+    _commentController.clear();
+    _editorKey.currentState?.clearImages();
+    _commentImageUrls = const [];
     setState(() {
       _replyToComment = null;
     });
+    _collapse();
+  }
+
+  void _setReplyTo(KeyConfigComment comment) {
+    setState(() {
+      _replyToComment = comment;
+    });
+    _expand();
   }
 
   @override
@@ -100,62 +167,89 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       listener: (context, state) {
         // 评论提交成功后清空编辑器和回复状态
         if (state.successMessage?.contains('评论') == true) {
-          _commentController.clear();
-          _editorKey.currentState?.clearImages();
-          setState(() {
-            _commentImageUrls = [];
-            _replyToComment = null;
-          });
+          _handleCancel(); // 提交成功后收起底栏
         }
       },
       builder: (context, state) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Stack(
           children: [
-            // 评论列表区域
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.slate800 : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? AppColors.slate700 : AppColors.gray200,
-                ),
-              ),
+            SingleChildScrollView(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(state),
-                  const SizedBox(height: 16),
-                  if (state.isLoadingComments)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (state.comments.isEmpty)
-                    _buildEmptyState()
-                  else
-                    ...state.comments.map(
-                      (comment) => _buildCommentItem(comment, state.comments),
-                    ),
+                  widget.content,
+                  const SizedBox(height: 32),
+                  // 评论列表区域
+                  _buildCommentList(state),
+                  // 预留底部空间，避免展开时底栏遮挡最后一条评论
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    height: _expanded ? 500 : 120, // 展开时预留更多高度
+                  ),
                 ],
               ),
             ),
-            // 评论输入区域（仅已通过的配置显示）
-            if (widget.config.isApproved) ...[
-              const SizedBox(height: 16),
-              Container(
-                key: _commentInputKey,
-                child: _buildCommentInput(state),
+            if (widget.topIndicator != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: widget.topIndicator!,
               ),
-            ],
+            // 底部悬浮评论框（仅已通过的配置显示）
+            if (widget.config.isApproved)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.bottomIndicator != null) widget.bottomIndicator!,
+                    _buildBottomComposerContainer(state),
+                  ],
+                ),
+              ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildCommentList(KeyBindingState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.slate800 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(state),
+          const SizedBox(height: 16),
+          if (state.isLoadingComments)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (state.comments.isEmpty)
+            _buildEmptyState()
+          else
+            ...state.comments.map(
+              (comment) => _buildCommentItem(comment, state.comments),
+            ),
+        ],
+      ),
     );
   }
 
@@ -327,7 +421,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                     _buildReplyQuote(replyTarget, isDark),
                   ],
                   const SizedBox(height: 8),
-                  // 使用 RichTextViewer 显示评论内容（与 issue 一致）
+                  // 使用 RichTextViewer 显示评论内容
                   RichTextViewer(
                     content: comment.content,
                     textStyle: TextStyle(
@@ -356,7 +450,6 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     );
   }
 
-  /// 回复按钮
   Widget _buildReplyButton(KeyConfigComment comment, bool isDark) {
     final isActive = _replyToComment?.id == comment.id;
     return Material(
@@ -364,7 +457,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       child: InkWell(
         onTap: () {
           if (isActive) {
-            _cancelReply();
+            _handleCancel();
           } else {
             _setReplyTo(comment);
           }
@@ -399,7 +492,6 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     );
   }
 
-  /// 被回复评论的引用块
   Widget _buildReplyQuote(KeyConfigComment replyTarget, bool isDark) {
     return InkWell(
       onTap: () async {
@@ -460,7 +552,246 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     );
   }
 
-  /// 评论输入区域上方的回复提示条
+
+  Widget _buildBottomComposerContainer(KeyBindingState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.slate900.withValues(alpha: 0.96)
+              : Colors.white.withValues(alpha: 0.97),
+          border: Border(
+            top: BorderSide(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : AppColors.gray200,
+              width: 1,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.bottomCenter,
+          child: _expanded
+              ? _buildExpandedComposer(state)
+              : _buildCollapsedComposer(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsedComposer() {
+    final isLoggedIn = _isLoggedIn();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hint = _replyToComment != null
+        ? '回复 @${_replyToComment!.authorName}...'
+        : (isLoggedIn ? '写下你的评论...' : '登录后参与评论');
+
+    return Padding(
+      key: const ValueKey('collapsed'),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: isDark ? AppColors.slate700 : AppColors.gray200,
+            backgroundImage: isLoggedIn && _avatarUrl() != null
+                ? bakaCachedImageProvider(_avatarUrl()!)
+                : null,
+            child: (!isLoggedIn || _avatarUrl() == null)
+                ? Text(
+                    _displayName()[0].toUpperCase(),
+                    style: const TextStyle(fontSize: 14),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _expand,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.slate800 : AppColors.gray100,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: isDark ? AppColors.slate700 : AppColors.gray200,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 16,
+                        color: isDark ? Colors.white38 : AppColors.gray400,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          hint,
+                          style: TextStyle(
+                            color: isDark ? Colors.white54 : AppColors.gray500,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (_replyToComment != null)
+                        IconButton(
+                          tooltip: '取消回复',
+                          padding: EdgeInsets.zero,
+                          iconSize: 16,
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
+                          onPressed: _handleCancel,
+                          icon: Icon(
+                            Icons.close,
+                            color: isDark ? Colors.white38 : AppColors.gray400,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: _expand,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              minimumSize: const Size(0, 44),
+            ),
+            child: Text(
+              _replyToComment != null ? '回复' : '发送',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandedComposer(KeyBindingState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      key: const ValueKey('expanded'),
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 12, bottom: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                _replyToComment != null ? '回复评论' : '发表评论',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : AppColors.gray700,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: _handleCancel,
+                icon: const Icon(Icons.close, size: 20),
+                color: isDark ? Colors.white38 : AppColors.gray400,
+                splashRadius: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 回复提示条
+          _buildReplyBar(isDark),
+          // 使用 RichTextEditor
+          SizedBox(
+            height: 200,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.slate800 : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.slate700 : AppColors.gray200,
+                ),
+              ),
+              child: RichTextEditor(
+                key: _editorKey,
+                controller: _commentController,
+                hintText: _replyToComment != null
+                    ? '回复 @${_replyToComment!.authorName}...'
+                    : '写下你的评论...',
+                maxLength: 200,
+                maxImages: 3,
+                compactMode: true,
+                draftId: null,
+                enableDraftManualSave: false,
+                onImagesChanged: (urls) =>
+                    setState(() => _commentImageUrls = urls),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: state.isSubmittingComment ? null : _handleCancel,
+                child: const Text('取消'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: state.isSubmittingComment ? null : _submitComment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: state.isSubmittingComment
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(_replyToComment != null ? '回复' : '发表评论'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReplyBar(bool isDark) {
     if (_replyToComment == null) return const SizedBox.shrink();
     return Container(
@@ -494,7 +825,9 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
           ),
           const Spacer(),
           InkWell(
-            onTap: _cancelReply,
+            onTap: () {
+              setState(() => _replyToComment = null);
+            },
             borderRadius: BorderRadius.circular(4),
             child: Padding(
               padding: const EdgeInsets.all(4),
@@ -510,122 +843,17 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     );
   }
 
-  Widget _buildCommentInput(KeyBindingState state) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final authState = context.watch<AuthBloc>().state;
-
-    if (!authState.isAuthenticated) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.slate800 : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? AppColors.slate700 : AppColors.gray200,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              MdiIcons.loginVariant,
-              size: 16,
-              color: isDark ? Colors.white54 : Colors.grey[600],
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '登录后可以发表评论',
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? Colors.white54 : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.slate800 : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.slate700 : AppColors.gray200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _replyToComment != null ? '回复评论' : '发表评论',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white70 : AppColors.gray700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // 回复提示条
-          _buildReplyBar(isDark),
-          // 使用 RichTextEditor（紧凑模式，适合侧边栏宽度）
-          SizedBox(
-            height: 300,
-            child: RichTextEditor(
-              key: _editorKey,
-              controller: _commentController,
-              hintText: _replyToComment != null
-                  ? '回复 ${_replyToComment!.authorName}...'
-                  : '写下你的评论...',
-              maxLength: 200,
-              maxImages: 3,
-              compactMode: true, // 紧凑模式，简化工具栏
-              draftId: null,
-              enableDraftManualSave: false,
-              onImagesChanged: (urls) =>
-                  setState(() => _commentImageUrls = urls),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              ElevatedButton(
-                onPressed: state.isSubmittingComment ? null : _submitComment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-                child: state.isSubmittingComment
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(_replyToComment != null ? '回复' : '发表评论'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   void _submitComment() {
+    if (!_isLoggedIn()) {
+      ToastUtils.showInfo(context, '登录后才能参与评论');
+      return;
+    }
     final plainText = _commentController.document.toPlainText().trim();
     if (plainText.isEmpty) {
       ToastUtils.showWarning(context, '请输入评论内容');
       return;
     }
 
-    // 使用 QuillDeltaCodec 编码富文本内容（与 issue 一致）
     final content = QuillDeltaCodec.encode(_commentController.document);
 
     context.read<KeyBindingBloc>().add(

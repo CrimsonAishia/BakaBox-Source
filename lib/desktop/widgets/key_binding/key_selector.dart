@@ -1,7 +1,6 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
+import 'components/key_capture_dialog.dart';
 
 /// 按键选择器组件
 ///
@@ -12,6 +11,9 @@ class KeySelector extends StatefulWidget {
 
   /// 当前选中的按键
   final String? selectedKey;
+
+  /// 默认按键（作者设定的）
+  final String? defaultKey;
 
   /// 按键选择回调
   final ValueChanged<String>? onKeySelected;
@@ -26,6 +28,7 @@ class KeySelector extends StatefulWidget {
     super.key,
     required this.label,
     this.selectedKey,
+    this.defaultKey,
     this.onKeySelected,
     this.onClear,
     this.disabled = false,
@@ -38,185 +41,28 @@ class KeySelector extends StatefulWidget {
 class _KeySelectorState extends State<KeySelector> {
   bool _isListening = false;
   final FocusNode _focusNode = FocusNode();
-  OverlayEntry? _overlayEntry;
 
   @override
   void dispose() {
-    _removeOverlay();
     _focusNode.dispose();
     super.dispose();
   }
 
-  /// 将 LogicalKeyboardKey 转换为 CS2 按键名称
-  String _keyToCS2Name(LogicalKeyboardKey key) {
-    // 特殊按键映射
-    final specialKeys = <LogicalKeyboardKey, String>{
-      LogicalKeyboardKey.space: 'SPACE',
-      LogicalKeyboardKey.enter: 'ENTER',
-      LogicalKeyboardKey.escape: 'ESCAPE',
-      LogicalKeyboardKey.tab: 'TAB',
-      LogicalKeyboardKey.backspace: 'BACKSPACE',
-      LogicalKeyboardKey.delete: 'DEL',
-      LogicalKeyboardKey.insert: 'INS',
-      LogicalKeyboardKey.home: 'HOME',
-      LogicalKeyboardKey.end: 'END',
-      LogicalKeyboardKey.pageUp: 'PGUP',
-      LogicalKeyboardKey.pageDown: 'PGDN',
-      LogicalKeyboardKey.arrowUp: 'UPARROW',
-      LogicalKeyboardKey.arrowDown: 'DOWNARROW',
-      LogicalKeyboardKey.arrowLeft: 'LEFTARROW',
-      LogicalKeyboardKey.arrowRight: 'RIGHTARROW',
-      LogicalKeyboardKey.shiftLeft: 'SHIFT',
-      LogicalKeyboardKey.shiftRight: 'RSHIFT',
-      LogicalKeyboardKey.controlLeft: 'CTRL',
-      LogicalKeyboardKey.controlRight: 'RCTRL',
-      LogicalKeyboardKey.altLeft: 'ALT',
-      LogicalKeyboardKey.altRight: 'RALT',
-      LogicalKeyboardKey.capsLock: 'CAPSLOCK',
-      LogicalKeyboardKey.numLock: 'NUMLOCK',
-      LogicalKeyboardKey.scrollLock: 'SCROLLLOCK',
-      LogicalKeyboardKey.f1: 'F1',
-      LogicalKeyboardKey.f2: 'F2',
-      LogicalKeyboardKey.f3: 'F3',
-      LogicalKeyboardKey.f4: 'F4',
-      LogicalKeyboardKey.f5: 'F5',
-      LogicalKeyboardKey.f6: 'F6',
-      LogicalKeyboardKey.f7: 'F7',
-      LogicalKeyboardKey.f8: 'F8',
-      LogicalKeyboardKey.f9: 'F9',
-      LogicalKeyboardKey.f10: 'F10',
-      LogicalKeyboardKey.f11: 'F11',
-      LogicalKeyboardKey.f12: 'F12',
-      LogicalKeyboardKey.numpad0: 'KP_0',
-      LogicalKeyboardKey.numpad1: 'KP_1',
-      LogicalKeyboardKey.numpad2: 'KP_2',
-      LogicalKeyboardKey.numpad3: 'KP_3',
-      LogicalKeyboardKey.numpad4: 'KP_4',
-      LogicalKeyboardKey.numpad5: 'KP_5',
-      LogicalKeyboardKey.numpad6: 'KP_6',
-      LogicalKeyboardKey.numpad7: 'KP_7',
-      LogicalKeyboardKey.numpad8: 'KP_8',
-      LogicalKeyboardKey.numpad9: 'KP_9',
-      LogicalKeyboardKey.numpadDecimal: 'KP_DEL',
-      LogicalKeyboardKey.numpadEnter: 'KP_ENTER',
-      LogicalKeyboardKey.numpadAdd: 'KP_PLUS',
-      LogicalKeyboardKey.numpadSubtract: 'KP_MINUS',
-      LogicalKeyboardKey.numpadMultiply: 'KP_MULTIPLY',
-      LogicalKeyboardKey.numpadDivide: 'KP_DIVIDE',
-      LogicalKeyboardKey.semicolon: 'SEMICOLON',
-      LogicalKeyboardKey.comma: ',',
-      LogicalKeyboardKey.period: '.',
-      LogicalKeyboardKey.slash: '/',
-      LogicalKeyboardKey.backquote: '`',
-      LogicalKeyboardKey.bracketLeft: '[',
-      LogicalKeyboardKey.bracketRight: ']',
-      LogicalKeyboardKey.backslash: '\\',
-      LogicalKeyboardKey.quote: "'",
-      LogicalKeyboardKey.minus: '-',
-      LogicalKeyboardKey.equal: '=',
-    };
-
-    if (specialKeys.containsKey(key)) {
-      return specialKeys[key]!;
-    }
-
-    // 字母和数字键 - 统一转为大写
-    final keyLabel = key.keyLabel;
-    if (keyLabel.isNotEmpty) {
-      return keyLabel.toUpperCase();
-    }
-
-    return key.debugName ?? 'UNKNOWN';
-  }
-
-  /// 将鼠标按键转换为 CS2 按键名称
-  String? _mouseButtonToCS2Name(int buttons) {
-    // buttons 是位掩码:
-    // kPrimaryButton = 1 (左键)
-    // kSecondaryButton = 2 (右键)
-    // kMiddleMouseButton = 4 (中键)
-    // kBackMouseButton = 8 (侧键1/后退)
-    // kForwardMouseButton = 16 (侧键2/前进)
-    if (buttons & kMiddleMouseButton != 0) {
-      return 'MOUSE3';
-    } else if (buttons & kBackMouseButton != 0) {
-      return 'MOUSE4';
-    } else if (buttons & kForwardMouseButton != 0) {
-      return 'MOUSE5';
-    }
-    return null; // 左键和右键忽略
-  }
-
-  void _showOverlay() {
-    _removeOverlay();
-    _overlayEntry = OverlayEntry(
-      builder: (context) => _KeyBindingOverlay(
-        onCancel: () => _stopListening(clearBinding: true),
-        onKeyEvent: _handleKeyEvent,
-        onMouseEvent: _handleMouseEvent,
-        onScrollEvent: _handleScrollEvent,
-      ),
-    );
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  void _startListening() {
+  Future<void> _startListening() async {
     if (widget.disabled) return;
     setState(() => _isListening = true);
-    _showOverlay();
-  }
 
-  void _stopListening({bool clearBinding = false}) {
-    _removeOverlay();
-    setState(() => _isListening = false);
-    if (clearBinding) {
-      widget.onClear?.call();
-    }
-  }
+    final keyName = await KeyCaptureDialog.show(
+      context,
+      title: '绑定按键',
+      subtitle: '请按下您想要绑定到【${widget.label}】的物理按键...',
+    );
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (!_isListening) return;
-    if (event is! KeyDownEvent) return;
-
-    // ESC 键取消绑定并清空
-    if (event.logicalKey == LogicalKeyboardKey.escape) {
-      _stopListening(clearBinding: true);
-      return;
-    }
-
-    final keyName = _keyToCS2Name(event.logicalKey);
-    widget.onKeySelected?.call(keyName);
-    _stopListening();
-  }
-
-  void _handleMouseEvent(PointerDownEvent event) {
-    if (!_isListening) return;
-
-    final keyName = _mouseButtonToCS2Name(event.buttons);
-    if (keyName != null) {
-      widget.onKeySelected?.call(keyName);
-      _stopListening();
-    }
-    // 左键和右键不处理，让用户可以点击取消
-  }
-
-  void _handleScrollEvent(PointerScrollEvent event) {
-    if (!_isListening) return;
-
-    // 判断滚动方向
-    if (event.scrollDelta.dy < 0) {
-      // 向上滚动
-      widget.onKeySelected?.call('MWHEELUP');
-      _stopListening();
-    } else if (event.scrollDelta.dy > 0) {
-      // 向下滚动
-      widget.onKeySelected?.call('MWHEELDOWN');
-      _stopListening();
+    if (mounted) {
+      setState(() => _isListening = false);
+      if (keyName != null && keyName.isNotEmpty) {
+        widget.onKeySelected?.call(keyName);
+      }
     }
   }
 
@@ -224,10 +70,21 @@ class _KeySelectorState extends State<KeySelector> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final hasKey = widget.selectedKey != null && widget.selectedKey!.isNotEmpty;
+    final hasSelectedKey =
+        widget.selectedKey != null && widget.selectedKey!.isNotEmpty;
+    final hasDefaultKey =
+        widget.defaultKey != null && widget.defaultKey!.isNotEmpty;
+    final hasKey = hasSelectedKey || hasDefaultKey;
+    final displayKey = hasSelectedKey
+        ? widget.selectedKey!
+        : (hasDefaultKey ? widget.defaultKey! : '点击选择按键');
+    final bindingPrefix = hasSelectedKey
+        ? '当前绑定：'
+        : (hasDefaultKey ? '默认：' : '');
 
     return GestureDetector(
-      onTap: _isListening ? _stopListening : _startListening,
+      onTap: _startListening,
+
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -270,21 +127,21 @@ class _KeySelectorState extends State<KeySelector> {
                     children: [
                       if (hasKey) ...[
                         Text(
-                          '绑定至：',
+                          bindingPrefix,
                           style: TextStyle(
                             fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.5,
-                            ),
+                            color: hasSelectedKey
+                                ? AppColors.primary
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.5,
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 4),
                       ],
                       Expanded(
                         child: Text(
-                          _isListening
-                              ? '按下任意键...'
-                              : (hasKey ? widget.selectedKey! : '点击选择按键'),
+                          _isListening ? '正在唤起捕获...' : displayKey,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: hasKey
@@ -292,11 +149,13 @@ class _KeySelectorState extends State<KeySelector> {
                                 : FontWeight.normal,
                             color: _isListening
                                 ? theme.colorScheme.primary
-                                : (hasKey
+                                : (hasSelectedKey
                                       ? AppColors.primary
-                                      : theme.colorScheme.onSurface.withValues(
-                                          alpha: 0.5,
-                                        )),
+                                      : (hasDefaultKey
+                                            ? theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.7)
+                                            : theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.5))),
                           ),
                         ),
                       ),
@@ -305,8 +164,8 @@ class _KeySelectorState extends State<KeySelector> {
                 ],
               ),
             ),
-            // 按键图标或清除按钮
-            if (hasKey && !_isListening)
+            // 按键图标或清除按钮（只有在用户自定义了按键时才显示清除按钮，恢复默认）
+            if (hasSelectedKey && !_isListening)
               IconButton(
                 icon: Icon(
                   Icons.close,
@@ -327,101 +186,6 @@ class _KeySelectorState extends State<KeySelector> {
                     : theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 按键绑定全局遮罩
-class _KeyBindingOverlay extends StatelessWidget {
-  final VoidCallback onCancel;
-  final void Function(KeyEvent) onKeyEvent;
-  final void Function(PointerDownEvent) onMouseEvent;
-  final void Function(PointerScrollEvent) onScrollEvent;
-
-  const _KeyBindingOverlay({
-    required this.onCancel,
-    required this.onKeyEvent,
-    required this.onMouseEvent,
-    required this.onScrollEvent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: KeyboardListener(
-        focusNode: FocusNode()..requestFocus(),
-        onKeyEvent: onKeyEvent,
-        autofocus: true,
-        child: Listener(
-          onPointerDown: (event) {
-            // 左键点击取消
-            if (event.buttons == 1) {
-              onCancel();
-            } else {
-              onMouseEvent(event);
-            }
-          },
-          onPointerSignal: (event) {
-            if (event is PointerScrollEvent) {
-              onScrollEvent(event);
-            }
-          },
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.6),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 48,
-                  vertical: 32,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.keyboard_alt_outlined,
-                      size: 48,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '请按下要绑定的按键',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '按 ESC 或点击任意位置取消',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
