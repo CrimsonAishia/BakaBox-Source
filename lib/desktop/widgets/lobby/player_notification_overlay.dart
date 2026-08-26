@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// 单个玩家通知项（CS2 风格：黑底白字）
@@ -17,6 +18,12 @@ class _PlayerNotificationItem extends StatefulWidget {
   /// 通知ID
   final String notificationId;
 
+  /// 停留时间（动态变化）
+  final Duration displayDuration;
+
+  /// 是否被鼠标悬停
+  final bool isHovered;
+
   /// 回调：当动画完成时通知父组件移除此通知
   final void Function(String id) onExpire;
 
@@ -26,6 +33,8 @@ class _PlayerNotificationItem extends StatefulWidget {
     this.targetMapName,
     this.sourceMapName,
     required this.notificationId,
+    required this.displayDuration,
+    required this.isHovered,
     required this.onExpire,
   });
 
@@ -38,6 +47,7 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+  Timer? _timer;
 
   /// CS2 风格配色
   /// 背景：半透明黑色（约60%）
@@ -70,9 +80,32 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
 
     _controller.forward();
 
-    // 3秒后开始淡出
-    Future.delayed(const Duration(milliseconds: 3000), () {
-      if (mounted) {
+    _controller.forward();
+    _startTimer(widget.displayDuration);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlayerNotificationItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 悬停状态发生改变
+    if (widget.isHovered != oldWidget.isHovered) {
+      if (widget.isHovered) {
+        _timer?.cancel(); // 悬停时暂停计时
+      } else {
+        _startTimer(widget.displayDuration); // 移开时重新开始计时
+      }
+    } else if (!widget.isHovered &&
+        widget.displayDuration < oldWidget.displayDuration) {
+      // 只有在没被悬停时，才因为队列积压更新定时器
+      _startTimer(widget.displayDuration);
+    }
+  }
+
+  void _startTimer(Duration duration) {
+    if (widget.isHovered) return; // 防御性判断
+    _timer?.cancel();
+    _timer = Timer(duration, () {
+      if (mounted && _controller.status != AnimationStatus.reverse) {
         _controller.reverse().then((_) {
           if (mounted) {
             widget.onExpire(widget.notificationId);
@@ -84,6 +117,7 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -140,77 +174,80 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 320),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: _backgroundColor,
-          borderRadius: BorderRadius.circular(2),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 类型符号
-            SizedBox(
-              width: 14,
-              child: Text(
-                _typeSymbol,
-                style: TextStyle(
-                  color: _typeColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 3), // 将外层的 padding 移到这里，使其一同缩放
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 320),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: _backgroundColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 类型符号
+              SizedBox(
+                width: 14,
+                child: Text(
+                  _typeSymbol,
+                  style: TextStyle(
+                    color: _typeColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-            // 玩家名（带颜色）
-            Flexible(
-              child: Text(
-                widget.playerName,
-                style: TextStyle(
-                  color: _typeColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 6),
+              // 玩家名（带颜色）
+              Flexible(
+                child: Text(
+                  widget.playerName,
+                  style: TextStyle(
+                    color: _typeColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
               ),
-            ),
-            const SizedBox(width: 4),
-            // 动作文字（白色）
-            Text(
-              _actionText,
-              style: const TextStyle(
-                color: _textColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            // 传送目标（teleport 离开）
-            if (widget.type == 2 && widget.targetMapName != null) ...[
               const SizedBox(width: 4),
+              // 动作文字（白色）
               Text(
-                '→ ${widget.targetMapName}',
+                _actionText,
                 style: const TextStyle(
                   color: _textColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
               ),
-            ],
-            // 传送来源（teleportIn 进入）
-            if (widget.type == 3 && widget.sourceMapName != null) ...[
-              const SizedBox(width: 4),
-              Text(
-                '← ${widget.sourceMapName}',
-                style: const TextStyle(
-                  color: _textColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
+              // 传送目标（teleport 离开）
+              if (widget.type == 2 && widget.targetMapName != null) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '→ ${widget.targetMapName}',
+                  style: const TextStyle(
+                    color: _textColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
+              ],
+              // 传送来源（teleportIn 进入）
+              if (widget.type == 3 && widget.sourceMapName != null) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '← ${widget.sourceMapName}',
+                  style: const TextStyle(
+                    color: _textColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -220,13 +257,24 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
 /// 包装器类：为 _PlayerNotificationItem 提供 key
 class _NotificationItemWrapper extends StatelessWidget {
   final dynamic notification;
+  final int queueLength;
+  final bool isHovered;
   final void Function(String id) onExpire;
 
   const _NotificationItemWrapper({
     super.key,
     required this.notification,
+    required this.queueLength,
+    required this.isHovered,
     required this.onExpire,
   });
+
+  Duration get _displayDuration {
+    if (queueLength > 15) return const Duration(milliseconds: 300);
+    if (queueLength > 8) return const Duration(milliseconds: 600);
+    if (queueLength > 5) return const Duration(milliseconds: 1000);
+    return const Duration(milliseconds: 3000);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -236,6 +284,8 @@ class _NotificationItemWrapper extends StatelessWidget {
       targetMapName: notification.targetMapName as String?,
       sourceMapName: notification.sourceMapName as String?,
       notificationId: notification.id as String,
+      displayDuration: _displayDuration,
+      isHovered: isHovered,
       onExpire: onExpire,
     );
   }
@@ -245,7 +295,7 @@ class _NotificationItemWrapper extends StatelessWidget {
 /// CS2 风格：黑底白字，右上角队列显示
 /// 机制：新的从顶部插入，旧的通知被推下去并淡出
 /// 注意：此组件会被嵌入到 Positioned.fill 中，所以不需要 Positioned
-class PlayerNotificationOverlay extends StatelessWidget {
+class PlayerNotificationOverlay extends StatefulWidget {
   /// 通知列表
   final List<dynamic> notifications;
 
@@ -259,15 +309,20 @@ class PlayerNotificationOverlay extends StatelessWidget {
   });
 
   @override
+  State<PlayerNotificationOverlay> createState() =>
+      _PlayerNotificationOverlayState();
+}
+
+class _PlayerNotificationOverlayState extends State<PlayerNotificationOverlay> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (notifications.isEmpty) {
+    if (widget.notifications.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 只显示最新的5条通知
-    final visibleNotifications = notifications.take(5).toList();
-
-    // 从屏幕顶部约 20% 的高度开始显示，贴着最右边
+    // 从屏幕顶部约 10% 的高度开始显示，贴着最右边
     final screenHeight = MediaQuery.of(context).size.height;
     final topOffset = screenHeight * 0.10;
 
@@ -276,19 +331,26 @@ class PlayerNotificationOverlay extends StatelessWidget {
       alignment: Alignment.topRight,
       child: Padding(
         padding: EdgeInsets.only(top: topOffset, right: 0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: visibleNotifications.map((notification) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: _NotificationItemWrapper(
-                key: ValueKey(notification.id),
-                notification: notification,
-                onExpire: onNotificationExpire,
-              ),
-            );
-          }).toList(),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            // 渲染时限制最多可见 10 条，通过动态时长快速滚走积压条目
+            children: widget.notifications.take(10).map((notification) {
+              return Align(
+                alignment: Alignment.centerRight,
+                child: _NotificationItemWrapper(
+                  key: ValueKey(notification.id),
+                  notification: notification,
+                  queueLength: widget.notifications.length,
+                  isHovered: _isHovered,
+                  onExpire: widget.onNotificationExpire,
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

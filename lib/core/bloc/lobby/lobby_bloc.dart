@@ -2187,10 +2187,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               playerName: displayName,
               createdAt: DateTime.now(),
             );
-            final updatedNotifications = [
+            var updatedNotifications = [
               ...state.playerNotifications,
               newNotification,
-            ].take(20).toList();
+            ];
+            if (updatedNotifications.length > 50) {
+              updatedNotifications = updatedNotifications.sublist(
+                updatedNotifications.length - 50,
+              );
+            }
 
             // 跨地图用户也需要同步到 allOnlineUsers（面板显示全服用户）
             if (state.allOnlineUsers.isNotEmpty) {
@@ -2255,10 +2260,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           }
         }
 
-        // 更新通知列表（限制最多保留20条）
-        final updatedNotifications = newNotification != null
-            ? [...state.playerNotifications, newNotification].take(20).toList()
-            : state.playerNotifications;
+        // 更新通知列表（FIFO队列，上限50条）
+        var updatedNotifications = state.playerNotifications;
+        if (newNotification != null) {
+          updatedNotifications = [
+            ...state.playerNotifications,
+            newNotification,
+          ];
+          if (updatedNotifications.length > 50) {
+            updatedNotifications = updatedNotifications.sublist(
+              updatedNotifications.length - 50,
+            );
+          }
+        }
 
         // 同步更新 allOnlineUsers：将新加入的用户插入列表（如果面板已打开）
         final updatedAllOnlineUsers = _upsertUserInList(
@@ -2367,11 +2381,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           );
         }
 
-        // 更新通知列表（限制最多保留20条）
-        final updatedNotifications = [
+        // 更新通知列表（FIFO队列，上限50条）
+        var updatedNotifications = [
           ...state.playerNotifications,
           newNotification,
-        ].take(20).toList();
+        ];
+        if (updatedNotifications.length > 50) {
+          updatedNotifications = updatedNotifications.sublist(
+            updatedNotifications.length - 50,
+          );
+        }
 
         // 同步更新 allOnlineUsers：移除离开的用户（如果只是传送，更新 mapId 即可）
         List<LobbyUser> updatedAllOnlineUsers = state.allOnlineUsers;
@@ -4824,11 +4843,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       }
     }
 
-    // 合并通知（限制最多 20 条，保留最新的）
+    // 合并通知（FIFO队列，上限50条）
     var updatedNotifications = [...state.playerNotifications, ...notifications];
-    if (updatedNotifications.length > 20) {
+    if (updatedNotifications.length > 50) {
       updatedNotifications = updatedNotifications.sublist(
-        updatedNotifications.length - 20,
+        updatedNotifications.length - 50,
       );
     }
 
