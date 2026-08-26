@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
@@ -277,155 +278,7 @@ class RichScriptEditingController extends TextEditingController {
   }
 }
 
-class PlaceholderDeletePopover extends StatefulWidget {
-  final VoidCallback onCancel;
-  final VoidCallback onDelete;
-
-  const PlaceholderDeletePopover({
-    super.key,
-    required this.onCancel,
-    required this.onDelete,
-  });
-
-  static OverlayEntry? _currentEntry;
-
-  static void show({
-    required BuildContext context,
-    required BuildContext anchorContext,
-    required VoidCallback onDelete,
-  }) {
-    hide(); // Ensure any existing popover is closed
-
-    final renderBox = anchorContext.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    final offset = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
-
-    _currentEntry = OverlayEntry(
-      builder: (ctx) => Stack(
-        children: [
-          // Barrier
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: hide,
-              child: Container(color: Colors.black.withValues(alpha: 0.1)),
-            ),
-          ),
-          // Popover positioned below the anchor
-          Positioned(
-            left: offset.dx + size.width / 2 - 80, // Center horizontally
-            top: offset.dy + size.height,
-            child: Material(
-              color: Colors.transparent,
-              child: PlaceholderDeletePopover(
-                onCancel: hide,
-                onDelete: () {
-                  hide();
-                  onDelete();
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    Overlay.of(context).insert(_currentEntry!);
-  }
-
-  static void hide() {
-    _currentEntry?.remove();
-    _currentEntry = null;
-  }
-
-  @override
-  State<PlaceholderDeletePopover> createState() =>
-      _PlaceholderDeletePopoverState();
-}
-
-class _PlaceholderDeletePopoverState extends State<PlaceholderDeletePopover> {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        CustomPaint(
-          size: const Size(16, 8),
-          painter: TrianglePainter(
-            color: AppColors.red500.withValues(alpha: 0.8),
-          ),
-        ),
-        Container(
-          width: 160,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.red500.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 16,
-                spreadRadius: 2,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '删除此占位符？',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: widget.onCancel,
-                    style: TextButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                    ),
-                    child: const Text(
-                      '取消',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: widget.onDelete,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.red500,
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                    ),
-                    child: const Text(
-                      '删除',
-                      style: TextStyle(fontSize: 12, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
+// Removed PlaceholderDeletePopover as requested
 
 class _PlaceholderCard extends StatefulWidget {
   final String label;
@@ -476,23 +329,116 @@ class _PlaceholderCardState extends State<_PlaceholderCard>
         ? '${widget.label} (${widget.defaultKey})'
         : widget.label;
 
-    final content = Row(
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 240),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(MdiIcons.keyboardOutline, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              displayText,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+                color: textColor,
+                height: 1.2,
+                shadows: [
+                  Shadow(
+                    color: textColor.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    void showConfirmDialog() {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      showDialog(
+        context: context,
+        builder: (dialogCtx) {
+          return AlertDialog(
+            backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text(
+              '确认删除占位符',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            content: Text(
+              '确认在脚本中删除占位符【${widget.label}】吗？',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: Text(
+                  '取消',
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.grey,
+                  ),
+                ),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(dialogCtx).pop();
+                  widget.onDelete();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.red500,
+                ),
+                child: const Text('确认删除'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    final contentWithAction = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(MdiIcons.keyboardOutline, size: 14, color: textColor),
-        const SizedBox(width: 4),
-        Text(
-          displayText,
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 13,
-            color: textColor,
-            height: 1.2,
-            shadows: [
-              Shadow(color: textColor.withValues(alpha: 0.5), blurRadius: 4),
-            ],
+        content,
+        if (!widget.readOnly) ...[
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () {
+              if (_isHovered) {
+                showConfirmDialog();
+              }
+            },
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 150),
+              opacity: _isHovered ? 1.0 : 0.0,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: AppColors.red500.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 12,
+                  color: AppColors.red500,
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ],
     );
 
@@ -504,7 +450,7 @@ class _PlaceholderCardState extends State<_PlaceholderCard>
         borderRadius: BorderRadius.circular(6),
         // Removed border here, relying on the gradient border
       ),
-      child: content,
+      child: contentWithAction,
     );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -572,22 +518,7 @@ class _PlaceholderCardState extends State<_PlaceholderCard>
       ),
     );
 
-    if (widget.readOnly) return cardContent;
-
-    return Builder(
-      builder: (anchorContext) {
-        return GestureDetector(
-          onTap: () {
-            PlaceholderDeletePopover.show(
-              context: context,
-              anchorContext: anchorContext,
-              onDelete: widget.onDelete,
-            );
-          },
-          child: cardContent,
-        );
-      },
-    );
+    return cardContent;
   }
 }
 
@@ -817,111 +748,124 @@ class _ScriptEditorState extends State<ScriptEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: 300,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.slate900 : const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? AppColors.slate700 : Colors.black87,
+        Listener(
+          onPointerSignal: (event) {
+            if (event is PointerScrollEvent) {
+              GestureBinding.instance.pointerSignalResolver.register(event, (
+                PointerSignalEvent e,
+              ) {
+                // Consume the event to prevent parent scroll views from scrolling
+              });
+            }
+          },
+          child: Container(
+            height: 350,
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.slate900 : const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? AppColors.slate700 : Colors.black87,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.slate800 : const Color(0xFF252526),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  ),
-                  border: Border(
-                    right: BorderSide(
-                      color: isDark ? AppColors.slate700 : Colors.black54,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.slate800
+                        : const Color(0xFF252526),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    border: Border(
+                      right: BorderSide(
+                        color: isDark ? AppColors.slate700 : Colors.black54,
+                      ),
                     ),
                   ),
-                ),
-                padding: const EdgeInsets.only(top: 24),
-                child: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: widget.controller,
-                  builder: (context, value, child) {
-                    final lineCount = value.text.split('\n').length;
-                    return ListView.builder(
-                      controller: _lineScrollController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: lineCount > 1000 ? 1000 : lineCount,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Text(
-                            '${index + 1}',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 14,
-                              height: 2.2,
-                              letterSpacing: 1.0,
-                              color: isDark ? Colors.white38 : Colors.grey[600],
+                  padding: const EdgeInsets.only(top: 0),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: widget.controller,
+                    builder: (context, value, child) {
+                      final lineCount = value.text.split('\n').length;
+                      return ListView.builder(
+                        controller: _lineScrollController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemExtent:
+                            30.8, // Must match fontSize(14) * height(2.2)
+                        itemCount: lineCount > 1000 ? 1000 : lineCount,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Text(
+                              '${index + 1}',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 14,
+                                height: 2.2,
+                                letterSpacing: 1.0,
+                                color: isDark
+                                    ? Colors.white38
+                                    : Colors.grey[600],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              Expanded(
-                child: TextFormField(
-                  controller: widget.controller,
-                  scrollController: _textScrollController,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'monospace',
-                    color: Color(0xFFF8F8F2),
-                    height: 2.2,
-                    letterSpacing: 1.0,
+                          );
+                        },
+                      );
+                    },
                   ),
-                  decoration: const InputDecoration(
-                    hintText: '输入脚本，例如：bind "v" "+jump"；点击右上角按钮将 v 替换为自定义按键',
-                    hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
-                    border: InputBorder.none,
-                    isDense: true,
-                    filled: false,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 24,
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller: widget.controller,
+                    scrollController: _textScrollController,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'monospace',
+                      color: Color(0xFFF8F8F2),
+                      height: 2.2,
+                      letterSpacing: 1.0,
                     ),
+                    decoration: const InputDecoration(
+                      hintText: '输入脚本，例如：bind "v" "+jump"；点击右上角按钮将 v 替换为自定义按键',
+                      hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                      border: InputBorder.none,
+                      isDense: true,
+                      filled: false,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
+                    ),
+                    onChanged: widget.onChanged,
+                    validator:
+                        widget.validator ??
+                        (v) {
+                          if (v?.trim().isEmpty == true) return '必填';
+                          if (!widget.needsKey &&
+                              KeyPlaceholderParser.hasPlaceholders(v!)) {
+                            return '当前类型不允许使用自定义按键，请删除占位符或更改类型';
+                          }
+                          return null;
+                        },
                   ),
-                  onChanged: widget.onChanged,
-                  validator:
-                      widget.validator ??
-                      (v) {
-                        if (v?.trim().isEmpty == true) return '必填';
-                        if (widget.needsKey &&
-                            !KeyPlaceholderParser.hasPlaceholders(v!)) {
-                          return '需要至少一个自定义按键占位符，请点击上方按钮插入';
-                        }
-                        if (!widget.needsKey &&
-                            KeyPlaceholderParser.hasPlaceholders(v!)) {
-                          return '当前类型不允许使用自定义按键，请删除占位符或更改类型';
-                        }
-                        return null;
-                      },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (widget.needsKey) ...[

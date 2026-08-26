@@ -18,6 +18,6 @@ class KeyConfigApi {
   Future<void> useConfig(int id) async { throw UnimplementedError('Stub'); }
   Future<KeyConfigCommentListResponse> getComments(int configId, {int page = 1, int pageSize = 20}) async { throw UnimplementedError('Stub'); }
   Future<KeyConfigComment?> addComment(int configId, String content, {List<String>? images, int? replyToId}) async { throw UnimplementedError('Stub'); }
+  Future<KeyConfigChangeRequestListResponse?> getMyChangeRequests({int page = 1, int pageSize = 20, int? configId}) async { throw UnimplementedError('Stub'); }
   Future<void> cancelChangeRequest(int configId) async { throw UnimplementedError('Stub'); }
-  Future<KeyConfigChangeRequestListResponse?> getMyChangeRequests({int page = 1, int pageSize = 20}) async { throw UnimplementedError('Stub'); }
 }

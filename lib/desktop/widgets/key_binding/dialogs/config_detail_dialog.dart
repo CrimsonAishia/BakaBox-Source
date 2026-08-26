@@ -14,7 +14,7 @@ import '../components/vote_widgets.dart';
 import '../views/comments_view.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/widgets/rich_text_viewer.dart';
-import '../components/key_capture_popover.dart';
+import '../components/key_capture_dialog.dart';
 import '../../common_scroll_indicator.dart';
 
 class ConfigDetailDialog extends StatefulWidget {
@@ -842,18 +842,17 @@ class _ConfigDetailDialogState extends State<ConfigDetailDialog> {
                 boundKey: boundKey,
                 isDark: isDark,
                 onTap: (anchorContext) {
-                  KeyCapturePopover.show(
-                    context: context,
-                    anchorContext: anchorContext,
-                    label: label,
-                    onKeyCaptured: (keyName) {
-                      if (context.mounted) {
-                        context.read<KeyBindingBloc>().add(
-                          KeyBindingSetKeyBinding(label: label, key: keyName),
-                        );
-                      }
-                    },
-                  );
+                  KeyCaptureDialog.show(
+                    context,
+                    title: '绑定按键',
+                    subtitle: '请按下你想绑定到【$label】的按键',
+                  ).then((keyName) {
+                    if (keyName != null && context.mounted) {
+                      context.read<KeyBindingBloc>().add(
+                        KeyBindingSetKeyBinding(label: label, key: keyName),
+                      );
+                    }
+                  });
                 },
                 onClear: () {
                   context.read<KeyBindingBloc>().add(
@@ -1132,41 +1131,54 @@ class _InlineKeyCardState extends State<_InlineKeyCard>
     final borderColor = hasKey ? baseColor : baseColor.withValues(alpha: 0.8);
     final shadowColor = baseColor.withValues(alpha: _isHovered ? 0.6 : 0.3);
 
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          hasKey ? widget.boundKey!.toUpperCase() : '此处需要设置按键',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-            color: textColor,
-            height: 1.2,
-            shadows: [
-              Shadow(color: textColor.withValues(alpha: 0.5), blurRadius: 4),
-            ],
-          ),
-        ),
-        if (hasKey) ...[
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: () {
-              // Prevent tap from bubbling to the card
-              widget.onClear();
-            },
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: AppColors.red500.withValues(
-                  alpha: 0.2,
-                ), // Distinct red color for clear button
-                shape: BoxShape.circle,
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 240),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              hasKey ? widget.boundKey!.toUpperCase() : '此处需要设置按键',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+                color: textColor,
+                height: 1.2,
+                shadows: [
+                  Shadow(
+                    color: textColor.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
-              child: const Icon(Icons.close, size: 12, color: AppColors.red500),
             ),
           ),
+          if (hasKey) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () {
+                // Prevent tap from bubbling to the card
+                widget.onClear();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: AppColors.red500.withValues(
+                    alpha: 0.2,
+                  ), // Distinct red color for clear button
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 12,
+                  color: AppColors.red500,
+                ),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
 
     final innerCard = AnimatedContainer(

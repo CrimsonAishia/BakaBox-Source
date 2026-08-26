@@ -90,6 +90,7 @@ class KeyConfig extends Equatable {
   final String? editReason;
   @JsonKey(defaultValue: false)
   final bool hasPendingChange;
+  final String? pendingChangeType; // 'edit' or 'delete'
 
   const KeyConfig({
     required this.id,
@@ -121,6 +122,7 @@ class KeyConfig extends Equatable {
     this.commentCount = 0,
     this.editReason,
     this.hasPendingChange = false,
+    this.pendingChangeType,
   });
 
   /// 获取投票类型枚举
@@ -173,6 +175,7 @@ class KeyConfig extends Equatable {
     int? commentCount,
     Object? editReason = _sentinel,
     bool? hasPendingChange,
+    Object? pendingChangeType = _sentinel,
   }) {
     return KeyConfig(
       id: id ?? this.id,
@@ -206,6 +209,9 @@ class KeyConfig extends Equatable {
           ? this.editReason
           : editReason as String?,
       hasPendingChange: hasPendingChange ?? this.hasPendingChange,
+      pendingChangeType: pendingChangeType == _sentinel
+          ? this.pendingChangeType
+          : pendingChangeType as String?,
     );
   }
 
@@ -240,6 +246,7 @@ class KeyConfig extends Equatable {
     commentCount,
     editReason,
     hasPendingChange,
+    pendingChangeType,
   ];
 }
 

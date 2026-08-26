@@ -49,6 +49,7 @@ const Map<String, String> keyBindingImageAssets = {
   '购买护甲': 'assets/images/key_binding/kevlar.webp',
 
   '开启第三人称': 'assets/images/key_binding/thirdperson.webp',
+  '三段式第三人称': 'assets/images/key_binding/thirdperson.webp',
   '开关地图滤镜': 'assets/images/key_binding/postprocess.webp',
   '开关地图特效': 'assets/images/key_binding/drawparticles.webp',
   '画面亮度调整': 'assets/images/key_binding/gamma.webp',

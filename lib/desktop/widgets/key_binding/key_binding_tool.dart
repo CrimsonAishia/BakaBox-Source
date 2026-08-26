@@ -279,15 +279,12 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
                                       KeyBindingState
                                     >(
                                       builder: (context, keyBindingState) {
-                                        final showMyConfigs =
-                                            keyBindingState.showMyConfigs;
                                         return Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            _buildMyConfigsToggle(
-                                              context,
-                                              showMyConfigs,
-                                              isDark,
+                                            _ModernCategoryDropdown(
+                                              state: keyBindingState,
+                                              isDark: isDark,
                                             ),
                                             const SizedBox(width: 12),
                                             _buildPublishButton(),
@@ -379,73 +376,6 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
                   '发布',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMyConfigsToggle(
-    BuildContext context,
-    bool isSelected,
-    bool isDark,
-  ) {
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : (isDark ? AppColors.slate900 : Colors.white),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : (isDark ? AppColors.slate700 : Colors.grey[300]!),
-        ),
-        boxShadow: isSelected
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () {
-            context.read<KeyBindingBloc>().add(
-              KeyBindingSetShowMyConfigs(!isSelected),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isSelected ? Icons.people_outline : Icons.person_outline,
-                  size: 16,
-                  color: isSelected
-                      ? AppColors.primary
-                      : (isDark ? Colors.white70 : Colors.black87),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  isSelected ? '切换：所有配置' : '切换：我的配置',
-                  style: TextStyle(
-                    color: isSelected
-                        ? AppColors.primary
-                        : (isDark ? Colors.white70 : Colors.black87),
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -588,6 +518,334 @@ class _TabButtonState extends State<_TabButton> {
                   : (_hovering
                         ? (widget.isDark ? Colors.white : Colors.black87)
                         : (widget.isDark ? Colors.white54 : Colors.black54)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModernCategoryDropdown extends StatefulWidget {
+  final KeyBindingState state;
+  final bool isDark;
+
+  const _ModernCategoryDropdown({required this.state, required this.isDark});
+
+  @override
+  State<_ModernCategoryDropdown> createState() =>
+      _ModernCategoryDropdownState();
+}
+
+class _ModernCategoryDropdownState extends State<_ModernCategoryDropdown> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+  bool _hovering = false;
+
+  @override
+  void dispose() {
+    if (_isOpen) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+    }
+    super.dispose();
+  }
+
+  void _toggleDropdown() {
+    if (_isOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
+  }
+
+  void _openDropdown() {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final isDark = widget.isDark;
+
+    _overlayEntry = OverlayEntry(
+      builder: (overlayContext) {
+        return Stack(
+          children: [
+            GestureDetector(
+              onTap: _closeDropdown,
+              behavior: HitTestBehavior.translucent,
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.transparent,
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, size.height + 8),
+              child: Material(
+                color: Colors.transparent,
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  builder: (animContext, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, -10 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 160,
+                    constraints: const BoxConstraints(maxHeight: 360),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.slate800 : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shrinkWrap: true,
+                        children: [
+                          _buildDropdownItem(
+                            title: '全部配置',
+                            icon: Icons.apps,
+                            isSelected:
+                                !widget.state.showMyConfigs &&
+                                widget.state.categoryFilter == null,
+                            onTap: () {
+                              context.read<KeyBindingBloc>().add(
+                                const KeyBindingSetCategoryFilter(null),
+                              );
+                              context.read<KeyBindingBloc>().add(
+                                const KeyBindingSetShowMyConfigs(false),
+                              );
+                              _closeDropdown();
+                            },
+                          ),
+                          _buildDropdownItem(
+                            title: '我的配置',
+                            icon: Icons.person_outline,
+                            isSelected: widget.state.showMyConfigs,
+                            onTap: () {
+                              context.read<KeyBindingBloc>().add(
+                                const KeyBindingSetCategoryFilter(null),
+                              );
+                              context.read<KeyBindingBloc>().add(
+                                const KeyBindingSetShowMyConfigs(true),
+                              );
+                              _closeDropdown();
+                            },
+                          ),
+                          if (widget.state.categories.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Text(
+                                '分类',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ),
+                            ...widget.state.categories.map(
+                              (c) => _buildDropdownItem(
+                                title: c.name,
+                                icon: Icons.category_outlined,
+                                isSelected:
+                                    !widget.state.showMyConfigs &&
+                                    widget.state.categoryFilter == c.id,
+                                onTap: () {
+                                  context.read<KeyBindingBloc>().add(
+                                    const KeyBindingSetShowMyConfigs(false),
+                                  );
+                                  context.read<KeyBindingBloc>().add(
+                                    KeyBindingSetCategoryFilter(c.id),
+                                  );
+                                  _closeDropdown();
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() {
+      _isOpen = true;
+    });
+  }
+
+  void _closeDropdown() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) {
+      setState(() {
+        _isOpen = false;
+      });
+    }
+  }
+
+  Widget _buildDropdownItem({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = widget.isDark;
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: 0.1)
+            : Colors.transparent,
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? Colors.white70 : Colors.black87),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark ? Colors.white : Colors.black87),
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check, size: 16, color: AppColors.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String currentLabel = '全部配置';
+    IconData currentIcon = Icons.apps;
+    if (widget.state.showMyConfigs) {
+      currentLabel = '我的配置';
+      currentIcon = Icons.person_outline;
+    } else if (widget.state.categoryFilter != null) {
+      final category = widget.state.categories
+          .cast<KeyConfigCategory?>()
+          .firstWhere(
+            (c) => c?.id == widget.state.categoryFilter,
+            orElse: () => null,
+          );
+      if (category != null) {
+        currentLabel = category.name;
+        currentIcon = Icons.category_outlined;
+      }
+    }
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: _toggleDropdown,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: _isOpen || _hovering
+                  ? (widget.isDark ? AppColors.slate700 : Colors.grey[200])
+                  : (widget.isDark ? AppColors.slate900 : Colors.white),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: _isOpen
+                    ? AppColors.primary.withValues(alpha: 0.5)
+                    : (widget.isDark ? AppColors.slate700 : Colors.grey[300]!),
+              ),
+              boxShadow: _isOpen
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  currentIcon,
+                  size: 16,
+                  color: _isOpen
+                      ? AppColors.primary
+                      : (widget.isDark ? Colors.white70 : Colors.black87),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  currentLabel,
+                  style: TextStyle(
+                    color: _isOpen
+                        ? AppColors.primary
+                        : (widget.isDark ? Colors.white70 : Colors.black87),
+                    fontWeight: _isOpen ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                AnimatedRotation(
+                  turns: _isOpen ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: _isOpen
+                        ? AppColors.primary
+                        : (widget.isDark ? Colors.white54 : Colors.black54),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

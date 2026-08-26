@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/signed_network_image.dart';
 import '../../guide/community_guide/community_guide_fallback.dart';
+import '../../../../core/utils/toast_utils.dart';
 import '../../../../core/utils/time_utils.dart';
 import '../../../../core/widgets/rich_text_viewer.dart';
 import '../../../../core/services/quill_delta_codec.dart';
@@ -34,11 +35,13 @@ class KeyBindingCard extends StatefulWidget {
   final bool hasPendingChange;
   final bool isRejected;
   final String? auditRemark;
+  final String? pendingChangeType;
 
   final VoidCallback? onEdit;
   final void Function(String? reason)? onDelete;
   final VoidCallback? onCancelAudit;
   final VoidCallback? onCancelApply;
+  final VoidCallback? onShowHistory;
 
   const KeyBindingCard({
     super.key,
@@ -65,10 +68,12 @@ class KeyBindingCard extends StatefulWidget {
     this.hasPendingChange = false,
     this.isRejected = false,
     this.auditRemark,
+    this.pendingChangeType,
     this.onEdit,
     this.onDelete,
     this.onCancelAudit,
     this.onCancelApply,
+    this.onShowHistory,
   });
 
   @override
@@ -416,14 +421,21 @@ class _KeyBindingCardState extends State<KeyBindingCard> {
                                       if (widget.onEdit != null ||
                                           widget.onDelete != null ||
                                           widget.onCancelAudit != null)
-                                        _KeyBindingCardMoreMenu(
-                                          isApproved: widget.isApproved,
-                                          isPending: widget.isPending,
-                                          hasPendingChange:
-                                              widget.hasPendingChange,
-                                          onEdit: widget.onEdit,
-                                          onDelete: widget.onDelete,
-                                          onCancelAudit: widget.onCancelAudit,
+                                        Visibility(
+                                          visible: false,
+                                          maintainSize: true,
+                                          maintainAnimation: true,
+                                          maintainState: true,
+                                          child: _KeyBindingCardMoreMenu(
+                                            isApproved: widget.isApproved,
+                                            isPending: widget.isPending,
+                                            hasPendingChange:
+                                                widget.hasPendingChange,
+                                            onEdit: widget.onEdit,
+                                            onDelete: widget.onDelete,
+                                            onCancelAudit: widget.onCancelAudit,
+                                            onShowHistory: widget.onShowHistory,
+                                          ),
                                         ),
                                     ] else if (widget.authorName != null) ...[
                                       Flexible(
@@ -479,7 +491,30 @@ class _KeyBindingCardState extends State<KeyBindingCard> {
                   ],
                 ),
                 if (widget.isApplied)
-                  Positioned.fill(child: _buildHoverOverlay(isDark)),
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      ignoring: !_hovering,
+                      child: _buildHoverOverlay(isDark),
+                    ),
+                  ),
+                if (widget.isOwner &&
+                    (widget.onEdit != null ||
+                        widget.onDelete != null ||
+                        widget.onCancelAudit != null))
+                  Positioned(
+                    bottom: 14,
+                    right: 14,
+                    child: _KeyBindingCardMoreMenu(
+                      isApproved: widget.isApproved,
+                      isPending: widget.isPending,
+                      hasPendingChange: widget.hasPendingChange,
+                      onEdit: widget.onEdit,
+                      onDelete: widget.onDelete,
+                      onCancelAudit: widget.onCancelAudit,
+                      onShowHistory: widget.onShowHistory,
+                      forceLightIcon: widget.isApplied && _hovering,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -492,54 +527,79 @@ class _KeyBindingCardState extends State<KeyBindingCard> {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
       opacity: _hovering ? 1.0 : 0.0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.black.withValues(alpha: 0.75)
-              : Colors.black.withValues(alpha: 0.65),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.appliedBindings != null &&
-                  widget.appliedBindings!.isNotEmpty) ...[
-                const Text(
-                  '当前绑定',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.appliedBindings!.entries
-                      .map((e) => '${e.key}: ${e.value}')
-                      .join(', '),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              ElevatedButton.icon(
-                onPressed: () {
-                  widget.onCancelApply?.call();
-                },
-                icon: const Icon(Icons.close, size: 16),
-                label: const Text('取消应用'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.red500,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                ),
+      child: Stack(
+        children: [
+          IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.75)
+                    : Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
+            ),
           ),
-        ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.appliedBindings != null &&
+                    widget.appliedBindings!.isNotEmpty) ...[
+                  const Text(
+                    '当前绑定',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.appliedBindings!.entries
+                        .map((e) => '${e.key}: ${e.value}')
+                        .join(', '),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => widget.onTap(),
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      label: const Text('打开'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        widget.onCancelApply?.call();
+                      },
+                      icon: const Icon(Icons.close, size: 16),
+                      label: const Text('取消绑定'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.red500,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -610,39 +670,29 @@ class _KeyBindingCardState extends State<KeyBindingCard> {
   }
 
   Widget _buildAuditStatusBar() {
-    if (widget.hasPendingChange) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: const BoxDecoration(
-          color: Color(0xFFEAB308),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
-          ),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule, size: 14, color: Colors.white),
-            SizedBox(width: 6),
-            Text(
-              '变更审核中',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    String statusText;
+    Color statusColor;
+    IconData statusIcon;
 
-    final statusColor = widget.isPending
-        ? const Color(0xFFEAB308)
-        : const Color(0xFFEF4444);
-    final statusIcon = widget.isPending ? Icons.schedule : Icons.error_outline;
-    final statusText = widget.isPending ? '审核中' : '未通过';
+    if (widget.hasPendingChange) {
+      if (widget.pendingChangeType == 'delete') {
+        statusText = '删除审核中';
+        statusColor = const Color(0xFFEF4444); // Red
+        statusIcon = Icons.delete_outline;
+      } else {
+        statusText = '修改审核中';
+        statusColor = const Color(0xFF3B82F6); // Blue
+        statusIcon = Icons.edit_outlined;
+      }
+    } else if (widget.isPending) {
+      statusText = '提交审核中';
+      statusColor = const Color(0xFFEAB308); // Yellow
+      statusIcon = Icons.schedule;
+    } else {
+      statusText = '未通过';
+      statusColor = const Color(0xFFEF4444); // Red
+      statusIcon = Icons.error_outline;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -693,17 +743,21 @@ class _KeyBindingCardMoreMenu extends StatelessWidget {
   final bool isApproved;
   final bool isPending;
   final bool hasPendingChange;
+  final bool forceLightIcon;
   final VoidCallback? onEdit;
   final void Function(String? reason)? onDelete;
   final VoidCallback? onCancelAudit;
+  final VoidCallback? onShowHistory;
 
   const _KeyBindingCardMoreMenu({
     required this.isApproved,
     required this.isPending,
     required this.hasPendingChange,
+    this.forceLightIcon = false,
     this.onEdit,
     this.onDelete,
     this.onCancelAudit,
+    this.onShowHistory,
   });
 
   @override
@@ -711,7 +765,16 @@ class _KeyBindingCardMoreMenu extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final menuBg = isDark ? AppColors.slate800 : Colors.white;
     final menuTextColor = isDark ? Colors.white : Colors.black87;
-    final iconColor = isDark ? Colors.white54 : Colors.grey[600];
+
+    final iconColor = forceLightIcon
+        ? Colors.white
+        : (isDark ? Colors.white54 : Colors.grey[600]);
+
+    final btnBgColor = forceLightIcon
+        ? Colors.white.withValues(alpha: 0.15)
+        : (isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.03));
 
     final showCancel = isPending || hasPendingChange;
 
@@ -719,9 +782,7 @@ class _KeyBindingCardMoreMenu extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.03),
+        color: btnBgColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: PopupMenuButton<String>(
@@ -796,15 +857,40 @@ class _KeyBindingCardMoreMenu extends StatelessWidget {
                   ],
                 ),
               ),
+            if (onShowHistory != null)
+              PopupMenuItem<String>(
+                value: 'history',
+                height: 36,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.history, size: 14, color: menuTextColor),
+                    const SizedBox(width: 8),
+                    Text(
+                      '历史记录',
+                      style: TextStyle(color: menuTextColor, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
           ];
         },
         onSelected: (value) {
+          if (value == 'edit' || value == 'delete') {
+            if (hasPendingChange) {
+              ToastUtils.showInfo(context, '当前已有待审核的变更申请，请先取消或等待审核完成');
+              return;
+            }
+          }
+
           if (value == 'edit') {
             onEdit?.call();
           } else if (value == 'delete') {
             _confirmDelete(context, menuBg, menuTextColor);
           } else if (value == 'cancel_audit') {
             onCancelAudit?.call();
+          } else if (value == 'history') {
+            onShowHistory?.call();
           }
         },
       ),

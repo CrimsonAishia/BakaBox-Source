@@ -40,6 +40,7 @@ KeyConfig _$KeyConfigFromJson(Map<String, dynamic> json) => KeyConfig(
   commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
   editReason: json['editReason'] as String?,
   hasPendingChange: json['hasPendingChange'] as bool? ?? false,
+  pendingChangeType: json['pendingChangeType'] as String?,
 );
 
 Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
@@ -72,6 +73,7 @@ Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
   'commentCount': instance.commentCount,
   'editReason': instance.editReason,
   'hasPendingChange': instance.hasPendingChange,
+  'pendingChangeType': instance.pendingChangeType,
 };
 
 const _$KeyConfigAuditStatusEnumMap = {

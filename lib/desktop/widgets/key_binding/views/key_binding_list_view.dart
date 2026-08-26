@@ -7,6 +7,7 @@ import '../../../../core/bloc/key_binding/key_binding_state.dart';
 import '../../../../core/bloc/key_binding/key_binding_event.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../components/key_binding_card.dart';
+import '../components/config_history_dialog.dart';
 import '../components/key_capture_dialog.dart';
 import '../data/basic_configs.dart';
 import '../data/key_binding_assets.dart';
@@ -303,6 +304,7 @@ class MarketTabView extends StatelessWidget {
               isApproved: cfg.isApproved,
               isPending: cfg.isPending,
               hasPendingChange: cfg.hasPendingChange,
+              pendingChangeType: cfg.pendingChangeType,
               isRejected: cfg.isRejected,
               auditRemark: cfg.auditRemark,
               onTap: () {
@@ -333,6 +335,12 @@ class MarketTabView extends StatelessWidget {
               onCancelApply: () {
                 context.read<KeyBindingBloc>().add(
                   KeyBindingRemoveAppliedConfig(cfg.configId),
+                );
+              },
+              onShowHistory: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => ConfigHistoryDialog(configId: cfg.id),
                 );
               },
             );

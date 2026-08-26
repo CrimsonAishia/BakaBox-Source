@@ -213,7 +213,8 @@ class _EditViewState extends State<EditView> {
                             icon: MdiIcons.codeJson,
                             iconColor: AppColors.violet500,
                             title: '3. 脚本编辑',
-                            subtitle: '修改配置代码。',
+                            subtitle:
+                                '修改配置代码。如果需要让多个按键联动（绑定同一按键），只需将它们的按键名称设为一致即可，用户设置一处会自动同步所有同名按键。',
                             titleBadges: [
                               const SizedBox(width: 8),
                               Container(
@@ -268,9 +269,7 @@ class _EditViewState extends State<EditView> {
                       ), // closes Column
                     ), // closes Form
                   ), // closes SingleChildScrollView
-                  Positioned(
-                    bottom: 24,
-                    right: 24,
+                  DraggableFloatingStepper(
                     child: FloatingStepper(
                       activeIndex: _activeStepIndex,
                       steps: [

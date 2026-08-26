@@ -333,7 +333,8 @@ class _PublishViewState extends State<PublishView> {
                             cardKey: _section3Key,
                             icon: MdiIcons.codeJson,
                             title: '3. 脚本编辑',
-                            subtitle: '在此编写你的配置代码。点击右上角按钮可以插入占位符，让用户能够自定义按键。',
+                            subtitle:
+                                '在此编写你的配置代码。点击右上角按钮可以插入占位符，让用户能够自定义设置按键。\n如果需要让多个按键联动（绑定同一按键），只需将它们的按键名称设为一致即可，用户设置一处会自动同步所有同名按键。',
                             headerTrailing: InsertPlaceholderButton(
                               onPressed: () =>
                                   PlaceholderInsertHelper.showInsertDialog(
@@ -352,9 +353,7 @@ class _PublishViewState extends State<PublishView> {
                       ), // closes Column
                     ), // closes Form
                   ), // closes SingleChildScrollView
-                  Positioned(
-                    bottom: 24,
-                    right: 24,
+                  DraggableFloatingStepper(
                     child: FloatingStepper(
                       activeIndex: _activeStepIndex,
                       steps: const ['基本信息', '分类与标签', '脚本编辑'],
