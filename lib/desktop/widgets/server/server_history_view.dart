@@ -194,15 +194,12 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       }
     }
 
-    final futures = <Future>[];
-    for (final mapName in mapsToLoadInfo) {
-      futures.add(_loadMapInfoSilent(mapName));
-    }
-
-    if (futures.isNotEmpty) {
-      await Future.wait(futures);
-      if (mounted) {
-        setState(() {});
+    if (mapsToLoadInfo.isNotEmpty) {
+      for (final mapName in mapsToLoadInfo) {
+        await _loadMapInfoSilent(mapName);
+        if (mounted) {
+          setState(() {});
+        }
       }
     }
   }
@@ -240,7 +237,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
 
   void _onSearchChanged(String value) {
     _searchDebounceTimer?.cancel();
-    setState(() {});
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       _handleSearch();
     });
@@ -272,16 +268,21 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     if (infos == null || infos.isEmpty) return '无数据';
     if (infos.length == 1) return '< 1分钟';
 
-    final sortedInfos = List<PlayerTrendInfo>.from(infos)
-      ..sort((a, b) {
-        final dateA = TimeUtils.parseServerTime(a.createdAt);
-        final dateB = TimeUtils.parseServerTime(b.createdAt);
-        if (dateA == null || dateB == null) return 0;
-        return dateA.compareTo(dateB);
-      });
+    DateTime? earliest;
+    DateTime? latest;
 
-    final earliest = TimeUtils.parseServerTime(sortedInfos.first.createdAt);
-    final latest = TimeUtils.parseServerTime(sortedInfos.last.createdAt);
+    for (final info in infos) {
+      final time = TimeUtils.parseServerTime(info.createdAt);
+      if (time != null) {
+        if (earliest == null || time.isBefore(earliest)) {
+          earliest = time;
+        }
+        if (latest == null || time.isAfter(latest)) {
+          latest = time;
+        }
+      }
+    }
+
     if (earliest == null || latest == null) return '无数据';
 
     final diff = latest.difference(earliest);
@@ -347,16 +348,18 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                         size: 18,
                         color: hintColor,
                       ),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.clear,
-                                size: 18,
-                                color: hintColor,
-                              ),
-                              onPressed: _clearSearch,
-                            )
-                          : null,
+                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _searchController,
+                        builder: (context, value, child) {
+                          if (value.text.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return IconButton(
+                            icon: Icon(Icons.clear, size: 18, color: hintColor),
+                            onPressed: _clearSearch,
+                          );
+                        },
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                       ),
