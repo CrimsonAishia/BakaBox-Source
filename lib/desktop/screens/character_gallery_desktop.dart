@@ -708,10 +708,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     }
 
     final name = knife?.name ?? gun?.name ?? menuSkin?.name ?? '';
-    final characterId = knife?.characterId ?? gun?.characterId ?? menuSkin?.characterId;
-    final characterName = knife?.characterName ?? gun?.characterName ?? menuSkin?.characterName;
-    final description = knife?.description ?? gun?.description ?? menuSkin?.description;
-    final acquisition = knife?.acquisition ?? gun?.acquisition ?? menuSkin?.acquisition;
+    final characterId =
+        knife?.characterId ?? gun?.characterId ?? menuSkin?.characterId;
+    final characterName =
+        knife?.characterName ?? gun?.characterName ?? menuSkin?.characterName;
+    final description =
+        knife?.description ?? gun?.description ?? menuSkin?.description;
+    final acquisition =
+        knife?.acquisition ?? gun?.acquisition ?? menuSkin?.acquisition;
     final tags = knife?.tags ?? gun?.tags ?? menuSkin?.tags;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -730,11 +734,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               _buildWeaponPreviewSection(state),
               const SizedBox(height: 20),
               // 名称区域
-              _buildWeaponNameSection(
-                name,
-                acquisition,
-                tags,
-              ),
+              _buildWeaponNameSection(name, acquisition, tags),
               const SizedBox(height: 16),
               // 专属角色区域（参照人物详情中专属刀模/枪模的布局）
               if (characterId != null &&
@@ -868,7 +868,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     if (preview != null) {
       allImages.addAll(preview.validUrls);
     }
-    
+
     if (allImages.isEmpty && imageUrl.isNotEmpty) {
       allImages.add(imageUrl);
     }
@@ -890,7 +890,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   }
 
   /// 刀枪模名称区域
-  Widget _buildWeaponNameSection(String name, AcquisitionInfo? acquisition, List<ItemTagData>? tags) {
+  Widget _buildWeaponNameSection(
+    String name,
+    AcquisitionInfo? acquisition,
+    List<ItemTagData>? tags,
+  ) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
 
     return Row(
@@ -970,20 +974,24 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   Widget _buildWeaponModelSelectHint(CharacterGalleryState state) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     final tabIndex = state.weaponModelTab;
-    final icon = tabIndex == 0 ? MdiIcons.knife : tabIndex == 1 ? MdiIcons.pistol : MdiIcons.wallpaper;
-    final text = tabIndex == 0 ? '刀模' : tabIndex == 1 ? '枪模' : '菜单皮肤';
+    final icon = tabIndex == 0
+        ? MdiIcons.knife
+        : tabIndex == 1
+        ? MdiIcons.pistol
+        : MdiIcons.wallpaper;
+    final text = tabIndex == 0
+        ? '刀模'
+        : tabIndex == 1
+        ? '枪模'
+        : '菜单皮肤';
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 64,
-            color: scrollBrown.withValues(alpha: 0.3),
-          ),
+          Icon(icon, size: 64, color: scrollBrown.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(
             '请从左侧选择$text',
@@ -2508,7 +2516,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               const Spacer(),
               // 统计信息
               Text(
-                '共 ${state.weaponModelTab == 0 ? state.allKnifeTotalCount : state.weaponModelTab == 1 ? state.allGunTotalCount : state.allMenuSkinTotalCount} 个',
+                '共 ${state.weaponModelTab == 0
+                    ? state.allKnifeTotalCount
+                    : state.weaponModelTab == 1
+                    ? state.allGunTotalCount
+                    : state.allMenuSkinTotalCount} 个',
                 style: TextStyle(
                   color: inkColor.withValues(alpha: 0.6),
                   fontSize: 12,
@@ -2588,8 +2600,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final items = state.weaponModelTab == 0
         ? state.allKnifeModels
         : state.weaponModelTab == 1
-            ? state.allGunModels
-            : state.allMenuSkins;
+        ? state.allGunModels
+        : state.allMenuSkins;
 
     if (items.isEmpty) {
       return Center(
@@ -2597,17 +2609,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              state.weaponModelTab == 0 
-                  ? MdiIcons.knife 
-                  : state.weaponModelTab == 1 
-                      ? MdiIcons.pistol 
-                      : MdiIcons.wallpaper,
+              state.weaponModelTab == 0
+                  ? MdiIcons.knife
+                  : state.weaponModelTab == 1
+                  ? MdiIcons.pistol
+                  : MdiIcons.wallpaper,
               size: 48,
               color: scrollBrown.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
-              '暂无${state.weaponModelTab == 0 ? '刀模' : state.weaponModelTab == 1 ? '枪模' : '菜单皮肤'}数据',
+              '暂无${state.weaponModelTab == 0
+                  ? '刀模'
+                  : state.weaponModelTab == 1
+                  ? '枪模'
+                  : '菜单皮肤'}数据',
               style: TextStyle(
                 color: inkColor.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -2663,7 +2679,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             model: menuSkin,
             isSelected: isSelected,
             onTap: () => context.read<CharacterGalleryBloc>().add(
-              SelectWeaponModel(id: menuSkin.id, type: WeaponModelType.menuSkin),
+              SelectWeaponModel(
+                id: menuSkin.id,
+                type: WeaponModelType.menuSkin,
+              ),
             ),
           );
         }
@@ -2679,7 +2698,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final isLoading = state.weaponModelsLoadState == LoadState.loading;
 
     // 如果没有刀模、枪模、菜单皮肤，不显示此区域
-    if (!isLoading && knifeModels.isEmpty && gunModels.isEmpty && menuSkins.isEmpty) {
+    if (!isLoading &&
+        knifeModels.isEmpty &&
+        gunModels.isEmpty &&
+        menuSkins.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -2971,10 +2993,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         spacing: 8,
         runSpacing: 8,
         children: tags.map((tag) {
-          return CharacterTagWidget(
-            text: tag.name,
-            colorHex: tag.color,
-          );
+          return CharacterTagWidget(text: tag.name, colorHex: tag.color);
         }).toList(),
       ),
     );

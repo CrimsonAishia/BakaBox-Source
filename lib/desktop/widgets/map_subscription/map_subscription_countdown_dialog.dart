@@ -46,7 +46,8 @@ class MapSubscriptionCountdownDialog extends StatelessWidget {
                       children: [
                         Icon(
                           state.autoJoinMapInfo!.mapLabel.isNotEmpty &&
-                                  state.autoJoinMapInfo!.mapLabel != state.autoJoinMapInfo!.mapName
+                                  state.autoJoinMapInfo!.mapLabel !=
+                                      state.autoJoinMapInfo!.mapName
                               ? Icons.translate
                               : Icons.map_outlined,
                           color: Colors.white,
@@ -66,12 +67,17 @@ class MapSubscriptionCountdownDialog extends StatelessWidget {
                       ],
                     ),
                     if (state.autoJoinMapInfo!.mapLabel.isNotEmpty &&
-                        state.autoJoinMapInfo!.mapLabel != state.autoJoinMapInfo!.mapName) ...[
+                        state.autoJoinMapInfo!.mapLabel !=
+                            state.autoJoinMapInfo!.mapName) ...[
                       const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.map_outlined, color: Colors.white70, size: 14),
+                          const Icon(
+                            Icons.map_outlined,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             state.autoJoinMapInfo!.mapName,

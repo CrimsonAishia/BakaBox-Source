@@ -18,9 +18,9 @@ enum CharacterCategory {
 
 /// 模型类型
 enum WeaponModelType {
-  knife,      // 刀模 (0)
-  gun,        // 枪模 (1)
-  menuSkin,   // 菜单皮肤 (2)
+  knife, // 刀模 (0)
+  gun, // 枪模 (1)
+  menuSkin, // 菜单皮肤 (2)
 }
 
 /// 获取途径类型
@@ -2154,16 +2154,12 @@ class ItemTagData extends Equatable {
   final String name;
   final String color;
 
-  const ItemTagData({
-    this.id,
-    required this.name,
-    required this.color,
-  });
+  const ItemTagData({this.id, required this.name, required this.color});
 
-  factory ItemTagData.fromJson(Map<String, dynamic> json) => _$ItemTagDataFromJson(json);
+  factory ItemTagData.fromJson(Map<String, dynamic> json) =>
+      _$ItemTagDataFromJson(json);
   Map<String, dynamic> toJson() => _$ItemTagDataToJson(this);
 
   @override
   List<Object?> get props => [id, name, color];
 }
-

@@ -201,12 +201,16 @@ class NativeProcessUtils {
   }
 
   /// 异步检测进程是否运行（推荐，不阻塞主线程）
-  static Future<bool> isAnyProcessRunningAsync(List<String> processNames) async {
+  static Future<bool> isAnyProcessRunningAsync(
+    List<String> processNames,
+  ) async {
     return Isolate.run(() => isAnyProcessRunning(processNames));
   }
 
   /// 异步获取进程可执行文件路径（推荐，不阻塞主线程）
-  static Future<String?> getProcessExecutablePathAsync(String processName) async {
+  static Future<String?> getProcessExecutablePathAsync(
+    String processName,
+  ) async {
     return Isolate.run(() => getProcessExecutablePath(processName));
   }
 }

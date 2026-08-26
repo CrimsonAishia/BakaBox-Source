@@ -154,14 +154,16 @@ class VdfParser {
     final start = _pos;
     while (_pos < _input.length) {
       final c = _input.codeUnitAt(_pos);
-      if (c == 32 || c == 9 || c == 13 || c == 10) { // ' ', '\t', '\r', '\n'
+      if (c == 32 || c == 9 || c == 13 || c == 10) {
+        // ' ', '\t', '\r', '\n'
         _pos++;
       } else if (c == 47 && // '/'
           _pos + 1 < _input.length &&
           _input.codeUnitAt(_pos + 1) == 47) {
         // C-style comments
         _pos += 2;
-        while (_pos < _input.length && _input.codeUnitAt(_pos) != 10) { // '\n'
+        while (_pos < _input.length && _input.codeUnitAt(_pos) != 10) {
+          // '\n'
           _pos++;
         }
       } else {
@@ -176,14 +178,16 @@ class VdfParser {
 
   /// 扫描一个被双引号包裹的字符串
   VdfStringNode? _scanString(List<VdfTrivia> leadingTrivia) {
-    if (_pos >= _input.length || _input.codeUnitAt(_pos) != 34) { // '"'
+    if (_pos >= _input.length || _input.codeUnitAt(_pos) != 34) {
+      // '"'
       return null;
     }
     _pos++; // skip "
     final start = _pos;
     while (_pos < _input.length && _input.codeUnitAt(_pos) != 34) {
       // 简单处理，VDF 中转义用的比较少，如需处理 \" 可以加逻辑
-      if (_input.codeUnitAt(_pos) == 92 && _pos + 1 < _input.length) { // '\'
+      if (_input.codeUnitAt(_pos) == 92 && _pos + 1 < _input.length) {
+        // '\'
         _pos += 2;
       } else {
         _pos++;
@@ -211,14 +215,16 @@ class VdfParser {
     }
 
     final c = _input.codeUnitAt(_pos);
-    if (c == 123) { // '{'
+    if (c == 123) {
+      // '{'
       // Object value
       _pos++; // skip {
       final objNode = VdfObjectNode(leading: valueLeadingTrivia);
 
       while (_pos < _input.length) {
         final innerTrivia = _scanTrivia();
-        if (_pos < _input.length && _input.codeUnitAt(_pos) == 125) { // '}'
+        if (_pos < _input.length && _input.codeUnitAt(_pos) == 125) {
+          // '}'
           _pos++; // skip }
           objNode.trailingTrivia = innerTrivia;
           break;
@@ -233,7 +239,8 @@ class VdfParser {
         }
       }
       return VdfPropertyNode(keyNode, objNode);
-    } else if (c == 34) { // '"'
+    } else if (c == 34) {
+      // '"'
       // String value
       final valNode = _scanString(valueLeadingTrivia);
       if (valNode != null) {

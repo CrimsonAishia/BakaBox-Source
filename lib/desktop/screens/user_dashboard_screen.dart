@@ -1015,8 +1015,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Widget _buildInventorySection(bool isDark) {
-    if (_isLoadingInventory)
+    if (_isLoadingInventory) {
       return _buildLoading(const Color(0xFF4ADE80), isDark);
+    }
     if (_inventoryError != null) return _buildError(_inventoryError!, isDark);
     final stats = _inventoryStats!;
 

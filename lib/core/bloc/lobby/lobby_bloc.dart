@@ -2308,7 +2308,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           if (state.allOnlineUsers.isNotEmpty) {
             if (targetMapId.isNotEmpty) {
               final targetUser = state.allOnlineUsers
-                  .where((u) => u.serverUserId == serverUserId || u.userId == serverUserId)
+                  .where(
+                    (u) =>
+                        u.serverUserId == serverUserId ||
+                        u.userId == serverUserId,
+                  )
                   .firstOrNull;
               if (targetUser != null) {
                 final crossMapUpdatedAll = _upsertUserInList(
@@ -2379,7 +2383,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         } else {
           updatedAllOnlineUsers = state.allOnlineUsers
               .where(
-                (u) => u.serverUserId != serverUserId && u.userId != serverUserId,
+                (u) =>
+                    u.serverUserId != serverUserId && u.userId != serverUserId,
               )
               .toList(growable: false);
         }
@@ -4641,11 +4646,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 预构建跨地图 teleport_in 事件索引，用于精准判断新加入用户是否是传送（摆脱对全服名单的依赖）
     final teleportInIndex = <String, pb.CrossMapPresenceEvent>{};
     for (final crossEvent in delta.crossMapEvents) {
-      if (crossEvent.eventType == 'teleport_in' && crossEvent.userId.isNotEmpty) {
+      if (crossEvent.eventType == 'teleport_in' &&
+          crossEvent.userId.isNotEmpty) {
         teleportInIndex[crossEvent.userId] = crossEvent;
       }
     }
-
 
     // 1. 批量添加新用户（缓存解析结果，避免重复解析）
     final parsedJoined = <LobbyUser>[];
@@ -4666,16 +4671,22 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 判断是否是传送
         final teleportInEvent = teleportInIndex[rawUserId];
         final isTeleportIn = teleportInEvent != null;
-            
+
         String? sourceMapName;
         if (teleportInEvent != null && teleportInEvent.targetMapId.isNotEmpty) {
-          sourceMapName = state.assets.getMapById(teleportInEvent.targetMapId)?.displayName ?? teleportInEvent.targetMapId;
+          sourceMapName =
+              state.assets
+                  .getMapById(teleportInEvent.targetMapId)
+                  ?.displayName ??
+              teleportInEvent.targetMapId;
         }
 
         notifications.add(
           PlayerNotification(
             id: 'delta_join_${DateTime.now().microsecondsSinceEpoch}_$rawUserId',
-            type: isTeleportIn ? PlayerNotificationType.teleportIn : PlayerNotificationType.online,
+            type: isTeleportIn
+                ? PlayerNotificationType.teleportIn
+                : PlayerNotificationType.online,
             playerName: user.displayName,
             sourceMapName: sourceMapName,
             createdAt: DateTime.now(),
@@ -4762,12 +4773,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (crossEvent.eventType == 'join') {
         // 判断是否是传送（如果该用户已在全服在线列表中，说明不是新上线，而是从其他地图传送过去的）
         final wasOnline = state.allOnlineUsers.any(
-          (u) => u.serverUserId == crossEvent.userId || u.userId == crossEvent.userId
+          (u) =>
+              u.serverUserId == crossEvent.userId ||
+              u.userId == crossEvent.userId,
         );
 
         if (wasOnline) {
           final targetMapName = crossEvent.mapId.isNotEmpty
-              ? (state.assets.getMapById(crossEvent.mapId)?.displayName ?? crossEvent.mapId)
+              ? (state.assets.getMapById(crossEvent.mapId)?.displayName ??
+                    crossEvent.mapId)
               : null;
           notifications.add(
             PlayerNotification(
@@ -4811,17 +4825,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     // 合并通知（限制最多 20 条，保留最新的）
-    var updatedNotifications = [
-      ...state.playerNotifications,
-      ...notifications,
-    ];
+    var updatedNotifications = [...state.playerNotifications, ...notifications];
     if (updatedNotifications.length > 20) {
-      updatedNotifications = updatedNotifications.sublist(updatedNotifications.length - 20);
+      updatedNotifications = updatedNotifications.sublist(
+        updatedNotifications.length - 20,
+      );
     }
 
     // 同步更新 allOnlineUsers（复用已解析的 joined 用户）
     var updatedAllOnline = List<LobbyUser>.from(state.allOnlineUsers);
-    
+
     // 1. 合并当前地图 join 的新用户
     for (final user in parsedJoined) {
       updatedAllOnline = _upsertUserInList(updatedAllOnline, user);
@@ -4832,7 +4845,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (crossEvent.eventType == 'join') {
         // 尝试找到 allOnlineUsers 中已有的条目并更新 mapId
         final existingUser = updatedAllOnline
-            .where((u) => u.serverUserId == crossEvent.userId || u.userId == crossEvent.userId)
+            .where(
+              (u) =>
+                  u.serverUserId == crossEvent.userId ||
+                  u.userId == crossEvent.userId,
+            )
             .firstOrNull;
         if (existingUser != null) {
           updatedAllOnline = _upsertUserInList(
@@ -4870,7 +4887,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (teleportEvent != null && teleportEvent.targetMapId.isNotEmpty) {
         // 传送场景：保留在 allOnlineUsers 中，只更新 mapId
         final leavingAllUser = updatedAllOnline
-            .where((u) => u.serverUserId == leftUserId || u.userId == leftUserId)
+            .where(
+              (u) => u.serverUserId == leftUserId || u.userId == leftUserId,
+            )
             .firstOrNull;
         if (leavingAllUser != null && !leavingAllUser.isSelf) {
           updatedAllOnline = _upsertUserInList(
@@ -4881,7 +4900,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       } else {
         // 正常下线：移除
         final leavingAllUser = updatedAllOnline
-            .where((u) => u.serverUserId == leftUserId || u.userId == leftUserId)
+            .where(
+              (u) => u.serverUserId == leftUserId || u.userId == leftUserId,
+            )
             .firstOrNull;
         if (leavingAllUser != null && leavingAllUser.isSelf) continue;
 
@@ -4898,7 +4919,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (crossEvent.eventType == 'leave' && crossEvent.targetMapId.isEmpty) {
         // targetMapId 为空代表真正下线，而不是传送
         updatedAllOnline = updatedAllOnline
-            .where((u) => u.serverUserId != crossEvent.userId && u.userId != crossEvent.userId)
+            .where(
+              (u) =>
+                  u.serverUserId != crossEvent.userId &&
+                  u.userId != crossEvent.userId,
+            )
             .toList(growable: false);
       }
     }

@@ -291,13 +291,13 @@ class MapSubscriptionTriggerAutoJoin extends MapSubscriptionEvent {
 
   @override
   List<Object?> get props => [
-        serverAddress,
-        serverName,
-        mapName,
-        mapLabel,
-        mapBackground,
-        countdownSeconds,
-      ];
+    serverAddress,
+    serverName,
+    mapName,
+    mapLabel,
+    mapBackground,
+    countdownSeconds,
+  ];
 }
 
 /// 自动加入倒计时滴答

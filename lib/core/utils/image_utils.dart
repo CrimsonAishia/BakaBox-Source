@@ -14,12 +14,16 @@ class ImageUtils {
   ImageUtils._();
 
   /// 为 B站 资源自动注入防盗链请求头
-  static Map<String, String>? getBilibiliHeaders(String url, [Map<String, String>? baseHeaders]) {
+  static Map<String, String>? getBilibiliHeaders(
+    String url, [
+    Map<String, String>? baseHeaders,
+  ]) {
     if (url.contains('hdslb.com') || url.contains('bilibili.com')) {
       return {
         ...?baseHeaders,
         'Referer': 'https://www.bilibili.com',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       };
     }
     return baseHeaders;
@@ -44,13 +48,17 @@ class ImageUtils {
 
     if (width != null && width.isFinite) {
       memWidth = (width * dpr).toInt();
-    } else if (constraints != null && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+    } else if (constraints != null &&
+        constraints.maxWidth.isFinite &&
+        constraints.maxWidth > 0) {
       memWidth = (constraints.maxWidth * dpr).toInt();
     }
 
     if (height != null && height.isFinite) {
       memHeight = (height * dpr).toInt();
-    } else if (constraints != null && constraints.maxHeight.isFinite && constraints.maxHeight > 0) {
+    } else if (constraints != null &&
+        constraints.maxHeight.isFinite &&
+        constraints.maxHeight > 0) {
       memHeight = (constraints.maxHeight * dpr).toInt();
     }
 

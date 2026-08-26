@@ -149,7 +149,9 @@ class MapManageBloc extends Bloc<MapManageEvent, MapManageState> {
     CheckSteamStatus event,
     Emitter<MapManageState> emit,
   ) async {
-    final isRunning = await NativeProcessUtils.isAnyProcessRunningAsync(['steam.exe']);
+    final isRunning = await NativeProcessUtils.isAnyProcessRunningAsync([
+      'steam.exe',
+    ]);
     emit(state.copyWith(isSteamRunning: isRunning));
   }
 

@@ -384,4 +384,3 @@ class ServerToggleOldCategoriesExpanded extends ServerEvent {
   @override
   List<Object?> get props => [expanded];
 }
-

@@ -48,7 +48,8 @@ class WarmupCountdownDialog extends StatelessWidget {
                       children: [
                         Icon(
                           state.mapInfo!.mapLabel.isNotEmpty &&
-                                  state.mapInfo!.mapLabel != state.mapInfo!.mapName
+                                  state.mapInfo!.mapLabel !=
+                                      state.mapInfo!.mapName
                               ? Icons.translate
                               : Icons.map_outlined,
                           color: Colors.white,
@@ -73,7 +74,11 @@ class WarmupCountdownDialog extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.map_outlined, color: Colors.white70, size: 14),
+                          const Icon(
+                            Icons.map_outlined,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             state.mapInfo!.mapName,

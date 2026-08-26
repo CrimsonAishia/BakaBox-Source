@@ -1582,7 +1582,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   const SizedBox(height: 20),
                   _buildCommentsSection(state),
                   SizedBox(
-                    height: (showComposer && _commentBarVisible) ? (_isComposerExpanded ? 450 : 150) : 20,
+                    height: (showComposer && _commentBarVisible)
+                        ? (_isComposerExpanded ? 450 : 150)
+                        : 20,
                   ),
                 ],
               ),

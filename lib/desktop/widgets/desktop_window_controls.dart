@@ -456,10 +456,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                       size: 16,
                       color: Colors.white,
                     )
-                    .animate(
-                      controller: _bubbleIconController,
-                      autoPlay: false,
-                    )
+                    .animate(controller: _bubbleIconController, autoPlay: false)
                     .moveY(
                       begin: -1.5,
                       end: 1.5,

@@ -561,7 +561,11 @@ class GameLauncherService {
 
       // 构建Steam URL，使用目标游戏对应的 AppID，并将空格替换为 %20
       // （防止 Windows 注册表损坏导致带有空格的 URL 被截断）
-      final rawSteamUrl = client.buildConnectUrl(serverAddress, password, appId);
+      final rawSteamUrl = client.buildConnectUrl(
+        serverAddress,
+        password,
+        appId,
+      );
       final steamUrl = rawSteamUrl.replaceAll(' ', '%20');
 
       LogService.d('生成的Steam URL: $steamUrl');
@@ -796,7 +800,12 @@ class GameLauncherService {
     }
 
     // 使用Steam URL连接
-    return await _connectUsingSteamUrl(serverAddress, password, client: client, appId: appId);
+    return await _connectUsingSteamUrl(
+      serverAddress,
+      password,
+      client: client,
+      appId: appId,
+    );
   }
 
   /// 连接到密码服务器
@@ -840,7 +849,12 @@ class GameLauncherService {
       return csgoValidation; // 验证失败，返回错误
     }
 
-    return await _connectUsingSteamUrl(address, password, client: client, appId: appId);
+    return await _connectUsingSteamUrl(
+      address,
+      password,
+      client: client,
+      appId: appId,
+    );
   }
 
   /// 使用Steam URL连接服务器
@@ -967,8 +981,13 @@ class GameLauncherService {
   }
 
   /// 仅启动游戏（不连接服务器），用于独立版 CSGO / CS:Source 的纯启动场景
-  Future<ServerConnectResult> _runGameWithoutConnect(GameClient client, {int? appId}) async {
-    final targetAppId = (appId != null && appId > 0) ? appId.toString() : client.steamAppId;
+  Future<ServerConnectResult> _runGameWithoutConnect(
+    GameClient client, {
+    int? appId,
+  }) async {
+    final targetAppId = (appId != null && appId > 0)
+        ? appId.toString()
+        : client.steamAppId;
     if (targetAppId.isEmpty) {
       return ServerConnectResult.failure('无法启动游戏：未知的 AppID');
     }
@@ -1129,9 +1148,8 @@ class GameLauncherService {
   /// 从进程查找Steam路径
   Future<String?> _findSteamPathFromProcess() async {
     try {
-      final executablePath = await NativeProcessUtils.getProcessExecutablePathAsync(
-        'steam.exe',
-      );
+      final executablePath =
+          await NativeProcessUtils.getProcessExecutablePathAsync('steam.exe');
       if (executablePath != null && executablePath.isNotEmpty) {
         var steamPath = File(executablePath).parent.path;
         try {

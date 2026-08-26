@@ -120,7 +120,11 @@ class MapCdBadge extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                _CdBadgeText(label: '获取中', color: Colors.blue.shade300, isCompact: isCompact),
+                _CdBadgeText(
+                  label: '获取中',
+                  color: Colors.blue.shade300,
+                  isCompact: isCompact,
+                ),
               ],
             ),
           );
@@ -144,7 +148,11 @@ class MapCdBadge extends StatelessWidget {
                     color: Colors.orange.shade300,
                   ),
                   const SizedBox(width: 5),
-                  _CdBadgeText(label: '失败', color: Colors.orange.shade300, isCompact: isCompact),
+                  _CdBadgeText(
+                    label: '失败',
+                    color: Colors.orange.shade300,
+                    isCompact: isCompact,
+                  ),
                 ],
               ),
             ),
@@ -251,7 +259,7 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: widget.isCompact 
+          padding: widget.isCompact
               ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
               : const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
@@ -316,7 +324,11 @@ class _CdBadgeText extends StatelessWidget {
   final Color color;
   final bool isCompact;
 
-  const _CdBadgeText({required this.label, required this.color, this.isCompact = false});
+  const _CdBadgeText({
+    required this.label,
+    required this.color,
+    this.isCompact = false,
+  });
 
   @override
   Widget build(BuildContext context) {

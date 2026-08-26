@@ -37,13 +37,13 @@ class FloatingStepper extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark 
-                  ? AppColors.slate800.withValues(alpha: 0.75) 
+              color: isDark
+                  ? AppColors.slate800.withValues(alpha: 0.75)
                   : Colors.white.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark 
-                    ? AppColors.slate700.withValues(alpha: 0.5) 
+                color: isDark
+                    ? AppColors.slate700.withValues(alpha: 0.5)
                     : Colors.white.withValues(alpha: 0.8),
                 width: 1.5,
               ),
@@ -52,22 +52,22 @@ class FloatingStepper extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: List.generate(steps.length, (index) {
-          return _StepperItem(
-            index: index,
-            title: steps[index],
-            isCompleted: completedSteps[index],
-            isActive: index == activeIndex,
-            onTap: () => onStepTapped(index),
-            isDark: isDark,
-          );
-        }),
-              ),
+                return _StepperItem(
+                  index: index,
+                  title: steps[index],
+                  isCompleted: completedSteps[index],
+                  isActive: index == activeIndex,
+                  onTap: () => onStepTapped(index),
+                  isDark: isDark,
+                );
+              }),
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
   }
+}
 
 class _StepperItem extends StatefulWidget {
   final int index;

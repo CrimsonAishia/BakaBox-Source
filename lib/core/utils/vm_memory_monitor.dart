@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
-import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
 
 import 'app_directory_service.dart';
@@ -46,7 +45,9 @@ class VmMemoryMonitor {
       final info = await developer.Service.getInfo();
       final uri = info.serverWebSocketUri;
       if (uri == null) {
-        debugPrint('[VmMemoryMonitor] 无法获取 VM Service URI，请确保在 Debug/Profile 模式下运行');
+        debugPrint(
+          '[VmMemoryMonitor] 无法获取 VM Service URI，请确保在 Debug/Profile 模式下运行',
+        );
         return;
       }
 
@@ -71,7 +72,7 @@ class VmMemoryMonitor {
       // 5. 拉取内存分配快照
       final profile = await vmService.getAllocationProfile(mainIsolate.id!);
       final members = profile.members;
-      
+
       if (members == null) {
         vmService.dispose();
         return;
@@ -87,7 +88,7 @@ class VmMemoryMonitor {
       // 7. 格式化排行榜
       final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
       final nowStr = dateFormat.format(DateTime.now());
-      
+
       final buffer = StringBuffer();
       buffer.writeln('=========================================');
       buffer.writeln('[$nowStr] 内存对象排行榜 (Top $topN)');
@@ -97,11 +98,11 @@ class VmMemoryMonitor {
       for (final stat in members) {
         if (count >= topN) break;
         final className = stat.classRef?.name ?? 'Unknown';
-        
+
         // 过滤掉底层的基础数据类型，让业务对象的泄露更明显
-        if (className == 'int' || 
-            className == 'double' || 
-            className == 'bool' || 
+        if (className == 'int' ||
+            className == 'double' ||
+            className == 'bool' ||
             className == 'Null' ||
             className == '_Smi' ||
             className == '_Mint') {
@@ -111,8 +112,10 @@ class VmMemoryMonitor {
         final instances = stat.instancesCurrent ?? 0;
         final bytes = stat.bytesCurrent ?? 0;
         final mb = (bytes / (1024 * 1024)).toStringAsFixed(3);
-        
-        buffer.writeln('${count + 1}. $className: $instances instances ($mb MB)');
+
+        buffer.writeln(
+          '${count + 1}. $className: $instances instances ($mb MB)',
+        );
         count++;
       }
       buffer.writeln(''); // 空行分隔
@@ -129,9 +132,11 @@ class VmMemoryMonitor {
 
   static Future<void> _writeToFile(String content) async {
     try {
-      final logFilePath = AppDirectoryService.getLogFilePath('memory_monitor.log');
+      final logFilePath = AppDirectoryService.getLogFilePath(
+        'memory_monitor.log',
+      );
       final file = File(logFilePath);
-      
+
       // 如果文件不存在则自动创建，否则追加内容
       await file.writeAsString(content, mode: FileMode.append);
       debugPrint('[VmMemoryMonitor] 已成功写入内存快照到 memory_monitor.log');

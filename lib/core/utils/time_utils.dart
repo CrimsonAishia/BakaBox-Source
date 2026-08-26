@@ -201,10 +201,7 @@ class TimeUtils {
     if (start.year == end.year &&
         start.month == end.month &&
         start.day == end.day) {
-      final startStr = formatDateTime(
-        start,
-        showYear: start.year != now.year,
-      );
+      final startStr = formatDateTime(start, showYear: start.year != now.year);
       final endStr = DateFormat('HH:mm').format(end);
       return '$startStr - $endStr';
     } else {

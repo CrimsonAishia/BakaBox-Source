@@ -222,7 +222,9 @@ class MarketTabView extends StatelessWidget {
     return BlocBuilder<KeyBindingBloc, KeyBindingState>(
       builder: (context, state) {
         final isLoading = state.isLoading || state.isLoadingMyConfigs;
-        final configs = state.showMyConfigs ? state.filteredMyConfigs : state.filteredConfigs;
+        final configs = state.showMyConfigs
+            ? state.filteredMyConfigs
+            : state.filteredConfigs;
 
         if (isLoading && configs.isEmpty) {
           return const Center(child: CircularProgressIndicator());

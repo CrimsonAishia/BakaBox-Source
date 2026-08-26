@@ -254,7 +254,14 @@ class CacheItemInfo extends Equatable {
   }
 
   @override
-  List<Object?> get props => [type, name, description, sizeInBytes, isClearing, canClear];
+  List<Object?> get props => [
+    type,
+    name,
+    description,
+    sizeInBytes,
+    isClearing,
+    canClear,
+  ];
 }
 
 /// 被拉黑的用户信息

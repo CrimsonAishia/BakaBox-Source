@@ -35,8 +35,9 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
   final Set<CacheType> _selectedTypes = {};
   bool _isClearing = false;
 
-  List<CacheItemInfo> get _availableCacheItems =>
-      widget.cacheDetails.where((item) => item.sizeInBytes > 0 && item.canClear).toList();
+  List<CacheItemInfo> get _availableCacheItems => widget.cacheDetails
+      .where((item) => item.sizeInBytes > 0 && item.canClear)
+      .toList();
 
   int get _selectedTotalSize => widget.cacheDetails
       .where((item) => _selectedTypes.contains(item.type))

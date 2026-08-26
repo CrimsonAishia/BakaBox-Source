@@ -1003,9 +1003,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         ),
       );
 
-      LogService.d(
-        '已清除选中的 ${event.cacheTypes.length} 种缓存',
-      );
+      LogService.d('已清除选中的 ${event.cacheTypes.length} 种缓存');
     } catch (e) {
       LogService.e('清除选中缓存失败', e);
       emit(state.copyWith(isLoading: false));
@@ -1097,7 +1095,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         appDataSize += announcementReadIds.length;
       }
 
-
       details.add(
         CacheItemInfo(
           type: CacheType.appData,
@@ -1125,11 +1122,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 5. 内置数据 (仅桌面端展示，不可清理)
       if (PlatformUtils.isDesktopPlatform) {
         int builtInSize = 0;
-        final webviewDir = Directory('${AppDirectoryService.cachePath}${Platform.pathSeparator}webview2');
+        final webviewDir = Directory(
+          '${AppDirectoryService.cachePath}${Platform.pathSeparator}webview2',
+        );
         if (await webviewDir.exists()) {
           builtInSize += await _calculateDirectorySize(webviewDir);
         }
-        final lobbyDir = Directory('${AppDirectoryService.cachePath}${Platform.pathSeparator}lobby_images');
+        final lobbyDir = Directory(
+          '${AppDirectoryService.cachePath}${Platform.pathSeparator}lobby_images',
+        );
         if (await lobbyDir.exists()) {
           builtInSize += await _calculateDirectorySize(lobbyDir);
         }
@@ -1157,7 +1158,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         // 清理磁盘图片缓存
         await DiskImageCacheService.instance.clearCache();
         // 大厅图片缓存 (lobby_images) 已移至不可清理的内置数据分类中，不再随图片缓存被清理
-        
+
         if (PlatformUtils.isDesktopPlatform) {
           final cacheDir = Directory(AppDirectoryService.cachePath);
           if (await cacheDir.exists()) {
@@ -1166,11 +1167,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
                 // 跳过 webview2 避免损坏，跳过 images/lobby_images 避免破坏专门清理逻辑后重建的目录
                 if (entity is Directory) {
                   final p = entity.path;
-                  if (p.endsWith('webview2') || p.endsWith('images') || p.endsWith('lobby_images')) {
+                  if (p.endsWith('webview2') ||
+                      p.endsWith('images') ||
+                      p.endsWith('lobby_images')) {
                     continue;
                   }
                 }
-                
+
                 if (entity is File) {
                   await entity.delete();
                 } else if (entity is Directory) {
@@ -1193,7 +1196,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
                     continue;
                   }
                 }
-                
+
                 if (entity is File) {
                   await entity.delete();
                 } else if (entity is Directory) {

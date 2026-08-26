@@ -190,9 +190,12 @@ class MapSubscriptionState extends Equatable {
       isTtsTesting: isTtsTesting ?? this.isTtsTesting,
       ttsTestingPhase: ttsTestingPhase,
       error: error,
-      isAutoJoinCountdownActive: isAutoJoinCountdownActive ?? this.isAutoJoinCountdownActive,
-      currentAutoJoinSeconds: currentAutoJoinSeconds ?? this.currentAutoJoinSeconds,
-      autoJoinServerAddress: autoJoinServerAddress ?? this.autoJoinServerAddress,
+      isAutoJoinCountdownActive:
+          isAutoJoinCountdownActive ?? this.isAutoJoinCountdownActive,
+      currentAutoJoinSeconds:
+          currentAutoJoinSeconds ?? this.currentAutoJoinSeconds,
+      autoJoinServerAddress:
+          autoJoinServerAddress ?? this.autoJoinServerAddress,
       autoJoinServerName: autoJoinServerName ?? this.autoJoinServerName,
       autoJoinMapInfo: autoJoinMapInfo ?? this.autoJoinMapInfo,
     );

@@ -41,7 +41,7 @@ class ServerCategory extends Equatable {
   final bool isFromApi; // 标记是否来源于第三方API
   final String? sourceApiUrl; // 第三方接口URL
   final String? sourceApiCategoryName; // 第三方接口的原始分类键名（用于找回数据源，防改名失效）
-  
+
   @JsonKey(defaultValue: false)
   final bool isOld; // 标记是否为旧版服务器
 

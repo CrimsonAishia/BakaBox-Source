@@ -42,7 +42,7 @@ class RichScriptEditingController extends TextEditingController {
         for (final match in matches) {
           if (oldSelection.isCollapsed) {
             final pos = oldSelection.baseOffset;
-            
+
             // 防止在占位符内部输入
             if (pos > match.start && pos < match.end) {
               adjustedValue = value;
@@ -50,7 +50,9 @@ class RichScriptEditingController extends TextEditingController {
             }
 
             // 处理在占位符末尾按退格键
-            if (pos == match.end && newValue.text.length < text.length && newValue.selection.baseOffset == match.end - 1) {
+            if (pos == match.end &&
+                newValue.text.length < text.length &&
+                newValue.selection.baseOffset == match.end - 1) {
               final newText = text.replaceRange(match.start, match.end, '');
               adjustedValue = TextEditingValue(
                 text: newText,
@@ -60,8 +62,10 @@ class RichScriptEditingController extends TextEditingController {
             }
 
             // 处理在占位符开头按 Delete 键
-            if (pos == match.start && newValue.text.length < text.length && newValue.selection.baseOffset == match.start) {
-              if (text.startsWith(match.group(0)!, match.start) && 
+            if (pos == match.start &&
+                newValue.text.length < text.length &&
+                newValue.selection.baseOffset == match.start) {
+              if (text.startsWith(match.group(0)!, match.start) &&
                   !newValue.text.startsWith(match.group(0)!, match.start)) {
                 final newText = text.replaceRange(match.start, match.end, '');
                 adjustedValue = TextEditingValue(
@@ -73,8 +77,10 @@ class RichScriptEditingController extends TextEditingController {
             }
           } else {
             // 防止跨占位符的部分修改
-            if ((oldSelection.start > match.start && oldSelection.start < match.end) || 
-                (oldSelection.end > match.start && oldSelection.end < match.end)) {
+            if ((oldSelection.start > match.start &&
+                    oldSelection.start < match.end) ||
+                (oldSelection.end > match.start &&
+                    oldSelection.end < match.end)) {
               adjustedValue = value;
               break;
             }
@@ -87,40 +93,50 @@ class RichScriptEditingController extends TextEditingController {
     if (adjustedValue.selection.isValid) {
       int? newBase;
       int? newExtent;
-      final currentMatches = adjustedValue.text == text 
-          ? matches 
-          : KeyPlaceholderParser.placeholderPattern.allMatches(adjustedValue.text);
-          
+      final currentMatches = adjustedValue.text == text
+          ? matches
+          : KeyPlaceholderParser.placeholderPattern.allMatches(
+              adjustedValue.text,
+            );
+
       final oldSelection = selection;
 
       for (final match in currentMatches) {
         if (adjustedValue.selection.isCollapsed) {
           final pos = adjustedValue.selection.baseOffset;
           if (pos > match.start && pos < match.end) {
-             if (oldSelection.isValid && oldSelection.isCollapsed) {
-               if (pos > oldSelection.baseOffset) {
-                 newBase = match.end; // 向右移动
-               } else if (pos < oldSelection.baseOffset) {
-                 newBase = match.start; // 向左移动
-               } else {
-                 newBase = (pos - match.start < match.end - pos) ? match.start : match.end;
-               }
-             } else {
-               newBase = (pos - match.start < match.end - pos) ? match.start : match.end;
-             }
-             newExtent = newBase;
-             break;
+            if (oldSelection.isValid && oldSelection.isCollapsed) {
+              if (pos > oldSelection.baseOffset) {
+                newBase = match.end; // 向右移动
+              } else if (pos < oldSelection.baseOffset) {
+                newBase = match.start; // 向左移动
+              } else {
+                newBase = (pos - match.start < match.end - pos)
+                    ? match.start
+                    : match.end;
+              }
+            } else {
+              newBase = (pos - match.start < match.end - pos)
+                  ? match.start
+                  : match.end;
+            }
+            newExtent = newBase;
+            break;
           }
         } else {
           int b = newBase ?? adjustedValue.selection.baseOffset;
           int e = newExtent ?? adjustedValue.selection.extentOffset;
           bool changed = false;
           if (b > match.start && b < match.end) {
-            b = (b > (oldSelection.isValid ? oldSelection.baseOffset : b)) ? match.end : match.start;
+            b = (b > (oldSelection.isValid ? oldSelection.baseOffset : b))
+                ? match.end
+                : match.start;
             changed = true;
           }
           if (e > match.start && e < match.end) {
-            e = (e > (oldSelection.isValid ? oldSelection.extentOffset : e)) ? match.end : match.start;
+            e = (e > (oldSelection.isValid ? oldSelection.extentOffset : e))
+                ? match.end
+                : match.start;
             changed = true;
           }
           if (changed) {
@@ -145,7 +161,7 @@ class RichScriptEditingController extends TextEditingController {
 
   List<TextSpan> _buildSpacedText(String rawText, TextStyle? baseStyle) {
     if (rawText.isEmpty) return [];
-    
+
     // 匹配连续的空格或制表符
     final matches = RegExp(r'[ \t]+').allMatches(rawText);
     if (matches.isEmpty) {
@@ -154,7 +170,9 @@ class RichScriptEditingController extends TextEditingController {
 
     // 成熟方案：将占位符颜色调淡，避免喧宾夺主
     final spaceStyle = baseStyle?.copyWith(
-      color: baseStyle.color?.withValues(alpha: 0.35) ?? Colors.grey.withValues(alpha: 0.35),
+      color:
+          baseStyle.color?.withValues(alpha: 0.35) ??
+          Colors.grey.withValues(alpha: 0.35),
     );
 
     final children = <TextSpan>[];
@@ -162,19 +180,28 @@ class RichScriptEditingController extends TextEditingController {
 
     for (final match in matches) {
       if (match.start > lastEnd) {
-        children.add(TextSpan(text: rawText.substring(lastEnd, match.start), style: baseStyle));
+        children.add(
+          TextSpan(
+            text: rawText.substring(lastEnd, match.start),
+            style: baseStyle,
+          ),
+        );
       }
-      
+
       final spaceStr = match.group(0)!;
       // 使用半角片假名中点(･)代替普通中点(·)，它在等宽字体中占宽更标准
-      final visuallyReplaced = spaceStr.replaceAll(' ', '･').replaceAll('\t', '→');
-      
+      final visuallyReplaced = spaceStr
+          .replaceAll(' ', '･')
+          .replaceAll('\t', '→');
+
       children.add(TextSpan(text: visuallyReplaced, style: spaceStyle));
       lastEnd = match.end;
     }
 
     if (lastEnd < rawText.length) {
-      children.add(TextSpan(text: rawText.substring(lastEnd), style: baseStyle));
+      children.add(
+        TextSpan(text: rawText.substring(lastEnd), style: baseStyle),
+      );
     }
 
     return children;
@@ -200,7 +227,9 @@ class RichScriptEditingController extends TextEditingController {
 
     for (final match in matches) {
       if (match.start > lastMatchEnd) {
-        children.addAll(_buildSpacedText(text.substring(lastMatchEnd, match.start), style));
+        children.addAll(
+          _buildSpacedText(text.substring(lastMatchEnd, match.start), style),
+        );
       }
 
       final label = match.group(1)!;
@@ -1069,8 +1098,9 @@ class PlaceholderInsertHelper {
       needsSuffixSpace = true;
     }
 
-    final ph = '${needsPrefixSpace ? ' ' : ''}{{KEY:$label}}${needsSuffixSpace ? ' ' : ''}';
-    
+    final ph =
+        '${needsPrefixSpace ? ' ' : ''}{{KEY:$label}}${needsSuffixSpace ? ' ' : ''}';
+
     final newText = text.replaceRange(start, end, ph);
     final newCursorPos = start + ph.length;
 

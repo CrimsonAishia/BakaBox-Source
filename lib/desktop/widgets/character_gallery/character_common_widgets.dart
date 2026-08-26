@@ -345,7 +345,7 @@ class CharacterTagWidget extends StatelessWidget {
                   color: color,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isDark ? Colors.white24 : Colors.black12, 
+                    color: isDark ? Colors.white24 : Colors.black12,
                     width: 0.5,
                   ),
                 ),

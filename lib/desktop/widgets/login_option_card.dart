@@ -29,9 +29,11 @@ class _LoginOptionCardState extends State<LoginOptionCard> {
   @override
   Widget build(BuildContext context) {
     final bgColor = widget.isDark ? AppColors.slate700 : AppColors.slate100;
-    final hoverBgColor = widget.isDark ? AppColors.slate600 : AppColors.slate200;
-    final borderColor = widget.isDark 
-        ? Colors.white.withValues(alpha: 0.1) 
+    final hoverBgColor = widget.isDark
+        ? AppColors.slate600
+        : AppColors.slate200;
+    final borderColor = widget.isDark
+        ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.05);
     final hoverBorderColor = widget.color.withValues(alpha: 0.5);
 
@@ -52,13 +54,15 @@ class _LoginOptionCardState extends State<LoginOptionCard> {
               color: _isHovered ? hoverBorderColor : borderColor,
               width: 1.5,
             ),
-            boxShadow: _isHovered ? [
-              BoxShadow(
-                color: widget.color.withValues(alpha: 0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              )
-            ] : [],
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
           ),
           child: Row(
             children: [
@@ -79,10 +83,8 @@ class _LoginOptionCardState extends State<LoginOptionCard> {
                 ),
                 child: Image.asset(
                   widget.iconPath,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.account_circle, 
-                    color: widget.color,
-                  ),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.account_circle, color: widget.color),
                 ),
               ),
               const SizedBox(width: 16),
@@ -103,7 +105,9 @@ class _LoginOptionCardState extends State<LoginOptionCard> {
                       widget.subtitle,
                       style: TextStyle(
                         fontSize: 12,
-                        color: widget.isDark ? Colors.white54 : AppColors.gray500,
+                        color: widget.isDark
+                            ? Colors.white54
+                            : AppColors.gray500,
                       ),
                     ),
                   ],
@@ -111,7 +115,9 @@ class _LoginOptionCardState extends State<LoginOptionCard> {
               ),
               Icon(
                 Icons.chevron_right,
-                color: _isHovered ? widget.color : (widget.isDark ? Colors.white38 : Colors.black26),
+                color: _isHovered
+                    ? widget.color
+                    : (widget.isDark ? Colors.white38 : Colors.black26),
               ),
             ],
           ),

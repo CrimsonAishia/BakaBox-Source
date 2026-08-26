@@ -473,7 +473,9 @@ class _ServersMobileState extends State<ServersMobile>
   }
 
   Widget _buildCategoryGrid(BuildContext context, ServerState state) {
-    final displayCategories = state.serverCategories.where((c) => !c.isOld).toList();
+    final displayCategories = state.serverCategories
+        .where((c) => !c.isOld)
+        .toList();
 
     return Padding(
       padding: const EdgeInsets.all(16),

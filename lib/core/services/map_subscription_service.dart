@@ -120,8 +120,10 @@ class MapSubscriptionService {
   Stream<void> get stateStream => _stateController.stream;
 
   /// 自动加入事件流
-  final _autoJoinController = StreamController<MapSubscriptionAutoJoinEvent>.broadcast();
-  Stream<MapSubscriptionAutoJoinEvent> get autoJoinStream => _autoJoinController.stream;
+  final _autoJoinController =
+      StreamController<MapSubscriptionAutoJoinEvent>.broadcast();
+  Stream<MapSubscriptionAutoJoinEvent> get autoJoinStream =>
+      _autoJoinController.stream;
 
   /// 是否已初始化
   bool _isInitialized = false;
@@ -361,7 +363,7 @@ class MapSubscriptionService {
     _cooldownSeconds = seconds.clamp(minCooldownSeconds, maxCooldownSeconds);
     await StorageUtils.setInt(_storageKeyCooldownSeconds, _cooldownSeconds);
     _notifyStateChange();
-    
+
     // 如果启用了本地私服轮询，重新启动定时器以应用新的时间间隔
     if (_localPollTimer != null) {
       _startLocalPolling();
@@ -392,7 +394,7 @@ class MapSubscriptionService {
   void _startLocalPolling() {
     _stopLocalPolling();
     if (!_isEnabled || _subscriptions.isEmpty) return;
-    
+
     LogService.d('[MapSubscription] 启动私服本地轮询机制，间隔 $_cooldownSeconds 秒');
     // 使用用户设置的冷却时间作为轮询频率
     _localPollTimer = Timer.periodic(Duration(seconds: _cooldownSeconds), (_) {
@@ -426,11 +428,14 @@ class MapSubscriptionService {
         }
       } else {
         // 如果是全服或者范围分类监控，需要从分类中找出所有私服
-        final targetCategories = sub.isAllCategories ? _globalCategories : sub.categoryNames;
+        final targetCategories = sub.isAllCategories
+            ? _globalCategories
+            : sub.categoryNames;
         for (final entry in _serverCategoryMap.entries) {
           final addr = entry.key;
           final cat = entry.value;
-          if ((sub.isAllCategories && _globalCategories.isEmpty) || targetCategories.contains(cat)) {
+          if ((sub.isAllCategories && _globalCategories.isEmpty) ||
+              targetCategories.contains(cat)) {
             if (!_apiServers.contains(addr)) {
               privateServers.add(addr);
             }
@@ -447,15 +452,17 @@ class MapSubscriptionService {
     // 每次最多并发查询 10 个服务器，极度保守的网络防洪，确保打游戏时绝对 0 影响
     const chunkSize = 10;
     for (var i = 0; i < serverList.length; i += chunkSize) {
-      final end = (i + chunkSize > serverList.length) ? serverList.length : i + chunkSize;
+      final end = (i + chunkSize > serverList.length)
+          ? serverList.length
+          : i + chunkSize;
       final chunk = serverList.sublist(i, end);
-      
+
       final chunkResults = await SourceServerService.batchQuery(
         chunk,
         timeout: 3000,
       );
       results.addAll(chunkResults);
-      
+
       // 如果还有下一批，稍微延迟一下让网络喘口气 (300ms)
       if (end < serverList.length) {
         await Future.delayed(const Duration(milliseconds: 300));
@@ -475,16 +482,18 @@ class MapSubscriptionService {
       final oldMap = _localServerLastMaps[addr];
       if (oldMap != newMap) {
         _localServerLastMaps[addr] = newMap;
-        
+
         // 首次获取（oldMap == null）不需要触发换图通知，只是记录
         if (oldMap != null) {
-          entries.add(ServerMapRuntimeEntry(
-            serverAddress: addr,
-            mapName: newMap,
-            oldMapName: oldMap,
-            maxPlayers: info.maxPlayers,
-            hostName: info.name,
-          ));
+          entries.add(
+            ServerMapRuntimeEntry(
+              serverAddress: addr,
+              mapName: newMap,
+              oldMapName: oldMap,
+              maxPlayers: info.maxPlayers,
+              hostName: info.name,
+            ),
+          );
         }
       }
     }
@@ -551,7 +560,8 @@ class MapSubscriptionService {
         _serverNameMap[entry.serverAddress] ??
         entry.serverAddress;
 
-    final isExplicitlySelected = !subscription.isAllServers &&
+    final isExplicitlySelected =
+        !subscription.isAllServers &&
         subscription.serverAddresses.contains(entry.serverAddress);
 
     if (categoryName == null && !isExplicitlySelected) {
@@ -621,14 +631,16 @@ class MapSubscriptionService {
     );
 
     if (subscription.isAutoJoinEnabled) {
-      _autoJoinController.add(MapSubscriptionAutoJoinEvent(
-        serverAddress: entry.serverAddress,
-        serverName: serverName,
-        mapName: subscription.mapName,
-        mapLabel: subscription.mapLabel,
-        mapBackground: subscription.mapBackground,
-        countdownSeconds: subscription.autoJoinCountdownSeconds,
-      ));
+      _autoJoinController.add(
+        MapSubscriptionAutoJoinEvent(
+          serverAddress: entry.serverAddress,
+          serverName: serverName,
+          mapName: subscription.mapName,
+          mapLabel: subscription.mapLabel,
+          mapBackground: subscription.mapBackground,
+          countdownSeconds: subscription.autoJoinCountdownSeconds,
+        ),
+      );
     }
 
     _sendNotification(
@@ -751,17 +763,20 @@ class MapSubscriptionService {
     if (_categoriesLoaded && _loadingCategoriesFuture == null) {
       return Future.value();
     }
-    
-    _loadingCategoriesFuture ??= _loadServerCategoryMapInternal().whenComplete(() {
-      _loadingCategoriesFuture = null;
-    });
-    
+
+    _loadingCategoriesFuture ??= _loadServerCategoryMapInternal().whenComplete(
+      () {
+        _loadingCategoriesFuture = null;
+      },
+    );
+
     return _loadingCategoriesFuture!;
   }
 
   Future<void> _loadServerCategoryMapInternal() async {
     try {
-      final apiCategories = await ServerCategoryService.instance.getApiCategories();
+      final apiCategories = await ServerCategoryService.instance
+          .getApiCategories();
       _apiServers.clear();
       for (final cat in apiCategories) {
         for (final server in cat.serverList) {

@@ -92,38 +92,72 @@ class SourceServerService {
           // 这是因为 getInfo() 内部为了处理 CS2 的 Challenge 机制，实际跑了 2 个 RTT。
           int accuratePing = -1;
           try {
-            final InternetAddress targetAddress = (await InternetAddress.lookup(ip)).first;
-            final pingSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+            final InternetAddress targetAddress = (await InternetAddress.lookup(
+              ip,
+            )).first;
+            final pingSocket = await RawDatagramSocket.bind(
+              InternetAddress.anyIPv4,
+              0,
+            );
             final pingCompleter = Completer<int>();
             final pingStopwatch = Stopwatch();
 
-            pingSocket.listen((event) {
-              if (event == RawSocketEvent.read) {
-                final datagram = pingSocket.receive();
-                if (datagram != null && !pingCompleter.isCompleted) {
-                  pingStopwatch.stop();
-                  pingCompleter.complete(pingStopwatch.elapsedMilliseconds);
+            pingSocket.listen(
+              (event) {
+                if (event == RawSocketEvent.read) {
+                  final datagram = pingSocket.receive();
+                  if (datagram != null && !pingCompleter.isCompleted) {
+                    pingStopwatch.stop();
+                    pingCompleter.complete(pingStopwatch.elapsedMilliseconds);
+                    pingSocket.close();
+                  }
+                }
+              },
+              onError: (e) {
+                if (!pingCompleter.isCompleted) {
+                  pingCompleter.complete(-1);
                   pingSocket.close();
                 }
-              }
-            }, onError: (e) {
-              if (!pingCompleter.isCompleted) {
-                pingCompleter.complete(-1);
-                pingSocket.close();
-              }
-            });
+              },
+            );
 
             // A2S_INFO request payload (T Source Engine Query)
-            final request = [0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00];
+            final request = [
+              0xFF,
+              0xFF,
+              0xFF,
+              0xFF,
+              0x54,
+              0x53,
+              0x6F,
+              0x75,
+              0x72,
+              0x63,
+              0x65,
+              0x20,
+              0x45,
+              0x6E,
+              0x67,
+              0x69,
+              0x6E,
+              0x65,
+              0x20,
+              0x51,
+              0x75,
+              0x65,
+              0x72,
+              0x79,
+              0x00,
+            ];
             pingStopwatch.start();
             pingSocket.send(request, targetAddress, port);
 
             accuratePing = await pingCompleter.future.timeout(
-              const Duration(seconds: 1), 
+              const Duration(seconds: 1),
               onTimeout: () {
                 pingSocket.close();
                 return -1;
-              }
+              },
             );
           } catch (e) {
             accuratePing = -1;

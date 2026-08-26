@@ -345,7 +345,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       bottomActions: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          MapCdBadge(mapName: sub.mapName, triggerOnHover: false, isCompact: true),
+          MapCdBadge(
+            mapName: sub.mapName,
+            triggerOnHover: false,
+            isCompact: true,
+          ),
           const SizedBox(width: 8),
           _buildAutoJoinButton(context, isDark, sub),
           const SizedBox(width: 8),
@@ -362,8 +366,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     MapSubscription sub,
   ) {
     return _ActionButton(
-      icon: sub.isAutoJoinEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
-      label: sub.isAutoJoinEnabled ? '${sub.autoJoinCountdownSeconds}s' : '自动加入',
+      icon: sub.isAutoJoinEnabled
+          ? Icons.flash_on_rounded
+          : Icons.flash_off_rounded,
+      label: sub.isAutoJoinEnabled
+          ? '${sub.autoJoinCountdownSeconds}s'
+          : '自动加入',
       baseColor: const Color(0xFF818CF8), // indigo400
       isActive: sub.isAutoJoinEnabled,
       onTap: () => _showAutoJoinDialog(context, isDark, sub),
@@ -481,7 +489,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                   SliderTheme(
                     data: SliderThemeData(
                       trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 6,
+                      ),
                       activeTrackColor: AppColors.indigo500,
                       inactiveTrackColor: isDark
                           ? Colors.white.withValues(alpha: 0.1)
@@ -492,7 +502,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                       value: seconds.toDouble(),
                       min: 5,
                       max: 120,
-                      divisions: 23, // 5 到 120, 步长 5 
+                      divisions: 23, // 5 到 120, 步长 5
                       onChanged: (v) {
                         setDialogState(() {
                           seconds = v.round();
@@ -837,9 +847,15 @@ class _ActionButtonState extends State<_ActionButton> {
   @override
   Widget build(BuildContext context) {
     final hovered = _isHovered;
-    final color = widget.isActive ? widget.baseColor : Colors.white.withValues(alpha: 0.5);
-    final borderColor = widget.isActive ? widget.baseColor.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.25);
-    final hoverBorderColor = widget.isActive ? widget.baseColor : Colors.white.withValues(alpha: 0.5);
+    final color = widget.isActive
+        ? widget.baseColor
+        : Colors.white.withValues(alpha: 0.5);
+    final borderColor = widget.isActive
+        ? widget.baseColor.withValues(alpha: 0.5)
+        : Colors.white.withValues(alpha: 0.25);
+    final hoverBorderColor = widget.isActive
+        ? widget.baseColor
+        : Colors.white.withValues(alpha: 0.5);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -882,11 +898,7 @@ class _ActionButtonState extends State<_ActionButton> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    widget.icon,
-                    size: 16,
-                    color: color,
-                  ),
+                  Icon(widget.icon, size: 16, color: color),
                   const SizedBox(width: 5),
                   Text(
                     widget.label,

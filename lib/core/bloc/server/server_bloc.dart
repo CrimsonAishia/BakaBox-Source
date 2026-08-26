@@ -786,11 +786,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final addresses = <String>[];
     for (final s in state.servers) {
       if (s.serverData == null) continue;
-      
+
       final isCustomServer = s.serverItem.isCustom;
       final gameType = s.serverData!.gameType?.toUpperCase();
-      final isAllowedGame = gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
-      
+      final isAllowedGame =
+          gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
+
       if (isCustomServer && !isAllowedGame) continue;
 
       final addr = s.serverItem.address ?? s.serverItem.serverAddress;
@@ -1062,7 +1063,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         _failureCountCache[address] = 0; // 更新全局缓存
         final newServerData = _convertSourceServerInfo(info);
         final isA2s = currentServer.serverItem.dataSourceMode != 'api';
-        
+
         ServerPingInfo? newPingInfo = currentServer.pingInfo;
         if (isA2s) {
           final ping = newServerData.pingLatency ?? -1;
@@ -1113,7 +1114,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         // graphics_settings 是服务器启动中的加载地图，不获取其背景图
         final isCustomServer = currentServer.serverItem.isCustom;
         final isValidMap = newMap != 'graphics_settings';
-        final isAllowedGame = info.gameType == 'CS2' || info.gameType == 'CSGO' || info.gameType == 'CSS';
+        final isAllowedGame =
+            info.gameType == 'CS2' ||
+            info.gameType == 'CSGO' ||
+            info.gameType == 'CSS';
         final shouldFetchMapInfo = !isCustomServer || isAllowedGame;
 
         if (isValidMap) {
@@ -1720,7 +1724,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             : addressList.length;
         final batch = addressList.sublist(i, end);
 
-        final batchServerPlayers = await Isolate.run(() => _fetchBatchPlayerCountsInIsolate(batch));
+        final batchServerPlayers = await Isolate.run(
+          () => _fetchBatchPlayerCountsInIsolate(batch),
+        );
 
         if (emit.isDone) break;
 
@@ -1739,7 +1745,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             total += batchServerPlayers[addr] ?? serverPlayers[addr] ?? 0;
             // 将新获取的结果存入全局累计 Map，防止后续批次覆盖时丢失之前批次的数据
             if (batchServerPlayers.containsKey(addr)) {
-               serverPlayers[addr] = batchServerPlayers[addr]!;
+              serverPlayers[addr] = batchServerPlayers[addr]!;
             }
           }
 
@@ -1749,12 +1755,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           }
         }
 
-        final bool shouldEmitFirstBatch = isFirstLoad && !state.hasEverLoadedOnlineCounts;
+        final bool shouldEmitFirstBatch =
+            isFirstLoad && !state.hasEverLoadedOnlineCounts;
         if ((hasChanges || shouldEmitFirstBatch) && !emit.isDone) {
-          emit(state.copyWith(
-            categoryOnlineCounts: latestCounts,
-            hasEverLoadedOnlineCounts: true,
-          ));
+          emit(
+            state.copyWith(
+              categoryOnlineCounts: latestCounts,
+              hasEverLoadedOnlineCounts: true,
+            ),
+          );
         }
       }
 
@@ -2334,13 +2343,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
 
     final serverIndex = state.servers.indexWhere(
-      (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.address,
+      (s) =>
+          (s.serverItem.address ?? s.serverItem.serverAddress) == event.address,
     );
     if (serverIndex != -1) {
       final s = state.servers[serverIndex];
       if (s.serverItem.isCustom && s.serverData != null) {
         final gameType = s.serverData!.gameType;
-        final isAllowedGame = gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
+        final isAllowedGame =
+            gameType == 'CS2' || gameType == 'CSGO' || gameType == 'CSS';
         if (!isAllowedGame) {
           emit(state.copyWith(error: '暂不支持获取该游戏类型的地图信息'));
           Future.delayed(const Duration(seconds: 3), () {
@@ -2642,7 +2653,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
         // 获取地图信息
         final mapName = info.map;
-        final isAllowedGame = info.gameType == 'CS2' || info.gameType == 'CSGO' || info.gameType == 'CSS';
+        final isAllowedGame =
+            info.gameType == 'CS2' ||
+            info.gameType == 'CSGO' ||
+            info.gameType == 'CSS';
         if (mapName != 'graphics_settings' && isAllowedGame) {
           final serverApi = ServerApi();
           serverApi
@@ -3244,14 +3258,17 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final expanded = event.expanded ?? !state.isOldCategoriesExpanded;
 
     // 如果折叠被关闭，并且当前选中的是旧版分类，则清空当前选择
-    final shouldClearSelection = !expanded && state.selectedCategory?.isOld == true;
+    final shouldClearSelection =
+        !expanded && state.selectedCategory?.isOld == true;
 
     if (shouldClearSelection) {
-      emit(state.copyWith(
-        isOldCategoriesExpanded: expanded,
-        clearSelectedCategory: true,
-        servers: const [], // 清空服务器列表，防止残留数据
-      ));
+      emit(
+        state.copyWith(
+          isOldCategoriesExpanded: expanded,
+          clearSelectedCategory: true,
+          servers: const [], // 清空服务器列表，防止残留数据
+        ),
+      );
     } else {
       emit(state.copyWith(isOldCategoriesExpanded: expanded));
     }
@@ -3355,24 +3372,28 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (state.pendingCategories == null) return;
 
     final pending = state.pendingCategories!;
-    
+
     // 如果当前有选中的分类，尝试在新的列表中找到对应的分类并更新选中状态
     ServerCategory? newSelectedCategory = state.selectedCategory;
     if (newSelectedCategory != null) {
       try {
         newSelectedCategory = pending.firstWhere(
-          (c) => c.modelName == newSelectedCategory!.modelName && c.isCustom == newSelectedCategory.isCustom,
+          (c) =>
+              c.modelName == newSelectedCategory!.modelName &&
+              c.isCustom == newSelectedCategory.isCustom,
         );
       } catch (_) {
         // 如果找不到（例如被移除了），保持原样，用户之后可以手动选择其他分类
       }
     }
 
-    emit(state.copyWith(
-      serverCategories: pending,
-      clearPendingCategories: true,
-      selectedCategory: newSelectedCategory,
-    ));
+    emit(
+      state.copyWith(
+        serverCategories: pending,
+        clearPendingCategories: true,
+        selectedCategory: newSelectedCategory,
+      ),
+    );
 
     // 如果选中的分类在新列表中仍然存在，触发一次强制刷新以加载其服务器信息
     if (newSelectedCategory != null) {
@@ -3390,9 +3411,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 }
 
 /// 在独立的后台 Isolate 中批量拉取 UDP 在线人数，杜绝主线程产生大量临时 Map/List 垃圾
-Future<Map<String, int>> _fetchBatchPlayerCountsInIsolate(List<String> addresses) async {
+Future<Map<String, int>> _fetchBatchPlayerCountsInIsolate(
+  List<String> addresses,
+) async {
   final Map<String, int> results = {};
-  
+
   await Future.wait(
     addresses.map((address) async {
       final parts = address.split(':');
@@ -3423,6 +3446,6 @@ Future<Map<String, int>> _fetchBatchPlayerCountsInIsolate(List<String> addresses
     }),
     eagerError: false,
   );
-  
+
   return results;
 }

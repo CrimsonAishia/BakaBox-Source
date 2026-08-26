@@ -4,7 +4,9 @@
 /// 例如: bind "{{KEY:跳投}}" "+jump; -attack"
 class KeyPlaceholderParser {
   /// 占位符正则表达式，支持带默认值格式: {{KEY:标签名|默认按键}}
-  static final RegExp placeholderPattern = RegExp(r'\{\{KEY:([^}|]+)(?:\|([^}]+))?\}\}');
+  static final RegExp placeholderPattern = RegExp(
+    r'\{\{KEY:([^}|]+)(?:\|([^}]+))?\}\}',
+  );
 
   /// 解析配置脚本，提取所有占位符
   ///
@@ -52,17 +54,17 @@ class KeyPlaceholderParser {
       final label = match.group(1)!;
       final defaultKey = match.group(2);
       final key = keyBindings[label];
-      
+
       // 如果用户绑定了按键，则优先使用绑定的按键
       if (key != null && key.isNotEmpty) {
         return key;
       }
-      
+
       // 如果没有绑定，但存在默认按键，则使用默认按键
       if (defaultKey != null && defaultKey.isNotEmpty) {
         return defaultKey;
       }
-      
+
       return showLabelOnMissing ? '[$label:未绑定]' : '';
     });
   }
@@ -74,8 +76,9 @@ class KeyPlaceholderParser {
     final placeholders = parse(script);
     for (final p in placeholders) {
       // 如果没有默认值，且用户没有绑定，则验证失败
-      if ((p.defaultKey == null || p.defaultKey!.isEmpty) && 
-          (!keyBindings.containsKey(p.label) || keyBindings[p.label]!.isEmpty)) {
+      if ((p.defaultKey == null || p.defaultKey!.isEmpty) &&
+          (!keyBindings.containsKey(p.label) ||
+              keyBindings[p.label]!.isEmpty)) {
         return false;
       }
     }
@@ -92,7 +95,8 @@ class KeyPlaceholderParser {
         .where(
           (p) =>
               (p.defaultKey == null || p.defaultKey!.isEmpty) &&
-              (!keyBindings.containsKey(p.label) || keyBindings[p.label]!.isEmpty),
+              (!keyBindings.containsKey(p.label) ||
+                  keyBindings[p.label]!.isEmpty),
         )
         .map((p) => p.label)
         .toList();

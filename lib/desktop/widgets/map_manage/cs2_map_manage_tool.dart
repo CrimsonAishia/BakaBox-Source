@@ -76,10 +76,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
 
   void _onSearchChanged(String query) {
     context.read<MapManageBloc>().add(
-      SetFilter(
-        searchQuery: query,
-        filterType: _selectedType,
-      ),
+      SetFilter(searchQuery: query, filterType: _selectedType),
     );
   }
 
@@ -89,10 +86,7 @@ class _Cs2MapManageToolState extends State<Cs2MapManageTool> {
       _selectedType = type;
     });
     context.read<MapManageBloc>().add(
-      SetFilter(
-        searchQuery: _searchController.text,
-        filterType: type,
-      ),
+      SetFilter(searchQuery: _searchController.text, filterType: type),
     );
   }
 

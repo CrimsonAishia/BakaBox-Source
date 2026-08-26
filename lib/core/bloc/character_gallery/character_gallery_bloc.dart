@@ -301,7 +301,9 @@ class CharacterGalleryBloc
           }).toList();
 
           if (updatedSubModels != null) {
-            final updatedCharacter = character.copyWith(subModels: updatedSubModels);
+            final updatedCharacter = character.copyWith(
+              subModels: updatedSubModels,
+            );
 
             emit(state.copyWith(selectedCharacter: updatedCharacter));
           }
@@ -878,7 +880,9 @@ class CharacterGalleryBloc
                   return s;
                 }).toList();
 
-                final updatedCharacter = character.copyWith(subModels: updatedSubModels);
+                final updatedCharacter = character.copyWith(
+                  subModels: updatedSubModels,
+                );
 
                 emit(state.copyWith(selectedCharacter: updatedCharacter));
               }
@@ -1100,9 +1104,9 @@ class CharacterGalleryBloc
       final results = await Future.wait([
         event.type == WeaponModelType.knife
             ? _api.getKnifeModelDetail(event.id)
-            : event.type == WeaponModelType.menuSkin 
-                ? _api.getMenuSkinDetail(event.id) 
-                : _api.getGunModelDetail(event.id),
+            : event.type == WeaponModelType.menuSkin
+            ? _api.getMenuSkinDetail(event.id)
+            : _api.getGunModelDetail(event.id),
         Future.delayed(const Duration(milliseconds: 400)), // 最小加载时间
       ]);
 
@@ -1395,9 +1399,9 @@ class CharacterGalleryBloc
       final results = await Future.wait([
         event.type == WeaponModelType.knife
             ? _api.getKnifeModelDetail(event.id)
-            : event.type == WeaponModelType.menuSkin 
-                ? _api.getMenuSkinDetail(event.id)
-                : _api.getGunModelDetail(event.id),
+            : event.type == WeaponModelType.menuSkin
+            ? _api.getMenuSkinDetail(event.id)
+            : _api.getGunModelDetail(event.id),
         Future.delayed(const Duration(milliseconds: 400)),
       ]);
 

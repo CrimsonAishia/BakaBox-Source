@@ -62,8 +62,12 @@ class BakaCachedImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (src.isEmpty) {
-      return errorBuilder?.call(context, Exception("Empty URL"), StackTrace.empty) ?? 
-             const SizedBox.shrink();
+      return errorBuilder?.call(
+            context,
+            Exception("Empty URL"),
+            StackTrace.empty,
+          ) ??
+          const SizedBox.shrink();
     }
 
     if (cacheWidth != null || cacheHeight != null) {
@@ -73,7 +77,7 @@ class BakaCachedImage extends StatelessWidget {
     // 如果直接提供了有效的 width 或 height，基于 devicePixelRatio 计算缓存尺寸
     final hasFiniteWidth = width != null && width!.isFinite;
     final hasFiniteHeight = height != null && height!.isFinite;
-    
+
     if (hasFiniteWidth || hasFiniteHeight) {
       final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
       int? cw = hasFiniteWidth ? (width! * devicePixelRatio).toInt() : null;
@@ -114,8 +118,9 @@ class BakaCachedImage extends StatelessWidget {
       filterQuality: filterQuality,
       memCacheWidth: memCacheW,
       memCacheHeight: memCacheH,
-      errorWidget: errorBuilder != null 
-          ? (context, url, error) => errorBuilder!(context, error, StackTrace.empty)
+      errorWidget: errorBuilder != null
+          ? (context, url, error) =>
+                errorBuilder!(context, error, StackTrace.empty)
           : (context, url, error) => const SizedBox.shrink(),
       fadeInDuration: const Duration(milliseconds: 300),
     );
@@ -123,7 +128,8 @@ class BakaCachedImage extends StatelessWidget {
 }
 
 /// 替代 NetworkImage 的 Provider
-CachedNetworkImageProvider bakaCachedImageProvider(String url, {
+CachedNetworkImageProvider bakaCachedImageProvider(
+  String url, {
   double scale = 1.0,
   Map<String, String>? headers,
   String? cacheKey,

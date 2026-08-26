@@ -165,16 +165,7 @@ class ServerCardWarmupMarchingAntsPainter extends CustomPainter {
         Color(0xFFFFFFFF), // 头部核心高光（纯白）
         Color(0x00000000), // 头部之后立刻截断透明
       ],
-      stops: const [
-        0.0,
-        0.3,
-        0.5,
-        0.7,
-        0.85,
-        0.98,
-        1.0,
-        1.0,
-      ],
+      stops: const [0.0, 0.3, 0.5, 0.7, 0.85, 0.98, 1.0, 1.0],
       // 利用 progress (0.0 -> 1.0) 旋转整个渐变矩阵
       transform: GradientRotation(progress * 2 * 3.1415926535),
     );

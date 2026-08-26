@@ -152,7 +152,7 @@ class MapRuntimeUtils {
 
     // 当前服务端剩余热身时间 = (总热身时间 - 拉取时服务端的当前运行时间)
     final remainingFromFetch = warmupDuration - mapRuntime.currentRuntime;
-    
+
     // 结束的绝对时间 = 拉取数据时的时间戳 + 剩余秒数 * 1000
     return DateTime.fromMillisecondsSinceEpoch(
       fetchedAt + remainingFromFetch * 1000,

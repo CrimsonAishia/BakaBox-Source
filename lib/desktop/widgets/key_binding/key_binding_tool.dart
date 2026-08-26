@@ -273,19 +273,28 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
                               }
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12),
-                                child: BlocBuilder<KeyBindingBloc, KeyBindingState>(
-                                  builder: (context, keyBindingState) {
-                                    final showMyConfigs = keyBindingState.showMyConfigs;
-                                    return Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _buildMyConfigsToggle(context, showMyConfigs, isDark),
-                                        const SizedBox(width: 12),
-                                        _buildPublishButton(),
-                                      ],
-                                    );
-                                  },
-                                ),
+                                child:
+                                    BlocBuilder<
+                                      KeyBindingBloc,
+                                      KeyBindingState
+                                    >(
+                                      builder: (context, keyBindingState) {
+                                        final showMyConfigs =
+                                            keyBindingState.showMyConfigs;
+                                        return Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _buildMyConfigsToggle(
+                                              context,
+                                              showMyConfigs,
+                                              isDark,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            _buildPublishButton(),
+                                          ],
+                                        );
+                                      },
+                                    ),
                               );
                             },
                           ),
@@ -341,10 +350,7 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
       height: 36,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.8),
-          ],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -385,7 +391,11 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
     );
   }
 
-  Widget _buildMyConfigsToggle(BuildContext context, bool isSelected, bool isDark) {
+  Widget _buildMyConfigsToggle(
+    BuildContext context,
+    bool isSelected,
+    bool isDark,
+  ) {
     return Container(
       height: 36,
       decoration: BoxDecoration(
@@ -413,7 +423,9 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: () {
-            context.read<KeyBindingBloc>().add(KeyBindingSetShowMyConfigs(!isSelected));
+            context.read<KeyBindingBloc>().add(
+              KeyBindingSetShowMyConfigs(!isSelected),
+            );
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

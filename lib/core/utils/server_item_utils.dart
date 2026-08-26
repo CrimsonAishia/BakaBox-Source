@@ -168,12 +168,14 @@ class ServerItemUtils {
     if (isCsgoServer(gameType)) {
       return GameClient.csgoLegacy;
     }
-    
+
     // 如果不是已知类型的字符串，也认为是其他游戏
-    if (gameType != null && gameType.isNotEmpty && gameType.toLowerCase() != 'cs2') {
+    if (gameType != null &&
+        gameType.isNotEmpty &&
+        gameType.toLowerCase() != 'cs2') {
       return GameClient.other;
     }
-    
+
     return GameClient.cs2;
   }
 
@@ -276,8 +278,14 @@ extension GameClientInfo on GameClient {
   }
 
   /// 构建连接服务器用的 Steam URL：`steam://run/<appId>//+connect <addr> [+password <pwd>]`
-  String buildConnectUrl(String serverAddress, [String? password, int? dynamicAppId]) {
-    final targetAppId = (dynamicAppId != null && dynamicAppId > 0) ? dynamicAppId.toString() : steamAppId;
+  String buildConnectUrl(
+    String serverAddress, [
+    String? password,
+    int? dynamicAppId,
+  ]) {
+    final targetAppId = (dynamicAppId != null && dynamicAppId > 0)
+        ? dynamicAppId.toString()
+        : steamAppId;
     if (targetAppId.isEmpty) {
       throw ArgumentError('无法构建连接 URL：未知的 AppID');
     }

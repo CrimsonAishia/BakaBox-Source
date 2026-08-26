@@ -68,14 +68,27 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
 
   Future<void> _loadImage() async {
     if (widget.imageUrl.isEmpty) {
-      if (mounted) setState(() { _isLoading = false; _hasError = true; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
       return;
     }
 
-    if (mounted) setState(() { _isLoading = true; _hasError = false; });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    }
 
     try {
-      final file = await DiskImageCacheService.instance.getImage(widget.imageUrl, maxRetries: 2);
+      final file = await DiskImageCacheService.instance.getImage(
+        widget.imageUrl,
+        maxRetries: 2,
+      );
       if (mounted) {
         setState(() {
           _imageFile = file;
@@ -98,7 +111,10 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
     final hasFiniteWidth = widget.width != null && widget.width!.isFinite;
     final hasFiniteHeight = widget.height != null && widget.height!.isFinite;
 
-    if (widget.cacheWidth != null || widget.cacheHeight != null || hasFiniteWidth || hasFiniteHeight) {
+    if (widget.cacheWidth != null ||
+        widget.cacheHeight != null ||
+        hasFiniteWidth ||
+        hasFiniteHeight) {
       return _buildContent(context, null);
     }
     return LayoutBuilder(
@@ -110,11 +126,14 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
 
   Widget _buildContent(BuildContext context, BoxConstraints? constraints) {
     if (_isLoading) {
-      return widget.placeholder ?? SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
+      return widget.placeholder ??
+          SizedBox(
+            width: widget.width,
+            height: widget.height,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
     }
 
     if (_hasError || _imageFile == null) {
@@ -131,11 +150,12 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
           cacheHeight: widget.cacheHeight,
         );
       }
-      return widget.errorWidget ?? SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: const Icon(Icons.broken_image, color: Colors.grey),
-      );
+      return widget.errorWidget ??
+          SizedBox(
+            width: widget.width,
+            height: widget.height,
+            child: const Icon(Icons.broken_image, color: Colors.grey),
+          );
     }
 
     int? memWidth = widget.cacheWidth;
@@ -176,11 +196,12 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
             colorBlendMode: widget.colorBlendMode,
           );
         }
-        return widget.errorWidget ?? SizedBox(
-          width: widget.width,
-          height: widget.height,
-          child: const Icon(Icons.broken_image, color: Colors.grey),
-        );
+        return widget.errorWidget ??
+            SizedBox(
+              width: widget.width,
+              height: widget.height,
+              child: const Icon(Icons.broken_image, color: Colors.grey),
+            );
       },
     );
   }

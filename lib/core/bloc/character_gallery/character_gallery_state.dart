@@ -254,7 +254,8 @@ class CharacterGalleryState extends Equatable {
       allMenuSkins: allMenuSkins ?? this.allMenuSkins,
       allKnifeTotalCount: allKnifeTotalCount ?? this.allKnifeTotalCount,
       allGunTotalCount: allGunTotalCount ?? this.allGunTotalCount,
-      allMenuSkinTotalCount: allMenuSkinTotalCount ?? this.allMenuSkinTotalCount,
+      allMenuSkinTotalCount:
+          allMenuSkinTotalCount ?? this.allMenuSkinTotalCount,
       weaponModelKeyword: clearWeaponModelKeyword
           ? null
           : (weaponModelKeyword ?? this.weaponModelKeyword),
@@ -309,8 +310,7 @@ class CharacterGalleryState extends Equatable {
       selectedWeaponModelId: clearSelectedWeaponModel
           ? null
           : (selectedWeaponModelId ?? this.selectedWeaponModelId),
-      selectedWeaponType:
-          selectedWeaponType ?? this.selectedWeaponType,
+      selectedWeaponType: selectedWeaponType ?? this.selectedWeaponType,
       weaponPreviewPosition: clearSelectedWeaponModel
           ? 0
           : (weaponPreviewPosition ?? this.weaponPreviewPosition),
@@ -370,7 +370,10 @@ class CharacterGalleryState extends Equatable {
 
   /// 获取当前选中的刀模（优先使用详情数据）
   KnifeModel? get selectedKnifeModel {
-    if (selectedWeaponModelId == null || selectedWeaponType != WeaponModelType.knife) return null;
+    if (selectedWeaponModelId == null ||
+        selectedWeaponType != WeaponModelType.knife) {
+      return null;
+    }
     // 优先使用详情 API 返回的数据
     if (selectedKnifeModelDetail != null) return selectedKnifeModelDetail;
     // 回退到列表数据
@@ -382,7 +385,10 @@ class CharacterGalleryState extends Equatable {
 
   /// 获取当前选中的枪模（优先使用详情数据）
   GunModel? get selectedGunModel {
-    if (selectedWeaponModelId == null || selectedWeaponType != WeaponModelType.gun) return null;
+    if (selectedWeaponModelId == null ||
+        selectedWeaponType != WeaponModelType.gun) {
+      return null;
+    }
     // 优先使用详情 API 返回的数据
     if (selectedGunModelDetail != null) return selectedGunModelDetail;
     // 回退到列表数据
@@ -394,7 +400,10 @@ class CharacterGalleryState extends Equatable {
 
   /// 获取当前选中的菜单皮肤（优先使用详情数据）
   MenuSkinModel? get selectedMenuSkin {
-    if (selectedWeaponModelId == null || selectedWeaponType != WeaponModelType.menuSkin) return null;
+    if (selectedWeaponModelId == null ||
+        selectedWeaponType != WeaponModelType.menuSkin) {
+      return null;
+    }
     // 优先使用详情 API 返回的数据
     if (selectedMenuSkinDetail != null) return selectedMenuSkinDetail;
     // 回退到列表数据

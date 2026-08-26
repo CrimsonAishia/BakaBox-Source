@@ -66,17 +66,19 @@ class MapSubscriptionBloc
     _serviceSubscription = _service.stateStream.listen((_) {
       add(const MapSubscriptionLoad());
     });
-    
+
     // 监听自动加入事件
     _autoJoinSubscription = _service.autoJoinStream.listen((event) {
-      add(MapSubscriptionTriggerAutoJoin(
-        serverAddress: event.serverAddress,
-        serverName: event.serverName,
-        mapName: event.mapName,
-        mapLabel: event.mapLabel,
-        mapBackground: event.mapBackground,
-        countdownSeconds: event.countdownSeconds,
-      ));
+      add(
+        MapSubscriptionTriggerAutoJoin(
+          serverAddress: event.serverAddress,
+          serverName: event.serverName,
+          mapName: event.mapName,
+          mapLabel: event.mapLabel,
+          mapBackground: event.mapBackground,
+          countdownSeconds: event.countdownSeconds,
+        ),
+      );
     });
   }
 
@@ -559,7 +561,9 @@ class MapSubscriptionBloc
 
     // 边界情况 2：暖服/连接优先，如果当前正在进行挤服、暖服、启动、连接等操作，忽略自动加入
     if (StatusWindowService().state.type != OperationType.none) {
-      LogService.d('[MapSubscriptionBloc] 当前有其他连接/暖服操作正在进行，忽略自动加入: ${event.mapName}');
+      LogService.d(
+        '[MapSubscriptionBloc] 当前有其他连接/暖服操作正在进行，忽略自动加入: ${event.mapName}',
+      );
       return;
     }
 
@@ -691,11 +695,7 @@ class MapSubscriptionBloc
 
     if (!success) {
       final currentState = StatusWindowService().state;
-      emit(
-        state.copyWith(
-          error: currentState.message ?? '连接失败',
-        ),
-      );
+      emit(state.copyWith(error: currentState.message ?? '连接失败'));
     }
   }
 

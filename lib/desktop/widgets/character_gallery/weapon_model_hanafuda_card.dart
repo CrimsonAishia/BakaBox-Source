@@ -277,7 +277,9 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
     return Container(
       color: washiColor,
       child: Icon(
-        widget.isKnife ? MdiIcons.knife : (widget.isMenuSkin ? MdiIcons.monitor : MdiIcons.pistol),
+        widget.isKnife
+            ? MdiIcons.knife
+            : (widget.isMenuSkin ? MdiIcons.monitor : MdiIcons.pistol),
         size: 40,
         color: scrollBrown.withValues(alpha: 0.3),
       ),

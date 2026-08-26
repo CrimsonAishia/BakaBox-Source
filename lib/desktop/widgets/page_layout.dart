@@ -64,7 +64,7 @@ class _PageLayoutState extends State<PageLayout> {
         ],
       );
     }
-    
+
     return content;
   }
 

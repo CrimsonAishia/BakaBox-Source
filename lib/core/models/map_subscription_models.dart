@@ -110,7 +110,8 @@ class MapSubscription extends Equatable {
       categoryNames: categoryNames ?? this.categoryNames,
       serverAddresses: serverAddresses ?? this.serverAddresses,
       isAutoJoinEnabled: isAutoJoinEnabled ?? this.isAutoJoinEnabled,
-      autoJoinCountdownSeconds: autoJoinCountdownSeconds ?? this.autoJoinCountdownSeconds,
+      autoJoinCountdownSeconds:
+          autoJoinCountdownSeconds ?? this.autoJoinCountdownSeconds,
       createdAt: createdAt ?? this.createdAt,
       cachedAt: clearCachedAt ? null : (cachedAt ?? this.cachedAt),
     );

@@ -9,8 +9,10 @@ import '../utils/storage_utils.dart';
 class CustomServerService {
   static const String _customCategoriesKey = 'custom_server_categories';
 
-  static final _categoriesChangedController = StreamController<void>.broadcast();
-  static Stream<void> get onCategoriesChanged => _categoriesChangedController.stream;
+  static final _categoriesChangedController =
+      StreamController<void>.broadcast();
+  static Stream<void> get onCategoriesChanged =>
+      _categoriesChangedController.stream;
 
   static Future<dynamic> _lock = Future.value();
 

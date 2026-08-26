@@ -15,7 +15,10 @@ class WorkshopMissingDialog extends StatefulWidget {
   const WorkshopMissingDialog({super.key, required this.reason});
 
   static Future<void> checkAndShow(BuildContext context) async {
-    if (StorageUtils.getBool('ignore_workshop_missing_dialog', defaultValue: false)) {
+    if (StorageUtils.getBool(
+      'ignore_workshop_missing_dialog',
+      defaultValue: false,
+    )) {
       return;
     }
 

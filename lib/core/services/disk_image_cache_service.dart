@@ -240,7 +240,8 @@ class DiskImageCacheService {
     // 下载图片，支持重试
     for (int attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        Map<String, String> headers = ImageUtils.getBilibiliHeaders(url, {}) ?? {};
+        Map<String, String> headers =
+            ImageUtils.getBilibiliHeaders(url, {}) ?? {};
 
         final response = await _dio.get<List<int>>(
           url,

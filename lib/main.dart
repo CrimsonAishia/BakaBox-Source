@@ -62,4 +62,3 @@ void _safeLogError(String message, Object error, StackTrace? stack) {
     debugPrint('$message: $error\n$stack');
   }
 }
-

@@ -237,7 +237,9 @@ class AutoexecService {
     // 修改为支持多键格式：label1=key1,label2=key2
     String keyLabel = 'AUTO';
     if (keyBindings.isNotEmpty) {
-      keyLabel = keyBindings.entries.map((e) => '${e.key}=${e.value}').join(',');
+      keyLabel = keyBindings.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join(',');
     }
 
     // 构建配置块

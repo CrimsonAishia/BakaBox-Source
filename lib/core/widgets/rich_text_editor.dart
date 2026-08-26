@@ -445,7 +445,8 @@ class RichTextEditorState extends State<RichTextEditor> {
                       isWarning: isImageLimit,
                       isDark: isDark,
                     ),
-                  if (!isInlineMode && widget.maxImages > 0) const SizedBox(height: 4),
+                  if (!isInlineMode && widget.maxImages > 0)
+                    const SizedBox(height: 4),
                   _buildStatusChip(
                     icon: null,
                     text: '$count/${widget.maxLength}',
@@ -1438,11 +1439,16 @@ class RichTextEditorState extends State<RichTextEditor> {
         }
 
         if (length > 0) {
-          widget.controller.replaceText(index, length, BlockEmbed.image(imageRef), null);
+          widget.controller.replaceText(
+            index,
+            length,
+            BlockEmbed.image(imageRef),
+            null,
+          );
         } else {
           widget.controller.document.insert(index, BlockEmbed.image(imageRef));
         }
-        
+
         // 将光标移到图片节点之后
         widget.controller.updateSelection(
           TextSelection.collapsed(offset: index + 1),
