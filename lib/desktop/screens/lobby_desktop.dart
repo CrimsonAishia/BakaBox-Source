@@ -1293,17 +1293,33 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
       'queuingOrWarming',
     );
 
+    final currentMapUserIds = widget.state.users.map((u) => u.userId).toSet();
+
     final displayUsers =
         searchedUsers.where((u) => _matchesFilter(u, _statusFilter)).toList()
           ..sort((a, b) {
-            if (a.isSelf) return -1;
-            if (b.isSelf) return 1;
-            // 关注用户排在前面
+            // 1. 自己最前
+            if (a.isSelf != b.isSelf) return a.isSelf ? -1 : 1;
+
+            // 2. 无名玩家最后
+            final aNoName = a.displayName.trim().isEmpty || a.isAnonymous;
+            final bNoName = b.displayName.trim().isEmpty || b.isAnonymous;
+            if (aNoName != bNoName) return aNoName ? 1 : -1;
+
+            // 3. 关注用户靠前
             final aFollowed = _followedIds.contains(a.businessUserId);
             final bFollowed = _followedIds.contains(b.businessUserId);
-            if (aFollowed && !bFollowed) return -1;
-            if (!aFollowed && bFollowed) return 1;
-            return a.displayName.compareTo(b.displayName);
+            if (aFollowed != bFollowed) return aFollowed ? -1 : 1;
+
+            // 4. 当前地图靠前
+            final aOnMap = currentMapUserIds.contains(a.userId);
+            final bOnMap = currentMapUserIds.contains(b.userId);
+            if (aOnMap != bOnMap) return aOnMap ? -1 : 1;
+
+            // 5. 按名称拼音/字母（忽略大小写）排序
+            return a.displayName.toLowerCase().compareTo(
+              b.displayName.toLowerCase(),
+            );
           });
     // 兜底去重：防止身份切换/丢帧场景下同一用户（尤其是"自己"）重复出现，
     // 导致点击一个高亮多行、或多行显示"你"标签。
@@ -1390,6 +1406,19 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: dedupedUsers.length,
+                        findChildIndexCallback: (Key key) {
+                          if (key is ValueKey<String>) {
+                            final id = key.value;
+                            final index = dedupedUsers.indexWhere((u) {
+                              final uid = u.businessUserId?.isNotEmpty == true
+                                  ? 'biz_${u.businessUserId}'
+                                  : 'uid_${u.userId}';
+                              return uid == id;
+                            });
+                            if (index >= 0) return index;
+                          }
+                          return null;
+                        },
                         itemBuilder: (context, index) {
                           final user = dedupedUsers[index];
                           final isFollowed = _followedIds.contains(
@@ -1398,8 +1427,8 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                           final isHighlighted =
                               _highlightedUserId == user.userId;
                           // 判断用户是否在本地图：检查 state.users（当前地图用户列表）中是否存在该用户
-                          final isOnCurrentMap = widget.state.users.any(
-                            (u) => u.userId == user.userId,
+                          final isOnCurrentMap = currentMapUserIds.contains(
+                            user.userId,
                           );
                           // 解析用户所在地图名称：优先使用服务端返回的 mapId
                           String? userMapName;
