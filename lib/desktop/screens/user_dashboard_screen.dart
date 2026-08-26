@@ -45,6 +45,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   final JustTheController _shakeTooltipController = JustTheController();
   final ScrollController _scrollController = ScrollController();
   bool _hasVerifiedMissingShake = false;
+  final GlobalKey _shakeTooltipKey = GlobalKey();
 
   @override
   void initState() {
@@ -90,26 +91,26 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       final now = DateTime.now();
       final records = await DailyTaskApi.getMonthRecords(now.year, now.month);
 
-      // 智能检查：如果今日后端无摇摇乐记录，且当前尚未强制校验过，则发起一次强制状态同步
+      // 如果今日后端无签到或摇摇乐记录，且当前尚未强制校验过，则发起一次强制状态同步
       if (!_hasVerifiedMissingShake) {
+        bool hasTodayCheckIn = false;
         bool hasTodayShake = false;
         for (var r in records) {
-          if (r.taskType == 'shake') {
-            try {
-              final date = DateTime.parse(r.createdAt).toLocal();
-              if (date.year == now.year &&
-                  date.month == now.month &&
-                  date.day == now.day) {
-                hasTodayShake = true;
-                break;
-              }
-            } catch (_) {}
-          }
+          try {
+            final date = DateTime.parse(r.createdAt).toLocal();
+            if (date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day) {
+              if (r.taskType == 'check_in') hasTodayCheckIn = true;
+              if (r.taskType == 'shake') hasTodayShake = true;
+              if (hasTodayCheckIn && hasTodayShake) break;
+            }
+          } catch (_) {}
         }
 
-        if (!hasTodayShake) {
+        if (!hasTodayCheckIn || !hasTodayShake) {
           _hasVerifiedMissingShake = true;
-          // 发现没记录，触发一次强制获取结果（会检查网页状态，若已摇则自动补录后端）
+          // 发现有缺失的记录，触发一次强制获取结果（会检查网页状态，若已完成则自动补录后端）
           if (mounted) {
             context.read<DailyTaskBloc>().add(
               const DailyTaskCheckStatusRequested(force: true),
@@ -700,7 +701,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     label: state.hasCheckedIn ? '今日已签到' : '立即签到',
                     color: const Color(0xFF60A5FA),
                     isCompleted: state.hasCheckedIn,
-                    isLoading: state.isCheckingIn,
+                    isLoading: state.isCheckingIn || state.isCheckingStatus,
                     onTap:
                         state.hasCheckedIn ||
                             state.isCheckingIn ||
@@ -713,6 +714,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   const SizedBox(width: 8),
 
                   JustTheTooltip(
+                    key: _shakeTooltipKey,
                     controller: _shakeTooltipController,
                     preferredDirection: AxisDirection.down,
                     backgroundColor: isDark
@@ -724,6 +726,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     tailBaseWidth: 16,
                     margin: const EdgeInsets.all(16),
                     triggerMode: TooltipTriggerMode.manual,
+                    isModal: true,
                     content: ShakeTooltipContent(
                       onClose: () => _shakeTooltipController.hideTooltip(),
                     ),
@@ -732,7 +735,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       label: state.hasShaked ? '摇摇乐已完成' : '去摇一摇',
                       color: const Color(0xFFF472B6),
                       isCompleted: state.hasShaked,
-                      isLoading: false,
+                      isLoading: state.isCheckingStatus,
                       onTap: () {
                         if (!state.isCheckingStatus) {
                           _shakeTooltipController.showTooltip();

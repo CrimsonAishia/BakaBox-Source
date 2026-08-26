@@ -145,19 +145,6 @@ class _ShakeTooltipContentState extends State<ShakeTooltipContent>
     try {
       final result = await AuthService.instance.doShake();
 
-      // 无论弹窗是否被关闭，都自动提交到数据库，防止漏提交
-      // 如果获取到了已在论坛摇过，或者新摇成功，且当前状态没记录，则提交
-      if (result.success && !dailyTaskBloc.state.hasShaked) {
-        dailyTaskBloc.add(
-          DailyTaskShakeCompleted(
-            success: true,
-            rewardAmount: result.rewardAmount,
-          ),
-        );
-      }
-
-      if (!mounted) return;
-
       if (result.success) {
         _rewardAmount = result.rewardAmount;
         _resultMessage = result.message;
@@ -166,6 +153,16 @@ class _ShakeTooltipContentState extends State<ShakeTooltipContent>
         await _stopSlotAnimation();
 
         if (!mounted) return;
+
+        // 动画停止后更新状态
+        if (!dailyTaskBloc.state.hasShaked) {
+          dailyTaskBloc.add(
+            DailyTaskShakeCompleted(
+              success: true,
+              rewardAmount: result.rewardAmount,
+            ),
+          );
+        }
 
         setState(() {
           _isShaking = false;
@@ -336,181 +333,188 @@ class _ShakeTooltipContentState extends State<ShakeTooltipContent>
     final textColor = isDark ? Colors.white : AppColors.gray800;
     final secondaryTextColor = isDark ? Colors.white54 : AppColors.gray500;
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: 360,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '摇一摇抽奖',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, color: secondaryTextColor),
-                  onPressed: widget.onClose,
-                  splashRadius: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // 老虎机滚动数字显示
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.slate700 : AppColors.slate100,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: _buildSlotDigit(index, isDark, textColor),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (_resultMessage != null)
-              Column(
+    return GestureDetector(
+      onTap: () {}, // 拦截点击，防止穿透导致弹窗关闭
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 360,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                  Text(
+                    '摇一摇抽奖',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
-                    decoration: BoxDecoration(
-                      color: _rewardAmount != null
-                          ? Colors.amber.withValues(alpha: 0.1)
-                          : (isDark ? AppColors.slate700 : AppColors.slate100),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_rewardAmount != null)
-                          const Icon(
-                            Icons.monetization_on,
-                            color: Colors.amber,
-                            size: 20,
-                          ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            _resultMessage!,
-                            style: TextStyle(
-                              color: _rewardAmount != null
-                                  ? Colors.amber
-                                  : textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: secondaryTextColor),
+                    onPressed: widget.onClose,
+                    splashRadius: 20,
                   ),
                 ],
               ),
-            if (_isLoading)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
+              const SizedBox(height: 24),
+              // 老虎机滚动数字显示
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.slate700 : AppColors.slate100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: _buildSlotDigit(index, isDark, textColor),
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (_resultMessage != null)
+                Column(
                   children: [
-                    const CircularProgressIndicator(color: AppColors.primary),
-                    const SizedBox(height: 12),
-                    Text(
-                      '正在加载...',
-                      style: TextStyle(color: secondaryTextColor),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _rewardAmount != null
+                            ? Colors.amber.withValues(alpha: 0.1)
+                            : (isDark
+                                  ? AppColors.slate700
+                                  : AppColors.slate100),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_rewardAmount != null)
+                            const Icon(
+                              Icons.monetization_on,
+                              color: Colors.amber,
+                              size: 20,
+                            ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _resultMessage!,
+                              style: TextStyle(
+                                color: _rewardAmount != null
+                                    ? Colors.amber
+                                    : textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed:
-                    _isLoading || _isShaking || _alreadyShaked || _hasResult
-                    ? null
-                    : _doShake,
-                icon: _isShaking
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Icon(
-                        _alreadyShaked || _hasResult
-                            ? Icons.check
-                            : Icons.vibration,
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(color: AppColors.primary),
+                      const SizedBox(height: 12),
+                      Text(
+                        '正在加载...',
+                        style: TextStyle(color: secondaryTextColor),
                       ),
-                label: Text(
-                  _isShaking
-                      ? '摇奖中...'
-                      : (_alreadyShaked || _hasResult ? '已完成' : '摇一摇'),
+                    ],
+                  ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _alreadyShaked || _hasResult
-                      ? Colors.green
-                      : AppColors.primary,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: _alreadyShaked || _hasResult
-                      ? Colors.green.withValues(alpha: 0.7)
-                      : AppColors.primary.withValues(alpha: 0.5),
-                  disabledForegroundColor: Colors.white70,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton.icon(
+                  onPressed:
+                      _isLoading || _isShaking || _alreadyShaked || _hasResult
+                      ? null
+                      : _doShake,
+                  icon: _isShaking
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          _alreadyShaked || _hasResult
+                              ? Icons.check
+                              : Icons.vibration,
+                        ),
+                  label: Text(
+                    _isShaking
+                        ? '摇奖中...'
+                        : (_alreadyShaked || _hasResult ? '已完成' : '摇一摇'),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _alreadyShaked || _hasResult
+                        ? Colors.green
+                        : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: _alreadyShaked || _hasResult
+                        ? Colors.green.withValues(alpha: 0.7)
+                        : AppColors.primary.withValues(alpha: 0.5),
+                    disabledForegroundColor: Colors.white70,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 40,
-              child: OutlinedButton.icon(
-                onPressed: _openInBrowser,
-                icon: const Icon(Icons.open_in_browser, size: 16),
-                label: const Text('网页打开'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? Colors.white70 : AppColors.gray500,
-                  side: BorderSide(
-                    color: (isDark ? Colors.white70 : AppColors.gray500)
-                        .withValues(alpha: 0.3),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: OutlinedButton.icon(
+                  onPressed: _openInBrowser,
+                  icon: const Icon(Icons.open_in_browser, size: 16),
+                  label: const Text('网页打开'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDark
+                        ? Colors.white70
+                        : AppColors.gray500,
+                    side: BorderSide(
+                      color: (isDark ? Colors.white70 : AppColors.gray500)
+                          .withValues(alpha: 0.3),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '每日可摇一次，获得随机僵尸币奖励',
-              style: TextStyle(color: secondaryTextColor, fontSize: 12),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                '每日可摇一次，获得随机僵尸币奖励',
+                style: TextStyle(color: secondaryTextColor, fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );
