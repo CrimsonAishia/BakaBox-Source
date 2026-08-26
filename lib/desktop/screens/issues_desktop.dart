@@ -1,4 +1,4 @@
-﻿import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
+import 'package:bakabox_app/core/widgets/baka_cached_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -1342,6 +1342,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   bool _isLoadingMore = false;
 
   bool _commentBarVisible = false;
+  bool _isComposerExpanded = false;
   final GlobalKey _commentSectionKey = GlobalKey();
 
   @override
@@ -1356,6 +1357,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     if (widget.issueId != oldWidget.issueId) {
       _isLoadingMore = false;
       _commentBarVisible = false;
+      _isComposerExpanded = false;
     }
   }
 
@@ -1399,6 +1401,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   void _setReplyTo(IssueComment comment) {
     setState(() {
       _replyToComment = comment;
+      _isComposerExpanded = true;
     });
   }
 
@@ -1579,7 +1582,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   const SizedBox(height: 20),
                   _buildCommentsSection(state),
                   SizedBox(
-                    height: (showComposer && _commentBarVisible) ? 150 : 20,
+                    height: (showComposer && _commentBarVisible) ? (_isComposerExpanded ? 450 : 150) : 20,
                   ),
                 ],
               ),
@@ -1602,6 +1605,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   issueId: widget.issueId,
                   replyTarget: _replyToComment,
                   onCancelReply: _cancelReply,
+                  onExpandedChanged: (expanded) {
+                    setState(() => _isComposerExpanded = expanded);
+                  },
                 ),
               ),
             ),
@@ -2881,11 +2887,13 @@ class _IssueBottomCommentComposer extends StatefulWidget {
   final int issueId;
   final IssueComment? replyTarget;
   final VoidCallback? onCancelReply;
+  final ValueChanged<bool>? onExpandedChanged;
 
   const _IssueBottomCommentComposer({
     required this.issueId,
     this.replyTarget,
     this.onCancelReply,
+    this.onExpandedChanged,
   });
 
   @override
@@ -2947,6 +2955,7 @@ class _IssueBottomCommentComposerState
     }
     if (_expanded) return;
     setState(() => _expanded = true);
+    widget.onExpandedChanged?.call(true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _commentEditorKey.currentState?.focus();
@@ -2957,6 +2966,7 @@ class _IssueBottomCommentComposerState
   void _collapse() {
     if (!_expanded) return;
     setState(() => _expanded = false);
+    widget.onExpandedChanged?.call(false);
     _commentEditorKey.currentState?.unfocus();
   }
 
