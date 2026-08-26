@@ -46,9 +46,7 @@ class WindowsPriorityUtils {
         _setPriorityClass != null) {
       final hProcess = _getCurrentProcess!();
       final result = _setPriorityClass!(hProcess, _idlePriorityClass);
-      if (result != 0) {
-        LogService.d('[WindowsPriorityUtils] 成功降低进程优先级 (IDLE)');
-      } else {
+      if (result == 0) {
         LogService.e('[WindowsPriorityUtils] 降低进程优先级失败');
       }
     }
@@ -63,9 +61,7 @@ class WindowsPriorityUtils {
         _setPriorityClass != null) {
       final hProcess = _getCurrentProcess!();
       final result = _setPriorityClass!(hProcess, _normalPriorityClass);
-      if (result != 0) {
-        LogService.d('[WindowsPriorityUtils] 成功恢复进程优先级 (NORMAL)');
-      } else {
+      if (result == 0) {
         LogService.e('[WindowsPriorityUtils] 恢复进程优先级失败');
       }
     }
