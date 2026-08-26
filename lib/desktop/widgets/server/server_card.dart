@@ -1745,6 +1745,28 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             mapName,
             dataQuality: server.teamScores!.dataQuality,
           ),
+        ] else if (server.mapRuntime?.weeklyOccurrences != null) ...[
+          const SizedBox(height: 2),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
+              ),
+              children: [
+                const TextSpan(text: '近七天出现'),
+                TextSpan(
+                  text: ' ${server.mapRuntime!.weeklyOccurrences} ',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.blue500,
+                  ),
+                ),
+                const TextSpan(text: '次'),
+              ],
+            ),
+          ),
         ],
       ],
     );
