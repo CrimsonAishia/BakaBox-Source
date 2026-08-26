@@ -120,7 +120,10 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
     // 如果同一天内已经检查过且有状态，跳过重复检查（优化性能）
     // 注意：跨天后需要重新检查，所以这里用 !isCrossDay
-    if (!isCrossDay && lastCheckDate == todayDate && state.canShake != null) {
+    if (!event.force &&
+        !isCrossDay &&
+        lastCheckDate == todayDate &&
+        state.canShake != null) {
       LogService.d('[DailyTask] 今日已检查过状态，跳过重复请求');
       return;
     }

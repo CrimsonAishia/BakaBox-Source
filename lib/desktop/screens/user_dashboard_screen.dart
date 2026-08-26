@@ -44,6 +44,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   List<DailyTaskRecordDto> _monthRecords = [];
   final JustTheController _shakeTooltipController = JustTheController();
   final ScrollController _scrollController = ScrollController();
+  bool _hasVerifiedMissingShake = false;
 
   @override
   void initState() {
@@ -88,6 +89,35 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     try {
       final now = DateTime.now();
       final records = await DailyTaskApi.getMonthRecords(now.year, now.month);
+
+      // 智能检查：如果今日后端无摇摇乐记录，且当前尚未强制校验过，则发起一次强制状态同步
+      if (!_hasVerifiedMissingShake) {
+        bool hasTodayShake = false;
+        for (var r in records) {
+          if (r.taskType == 'shake') {
+            try {
+              final date = DateTime.parse(r.createdAt).toLocal();
+              if (date.year == now.year &&
+                  date.month == now.month &&
+                  date.day == now.day) {
+                hasTodayShake = true;
+                break;
+              }
+            } catch (_) {}
+          }
+        }
+
+        if (!hasTodayShake) {
+          _hasVerifiedMissingShake = true;
+          // 发现没记录，触发一次强制获取结果（会检查网页状态，若已摇则自动补录后端）
+          if (mounted) {
+            context.read<DailyTaskBloc>().add(
+              const DailyTaskCheckStatusRequested(force: true),
+            );
+          }
+        }
+      }
+
       if (mounted) {
         setState(() {
           _monthRecords = records;

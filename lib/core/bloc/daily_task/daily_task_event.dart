@@ -9,7 +9,12 @@ abstract class DailyTaskEvent extends Equatable {
 
 /// 检查每日任务状态（签到+摇一摇）
 class DailyTaskCheckStatusRequested extends DailyTaskEvent {
-  const DailyTaskCheckStatusRequested();
+  final bool force;
+
+  const DailyTaskCheckStatusRequested({this.force = false});
+
+  @override
+  List<Object?> get props => [force];
 }
 
 /// 执行签到
