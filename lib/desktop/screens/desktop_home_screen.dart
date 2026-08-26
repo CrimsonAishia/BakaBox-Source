@@ -26,6 +26,7 @@ import 'character_gallery_desktop.dart';
 import 'bilibili_content_screen.dart';
 import 'lobby_desktop.dart';
 import 'community_guide_screen.dart';
+import 'user_dashboard_screen.dart';
 import '../../core/services/game_status_service.dart';
 import '../../core/services/cs2_crash_monitor_service.dart';
 import '../widgets/global_broadcast_bar.dart';
@@ -149,6 +150,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       ),
       8 => const SettingsDesktop(),
       9 => const IssuesDesktop(),
+      10 => const UserDashboardScreen(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -315,6 +317,9 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
         break;
       case 9:
         newActivityText = '在看问题反馈';
+        break;
+      case 10:
+        newActivityText = '在看个人主页';
         break;
     }
     context.read<LobbyBloc>().add(LobbyPageActivityChanged(newActivityText));
@@ -564,6 +569,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                           items: _navigationItems,
                           onFeedbackTap: () => _onIndexChanged(9),
                           isFeedbackSelected: _currentIndex == 9,
+                          onProfileTap: () => _onIndexChanged(10),
+                          isProfileSelected: _currentIndex == 10,
                         ),
                         Expanded(
                           child: AnimatedBuilder(

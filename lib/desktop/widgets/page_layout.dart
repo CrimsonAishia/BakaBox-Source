@@ -18,11 +18,15 @@ class PageLayout extends StatefulWidget {
   /// 返回按钮的回调，如果提供，则会在标题旁边显示一个返回按钮
   final VoidCallback? onBack;
 
+  /// 可选的页面背景组件（将显示在最底层）
+  final Widget? background;
+
   const PageLayout({
     super.key,
     required this.title,
     required this.child,
     this.onBack,
+    this.background,
   });
 
   @override
@@ -34,7 +38,7 @@ class _PageLayoutState extends State<PageLayout> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       width: double.infinity,
       height: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -51,6 +55,17 @@ class _PageLayoutState extends State<PageLayout> {
         ],
       ),
     );
+
+    if (widget.background != null) {
+      return Stack(
+        children: [
+          Positioned.fill(child: widget.background!),
+          content,
+        ],
+      );
+    }
+    
+    return content;
   }
 
   /// 构建页面头部

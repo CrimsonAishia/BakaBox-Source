@@ -29,6 +29,12 @@ class DesktopNavigation extends StatelessWidget {
   /// 问题反馈是否选中
   final bool isFeedbackSelected;
 
+  /// 头像点击回调（进入个人主页）
+  final VoidCallback? onProfileTap;
+
+  /// 个人主页是否选中
+  final bool isProfileSelected;
+
   const DesktopNavigation({
     super.key,
     required this.currentIndex,
@@ -36,6 +42,8 @@ class DesktopNavigation extends StatelessWidget {
     required this.items,
     this.onFeedbackTap,
     this.isFeedbackSelected = false,
+    this.onProfileTap,
+    this.isProfileSelected = false,
   });
 
   @override
@@ -127,7 +135,10 @@ class DesktopNavigation extends StatelessWidget {
   Widget _buildLoginArea(ThemeData theme, bool isDark) {
     return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: const UserLoginBox(),
+          child: UserLoginBox(
+            onProfileTap: onProfileTap,
+            isSelected: isProfileSelected,
+          ),
         )
         .animate()
         .fadeIn(duration: 400.ms, delay: 700.ms)
