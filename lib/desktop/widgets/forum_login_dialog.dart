@@ -228,7 +228,7 @@ class _ForumLoginDialogState extends State<ForumLoginDialog> {
         });
 
         // Reuse the generic cookie login event
-        authBloc.add(AuthQQLoginRequested(cookies: forumCookies));
+        authBloc.add(AuthCookieLoginRequested(cookies: forumCookies));
 
         final success = await completer.future.timeout(
           const Duration(seconds: 10),
@@ -245,12 +245,10 @@ class _ForumLoginDialogState extends State<ForumLoginDialog> {
 
         if (success) {
           ToastUtils.showSuccess(context, '论坛登录成功');
-          Navigator.of(context).pop();
         } else {
-          setState(() => _isExtracting = false);
-          _loginDetected = false;
           ToastUtils.showError(context, '论坛登录失败，请重试');
         }
+        Navigator.of(context).pop();
       }
     } catch (e) {
       LogService.e('[ForumLogin] 提取 Cookie 失败', e);
