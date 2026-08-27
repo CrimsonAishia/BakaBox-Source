@@ -237,7 +237,7 @@ class _VideosSectionState extends State<VideosSection> {
               ),
             )
             .animate()
-            .fadeIn(duration: 500.ms, delay: 1000.ms)
+            .fadeIn(duration: 500.ms, delay: 1150.ms)
             .slideY(
               begin: 0.15,
               end: 0,

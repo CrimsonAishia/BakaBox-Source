@@ -279,7 +279,7 @@ class _LiveRoomsSectionState extends State<LiveRoomsSection> {
               ),
             )
             .animate()
-            .fadeIn(duration: 500.ms, delay: 900.ms)
+            .fadeIn(duration: 500.ms, delay: 1050.ms)
             .slideY(
               begin: 0.15,
               end: 0,
