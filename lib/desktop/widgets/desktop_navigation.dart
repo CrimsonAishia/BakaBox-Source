@@ -29,6 +29,12 @@ class DesktopNavigation extends StatelessWidget {
   /// 问题反馈是否选中
   final bool isFeedbackSelected;
 
+  /// 设置点击回调
+  final VoidCallback? onSettingsTap;
+
+  /// 设置是否选中
+  final bool isSettingsSelected;
+
   /// 头像点击回调（进入个人主页）
   final VoidCallback? onProfileTap;
 
@@ -42,6 +48,8 @@ class DesktopNavigation extends StatelessWidget {
     required this.items,
     this.onFeedbackTap,
     this.isFeedbackSelected = false,
+    this.onSettingsTap,
+    this.isSettingsSelected = false,
     this.onProfileTap,
     this.isProfileSelected = false,
   });
@@ -74,7 +82,7 @@ class DesktopNavigation extends StatelessWidget {
         children: [
           _buildLogoArea(isDark),
           Expanded(child: _buildNavigationItems(theme, isDark)),
-          _buildFeedbackButton(theme, isDark),
+          _buildBottomActions(theme, isDark),
           _buildLoginArea(theme, isDark),
         ],
       ),
@@ -145,79 +153,105 @@ class DesktopNavigation extends StatelessWidget {
         .slideY(begin: 0.3, duration: 500.ms, curve: Curves.easeOutCubic);
   }
 
-  /// 构建问题反馈按钮
-  Widget _buildFeedbackButton(ThemeData theme, bool isDark) {
+  /// 构建底部操作按钮（问题反馈、设置）
+  Widget _buildBottomActions(ThemeData theme, bool isDark) {
     return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              onTap: onFeedbackTap,
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isFeedbackSelected
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : (isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : AppColors.gray100),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isFeedbackSelected
-                        ? AppColors.primary.withValues(alpha: 0.3)
-                        : (isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : AppColors.gray200),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isFeedbackSelected
-                          ? Icons.feedback
-                          : Icons.feedback_outlined,
-                      size: 18,
-                      color: isFeedbackSelected
-                          ? AppColors.primary
-                          : (isDark ? Colors.white60 : AppColors.gray500),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        '问题反馈',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isFeedbackSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                          color: isFeedbackSelected
-                              ? AppColors.primary
-                              : (isDark ? Colors.white60 : AppColors.gray500),
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 12,
-                      color: isFeedbackSelected
-                          ? AppColors.primary
-                          : (isDark ? Colors.white38 : AppColors.gray400),
-                    ),
-                  ],
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildActionItem(
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.feedback_outlined,
+                  selectedIcon: Icons.feedback,
+                  label: '问题反馈',
+                  isSelected: isFeedbackSelected,
+                  onTap: onFeedbackTap,
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildActionItem(
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.settings_outlined,
+                  selectedIcon: Icons.settings,
+                  label: '设置',
+                  isSelected: isSettingsSelected,
+                  onTap: onSettingsTap,
+                ),
+              ),
+            ],
           ),
         )
         .animate(delay: 600.ms)
         .fadeIn(duration: 300.ms)
         .slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOutCubic);
+  }
+
+  Widget _buildActionItem({
+    required ThemeData theme,
+    required bool isDark,
+    required IconData icon,
+    required IconData selectedIcon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : AppColors.gray100),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.3)
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : AppColors.gray200),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
+                size: 16,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? Colors.white60 : AppColors.gray500),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark ? Colors.white60 : AppColors.gray500),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

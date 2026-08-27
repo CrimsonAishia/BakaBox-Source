@@ -121,13 +121,6 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       activeColor: AppColors.primary,
       inactiveColor: AppColors.slate500,
     ),
-    NavigationItem(
-      icon: MdiIcons.cogOutline,
-      selectedIcon: MdiIcons.cog,
-      label: '设置',
-      activeColor: AppColors.primary,
-      inactiveColor: AppColors.slate500,
-    ),
   ];
 
   /// 根据索引构建页面（使用全局 Bloc，页面切换不重新创建）
@@ -569,6 +562,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                           items: _navigationItems,
                           onFeedbackTap: () => _onIndexChanged(9),
                           isFeedbackSelected: _currentIndex == 9,
+                          onSettingsTap: () => _onIndexChanged(8),
+                          isSettingsSelected: _currentIndex == 8,
                           onProfileTap: () => _onIndexChanged(10),
                           isProfileSelected: _currentIndex == 10,
                         ),
