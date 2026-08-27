@@ -5,6 +5,7 @@ import '../../../core/bloc/activity/activity_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/activity_model.dart';
 import '../../../core/utils/time_utils.dart';
+import '../../../core/widgets/signed_network_image.dart';
 import '../activity/activity_detail_dialog.dart';
 
 class ActivityBannerCarousel extends StatefulWidget {
@@ -303,11 +304,10 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
                 scale: _isHovered ? 1.05 : 1.0,
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.easeOutCubic,
-                child: Image.network(
-                  widget.activity.bannerUrl,
+                child: SignedNetworkImage(
+                  url: widget.activity.bannerUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      _buildPlaceholder(),
+                  fallback: _buildPlaceholder(),
                 ),
               )
             else

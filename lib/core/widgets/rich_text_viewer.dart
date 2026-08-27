@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/quill_delta_codec.dart';
 import '../services/image_url_service.dart';
 import 'disk_cached_image.dart';
+import 'image_viewer_dialog.dart';
 import 'embeds/divider_embed_builder.dart';
 import 'embeds/hover_info_embed_builder.dart';
 import 'embeds/resizable_image_embed_builder.dart';
@@ -493,13 +494,15 @@ class _LegacyImageEmbedBuilder extends EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final String url = embedContext.node.value.data.toString();
-    return _LegacyImageWidget(url: url);
+    final attributes = embedContext.node.style.attributes;
+    return _LegacyImageWidget(url: url, attributes: attributes);
   }
 }
 
 class _LegacyImageWidget extends StatefulWidget {
   final String url;
-  const _LegacyImageWidget({required this.url});
+  final Map<String, Attribute> attributes;
+  const _LegacyImageWidget({required this.url, required this.attributes});
   @override
   State<_LegacyImageWidget> createState() => _LegacyImageWidgetState();
 }
@@ -507,11 +510,20 @@ class _LegacyImageWidget extends StatefulWidget {
 class _LegacyImageWidgetState extends State<_LegacyImageWidget> {
   String? _signedUrl;
   bool _isLoading = true;
+  bool _isHovering = false;
 
   @override
   void initState() {
     super.initState();
     _loadSignedUrl();
+  }
+
+  @override
+  void didUpdateWidget(_LegacyImageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _loadSignedUrl();
+    }
   }
 
   Future<void> _loadSignedUrl() async {
@@ -526,6 +538,11 @@ class _LegacyImageWidgetState extends State<_LegacyImageWidget> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _handleTap() {
+    if (_signedUrl == null) return;
+    ImageViewerDialog.show(context, imageUrls: [_signedUrl!], initialIndex: 0);
   }
 
   @override
@@ -547,12 +564,124 @@ class _LegacyImageWidgetState extends State<_LegacyImageWidget> {
       return const SizedBox.shrink();
     }
 
+    Widget image = ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          DiskCachedImage(imageUrl: _signedUrl!, fit: BoxFit.contain),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: _isHovering ? 1.0 : 0.0,
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.zoom_in,
+                    size: 32,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    double? width;
+    double? widthFactor;
+    double? height;
+
+    final widthAttr = widget.attributes['width']?.value?.toString();
+    final heightAttr = widget.attributes['height']?.value?.toString();
+    final styleAttr = widget.attributes['style']?.value?.toString();
+
+    void parseDimension(
+      String? str,
+      void Function(double) setPx,
+      void Function(double) setPct,
+    ) {
+      if (str == null || str.isEmpty) return;
+      if (str.endsWith('%')) {
+        final val = double.tryParse(str.substring(0, str.length - 1));
+        if (val != null) setPct(val / 100.0);
+      } else if (str.endsWith('px')) {
+        final val = double.tryParse(str.substring(0, str.length - 2));
+        if (val != null) setPx(val);
+      } else {
+        final val = double.tryParse(str);
+        if (val != null) setPx(val);
+      }
+    }
+
+    // 优先从直接属性读取
+    parseDimension(widthAttr, (v) => width = v, (v) => widthFactor = v);
+    parseDimension(
+      heightAttr,
+      (v) => height = v,
+      (_) {},
+    ); // 忽略 heightFactor，防止滚动视图崩溃
+
+    // 如果直接属性没找到，尝试从 style 字符串提取
+    if (styleAttr != null) {
+      if (width == null && widthFactor == null) {
+        final widthMatch = RegExp(r'width:\s*([^;]+)').firstMatch(styleAttr);
+        if (widthMatch != null) {
+          parseDimension(
+            widthMatch.group(1)?.trim(),
+            (v) => width = v,
+            (v) => widthFactor = v,
+          );
+        }
+      }
+      if (height == null) {
+        final heightMatch = RegExp(r'height:\s*([^;]+)').firstMatch(styleAttr);
+        if (heightMatch != null) {
+          parseDimension(
+            heightMatch.group(1)?.trim(),
+            (v) => height = v,
+            (_) {},
+          );
+        }
+      }
+    }
+
+    // 应用尺寸约束
+    if (widthFactor != null && widthFactor! > 0) {
+      image = FractionallySizedBox(widthFactor: widthFactor, child: image);
+    } else if (width != null || height != null) {
+      image = SizedBox(width: width, height: height, child: image);
+    }
+
+    image = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _handleTap,
+        child: image,
+      ),
+    );
+
+    // 解析对齐方式
+    AlignmentGeometry alignment = Alignment.center; // 默认居中
+    if (styleAttr != null) {
+      if (styleAttr.contains('float: right')) {
+        alignment = Alignment.centerRight;
+      } else if (styleAttr.contains('float: left')) {
+        alignment = Alignment.centerLeft;
+      } else if (styleAttr.contains('margin: auto')) {
+        alignment = Alignment.center;
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: DiskCachedImage(imageUrl: _signedUrl!, fit: BoxFit.contain),
-      ),
+      child: Align(alignment: alignment, child: image),
     );
   }
 }
