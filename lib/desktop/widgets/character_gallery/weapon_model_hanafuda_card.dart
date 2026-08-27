@@ -279,7 +279,9 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
       child: Icon(
         widget.isKnife
             ? MdiIcons.knife
-            : (widget.isMenuSkin ? MdiIcons.monitor : MdiIcons.pistol),
+            : (widget.isMenuSkin
+                  ? Icons.view_sidebar_outlined
+                  : MdiIcons.pistol),
         size: 40,
         color: scrollBrown.withValues(alpha: 0.3),
       ),

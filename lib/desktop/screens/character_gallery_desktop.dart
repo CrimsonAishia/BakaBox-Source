@@ -980,7 +980,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         ? MdiIcons.knife
         : tabIndex == 1
         ? MdiIcons.pistol
-        : MdiIcons.wallpaper;
+        : Icons.view_sidebar_outlined;
     final text = tabIndex == 0
         ? '刀模'
         : tabIndex == 1
@@ -1464,7 +1464,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('🎴', style: TextStyle(fontSize: 64)),
+          Image.asset(
+            'assets/images/character_gallery/card_placeholder.webp',
+            width: 70,
+            height: 112,
+          ),
           const SizedBox(height: 16),
           Text(
             '选择一张卡片查看详情',
@@ -2507,7 +2511,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               const SizedBox(width: 8),
               _buildWeaponTabButton(
                 label: '菜单皮肤',
-                icon: MdiIcons.wallpaper,
+                icon: Icons.view_sidebar_outlined,
                 isSelected: state.weaponModelTab == 2,
                 onTap: () => context.read<CharacterGalleryBloc>().add(
                   const ChangeWeaponModelTab(2),
@@ -2613,7 +2617,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   ? MdiIcons.knife
                   : state.weaponModelTab == 1
                   ? MdiIcons.pistol
-                  : MdiIcons.wallpaper,
+                  : Icons.view_sidebar_outlined,
               size: 48,
               color: scrollBrown.withValues(alpha: 0.3),
             ),
@@ -2739,7 +2743,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           if (menuSkins.isNotEmpty) ...[
             _WeaponSectionTitle(
               title: '专属菜单皮肤',
-              icon: MdiIcons.wallpaper,
+              icon: Icons.view_sidebar_outlined,
               count: menuSkins.length,
             ),
             const SizedBox(height: 10),
