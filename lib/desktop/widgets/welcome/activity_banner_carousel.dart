@@ -157,11 +157,10 @@ class _ActivityBannerCarouselState extends State<ActivityBannerCarousel> {
                 ),
 
                 if (activities.length > 1)
-                  Positioned(
-                    left: 16,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16),
                       child: AnimatedOpacity(
                         opacity: _isHovered ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 200),
@@ -174,11 +173,10 @@ class _ActivityBannerCarouselState extends State<ActivityBannerCarousel> {
                   ),
 
                 if (activities.length > 1)
-                  Positioned(
-                    right: 16,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
                       child: AnimatedOpacity(
                         opacity: _isHovered ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 200),
@@ -191,35 +189,37 @@ class _ActivityBannerCarouselState extends State<ActivityBannerCarousel> {
                   ),
 
                 if (activities.length > 1)
-                  Positioned(
-                    bottom: 16,
-                    right: 24,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16, right: 24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(
-                          activities.length,
-                          (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentPage == index ? 16 : 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(
+                            activities.length,
+                            (index) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentPage == index ? 16 : 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _currentPage == index
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
                             ),
                           ),
                         ),
@@ -315,59 +315,61 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
               _buildPlaceholder(),
 
             // 顶部优雅角标 (左上角)
-            Positioned(
-              top: 16,
-              left: 16,
-              child: Row(
-                children: [
-                  if (widget.activity.isPinned)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFF43F5E),
-                            Color(0xFFE11D48),
-                          ], // Rose 500 to 600
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 16, left: 16),
+                child: Row(
+                  children: [
+                    if (widget.activity.isPinned)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFFE11D48,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFFF43F5E),
+                              Color(0xFFE11D48),
+                            ], // Rose 500 to 600
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.push_pin_rounded,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '置顶',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFE11D48,
+                              ).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.push_pin_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '置顶',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -388,44 +390,52 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
             ),
 
             // 左下角信息
-            Positioned(
-              left: 24,
-              bottom: 24,
-              right: 120,
-              child: AnimatedSlide(
-                offset: _isHovered ? const Offset(0, -0.05) : Offset.zero,
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOutCubic,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTimeAndStatusRow(context),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.activity.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (widget.activity.description.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        widget.activity.description,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontSize: 14,
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 24,
+                  bottom: 24,
+                  right: 120,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: AnimatedSlide(
+                    offset: _isHovered ? const Offset(0, -0.05) : Offset.zero,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTimeAndStatusRow(context),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.activity.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
+                        if (widget.activity.description.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            widget.activity.description,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
