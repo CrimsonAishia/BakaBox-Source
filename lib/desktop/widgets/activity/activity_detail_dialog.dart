@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/activity_model.dart';
@@ -55,64 +56,103 @@ class ActivityDetailDialog extends StatelessWidget {
 
     // 颜色适配
     final Color timeIconColor = isOverlay
-        ? Colors.white.withValues(alpha: 0.6)
+        ? const Color(0xFFFBBF24)
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
     final Color timeTextColor = isOverlay
-        ? Colors.white.withValues(alpha: 0.75)
+        ? const Color(0xFFFBBF24)
         : theme.colorScheme.onSurfaceVariant;
+
+    final List<Shadow>? textShadows = isOverlay
+        ? [
+            Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 3),
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.6),
+              offset: const Offset(0, 1),
+              blurRadius: 2,
+            ),
+          ]
+        : null;
+
+    Widget statusBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: statusColor.withValues(alpha: isOverlay ? 0.4 : 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: statusColor.withValues(alpha: isOverlay ? 0.6 : 0.4),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            statusText,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+              shadows: isOverlay
+                  ? [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 2,
+                      ),
+                    ]
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (isOverlay) {
+      statusBadge = ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: statusBadge,
+        ),
+      );
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         // 状态指示标签
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-          decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: statusColor.withValues(alpha: 0.4),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                statusText,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  height: 1.1,
-                ),
-              ),
-            ],
-          ),
-        ),
+        statusBadge,
         const SizedBox(width: 10),
         // 时间字符串
-        Icon(Icons.schedule_rounded, color: timeIconColor, size: 13),
+        Icon(
+          Icons.schedule_rounded,
+          color: timeIconColor,
+          size: 13,
+          shadows: textShadows,
+        ),
         const SizedBox(width: 4),
         Text(
           timeStr,
           style: TextStyle(
             color: timeTextColor,
             fontSize: 12,
-            fontWeight: FontWeight.w500,
+            fontWeight: isOverlay ? FontWeight.w600 : FontWeight.w500,
             letterSpacing: 0.5,
+            shadows: textShadows,
           ),
         ),
       ],
