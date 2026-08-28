@@ -188,6 +188,7 @@ class _BasicTabViewState extends State<BasicTabView> {
                       appliedBindings: appliedBindings,
                       imageUrl: keyBindingImageAssets[item.keyName],
                       fallbackId: item.keyName.hashCode,
+                      showOpenButton: false,
                       onTap: () => _handleBindItem(item),
                       onCancelApply: () {
                         context.read<KeyBindingBloc>().add(

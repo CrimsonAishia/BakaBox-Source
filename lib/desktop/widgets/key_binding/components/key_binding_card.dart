@@ -42,6 +42,7 @@ class KeyBindingCard extends StatefulWidget {
   final VoidCallback? onCancelAudit;
   final VoidCallback? onCancelApply;
   final VoidCallback? onShowHistory;
+  final bool showOpenButton;
 
   const KeyBindingCard({
     super.key,
@@ -74,6 +75,7 @@ class KeyBindingCard extends StatefulWidget {
     this.onCancelAudit,
     this.onCancelApply,
     this.onShowHistory,
+    this.showOpenButton = true,
   });
 
   @override
@@ -565,20 +567,22 @@ class _KeyBindingCardState extends State<KeyBindingCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () => widget.onTap(),
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      label: const Text('打开'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                    if (widget.showOpenButton) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => widget.onTap(),
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: const Text('打开'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
+                      const SizedBox(width: 12),
+                    ],
                     ElevatedButton.icon(
                       onPressed: () {
                         widget.onCancelApply?.call();
@@ -779,18 +783,18 @@ class _KeyBindingCardMoreMenu extends StatelessWidget {
     final showCancel = isPending || hasPendingChange;
 
     return Container(
-      width: 32,
-      height: 32,
+      width: 26,
+      height: 26,
       decoration: BoxDecoration(
         color: btnBgColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: PopupMenuButton<String>(
         tooltip: '更多操作',
-        icon: Icon(Icons.more_vert, size: 18, color: iconColor),
+        icon: Icon(Icons.more_vert, size: 16, color: iconColor),
         padding: EdgeInsets.zero,
-        iconSize: 18,
-        splashRadius: 16,
+        iconSize: 16,
+        splashRadius: 14,
         color: menuBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         itemBuilder: (context) {
