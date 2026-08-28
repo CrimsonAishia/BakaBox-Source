@@ -302,10 +302,14 @@ class PlayerNotificationOverlay extends StatefulWidget {
   /// 回调：当通知过期时通知父组件
   final void Function(String id) onNotificationExpire;
 
+  /// 右侧偏移量（用于避免遮挡侧边栏）
+  final double rightOffset;
+
   const PlayerNotificationOverlay({
     super.key,
     required this.notifications,
     required this.onNotificationExpire,
+    this.rightOffset = 0.0,
   });
 
   @override
@@ -329,8 +333,10 @@ class _PlayerNotificationOverlayState extends State<PlayerNotificationOverlay> {
     // 使用 Align 配合 alignment 来实现右上角定位（不依赖 Positioned）
     return Align(
       alignment: Alignment.topRight,
-      child: Padding(
-        padding: EdgeInsets.only(top: topOffset, right: 0),
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(top: topOffset, right: widget.rightOffset),
         child: MouseRegion(
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),

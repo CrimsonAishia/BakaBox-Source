@@ -820,13 +820,17 @@ class _LobbyDesktopState extends State<LobbyDesktop>
               // 玩家加入/离开通知
               if (state.playerNotifications.isNotEmpty)
                 Positioned.fill(
-                  child: PlayerNotificationOverlay(
-                    notifications: state.playerNotifications,
-                    onNotificationExpire: (id) {
-                      context.read<LobbyBloc>().add(
-                        LobbyNotificationExpired(id),
-                      );
-                    },
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: PlayerNotificationOverlay(
+                      notifications: state.playerNotifications,
+                      rightOffset: state.isPlayersPanelOpen ? 320.0 : 0.0,
+                      onNotificationExpire: (id) {
+                        context.read<LobbyBloc>().add(
+                          LobbyNotificationExpired(id),
+                        );
+                      },
+                    ),
                   ),
                 ),
               // 传送门询问对话框
