@@ -555,6 +555,7 @@ class GameLauncherService {
     String? password, {
     required GameClient client,
     int? appId,
+    String? gameType,
   }) async {
     try {
       LogService.d('使用命令行连接服务器: $serverAddress (${client.displayName})');
@@ -565,6 +566,7 @@ class GameLauncherService {
         serverAddress,
         password,
         appId,
+        gameType,
       );
       final steamUrl = rawSteamUrl.replaceAll(' ', '%20');
 
@@ -805,6 +807,7 @@ class GameLauncherService {
       password,
       client: client,
       appId: appId,
+      gameType: gameType,
     );
   }
 
@@ -854,6 +857,7 @@ class GameLauncherService {
       password,
       client: client,
       appId: appId,
+      gameType: gameType,
     );
   }
 
@@ -867,6 +871,7 @@ class GameLauncherService {
     String? password, {
     required GameClient client,
     int? appId,
+    String? gameType,
   }) async {
     // Windows使用命令行方式
     if (PlatformUtils.isWindows) {
@@ -875,6 +880,7 @@ class GameLauncherService {
         password,
         client: client,
         appId: appId,
+        gameType: gameType,
       );
     }
 
@@ -883,7 +889,12 @@ class GameLauncherService {
       LogService.d('使用Steam URL连接服务器: $serverAddress (${client.displayName})');
 
       // 构建Steam URL，使用目标游戏对应的 AppID
-      final steamUrl = client.buildConnectUrl(serverAddress, password, appId);
+      final steamUrl = client.buildConnectUrl(
+        serverAddress,
+        password,
+        appId,
+        gameType,
+      );
 
       LogService.d('生成的Steam URL: $steamUrl');
 
@@ -977,6 +988,7 @@ class GameLauncherService {
       effectivePassword,
       client: client,
       appId: appId,
+      gameType: gameType,
     );
   }
 

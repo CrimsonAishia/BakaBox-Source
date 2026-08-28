@@ -190,6 +190,8 @@ class SourceServerService {
             gameType = 'CSS';
           } else if (info.game.toLowerCase().contains('counter-strike')) {
             gameType = 'CSGO';
+          } else if (info.folder.isNotEmpty) {
+            gameType = info.folder;
           }
 
           if (!completer.isCompleted) {

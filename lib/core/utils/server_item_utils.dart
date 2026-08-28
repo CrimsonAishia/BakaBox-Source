@@ -134,6 +134,89 @@ class ServerItemUtils {
   /// Counter-Strike: Source 的 AppID
   static const int cssAppId = 240;
 
+  /// 获取有效的 AppID（处理某些第三方游戏服务器不返回 AppID 或返回 0 的情况）
+  static int? getEffectiveAppId(int? appId, String? gameType) {
+    if (appId != null && appId > 0) return appId;
+    if (gameType == null || gameType.isEmpty) return null;
+
+    final lower = gameType.toLowerCase();
+    switch (lower) {
+      // 常见 Source / GoldSrc 独立游戏
+      case 'nmrih':
+        return 224260; // 地狱已满 (No More Room in Hell)
+      case 'left4dead2':
+      case 'l4d2':
+        return 550; // 求生之路2
+      case 'left4dead':
+      case 'l4d':
+        return 500; // 求生之路
+      case 'tf':
+      case 'tf2':
+        return 440; // 军团要塞2 (Team Fortress 2)
+      case 'garrysmod':
+      case 'gmod':
+        return 4000; // 盖瑞模组 (Garry's Mod)
+      case 'insurgency':
+        return 222880; // 叛乱 (Insurgency)
+      case 'doi':
+      case 'dayofinfamy':
+        return 447820; // 耻辱之日 (Day of Infamy)
+      case 'cstrike':
+      case 'cs16':
+        return 10; // 反恐精英1.6 (CS 1.6)
+      case 'czero':
+        return 80; // 零点行动 (Condition Zero)
+      case 'dod':
+        return 30; // 胜利之日 (Day of Defeat)
+      case 'dods':
+        return 300; // 胜利之日：起源 (Day of Defeat: Source)
+      case 'tfc':
+        return 20; // 军团要塞：经典 (Team Fortress Classic)
+      case 'dmc':
+        return 40; // 死亡竞赛：经典 (Deathmatch Classic)
+      case 'ricochet':
+        return 60; // 弹跳 (Ricochet)
+      case 'valve':
+        return 70; // 半条命 (Half-Life)
+      case 'gearbox':
+        return 50; // 半条命：针锋相对 (Opposing Force)
+      case 'hl2mp':
+        return 320; // 半条命2：死亡竞赛 (HL2: Deathmatch)
+      case 'pvkii':
+        return 17570; // 维京海盗与骑士2 (Pirates, Vikings, and Knights II)
+      case 'bms':
+      case 'blackmesa':
+        return 362890; // 黑山 (Black Mesa)
+      case 'synergy':
+        return 17520; // 协同效应 (Synergy)
+      case 'zps':
+        return 17500; // 僵尸恐慌：起源 (Zombie Panic! Source)
+      case 'fistful_of_frags':
+      case 'fof':
+        return 265630; // 荒野大镖客：起源 (Fistful of Frags)
+      case 'alienswarm':
+        return 630; // 异形丛生 (Alien Swarm)
+      case 'asrd':
+        return 563560; // 异形丛生：反应型空降 (Alien Swarm: Reactive Drop)
+      case 'nucleardawn':
+        return 17710; // 核子黎明 (Nuclear Dawn)
+      case 'contagion':
+        return 238430; // 传染病 (Contagion)
+      case 'brainbread2':
+        return 346330; // 脑残面包2 (BrainBread 2)
+      case 'ageofchivalry':
+        return 17510; // 骑士时代 (Age of Chivalry)
+      case 'dystopia':
+        return 17580; // 乌托邦 (Dystopia)
+      case 'empires':
+        return 17740; // 帝国 (Empires)
+      case 'hidden':
+        return 215; // 隐形人 (The Hidden) 需要 Source SDK Base 2006
+      default:
+        return null;
+    }
+  }
+
   /// 根据服务器的 appId 与 gameType 解析对应的游戏客户端类型
   ///
   /// 解析优先级：appId（最权威）> gameType 字符串
@@ -145,8 +228,9 @@ class ServerItemUtils {
   /// - 无 appId 时回退到 gameType；此时无法区分独立版/Legacy CSGO，
   ///   保守按 Legacy 处理以保持既有行为
   static GameClient resolveGameClient({int? appId, String? gameType}) {
-    if (appId != null) {
-      switch (appId) {
+    final effectiveAppId = getEffectiveAppId(appId, gameType);
+    if (effectiveAppId != null) {
+      switch (effectiveAppId) {
         case csgoStandaloneAppId:
           return GameClient.csgoStandalone;
         case cssAppId:
@@ -282,12 +366,17 @@ extension GameClientInfo on GameClient {
     String serverAddress, [
     String? password,
     int? dynamicAppId,
+    String? gameType,
   ]) {
-    final targetAppId = (dynamicAppId != null && dynamicAppId > 0)
-        ? dynamicAppId.toString()
+    final effectiveAppId = ServerItemUtils.getEffectiveAppId(
+      dynamicAppId,
+      gameType,
+    );
+    final targetAppId = (effectiveAppId != null && effectiveAppId > 0)
+        ? effectiveAppId.toString()
         : steamAppId;
     if (targetAppId.isEmpty) {
-      throw ArgumentError('无法构建连接 URL：未知的 AppID');
+      throw ArgumentError('无法构建连接 URL：未知的 AppID (GameType: $gameType)');
     }
     final base = 'steam://run/$targetAppId//+connect $serverAddress';
     if (password != null && password.isNotEmpty) {
