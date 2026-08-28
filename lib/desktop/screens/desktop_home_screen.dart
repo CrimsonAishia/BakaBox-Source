@@ -368,6 +368,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     });
   }
 
+  @override
+  void goHome() {
+    _onIndexChanged(0);
+  }
+
   /// 辅助：在切换前检查编辑器是否有未保存内容，通过后执行跳转
   void _performWithLeaveCheck(VoidCallback action) async {
     final hostState = _guideHostKey.currentState;

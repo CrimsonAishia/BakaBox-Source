@@ -24,6 +24,9 @@ abstract class DesktopNavigator {
   /// 草稿被删、已发布攻略内容或状态更新等）。「我的中心」若仍挂载需刷新当前列表，
   /// 避免显示旧标题 / 摘要 / 状态或已删除的草稿。
   void openMine({bool fromPublish = false});
+
+  /// 返回首页
+  void goHome();
 }
 
 /// InheritedWidget 用于在子树中访问 DesktopNavigator

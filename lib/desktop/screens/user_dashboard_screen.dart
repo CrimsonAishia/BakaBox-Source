@@ -22,6 +22,7 @@ import '../widgets/common_scroll_indicator.dart';
 import '../widgets/shake_tooltip.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import '../../core/api/daily_task_api.dart';
+import '../../core/services/desktop_navigator.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -31,6 +32,7 @@ class UserDashboardScreen extends StatefulWidget {
 }
 
 class _UserDashboardScreenState extends State<UserDashboardScreen> {
+  UserInfo? _cachedUserInfo;
   pb.SteamUserInfoResponse? _steamUserInfo;
   pb.InventoryStatsResponse? _inventoryStats;
 
@@ -223,15 +225,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
-        if (!authState.isAuthenticated || authState.userInfo == null) {
-          return Center(
-            child: Text(
-              '请先登录',
-              style: TextStyle(color: _getSecondaryTextColor(isDark)),
-            ),
-          );
+        final userInfo = authState.userInfo ?? _cachedUserInfo;
+        if (userInfo == null) {
+          return const SizedBox.shrink();
         }
-        final userInfo = authState.userInfo!;
+        _cachedUserInfo = userInfo;
 
         return PageLayout(
           title: '个人中心',
@@ -1327,6 +1325,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
+              DesktopNavigatorProvider.of(context)?.goHome();
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
             child: const Text('确认解除', style: TextStyle(color: Colors.red)),
