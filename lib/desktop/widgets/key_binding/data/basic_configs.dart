@@ -91,7 +91,7 @@ bind "{{KEY:按键}}" "third_p1"''',
     CfgItem('画面亮度调整', 'toggle r_fullscreen_gamma 1 1.5 2 2.5 3'),
     CfgItem('隐藏腿部模型', 'say !hidebody'),
     CfgItem('传送到复活点', 'say !ztele'),
-    CfgItem('屏蔽好友', 'c_hidesteamfriends'),
+    CfgItem('屏蔽Steam好友', 'c_hidesteamfriends'),
     CfgItem('屏蔽白名单', 'c_hidefriends'),
   ]),
 ];

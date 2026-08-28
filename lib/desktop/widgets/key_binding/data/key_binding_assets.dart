@@ -56,7 +56,7 @@ const Map<String, String> keyBindingImageAssets = {
   '隐藏腿部模型': 'assets/images/key_binding/hidebody.webp',
 
   '传送到复活点': 'assets/images/key_binding/ztele.webp',
-  '屏蔽好友': 'assets/images/key_binding/hidesteamfriends.webp',
+  '屏蔽Steam好友': 'assets/images/key_binding/hidesteamfriends.webp',
   '屏蔽白名单': 'assets/images/key_binding/hidesteamfriends.webp',
   '冰冻弹': 'assets/images/key_binding/ice.webp',
 };
