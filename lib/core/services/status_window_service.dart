@@ -14,7 +14,6 @@ import 'console_log_service.dart';
 import 'floating_window_service.dart';
 import 'game_launcher_service.dart';
 import 'game_status_service.dart';
-import 'gsi_service.dart';
 import 'queue_guard_service.dart';
 import 'server_address_mapping_service.dart';
 import 'source_server_service.dart';
@@ -1947,12 +1946,11 @@ class StatusWindowService {
         return;
       }
 
-      // 乐观模式：仅当游戏不可监控（无 -condebug console.log）
-      // 且 GSI 也不可用时，没有任何信号能验证是否真正进服，
-      // 只能在命令发出后直接乐观判定成功。
+      // 乐观模式：当游戏不可监控（无 -condebug console.log）时，
+      // 即使 GSI 在线也不足以完美判断连接状态（容易卡在挤服面板），
+      // 因此在命令发出后直接乐观判定成功。
       final canMonitorViaConsole = _gameStatusService.isMonitorable;
-      final canVerifyViaGsi = GsiService().isLive;
-      if (!canMonitorViaConsole && !canVerifyViaGsi) {
+      if (!canMonitorViaConsole) {
         // 无任何验证信号时发送成功消息
         final usersBloc = QueueUsersBloc.instance;
         usersBloc.add(const QueueUsersSuccess());
