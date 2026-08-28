@@ -113,17 +113,19 @@ class UpdateTag extends MapTagEvent {
 
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
+  final List<int>? categoryIds;
   final String? editReason;
 
   const UpdateTag({
     required this.tagId,
     required this.name,
     this.color,
+    this.categoryIds,
     this.editReason,
   });
 
   @override
-  List<Object?> get props => [tagId, name, color, editReason];
+  List<Object?> get props => [tagId, name, color, categoryIds, editReason];
 }
 
 /// 删除标签

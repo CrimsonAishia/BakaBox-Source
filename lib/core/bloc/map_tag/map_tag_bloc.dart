@@ -191,6 +191,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         event.tagId,
         event.name,
         color: event.color,
+        categoryIds: event.categoryIds,
         editReason: event.editReason,
       );
       if (success) {

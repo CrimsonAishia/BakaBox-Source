@@ -12,6 +12,7 @@ import '../../../../core/utils/toast_utils.dart';
 import 'contribution_auth_mixin.dart';
 import 'map_tag_chip.dart';
 import '../../../../core/widgets/tag_color_picker.dart';
+import '../../../../core/services/token_service.dart';
 import 'tag_voters_dialogs.dart';
 
 class MapTagContributionView extends StatefulWidget {
@@ -107,8 +108,12 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
     final controller = TextEditingController(text: tag.name);
     final reasonController = TextEditingController();
     String? selectedColor = tag.color;
+    List<int> selectedCategoryIds = tag.categoryIds != null
+        ? List.from(tag.categoryIds!)
+        : [];
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapTagBloc = context.read<MapTagBloc>();
+    final categories = mapTagBloc.state.categories;
     final isApproved = tag.isApproved;
     final isRejected = tag.isRejected;
     final needsReason = isApproved || isRejected;
@@ -180,6 +185,51 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                       setDialogState(() => selectedColor = color),
                   enabled: true,
                 ),
+                const SizedBox(height: 16),
+                if (categories.isNotEmpty) ...[
+                  Text(
+                    '所属分类',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white70 : AppColors.gray700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories.map((cat) {
+                      final isSelected = selectedCategoryIds.contains(cat.id);
+                      return FilterChip(
+                        label: Text(
+                          cat.name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.white70 : AppColors.gray700),
+                          ),
+                        ),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setDialogState(() {
+                            if (selected) {
+                              selectedCategoryIds.add(cat.id);
+                            } else {
+                              selectedCategoryIds.remove(cat.id);
+                            }
+                          });
+                        },
+                        selectedColor: AppColors.primary,
+                        checkmarkColor: Colors.white,
+                        backgroundColor: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.grey.shade100,
+                      );
+                    }).toList(),
+                  ),
+                ],
                 if (needsReason) ...[
                   const SizedBox(height: 16),
                   TextField(
@@ -246,6 +296,7 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
                     tagId: tag.id,
                     name: newName,
                     color: selectedColor,
+                    categoryIds: selectedCategoryIds,
                     editReason: needsReason ? reason : null,
                   ),
                 );
@@ -1153,9 +1204,7 @@ class _MapTagContributionViewState extends State<MapTagContributionView>
 
   Widget _buildTagList(MapTagState state, bool isDark) {
     final query = _tagSearchController.text.trim().toLowerCase();
-    final currentUserId = int.tryParse(
-      context.read<AuthBloc>().state.userInfo?.uid ?? '',
-    );
+    final currentUserId = TokenService.instance.userInfo?.id;
 
     final seen = <int>{};
     final allTags = <MapTag>[
