@@ -409,7 +409,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 内容区域 - 左右布局
   Widget _buildContent() {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 10),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

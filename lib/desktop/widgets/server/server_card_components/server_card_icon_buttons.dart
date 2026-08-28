@@ -81,7 +81,7 @@ class _ServerCardHoverIconButtonState extends State<ServerCardHoverIconButton> {
                 ? widget.color.withValues(alpha: 0.35)
                 : isHovered
                 ? widget.color.withValues(alpha: 0.25)
-                : Colors.white.withValues(alpha: widget.disabled ? 0.05 : 0.15),
+                : widget.color.withValues(alpha: widget.disabled ? 0.05 : 0.15),
             borderRadius: BorderRadius.circular(4),
             border: widget.isActive
                 ? Border.all(color: widget.color, width: 1.5)
@@ -104,10 +104,10 @@ class _ServerCardHoverIconButtonState extends State<ServerCardHoverIconButton> {
             widget.icon,
             size: 18,
             color: widget.disabled
-                ? Colors.white.withValues(alpha: 0.3)
+                ? widget.color.withValues(alpha: 0.5)
                 : widget.isActive || isHovered
                 ? Colors.white
-                : Colors.white.withValues(alpha: 0.85),
+                : widget.color.withValues(alpha: 0.85),
           ),
         ),
       ),
