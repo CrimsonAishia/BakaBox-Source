@@ -534,7 +534,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                               'assets/icons/steam.png',
                               width: 14,
                               height: 14,
-                              color: _getSecondaryTextColor(isDark),
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -1347,11 +1346,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return buffer.toString();
   }
 
-  String _formatDuration(int minutes) {
-    if (minutes < 60) return '$minutes分钟';
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    return '$hours小时${mins > 0 ? ' $mins分' : ''}';
+  String _formatDuration(int seconds) {
+    if (seconds <= 0) return '0分';
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    if (hours > 0) {
+      return '$hours小时${minutes > 0 ? ' $minutes分' : ''}';
+    }
+    return '$minutes分';
   }
 }
 
