@@ -415,6 +415,9 @@ class CharacterGalleryState extends Equatable {
 
   /// 获取当前刀枪模的预览图
   String? get currentWeaponPreviewImage {
+    if (selectedWeaponType == WeaponModelType.menuSkin) {
+      return selectedMenuSkin?.previewUrl;
+    }
     final preview = selectedKnifeModel?.preview ?? selectedGunModel?.preview;
     if (preview == null) return null;
     return switch (weaponPreviewPosition) {
