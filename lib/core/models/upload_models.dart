@@ -8,7 +8,6 @@ part 'upload_models.g.dart';
 class UploadResult extends Equatable {
   final int fileId;
   final String url;
-  final String cdnUrl;
   final String fileName;
   final int fileSize;
   final String fileMD5;
@@ -16,7 +15,6 @@ class UploadResult extends Equatable {
   const UploadResult({
     required this.fileId,
     required this.url,
-    required this.cdnUrl,
     required this.fileName,
     required this.fileSize,
     required this.fileMD5,
@@ -28,7 +26,7 @@ class UploadResult extends Equatable {
   Map<String, dynamic> toJson() => _$UploadResultToJson(this);
 
   @override
-  List<Object?> get props => [fileId, url, cdnUrl, fileName, fileSize, fileMD5];
+  List<Object?> get props => [fileId, url, fileName, fileSize, fileMD5];
 }
 
 /// 已上传图片信息

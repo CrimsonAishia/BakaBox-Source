@@ -1467,7 +1467,7 @@ class RichTextEditorState extends State<RichTextEditor> {
         // attachment 模式：添加到附件区域（现有行为）
         final uploadedImage = UploadedImage(
           url: imageRef,
-          thumbnailUrl: uploadResult.cdnUrl,
+          thumbnailUrl: uploadResult.url,
           fileSize: uploadResult.fileSize,
           fileName: uploadResult.fileName,
         );

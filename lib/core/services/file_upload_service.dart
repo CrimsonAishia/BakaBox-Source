@@ -86,7 +86,6 @@ class FileUploadService {
       return UploadResult(
         fileId: response.fileId,
         url: response.url,
-        cdnUrl: response.url,
         fileName: fileName,
         fileSize: fileSize,
         fileMD5: '', // 图床上传不需要 MD5
