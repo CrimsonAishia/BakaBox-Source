@@ -17,6 +17,7 @@ import '../widgets/character_gallery/character_image_viewer.dart';
 import '../widgets/character_gallery/character_unified_edit_dialog.dart';
 import '../widgets/character_gallery/character_unified_history_dialog.dart';
 import '../widgets/character_gallery/skill_preview_indicator.dart';
+import '../widgets/character_gallery/character_voice_card.dart';
 
 /// 格式化数值：整数不显示小数点，小数保留原样
 String _formatNumber(num value) {
@@ -1521,6 +1522,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   height: 1.8,
                 ),
               ),
+              if (state.currentSubModel?.voices != null &&
+                  state.currentSubModel!.voices!.isNotEmpty)
+                _buildVoicesSection(state.currentSubModel!.voices!),
               // 符卡/技能区域
               if (character.category == CharacterCategory.touhou)
                 _buildSpellCardsSection(state),
@@ -1547,6 +1551,48 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             right: 0,
             child: ScrollIndicator(isTop: false),
           ),
+      ],
+    );
+  }
+
+  Widget _buildVoicesSection(List<VoiceItem> voices) {
+    // Group voices by type
+    final Map<String, List<VoiceItem>> groupedVoices = {};
+    for (final voice in voices) {
+      if (!groupedVoices.containsKey(voice.type)) {
+        groupedVoices[voice.type] = [];
+      }
+      groupedVoices[voice.type]!.add(voice);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionDivider(title: '角色语音'),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // 如果宽度大于 600，则使用双列布局；否则使用单列撑满
+            final isWide = constraints.maxWidth > 600;
+            final double cardWidth = isWide
+                ? (constraints.maxWidth - 8) / 2
+                : constraints.maxWidth;
+
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: groupedVoices.values
+                  .map(
+                    (group) => SizedBox(
+                      width: cardWidth,
+                      child: CharacterVoiceCard(voices: group),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }

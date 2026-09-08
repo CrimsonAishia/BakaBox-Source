@@ -225,6 +225,18 @@ const _$ZombieSkillTypeEnumMap = {
   ZombieSkillType.passive: 'passive',
 };
 
+VoiceItem _$VoiceItemFromJson(Map<String, dynamic> json) => VoiceItem(
+  type: json['type'] as String,
+  url: json['url'] as String,
+  message: json['message'] as String,
+);
+
+Map<String, dynamic> _$VoiceItemToJson(VoiceItem instance) => <String, dynamic>{
+  'type': instance.type,
+  'url': instance.url,
+  'message': instance.message,
+};
+
 CharacterSubModel _$CharacterSubModelFromJson(Map<String, dynamic> json) =>
     CharacterSubModel(
       id: (json['id'] as num).toInt(),
@@ -247,6 +259,9 @@ CharacterSubModel _$CharacterSubModelFromJson(Map<String, dynamic> json) =>
       tags: (json['tags'] as List<dynamic>?)
           ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
           .toList(),
+      voices: (json['voices'] as List<dynamic>?)
+          ?.map((e) => VoiceItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
       isDefault: json['isDefault'] as bool? ?? false,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
     );
@@ -263,6 +278,7 @@ Map<String, dynamic> _$CharacterSubModelToJson(CharacterSubModel instance) =>
       'glbModelUrl': instance.glbModelUrl,
       'acquisition': instance.acquisition,
       'tags': instance.tags,
+      'voices': instance.voices,
       'isDefault': instance.isDefault,
       'sortOrder': instance.sortOrder,
     };

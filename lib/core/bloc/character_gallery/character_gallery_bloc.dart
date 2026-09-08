@@ -225,6 +225,45 @@ class CharacterGalleryBloc
           ),
         );
 
+        // 如果有默认子模型且其预览图或语音为空，需要加载子模型详情
+        if (defaultSubModelId != null && character.subModels != null) {
+          final targetSubModel = character.subModels!.firstWhere(
+            (s) => s.id == defaultSubModelId,
+            orElse: () => character.subModels!.first,
+          );
+          if (targetSubModel.preview == null || targetSubModel.voices == null) {
+            try {
+              final subModelDetail = await _api.getSubModelDetail(
+                character.id,
+                defaultSubModelId,
+              );
+              if (subModelDetail != null) {
+                final updatedSubModels = character.subModels!.map((s) {
+                  if (s.id == defaultSubModelId) {
+                    return s.copyWith(
+                      description: subModelDetail.description ?? s.description,
+                      preview: subModelDetail.preview ?? s.preview,
+                      glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
+                      acquisition: subModelDetail.acquisition ?? s.acquisition,
+                      tags: subModelDetail.tags ?? s.tags,
+                      voices: subModelDetail.voices ?? s.voices,
+                    );
+                  }
+                  return s;
+                }).toList();
+
+                final updatedCharacter = character.copyWith(
+                  subModels: updatedSubModels,
+                );
+
+                emit(state.copyWith(selectedCharacter: updatedCharacter));
+              }
+            } catch (e) {
+              LogService.e('加载子模型详情失败: $e', e);
+            }
+          }
+        }
+
         // 检查待审核状态（仅登录用户需要，该接口需要认证）
         if (defaultSubModelId != null && AuthService.instance.isLoggedIn) {
           add(CheckPendingRequest(defaultSubModelId));
@@ -280,21 +319,22 @@ class CharacterGalleryBloc
       orElse: () => character.subModels!.first,
     );
 
-    if (currentSubModel?.preview == null) {
+    if (currentSubModel?.preview == null || currentSubModel?.voices == null) {
       try {
         final subModelDetail = await _api.getSubModelDetail(
           character.id,
           event.subModelId,
         );
-        if (subModelDetail != null && subModelDetail.preview != null) {
+        if (subModelDetail != null) {
           final updatedSubModels = character.subModels?.map((s) {
             if (s.id == event.subModelId) {
               return s.copyWith(
                 description: subModelDetail.description ?? s.description,
-                preview: subModelDetail.preview,
+                preview: subModelDetail.preview ?? s.preview,
                 glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
                 acquisition: subModelDetail.acquisition ?? s.acquisition,
                 tags: subModelDetail.tags ?? s.tags,
+                voices: subModelDetail.voices ?? s.voices,
               );
             }
             return s;
@@ -859,22 +899,23 @@ class CharacterGalleryBloc
             (s) => s.id == event.subModelId,
             orElse: () => character.subModels!.first,
           );
-          // 如果子模型没有预览图，需要单独请求
-          if (targetSubModel.preview == null) {
+          // 如果子模型没有预览图或语音，需要单独请求
+          if (targetSubModel.preview == null || targetSubModel.voices == null) {
             try {
               final subModelDetail = await _api.getSubModelDetail(
                 character.id,
                 event.subModelId!,
               );
-              if (subModelDetail != null && subModelDetail.preview != null) {
+              if (subModelDetail != null) {
                 final updatedSubModels = character.subModels!.map((s) {
                   if (s.id == event.subModelId) {
                     return s.copyWith(
                       description: subModelDetail.description ?? s.description,
-                      preview: subModelDetail.preview,
+                      preview: subModelDetail.preview ?? s.preview,
                       glbModelUrl: subModelDetail.glbModelUrl ?? s.glbModelUrl,
                       acquisition: subModelDetail.acquisition ?? s.acquisition,
                       tags: subModelDetail.tags ?? s.tags,
+                      voices: subModelDetail.voices ?? s.voices,
                     );
                   }
                   return s;

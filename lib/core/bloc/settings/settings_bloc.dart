@@ -1038,8 +1038,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       details.add(
         CacheItemInfo(
           type: CacheType.cacheFiles,
-          name: '图片缓存',
-          description: '临时文件和图片缓存',
+          name: '媒体文件缓存',
+          description: '临时文件、图片及角色语音缓存',
           sizeInBytes: cacheFilesSize,
         ),
       );

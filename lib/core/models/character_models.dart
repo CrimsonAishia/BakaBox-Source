@@ -368,6 +368,27 @@ class ZombieSkill extends Equatable {
   ];
 }
 
+/// 语音项
+@JsonSerializable()
+class VoiceItem extends Equatable {
+  final String type;
+  final String url;
+  final String message;
+
+  const VoiceItem({
+    required this.type,
+    required this.url,
+    required this.message,
+  });
+
+  factory VoiceItem.fromJson(Map<String, dynamic> json) =>
+      _$VoiceItemFromJson(json);
+  Map<String, dynamic> toJson() => _$VoiceItemToJson(this);
+
+  @override
+  List<Object?> get props => [type, url, message];
+}
+
 /// 子模型
 @JsonSerializable()
 class CharacterSubModel extends Equatable {
@@ -381,6 +402,7 @@ class CharacterSubModel extends Equatable {
   final String? glbModelUrl;
   final AcquisitionInfo? acquisition;
   final List<ItemTagData>? tags;
+  final List<VoiceItem>? voices;
   @JsonKey(defaultValue: false)
   final bool isDefault;
   @JsonKey(defaultValue: 0)
@@ -397,6 +419,7 @@ class CharacterSubModel extends Equatable {
     this.glbModelUrl,
     this.acquisition,
     this.tags,
+    this.voices,
     this.isDefault = false,
     this.sortOrder = 0,
   });
@@ -417,6 +440,7 @@ class CharacterSubModel extends Equatable {
     glbModelUrl,
     acquisition,
     tags,
+    voices,
     isDefault,
     sortOrder,
   ];
@@ -432,6 +456,7 @@ class CharacterSubModel extends Equatable {
     String? glbModelUrl,
     AcquisitionInfo? acquisition,
     List<ItemTagData>? tags,
+    List<VoiceItem>? voices,
     bool? isDefault,
     int? sortOrder,
   }) {
@@ -446,6 +471,7 @@ class CharacterSubModel extends Equatable {
       glbModelUrl: glbModelUrl ?? this.glbModelUrl,
       acquisition: acquisition ?? this.acquisition,
       tags: tags ?? this.tags,
+      voices: voices ?? this.voices,
       isDefault: isDefault ?? this.isDefault,
       sortOrder: sortOrder ?? this.sortOrder,
     );
