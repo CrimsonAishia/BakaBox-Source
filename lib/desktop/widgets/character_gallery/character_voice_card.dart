@@ -5,8 +5,13 @@ import 'character_gallery_theme.dart';
 
 class CharacterVoiceCard extends StatefulWidget {
   final List<VoiceItem> voices;
+  final bool showType;
 
-  const CharacterVoiceCard({super.key, required this.voices});
+  const CharacterVoiceCard({
+    super.key,
+    required this.voices,
+    this.showType = true,
+  });
 
   @override
   State<CharacterVoiceCard> createState() => _CharacterVoiceCardState();
@@ -18,13 +23,16 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
 
   late List<String> _fullUrls;
 
+  bool _isPlaying = false;
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
     _updateFullUrls();
-    _voiceService.currentPlayingUrl.addListener(_onStateChanged);
-    _voiceService.currentLoadingUrl.addListener(_onStateChanged);
-    _voiceService.currentProgress.addListener(_onStateChanged);
+    _checkStatus();
+    _voiceService.currentPlayingUrl.addListener(_onUrlChanged);
+    _voiceService.currentLoadingUrl.addListener(_onUrlChanged);
   }
 
   @override
@@ -43,17 +51,30 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
     _fullUrls = widget.voices.map((v) => EnvConfig.getApiUrl(v.url)).toList();
   }
 
-  void _onStateChanged() {
-    if (mounted) {
+  void _checkStatus() {
+    _isPlaying = _fullUrls.any(
+      (url) => _voiceService.currentPlayingUrl.value == url,
+    );
+    _isLoading = _fullUrls.any(
+      (url) => _voiceService.currentLoadingUrl.value == url,
+    );
+  }
+
+  void _onUrlChanged() {
+    if (!mounted) return;
+    final wasPlaying = _isPlaying;
+    final wasLoading = _isLoading;
+    _checkStatus();
+
+    if (wasPlaying != _isPlaying || wasLoading != _isLoading) {
       setState(() {});
     }
   }
 
   @override
   void dispose() {
-    _voiceService.currentPlayingUrl.removeListener(_onStateChanged);
-    _voiceService.currentLoadingUrl.removeListener(_onStateChanged);
-    _voiceService.currentProgress.removeListener(_onStateChanged);
+    _voiceService.currentPlayingUrl.removeListener(_onUrlChanged);
+    _voiceService.currentLoadingUrl.removeListener(_onUrlChanged);
     super.dispose();
   }
 
@@ -83,9 +104,7 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
   @override
   Widget build(BuildContext context) {
     // Check if any voice in the group is playing or loading
-    final isPlaying = _fullUrls.any(
-      (url) => _voiceService.currentPlayingUrl.value == url,
-    );
+    final isPlaying = _isPlaying;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
@@ -200,7 +219,8 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
                                 );
                               },
                             ),
-                            if (repVoice.message.isNotEmpty &&
+                            if (widget.showType &&
+                                repVoice.message.isNotEmpty &&
                                 !repVoice.message.startsWith(' (')) ...[
                               Text(
                                 repVoice.type,
@@ -254,20 +274,31 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
                                           : vermillion.withValues(alpha: 0.05),
                                     ),
                                   ),
-                                  CircularProgressIndicator(
-                                    value: isThisPlaying
-                                        ? _voiceService.currentProgress.value
-                                        : 1.0,
-                                    strokeWidth: 1.0,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      isThisPlaying
-                                          ? vermillion.withValues(alpha: 0.8)
-                                          : vermillion.withValues(alpha: 0.3),
+                                  if (isThisPlaying)
+                                    ValueListenableBuilder<double>(
+                                      valueListenable:
+                                          _voiceService.currentProgress,
+                                      builder: (context, progress, child) {
+                                        return CircularProgressIndicator(
+                                          value: progress,
+                                          strokeWidth: 1.0,
+                                          valueColor: AlwaysStoppedAnimation(
+                                            vermillion.withValues(alpha: 0.8),
+                                          ),
+                                          backgroundColor: vermillion
+                                              .withValues(alpha: 0.1),
+                                        );
+                                      },
+                                    )
+                                  else
+                                    CircularProgressIndicator(
+                                      value: 1.0,
+                                      strokeWidth: 1.0,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        vermillion.withValues(alpha: 0.3),
+                                      ),
+                                      backgroundColor: Colors.transparent,
                                     ),
-                                    backgroundColor: isThisPlaying
-                                        ? vermillion.withValues(alpha: 0.1)
-                                        : Colors.transparent,
-                                  ),
                                   if (isThisLoading)
                                     const Padding(
                                       padding: EdgeInsets.all(6.0),

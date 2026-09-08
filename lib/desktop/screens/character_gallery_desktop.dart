@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../core/core.dart';
 import '../../core/widgets/disk_cached_image.dart';
 import '../widgets/character_gallery/character_gallery_theme.dart';
@@ -44,6 +45,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _listScrollController = ScrollController();
   final ScrollController _detailScrollController = ScrollController();
+  final ScrollController _memeScrollController = ScrollController();
   Timer? _searchDebounce;
 
   // 滚动指示器状态
@@ -51,6 +53,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   bool _listCanScrollDown = false;
   bool _detailCanScrollUp = false;
   bool _detailCanScrollDown = false;
+  bool _memeCanScrollUp = false;
+  bool _memeCanScrollDown = false;
 
   @override
   void initState() {
@@ -58,6 +62,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     _listScrollController.addListener(_onScroll);
     _listScrollController.addListener(_updateListScrollIndicators);
     _detailScrollController.addListener(_updateDetailScrollIndicators);
+    _memeScrollController.addListener(_updateMemeScrollIndicators);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bloc = context.read<CharacterGalleryBloc>();
@@ -101,6 +106,19 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     }
   }
 
+  void _updateMemeScrollIndicators() {
+    if (!_memeScrollController.hasClients) return;
+    final position = _memeScrollController.position;
+    final canUp = position.pixels > 0;
+    final canDown = position.pixels < position.maxScrollExtent;
+    if (canUp != _memeCanScrollUp || canDown != _memeCanScrollDown) {
+      setState(() {
+        _memeCanScrollUp = canUp;
+        _memeCanScrollDown = canDown;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _searchDebounce?.cancel();
@@ -110,6 +128,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     _listScrollController.dispose();
     _detailScrollController.removeListener(_updateDetailScrollIndicators);
     _detailScrollController.dispose();
+    _memeScrollController.removeListener(_updateMemeScrollIndicators);
+    _memeScrollController.dispose();
     super.dispose();
   }
 
@@ -193,12 +213,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           _buildToolbar(),
           Container(height: 1, color: scrollBrown.withValues(alpha: 0.3)),
           Expanded(
-            child: Row(
-              children: [
-                Expanded(flex: 3, child: _buildCharacterGrid()),
-                _buildVerticalDivider(),
-                Expanded(flex: 4, child: _buildDetailPanel()),
-              ],
+            child: BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
+              buildWhen: (prev, curr) =>
+                  prev.showCheerSoundsView != curr.showCheerSoundsView,
+              builder: (context, state) {
+                if (state.showCheerSoundsView) {
+                  return _buildCheerSoundsView();
+                }
+                return Row(
+                  children: [
+                    Expanded(flex: 3, child: _buildCharacterGrid()),
+                    _buildVerticalDivider(),
+                    Expanded(flex: 4, child: _buildDetailPanel()),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -212,6 +241,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           prev.selectedCategory != curr.selectedCategory ||
           prev.showSpellCardTierView != curr.showSpellCardTierView ||
           prev.showWeaponModelView != curr.showWeaponModelView ||
+          prev.showCheerSoundsView != curr.showCheerSoundsView ||
           prev.sortBy != curr.sortBy,
       builder: (context, state) {
         return Container(
@@ -223,7 +253,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 isSelected:
                     state.selectedCategory == CharacterCategory.touhou &&
                     !state.showSpellCardTierView &&
-                    !state.showWeaponModelView,
+                    !state.showWeaponModelView &&
+                    !state.showCheerSoundsView,
                 onTap: () {
                   PaintingBinding.instance.imageCache.clear();
                   context.read<CharacterGalleryBloc>().add(
@@ -237,7 +268,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 isSelected:
                     state.selectedCategory == CharacterCategory.zombie &&
                     !state.showSpellCardTierView &&
-                    !state.showWeaponModelView,
+                    !state.showWeaponModelView &&
+                    !state.showCheerSoundsView,
                 onTap: () {
                   PaintingBinding.instance.imageCache.clear();
                   context.read<CharacterGalleryBloc>().add(
@@ -251,7 +283,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 isSelected:
                     state.selectedCategory == CharacterCategory.normal &&
                     !state.showSpellCardTierView &&
-                    !state.showWeaponModelView,
+                    !state.showWeaponModelView &&
+                    !state.showCheerSoundsView,
                 onTap: () {
                   PaintingBinding.instance.imageCache.clear();
                   context.read<CharacterGalleryBloc>().add(
@@ -297,9 +330,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   );
                 },
               ),
+              const SizedBox(width: 8),
+              // Meme语音按钮
+              CategoryButton(
+                label: 'Meme',
+                isSelected: state.showCheerSoundsView,
+                onTap: () {
+                  PaintingBinding.instance.imageCache.clear();
+                  context.read<CharacterGalleryBloc>().add(
+                    const LoadCheerSounds(),
+                  );
+                },
+              ),
               const Spacer(),
               // 排序按钮（仅在人物和符卡视图显示）
-              if (!state.showWeaponModelView) ...[
+              if (!state.showWeaponModelView && !state.showCheerSoundsView) ...[
                 _buildSortButton(state.sortBy),
                 const SizedBox(width: 8),
               ],
@@ -1552,6 +1597,83 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             child: ScrollIndicator(isTop: false),
           ),
       ],
+    );
+  }
+
+  Widget _buildCheerSoundsView() {
+    return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
+      builder: (context, state) {
+        if (state.cheerSoundsLoadState == LoadState.loading) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: CharacterGalleryTheme.getVermillion(context),
+            ),
+          );
+        }
+        if (state.cheerSoundsLoadState == LoadState.failure) {
+          return _buildErrorState(state.error ?? '加载失败');
+        }
+        if (state.cheerSounds.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _updateMemeScrollIndicators();
+        });
+
+        final Map<String, List<VoiceItem>> groupedVoices = {};
+        for (final voice in state.cheerSounds) {
+          if (!groupedVoices.containsKey(voice.type)) {
+            groupedVoices[voice.type] = [];
+          }
+          groupedVoices[voice.type]!.add(voice);
+        }
+        final voiceGroups = groupedVoices.values.toList();
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final int crossAxisCount = constraints.maxWidth > 1200
+                ? 5
+                : (constraints.maxWidth > 1000
+                      ? 4
+                      : (constraints.maxWidth > 800
+                            ? 3
+                            : (constraints.maxWidth > 500 ? 2 : 1)));
+            return Stack(
+              children: [
+                MasonryGridView.count(
+                  controller: _memeScrollController,
+                  padding: const EdgeInsets.all(16),
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  itemCount: voiceGroups.length,
+                  itemBuilder: (context, index) {
+                    return CharacterVoiceCard(
+                      voices: voiceGroups[index],
+                      showType: false,
+                    );
+                  },
+                ),
+                if (_memeCanScrollUp)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ScrollIndicator(isTop: true),
+                  ),
+                if (_memeCanScrollDown)
+                  const Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: ScrollIndicator(isTop: false),
+                  ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

@@ -23,6 +23,11 @@ class CharacterGalleryState extends Equatable {
   // 是否显示刀枪图鉴视图
   final bool showWeaponModelView;
 
+  // 是否显示meme语音视图
+  final bool showCheerSoundsView;
+  final LoadState cheerSoundsLoadState;
+  final List<VoiceItem> cheerSounds;
+
   // 刀枪图鉴当前标签页 (0=刀模, 1=枪模)
   final int weaponModelTab;
 
@@ -111,6 +116,9 @@ class CharacterGalleryState extends Equatable {
     this.sortBy = '',
     this.showSpellCardTierView = false,
     this.showWeaponModelView = false,
+    this.showCheerSoundsView = false,
+    this.cheerSoundsLoadState = LoadState.initial,
+    this.cheerSounds = const [],
     this.weaponModelTab = 0,
     this.allWeaponModelsLoadState = LoadState.initial,
     this.allKnifeModels = const [],
@@ -173,6 +181,9 @@ class CharacterGalleryState extends Equatable {
     String? sortBy,
     bool? showSpellCardTierView,
     bool? showWeaponModelView,
+    bool? showCheerSoundsView,
+    LoadState? cheerSoundsLoadState,
+    List<VoiceItem>? cheerSounds,
     int? weaponModelTab,
     LoadState? allWeaponModelsLoadState,
     List<KnifeModel>? allKnifeModels,
@@ -246,6 +257,9 @@ class CharacterGalleryState extends Equatable {
       showSpellCardTierView:
           showSpellCardTierView ?? this.showSpellCardTierView,
       showWeaponModelView: showWeaponModelView ?? this.showWeaponModelView,
+      showCheerSoundsView: showCheerSoundsView ?? this.showCheerSoundsView,
+      cheerSoundsLoadState: cheerSoundsLoadState ?? this.cheerSoundsLoadState,
+      cheerSounds: cheerSounds ?? this.cheerSounds,
       weaponModelTab: weaponModelTab ?? this.weaponModelTab,
       allWeaponModelsLoadState:
           allWeaponModelsLoadState ?? this.allWeaponModelsLoadState,
@@ -443,6 +457,9 @@ class CharacterGalleryState extends Equatable {
     sortBy,
     showSpellCardTierView,
     showWeaponModelView,
+    showCheerSoundsView,
+    cheerSoundsLoadState,
+    cheerSounds,
     weaponModelTab,
     allWeaponModelsLoadState,
     allKnifeModels,

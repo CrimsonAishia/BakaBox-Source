@@ -45,6 +45,40 @@ class CharacterGalleryBloc
       _onLoadWeaponModelDetailInCharacterView,
     );
     on<ChangeSortBy>(_onChangeSortBy);
+    on<LoadCheerSounds>(_onLoadCheerSounds);
+  }
+
+  Future<void> _onLoadCheerSounds(
+    LoadCheerSounds event,
+    Emitter<CharacterGalleryState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        showCheerSoundsView: true,
+        showSpellCardTierView: false,
+        showWeaponModelView: false,
+        cheerSoundsLoadState: LoadState.loading,
+        clearCategory: true,
+      ),
+    );
+
+    try {
+      final voices = await _api.getCheerSounds();
+      emit(
+        state.copyWith(
+          cheerSoundsLoadState: LoadState.success,
+          cheerSounds: voices ?? [],
+        ),
+      );
+    } catch (e) {
+      LogService.e('加载meme语音失败: $e', e);
+      emit(
+        state.copyWith(
+          cheerSoundsLoadState: LoadState.failure,
+          error: '加载meme语音失败',
+        ),
+      );
+    }
   }
 
   Future<void> _onLoadCharacters(
@@ -411,12 +445,15 @@ class CharacterGalleryBloc
     ChangeCategory event,
     Emitter<CharacterGalleryState> emit,
   ) {
-    // 切换分类时退出符卡评级视图和刀枪图鉴视图
-    if (state.showSpellCardTierView || state.showWeaponModelView) {
+    // 切换分类时退出符卡评级视图、刀枪图鉴视图和meme语音视图
+    if (state.showSpellCardTierView ||
+        state.showWeaponModelView ||
+        state.showCheerSoundsView) {
       emit(
         state.copyWith(
           showSpellCardTierView: false,
           showWeaponModelView: false,
+          showCheerSoundsView: false,
         ),
       );
     }
@@ -433,6 +470,10 @@ class CharacterGalleryBloc
     SearchCharacters event,
     Emitter<CharacterGalleryState> emit,
   ) {
+    if (state.showCheerSoundsView) {
+      emit(state.copyWith(showCheerSoundsView: false));
+    }
+
     // 如果当前是符卡评级视图，搜索符卡
     if (state.showSpellCardTierView) {
       add(
@@ -794,6 +835,7 @@ class CharacterGalleryBloc
       state.copyWith(
         showSpellCardTierView: true,
         showWeaponModelView: false, // 关闭刀枪图鉴视图
+        showCheerSoundsView: false,
         spellCardTierLoadState: LoadState.loading,
         spellCardTierFilter: event.type,
         clearSpellCardTierFilter: event.type == null,
@@ -1022,6 +1064,7 @@ class CharacterGalleryBloc
       state.copyWith(
         showWeaponModelView: true,
         showSpellCardTierView: false,
+        showCheerSoundsView: false,
         allWeaponModelsLoadState: LoadState.loading,
         weaponModelTab: tabIndex,
         weaponModelKeyword: event.keyword,

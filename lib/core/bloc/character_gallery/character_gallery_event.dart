@@ -8,6 +8,10 @@ abstract class CharacterGalleryEvent extends Equatable {
 }
 
 /// 加载角色列表
+class LoadCheerSounds extends CharacterGalleryEvent {
+  const LoadCheerSounds();
+}
+
 class LoadCharacters extends CharacterGalleryEvent {
   final CharacterCategory? category;
   final String? keyword;
