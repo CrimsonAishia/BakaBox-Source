@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../api/env_config.dart';
 import '../api/update_api.dart';
 import '../exceptions/app_exception.dart';
 import '../models/update_models.dart';
@@ -12,6 +15,7 @@ import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 import '../utils/log_service.dart';
 import '../utils/version_utils.dart';
+import 'app_info_service.dart';
 import 'floating_window_service.dart';
 import 'notification_window_service.dart';
 
@@ -32,15 +36,30 @@ class UpdateCancelledException implements AppException {
 }
 
 class UpdateService {
+  static final UpdateService _instance = UpdateService._internal();
+
+  factory UpdateService() {
+    return _instance;
+  }
+
+  UpdateService._internal() {
+    _startQueueWorker();
+  }
+
   final UpdateApi _updateApi = UpdateApi();
   static const String _keyLastCheckTime = 'last_update_check_time';
   static const String _keyPendingInstallVersion = 'pending_install_version';
   static const String _keyPendingInstallFromVersion =
       'pending_install_from_version';
+  static const String _keyPendingReports = 'pending_update_reports';
+  static const String _keyLastKnownVersion = 'update_last_known_version';
   static const int _minCheckIntervalHours = 6;
 
   /// 当前下载的取消令牌，用户取消下载时调用 [cancelDownload]
   CancelToken? _downloadCancelToken;
+
+  /// 轮询队列的定时器
+  Timer? _queueWorkerTimer;
 
   /// 取消当前正在进行的下载
   void cancelDownload() {
@@ -49,76 +68,124 @@ class UpdateService {
     }
   }
 
+  /// 启动后台上报队列轮询
+  void _startQueueWorker() {
+    _queueWorkerTimer?.cancel();
+    _queueWorkerTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      final pendingList = StorageUtils.getStringList(_keyPendingReports);
+      if (pendingList.isNotEmpty) {
+        flushPendingReports().ignore();
+      }
+    });
+  }
+
   /// 检查并上报安装结果（应用启动时调用）
   ///
-  /// 原理：
-  /// 1. 安装前记录待安装版本号（[_keyPendingInstallVersion]）
-  /// 2. 新版本启动时对比当前版本与待安装版本
-  ///    - 相等：安装成功，上报 `install_success`
-  ///    - 当前版本仍低于待安装版本：静默安装未生效
-  ///      （通常是 DLL 被子窗口进程锁定、UAC 拒绝、7z 覆盖失败等），
-  ///      上报 `install_verify_failed`，方便后端统计"更新丢失"用户
-  ///    - 当前版本高于待安装版本：用户已通过其他方式装了更新版，忽略
-  /// 3. 无论哪种情况都清除待安装标记，避免下次启动重复上报
+  /// 原理（彻底重构版，100% 准确）：
+  /// 1. 每次启动读取本地存储的最后一次运行版本（[_keyLastKnownVersion]）。
+  /// 2. 只要检测到当前版本 > 最后运行版本，视为发生过升级，立刻上报 `install_success`。
+  ///    - 该机制脱离了"App内更新"的绑定，即使用户去官网下载包手动覆盖安装，也能100%准确上报成功。
+  /// 3. 如果当前版本未变化，但依然存在 `pendingVersion` 标记，说明用户发起了 App 内更新但最终并未安装。
+  ///    - 此时上报 `install_verify_failed`。
+  /// 4. 仲裁完成后，将当前版本持久化写入 `lastKnownVersion`，并清除所有 `pending` 标记。
   Future<void> checkAndReportInstallSuccess() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version;
 
-      // 获取待安装版本号
-      final pendingVersion = StorageUtils.getString(_keyPendingInstallVersion);
-      final fromVersion = StorageUtils.getString(_keyPendingInstallFromVersion);
-
-      if (pendingVersion == null) return;
+      // 获取完整版本号，确保包含 build 号
+      String actualCurrentVersion = packageInfo.version;
+      if (AppInfoService.instance.isInitialized) {
+        actualCurrentVersion = AppInfoService.instance.fullVersion;
+      } else {
+        actualCurrentVersion =
+            '${packageInfo.version}+${packageInfo.buildNumber}';
+      }
 
       final platform = PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile';
       final os = Platform.operatingSystem;
 
-      if (pendingVersion == currentVersion) {
-        // 版本匹配，说明安装成功
-        await _updateApi.reportUpdateResult(
-          UpdateReportRequest(
-            platform: platform,
-            os: os,
-            fromVersion: fromVersion ?? 'unknown',
-            toVersion: currentVersion,
-            status: 'install_success',
-            errorMessage: null,
-          ),
-        );
-      } else {
-        // 版本不匹配，判断是"安装未生效"还是"用户装了更新版"
-        int cmp;
+      // 读取待安装版本号和最后的已知版本号
+      final pendingVersion = StorageUtils.getString(_keyPendingInstallVersion);
+      final fromVersion = StorageUtils.getString(_keyPendingInstallFromVersion);
+
+      // 如果 lastKnownVersion 为空（例如从旧版本首次升级上来），尝试使用 fromVersion 作为替代
+      final lastKnownVersion =
+          StorageUtils.getString(_keyLastKnownVersion) ?? fromVersion;
+
+      bool versionChanged = false;
+
+      // 判断基于 lastKnownVersion 的绝对版本变化
+      if (lastKnownVersion != null &&
+          actualCurrentVersion != lastKnownVersion) {
+        int cmp = -1;
         try {
-          cmp = VersionUtils.compareVersion(currentVersion, pendingVersion);
-        } catch (_) {
-          cmp = 0;
-        }
-        if (cmp < 0) {
-          // 当前版本比待安装版本低：静默安装文件替换失败，属于"更新丢失"
-          LogService.w(
-            '[UpdateService] 检测到更新未生效: '
-            '待安装 $pendingVersion，当前仍是 $currentVersion',
+          cmp = VersionUtils.compareVersion(
+            actualCurrentVersion,
+            lastKnownVersion,
           );
-          await _updateApi.reportUpdateResult(
+        } catch (_) {
+          cmp = actualCurrentVersion == lastKnownVersion ? 0 : -1;
+        }
+
+        if (cmp > 0) {
+          // 确定发生了升级，统一使用真实的当前版本（包含构建号）作为汇报目标
+          final targetVersion = actualCurrentVersion;
+
+          LogService.i(
+            '[UpdateService] 检测到应用升级: $lastKnownVersion -> $actualCurrentVersion (汇报目标: $targetVersion)',
+          );
+
+          await _enqueueReport(
             UpdateReportRequest(
               platform: platform,
               os: os,
-              fromVersion: fromVersion ?? currentVersion,
-              toVersion: pendingVersion,
-              status: 'install_verify_failed',
-              errorMessage:
-                  'Pending version $pendingVersion, but current is $currentVersion',
+              fromVersion: lastKnownVersion,
+              toVersion: targetVersion,
+              status: 'install_success',
+              errorMessage: null,
             ),
           );
+          versionChanged = true;
+        } else {
+          // 发生了降级（用户手动覆盖了老包）
+          LogService.w(
+            '[UpdateService] 检测到应用降级: $lastKnownVersion -> $actualCurrentVersion',
+          );
+          versionChanged = true;
         }
-        // cmp >= 0：用户已经手动装了同版本/更高版本，静默丢弃
       }
 
-      // 无论成功、失败还是被用户覆盖，都清除待安装标记
-      await _clearPendingInstallMarkers();
+      // 如果版本没有发生变化，但存在 pendingVersion 标记，说明"发起了更新但没成功安装"
+      if (!versionChanged && pendingVersion != null) {
+        LogService.w(
+          '[UpdateService] 检测到应用内更新未生效: '
+          '待安装 $pendingVersion，当前仍是 $actualCurrentVersion',
+        );
+        await _enqueueReport(
+          UpdateReportRequest(
+            platform: platform,
+            os: os,
+            fromVersion: fromVersion ?? actualCurrentVersion,
+            toVersion: pendingVersion,
+            status: 'install_verify_failed',
+            errorMessage:
+                'Pending version $pendingVersion, but current is $actualCurrentVersion',
+          ),
+        );
+      }
+
+      // 无论如何，更新最后已知版本，并清理遗留的 pending 标记
+      await StorageUtils.setString(_keyLastKnownVersion, actualCurrentVersion);
+      if (pendingVersion != null) {
+        await _clearPendingInstallMarkers();
+      }
+
+      // 稍微延迟 3 秒尝试执行一次刷新，即便这次失败，也会有每 30 秒的 _queueWorkerTimer 兜底
+      Future.delayed(const Duration(seconds: 3), () {
+        flushPendingReports().ignore();
+      });
     } catch (e) {
-      // 失败不影响应用启动，静默处理
+      LogService.e('[UpdateService] 检查更新安装结果失败', e);
     }
   }
 
@@ -129,6 +196,9 @@ class UpdateService {
       throw const UpdateException('商店版本由 Microsoft Store 自动更新');
     }
 
+    // 每次检查更新时，顺便尝试清空积压的上报队列（此时网络大概率可用）
+    flushPendingReports().ignore();
+
     final updateInfo = await _updateApi.checkForUpdate();
     await _updateLastCheckTime();
     return updateInfo;
@@ -136,6 +206,11 @@ class UpdateService {
 
   /// 自动检查更新（带间隔限制）
   Future<AppUpdateInfo?> autoCheckForUpdate() async {
+    // 开发/测试模式不主动检查更新
+    if (EnvConfig.isDev) {
+      return null;
+    }
+
     // 商店版本不需要自动检查更新
     if (PlatformUtils.isInstalledFromStore) {
       return null;
@@ -761,18 +836,82 @@ class UpdateService {
     String? errorMessage,
   }) async {
     try {
-      await _updateApi.reportUpdateResult(
-        UpdateReportRequest(
-          platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
-          os: Platform.operatingSystem,
-          fromVersion: updateInfo.currentVersion,
-          toVersion: updateInfo.latestVersion,
-          status: status,
-          errorMessage: errorMessage,
-        ),
+      final request = UpdateReportRequest(
+        platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
+        os: Platform.operatingSystem,
+        fromVersion: updateInfo.currentVersion,
+        toVersion: updateInfo.latestVersion,
+        status: status,
+        errorMessage: errorMessage,
       );
+      await _enqueueReport(request);
+
+      // 不阻塞主流程，后台静默刷新队列
+      flushPendingReports().ignore();
     } catch (e) {
-      // 上报失败不影响主流程，静默处理
+      // 上报入队或发送失败不影响主流程，静默处理
+    }
+  }
+
+  /// 将上报请求加入本地持久化队列
+  Future<void> _enqueueReport(UpdateReportRequest request) async {
+    try {
+      final pendingList = StorageUtils.getStringList(_keyPendingReports);
+      pendingList.add(jsonEncode(request.toJson()));
+      await StorageUtils.setStringList(_keyPendingReports, pendingList);
+    } catch (e) {
+      LogService.w('[UpdateService] 入队上报请求失败', e);
+    }
+  }
+
+  bool _isFlushing = false;
+
+  /// 尝试发送所有积压的上报请求，发送成功则移出队列
+  Future<void> flushPendingReports() async {
+    if (_isFlushing) return;
+    _isFlushing = true;
+
+    try {
+      while (true) {
+        final pendingList = StorageUtils.getStringList(_keyPendingReports);
+        if (pendingList.isEmpty) break;
+
+        final reportStr = pendingList.first;
+        UpdateReportRequest request;
+        try {
+          request = UpdateReportRequest.fromJson(
+            jsonDecode(reportStr) as Map<String, dynamic>,
+          );
+        } catch (e) {
+          LogService.e('[UpdateService] 无效的上报数据，丢弃: $reportStr', e);
+          final currentList = StorageUtils.getStringList(_keyPendingReports);
+          if (currentList.isNotEmpty && currentList.first == reportStr) {
+            currentList.removeAt(0);
+            await StorageUtils.setStringList(_keyPendingReports, currentList);
+          }
+          continue; // 解析失败，直接抛弃并处理下一条
+        }
+
+        try {
+          // 尝试发送，设置超时避免单个请求卡死整个队列
+          await _updateApi
+              .reportUpdateResult(request)
+              .timeout(const Duration(seconds: 10));
+
+          // 发送成功，重新读取列表并安全地移除已发送的项
+          final currentList = StorageUtils.getStringList(_keyPendingReports);
+          if (currentList.isNotEmpty && currentList.first == reportStr) {
+            currentList.removeAt(0);
+            await StorageUtils.setStringList(_keyPendingReports, currentList);
+          }
+        } catch (e) {
+          // 发送失败（网络不通或超时等API异常），终止本次刷新，等待下次重试
+          LogService.d('[UpdateService] 上报队列刷新暂停：发送失败');
+          break;
+        }
+      }
+    } finally {
+      _isFlushing = false;
     }
   }
 }
