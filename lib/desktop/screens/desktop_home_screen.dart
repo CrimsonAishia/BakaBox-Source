@@ -13,6 +13,7 @@ import '../widgets/desktop_navigation.dart';
 import '../widgets/queue/queue_floating_card.dart';
 import '../widgets/warmup/warmup_floating_card.dart';
 import '../widgets/map_manage/workshop_missing_dialog.dart';
+import '../../core/widgets/page_memory_manager.dart';
 
 import 'welcome_screen.dart';
 import 'servers_desktop.dart';
@@ -274,9 +275,6 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
 
   void _onIndexChanged(int index) {
     if (_currentIndex == index) return;
-
-    // 页面切换时清理 Flutter 图片缓存，释放内存
-    PaintingBinding.instance.imageCache.clear();
 
     String newActivityText = '在线';
     switch (index) {
@@ -650,11 +648,16 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     );
   }
 
-  /// 构建页面内容，使用 KeyedSubtree 确保页面切换时正确销毁
+  /// 构建页面内容，使用 PageMemoryManager 缓存页面状态并按时回收
   Widget _buildPageContent() {
-    return KeyedSubtree(
-      key: ValueKey(_currentIndex),
-      child: _buildScreen(_currentIndex),
+    return PageMemoryManager(
+      currentIndex: _currentIndex,
+      cacheDuration: const Duration(minutes: 3), // 3分钟未使用则回收并清理内存
+      builders: List.generate(
+        11, // 总共11个可能返回非空页面的索引（0-10）
+        (index) =>
+            (context) => _buildScreen(index),
+      ),
     );
   }
 }
