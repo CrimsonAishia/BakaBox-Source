@@ -12,10 +12,8 @@ class CacheService {
 
   static Future<void> cacheServerList(List<ServerCategory> serverList) async {
     try {
-      final jsonString = json.encode(
-        serverList.map((e) => e.toJson()).toList(),
-      );
-      await StorageUtils.setString(_serverListKey, jsonString);
+      final list = serverList.map((e) => e.toJson()).toList();
+      await StorageUtils.setList(_serverListKey, list);
       await StorageUtils.setInt(
         _serverListTimestampKey,
         DateTime.now().millisecondsSinceEpoch,
@@ -28,11 +26,9 @@ class CacheService {
 
   static Future<List<ServerCategory>?> getCachedServerList() async {
     try {
-      final jsonString = StorageUtils.getString(_serverListKey);
       final timestamp = StorageUtils.getInt(_serverListTimestampKey);
-
-      if (jsonString == null || timestamp == null) {
-        LogService.d('没有找到缓存的服务器列表');
+      if (timestamp == null) {
+        LogService.d('没有找到缓存的服务器列表时间戳');
         return null;
       }
 
@@ -44,13 +40,34 @@ class CacheService {
         return null;
       }
 
-      final List<dynamic> jsonList = json.decode(jsonString);
-      final serverList = jsonList
-          .map((json) => ServerCategory.fromJson(json as Map<String, dynamic>))
-          .toList();
+      final rawList = StorageUtils.getList(_serverListKey);
+      if (rawList != null) {
+        final serverList = rawList.map((e) {
+          // Hive 中存储的 Map 可能是 Map<dynamic, dynamic>
+          final map = Map<String, dynamic>.from(e as Map);
+          return ServerCategory.fromJson(map);
+        }).toList();
+        LogService.i('从缓存获取服务器列表，共 ${serverList.length} 个分类');
+        return serverList;
+      }
 
-      LogService.i('从缓存获取服务器列表，共 ${serverList.length} 个分类');
-      return serverList;
+      // 兼容旧版的 String 读取
+      // TODO: (旧版兼容) 未来版本如果确认所有老用户都已迁移到 setList 格式，可删除此分支。
+      final jsonString = StorageUtils.getString(_serverListKey);
+      if (jsonString != null) {
+        final List<dynamic> jsonList = json.decode(jsonString);
+        final serverList = jsonList
+            .map(
+              (json) => ServerCategory.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        // 顺手将其转为新格式存储
+        cacheServerList(serverList);
+        LogService.i('从旧版缓存获取服务器列表并迁移，共 ${serverList.length} 个分类');
+        return serverList;
+      }
+
+      return null;
     } catch (e) {
       LogService.e('获取缓存服务器列表失败: $e', e);
       return null;
@@ -82,26 +99,26 @@ class CacheService {
   }
 
 
+  static const String _mapDataPrefix = 'map_info_data_';
+  static const String _mapTsPrefix = 'map_info_ts_';
+
   /// 缓存单个地图信息
   static Future<void> cacheMapInfo(String mapName, MapData mapData) async {
     try {
       final normalizedName = mapName.toLowerCase().trim();
 
-      // 获取现有缓存
-      final existingData = await _getMapInfoCacheData();
-      final existingTimestamps = await _getMapInfoTimestamps();
-
-      // 更新缓存
-      existingData[normalizedName] = mapData.toJson();
-      existingTimestamps[normalizedName] =
-          DateTime.now().millisecondsSinceEpoch;
-
-      // 保存
-      await StorageUtils.setString(_mapInfoKey, json.encode(existingData));
-      await StorageUtils.setString(
-        _mapInfoTimestampKey,
-        json.encode(existingTimestamps),
+      // 直接存入独立的 Key，避免巨型 Map 序列化
+      await StorageUtils.setMap(
+        '$_mapDataPrefix$normalizedName',
+        mapData.toJson(),
       );
+      await StorageUtils.setInt(
+        '$_mapTsPrefix$normalizedName',
+        DateTime.now().millisecondsSinceEpoch,
+      );
+
+      // 清理旧版巨型缓存垃圾（如果存在）
+      _cleanupLegacyCache();
     } catch (e) {
       LogService.e('缓存地图信息失败 ($mapName): $e', e);
     }
@@ -117,14 +134,12 @@ class CacheService {
     try {
       final normalizedName = mapName.toLowerCase().trim();
 
-      final data = await _getMapInfoCacheData();
-      final timestamps = await _getMapInfoTimestamps();
-
-      if (!data.containsKey(normalizedName)) return null;
+      final dataMap = StorageUtils.getMap('$_mapDataPrefix$normalizedName');
+      if (dataMap == null) return null;
 
       // 检查时间戳，超过1小时返回 null 触发 API 更新
       // 但图片数据仍然保留在缓存中（永久缓存）
-      final timestamp = timestamps[normalizedName];
+      final timestamp = StorageUtils.getInt('$_mapTsPrefix$normalizedName');
       if (timestamp != null) {
         final cacheTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
         if (DateTime.now().difference(cacheTime) >
@@ -133,7 +148,7 @@ class CacheService {
         }
       }
 
-      return MapData.fromJson(data[normalizedName] as Map<String, dynamic>);
+      return MapData.fromJson(dataMap);
     } catch (e) {
       LogService.e('获取缓存地图信息失败 ($mapName): $e', e);
       return null;
@@ -144,11 +159,10 @@ class CacheService {
   static Future<MapData?> getCachedMapInfoIgnoreExpiry(String mapName) async {
     try {
       final normalizedName = mapName.toLowerCase().trim();
+      final dataMap = StorageUtils.getMap('$_mapDataPrefix$normalizedName');
+      if (dataMap == null) return null;
 
-      final data = await _getMapInfoCacheData();
-      if (!data.containsKey(normalizedName)) return null;
-
-      return MapData.fromJson(data[normalizedName] as Map<String, dynamic>);
+      return MapData.fromJson(dataMap);
     } catch (e) {
       LogService.e('获取缓存地图信息失败 ($mapName): $e', e);
       return null;
@@ -158,31 +172,34 @@ class CacheService {
   /// 清除所有地图信息缓存
   static Future<void> clearMapInfoCache() async {
     try {
-      await StorageUtils.remove(_mapInfoKey);
-      await StorageUtils.remove(_mapInfoTimestampKey);
-      LogService.i('地图信息缓存已清除');
+      final keysToRemove = StorageUtils.getKeys()
+          .where(
+            (k) => k.startsWith(_mapDataPrefix) || k.startsWith(_mapTsPrefix),
+          )
+          .toList();
+
+      for (var key in keysToRemove) {
+        await StorageUtils.remove(key);
+      }
+      LogService.i('地图信息缓存已清除 (共 ${keysToRemove.length ~/ 2} 张地图)');
     } catch (e) {
       LogService.e('清除地图信息缓存失败: $e', e);
     }
   }
 
   /// 温和失效所有地图信息缓存：把时间戳标记为过期（下次读取会触发 API 刷新），
-  /// 但**保留缓存的地图数据**，供 API 失败时通过 [getCachedMapInfoIgnoreExpiry]
-  /// 兜底。
-  ///
-  /// 用于 WS 重连后的对账：相比 [clearMapInfoCache] 直接清空，弱网下 API 持续
-  /// 超时时仍能用上次的译名/背景兜底，避免地图信息被清成空白后补不回来。
+  /// 但**保留缓存的地图数据**，供 API 失败时兜底。
   static Future<void> invalidateAllMapInfoTimestamps() async {
     try {
-      final timestamps = await _getMapInfoTimestamps();
-      if (timestamps.isEmpty) return;
-      // 全部置为 0（纪元），使 getCachedMapInfo 判定为过期并触发刷新；
-      // 数据本体（_mapInfoKey）保持不动，作为 fallback。
-      final invalidated = {for (final key in timestamps.keys) key: 0};
-      await StorageUtils.setString(
-        _mapInfoTimestampKey,
-        json.encode(invalidated),
-      );
+      final tsKeys = StorageUtils.getKeys()
+          .where((k) => k.startsWith(_mapTsPrefix))
+          .toList();
+      if (tsKeys.isEmpty) return;
+
+      // 全部置为 0（纪元），使 getCachedMapInfo 判定为过期并触发刷新
+      for (var key in tsKeys) {
+        await StorageUtils.setInt(key, 0);
+      }
       LogService.i('地图信息缓存已标记为过期（保留数据兜底）');
     } catch (e) {
       LogService.e('标记地图信息缓存过期失败: $e', e);
@@ -194,44 +211,27 @@ class CacheService {
     try {
       final normalizedName = mapName.toLowerCase().trim();
 
-      final data = await _getMapInfoCacheData();
-      final timestamps = await _getMapInfoTimestamps();
+      await StorageUtils.remove('$_mapDataPrefix$normalizedName');
+      await StorageUtils.remove('$_mapTsPrefix$normalizedName');
 
-      data.removeWhere(
-        (k, _) => k == normalizedName || k.startsWith('$normalizedName:'),
-      );
-      timestamps.removeWhere(
-        (k, _) => k == normalizedName || k.startsWith('$normalizedName:'),
-      );
-
-      await StorageUtils.setString(_mapInfoKey, json.encode(data));
-      await StorageUtils.setString(
-        _mapInfoTimestampKey,
-        json.encode(timestamps),
-      );
       LogService.i('地图信息缓存已清除: $mapName');
     } catch (e) {
       LogService.e('清除地图信息缓存失败 ($mapName): $e', e);
     }
   }
 
-  static Future<Map<String, dynamic>> _getMapInfoCacheData() async {
-    final jsonString = StorageUtils.getString(_mapInfoKey);
-    if (jsonString == null) return {};
+  /// 清理旧版本的巨型 Map 缓存垃圾（向下兼容，无感迁移）
+  /// TODO: (旧版兼容) 未来版本如果确认所有老用户都已完成迁移，可删除此兼容清理代码。
+  static bool _legacyCleaned = false;
+  static Future<void> _cleanupLegacyCache() async {
+    if (_legacyCleaned) return;
     try {
-      return Map<String, dynamic>.from(json.decode(jsonString));
-    } catch (e) {
-      return {};
-    }
-  }
-
-  static Future<Map<String, int>> _getMapInfoTimestamps() async {
-    final jsonString = StorageUtils.getString(_mapInfoTimestampKey);
-    if (jsonString == null) return {};
-    try {
-      return Map<String, int>.from(json.decode(jsonString));
-    } catch (e) {
-      return {};
-    }
+      if (StorageUtils.containsKey(_mapInfoKey)) {
+        await StorageUtils.remove(_mapInfoKey);
+        await StorageUtils.remove(_mapInfoTimestampKey);
+        LogService.i('已清理旧版巨型地图缓存垃圾释放空间');
+      }
+      _legacyCleaned = true;
+    } catch (_) {}
   }
 }

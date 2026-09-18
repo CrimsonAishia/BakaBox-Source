@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import '../models/lobby_models.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
@@ -45,32 +43,49 @@ class LobbyAssetCacheService {
     if (_initialized) return;
 
     try {
+      final keys = StorageUtils.getKeys().toList();
+
       // 加载 sprite 缓存
-      final spriteJson = StorageUtils.getString(_spriteCacheKey);
-      if (spriteJson != null && spriteJson.isNotEmpty) {
-        final Map<String, dynamic> data = json.decode(spriteJson);
-        for (final entry in data.entries) {
-          _spriteMemoryCache[entry.key] = _SpriteUrlCache.fromJson(entry.value);
-        }
-        if (LogService.enableLobbyDebugLog) {
-          LogService.d(
-            '[LobbyAssetCache] 已加载 ${_spriteMemoryCache.length} 个 sprite 缓存',
-          );
+      int loadedSprites = 0;
+      for (final key in keys) {
+        if (key.startsWith('lobby_sprite_')) {
+          final spriteId = key.substring('lobby_sprite_'.length);
+          final dataMap = StorageUtils.getMap(key);
+          if (dataMap != null) {
+            _spriteMemoryCache[spriteId] = _SpriteUrlCache.fromJson(dataMap);
+            loadedSprites++;
+          }
         }
       }
 
+      if (LogService.enableLobbyDebugLog && loadedSprites > 0) {
+        LogService.d('[LobbyAssetCache] 已加载 $loadedSprites 个 sprite 缓存');
+      }
+
       // 加载 map 缓存
-      final mapJson = StorageUtils.getString(_mapCacheKey);
-      if (mapJson != null && mapJson.isNotEmpty) {
-        final Map<String, dynamic> data = json.decode(mapJson);
-        for (final entry in data.entries) {
-          _mapMemoryCache[entry.key] = _MapUrlCache.fromJson(entry.value);
+      int loadedMaps = 0;
+      for (final key in keys) {
+        if (key.startsWith('lobby_map_')) {
+          final mapId = key.substring('lobby_map_'.length);
+          final dataMap = StorageUtils.getMap(key);
+          if (dataMap != null) {
+            _mapMemoryCache[mapId] = _MapUrlCache.fromJson(dataMap);
+            loadedMaps++;
+          }
         }
-        if (LogService.enableLobbyDebugLog) {
-          LogService.d(
-            '[LobbyAssetCache] 已加载 ${_mapMemoryCache.length} 个 map 缓存',
-          );
-        }
+      }
+
+      if (LogService.enableLobbyDebugLog && loadedMaps > 0) {
+        LogService.d('[LobbyAssetCache] 已加载 $loadedMaps 个 map 缓存');
+      }
+
+      // 清理旧版巨型垃圾缓存
+      // TODO: (旧版兼容) 未来版本如果确认所有老用户都已完成迁移，可删除此兼容清理代码。
+      if (StorageUtils.containsKey(_spriteCacheKey)) {
+        await StorageUtils.remove(_spriteCacheKey);
+      }
+      if (StorageUtils.containsKey(_mapCacheKey)) {
+        await StorageUtils.remove(_mapCacheKey);
       }
 
       _initialized = true;
@@ -139,11 +154,16 @@ class LobbyAssetCacheService {
       if (existing == null ||
           existing.spriteUrl != stableSpriteUrl ||
           existing.previewUrl != stablePreviewUrl) {
-        _spriteMemoryCache[sprite.id] = _SpriteUrlCache(
+        final newCache = _SpriteUrlCache(
           spriteUrl: stableSpriteUrl,
           previewUrl: stablePreviewUrl,
           lastUpdated: DateTime.now().millisecondsSinceEpoch,
         );
+        _spriteMemoryCache[sprite.id] = newCache;
+
+        // 直接存入独立的 Key，避免全局重写
+        StorageUtils.setMap('lobby_sprite_${sprite.id}', newCache.toJson());
+
         updated++;
 
         // 收集需要下载的原始 URL（带鉴权参数，确保图片有效期内下载）
@@ -157,7 +177,6 @@ class LobbyAssetCacheService {
     }
 
     if (updated > 0) {
-      await _saveSpriteCache();
       if (LogService.enableLobbyDebugLog) {
         LogService.d('[LobbyAssetCache] 缓存了 $updated/$total 个 sprite URL');
       }
@@ -178,11 +197,18 @@ class LobbyAssetCacheService {
     final existing = _mapMemoryCache[mapConfig.mapId];
 
     if (existing == null || existing.backgroundUrl != stableBackgroundUrl) {
-      _mapMemoryCache[mapConfig.mapId] = _MapUrlCache(
+      final newCache = _MapUrlCache(
         backgroundUrl: stableBackgroundUrl,
         lastUpdated: DateTime.now().millisecondsSinceEpoch,
       );
-      await _saveMapCache();
+      _mapMemoryCache[mapConfig.mapId] = newCache;
+
+      // 直接存入独立的 Key，避免全局重写
+      await StorageUtils.setMap(
+        'lobby_map_${mapConfig.mapId}',
+        newCache.toJson(),
+      );
+
       if (LogService.enableLobbyDebugLog) {
         LogService.d('[LobbyAssetCache] 缓存了地图背景: ${mapConfig.mapId}');
       }
@@ -278,15 +304,23 @@ class LobbyAssetCacheService {
   Future<void> clearAll() async {
     _spriteMemoryCache.clear();
     _mapMemoryCache.clear();
-    await StorageUtils.remove(_spriteCacheKey);
-    await StorageUtils.remove(_mapCacheKey);
+
+    final keys = StorageUtils.getKeys()
+        .where(
+          (k) => k.startsWith('lobby_sprite_') || k.startsWith('lobby_map_'),
+        )
+        .toList();
+    for (final key in keys) {
+      await StorageUtils.remove(key);
+    }
+
     LogService.i('[LobbyAssetCache] 已清除所有素材 URL 缓存');
   }
 
   /// 清除指定 sprite 的缓存
   Future<void> clearSpriteCache(String spriteId) async {
     if (_spriteMemoryCache.remove(spriteId) != null) {
-      await _saveSpriteCache();
+      await StorageUtils.remove('lobby_sprite_$spriteId');
       if (LogService.enableLobbyDebugLog) {
         LogService.d('[LobbyAssetCache] 已清除 sprite 缓存: $spriteId');
       }
@@ -296,34 +330,10 @@ class LobbyAssetCacheService {
   /// 清除指定 map 的缓存
   Future<void> clearMapCache(String mapId) async {
     if (_mapMemoryCache.remove(mapId) != null) {
-      await _saveMapCache();
+      await StorageUtils.remove('lobby_map_$mapId');
       if (LogService.enableLobbyDebugLog) {
         LogService.d('[LobbyAssetCache] 已清除 map 缓存: $mapId');
       }
-    }
-  }
-
-  Future<void> _saveSpriteCache() async {
-    try {
-      final data = <String, dynamic>{};
-      for (final entry in _spriteMemoryCache.entries) {
-        data[entry.key] = entry.value.toJson();
-      }
-      await StorageUtils.setString(_spriteCacheKey, json.encode(data));
-    } catch (e) {
-      LogService.e('[LobbyAssetCache] 保存 sprite 缓存失败', e);
-    }
-  }
-
-  Future<void> _saveMapCache() async {
-    try {
-      final data = <String, dynamic>{};
-      for (final entry in _mapMemoryCache.entries) {
-        data[entry.key] = entry.value.toJson();
-      }
-      await StorageUtils.setString(_mapCacheKey, json.encode(data));
-    } catch (e) {
-      LogService.e('[LobbyAssetCache] 保存 map 缓存失败', e);
     }
   }
 }

@@ -840,11 +840,10 @@ class MapSubscriptionService {
 
   Future<void> _loadNotificationCooldown() async {
     try {
-      final cooldownData = StorageUtils.getString(
+      final Map<String, dynamic>? decoded = StorageUtils.getMap(
         _storageKeyNotificationCooldown,
       );
-      if (cooldownData != null && cooldownData.isNotEmpty) {
-        final Map<String, dynamic> decoded = jsonDecode(cooldownData);
+      if (decoded != null) {
         _notificationCooldown.clear();
         for (final entry in decoded.entries) {
           if (entry.value is int) {
@@ -864,8 +863,10 @@ class MapSubscriptionService {
 
   Future<void> _saveNotificationCooldown() async {
     try {
-      final encoded = jsonEncode(_notificationCooldown);
-      await StorageUtils.setString(_storageKeyNotificationCooldown, encoded);
+      await StorageUtils.setMap(
+        _storageKeyNotificationCooldown,
+        _notificationCooldown,
+      );
     } catch (e) {
       LogService.e('[MapSubscription] 保存冷却记录失败', e);
     }

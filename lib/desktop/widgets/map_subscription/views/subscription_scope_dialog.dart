@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -102,10 +101,11 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
   }
 
   Future<void> _loadCachedRealNames() async {
-    final cachedData = StorageUtils.getString('a2s_server_names_cache');
-    if (cachedData != null && cachedData.isNotEmpty) {
+    final Map<String, dynamic>? decoded = StorageUtils.getMap(
+      'a2s_server_names_cache',
+    );
+    if (decoded != null && decoded.isNotEmpty) {
       try {
-        final Map<String, dynamic> decoded = jsonDecode(cachedData);
         final now = DateTime.now().millisecondsSinceEpoch;
         final validNames = <String, String>{};
         bool needClean = false;
@@ -141,8 +141,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
       _serverRealNames.forEach((key, value) {
         dataToSave[key] = {'name': value, 'time': now};
       });
-      final encoded = jsonEncode(dataToSave);
-      await StorageUtils.setString('a2s_server_names_cache', encoded);
+      await StorageUtils.setMap('a2s_server_names_cache', dataToSave);
     } catch (_) {}
   }
 

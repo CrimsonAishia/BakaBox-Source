@@ -71,7 +71,6 @@ class StorageUtils {
     return Hive.box(_defaultBoxName);
   }
 
-  // ========== 基础类型存储 ==========
 
   /// 存储字符串
   static Future<void> setString(String key, String value) async {
@@ -144,7 +143,20 @@ class StorageUtils {
     return defaultValue;
   }
 
-  // ========== 通用操作 ==========
+  /// 存储 List（例如 `List<Map<String, dynamic>>`）
+  static Future<void> setList(String key, List<dynamic> value) async {
+    await _getBox().put(key, value);
+  }
+
+  /// 获取 List
+  static List<dynamic>? getList(String key, {List<dynamic>? defaultValue}) {
+    final value = _getBox().get(key, defaultValue: defaultValue);
+    if (value is List) {
+      return value;
+    }
+    return defaultValue;
+  }
+
 
   /// 删除指定键
   static Future<void> remove(String key) async {
@@ -175,7 +187,6 @@ class StorageUtils {
     return Map<String, dynamic>.from(_getBox().toMap());
   }
 
-  // ========== 高级功能 ==========
 
   /// 打开自定义 Box
   ///
@@ -227,7 +238,6 @@ class StorageUtils {
     }
   }
 
-  // ========== 内部方法 ==========
 
   static void _checkInitialized() {
     if (!_initialized) {

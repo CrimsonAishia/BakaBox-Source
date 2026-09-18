@@ -38,7 +38,7 @@ class CustomServerService {
   ) async {
     try {
       final jsonList = categories.map((c) => c.toJson()).toList();
-      await StorageUtils.setString(_customCategoriesKey, jsonEncode(jsonList));
+      await StorageUtils.setList(_customCategoriesKey, jsonList);
       LogService.d('保存自定义分类成功，共 ${categories.length} 个');
       _categoriesChangedController.add(null);
     } catch (e) {
@@ -49,15 +49,27 @@ class CustomServerService {
   /// 加载自定义分类列表
   static Future<List<ServerCategory>> loadCustomCategories() async {
     try {
-      final jsonString = StorageUtils.getString(_customCategoriesKey);
-      if (jsonString == null || jsonString.isEmpty) {
+      List<dynamic>? jsonList = StorageUtils.getList(_customCategoriesKey);
+
+      // 向下兼容旧版 JSON String
+      // TODO: (旧版兼容) 未来版本如果确认所有老用户都已迁移到 setList 格式，可删除此兼容代码。
+      if (jsonList == null) {
+        final jsonString = StorageUtils.getString(_customCategoriesKey);
+        if (jsonString != null && jsonString.isNotEmpty) {
+          jsonList = jsonDecode(jsonString) as List;
+          // 异步转储为新格式
+          unawaited(StorageUtils.setList(_customCategoriesKey, jsonList));
+        }
+      }
+
+      if (jsonList == null || jsonList.isEmpty) {
         return [];
       }
 
-      final jsonList = jsonDecode(jsonString) as List;
-      final categories = jsonList
-          .map((json) => ServerCategory.fromJson(json as Map<String, dynamic>))
-          .toList();
+      final categories = jsonList.map((e) {
+        final map = Map<String, dynamic>.from(e as Map);
+        return ServerCategory.fromJson(map);
+      }).toList();
 
       // 按照 sortOrder 排序（如果有的话）
       categories.sort((a, b) {
