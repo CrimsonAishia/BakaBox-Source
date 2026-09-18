@@ -7,6 +7,11 @@ import '../models/server_models.dart';
 import '../models/map_contribution_models.dart';
 
 class ServerApi {
+  static void setMaxCacheSize(int size) {}
+
+  Future<Map<String, int>?> getCategoryPlayersCounts() async {
+    throw UnimplementedError('Stub');
+  }
   Future<List<ServerCategory>> getServerList() async { throw UnimplementedError('Stub'); }
   Future<MapData?> getMapInfo(String mapName, {String? address}) async { throw UnimplementedError('Stub'); }
   Future<MapRuntimeData?> getMapRuntime(String address, String mapName) async { throw UnimplementedError('Stub'); }

@@ -13,6 +13,7 @@ import '../../services/realtime/realtime_map_info_channel.dart';
 import '../../services/realtime/realtime_score_updates_channel.dart';
 import '../../services/realtime/realtime_server_map_runtime_channel.dart';
 import '../../services/realtime/realtime_server_users_count_channel.dart';
+import '../../services/realtime/realtime_category_players_channel.dart';
 import '../../services/server_category_service.dart';
 import '../../services/network_mode_service.dart';
 import '../../utils/log_service.dart';
@@ -21,6 +22,8 @@ import 'server_event.dart';
 import 'server_state.dart';
 import '../../services/custom_server_service.dart';
 import '../../services/third_party_api_service.dart';
+import '../../services/disk_image_cache_service.dart';
+import '../../utils/map_utils.dart';
 
 class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 全局 mapRuntime 缓存，key 为服务器地址
@@ -71,8 +74,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 连续失败多少次才标记为离线（需要更高阈值）
   static const int _offlineThreshold = 5;
 
-  // 缓存大小限制：大幅增加容量，避免单个分类服务器数量过多导致缓存被高频淘汰（Thrashing）
-  static const int _maxCacheSize = 2000; // 最多缓存 2000 个服务器的数据（实际内存占用极低）
+  // 缓存大小限制：动态调整，避免单个分类服务器数量过多导致缓存被高频淘汰（Thrashing）
+  static int _maxCacheSize = 500; // 默认 500，切换分类时动态伸缩
 
   // 比分查询防抖时间戳（仅记录用于诊断；具体值由 WS 频道维护）
   // ignore: unused_field
@@ -86,10 +89,14 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   final RealtimeServerUsersCountChannel _usersCountChannel =
       RealtimeServerUsersCountChannel();
   final RealtimeMapInfoChannel _mapInfoChannel = RealtimeMapInfoChannel();
+  final RealtimeCategoryPlayersChannel _categoryPlayersChannel =
+      RealtimeCategoryPlayersChannel();
   StreamSubscription<ScoreUpdateEvent>? _scoreChannelSubscription;
   StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeChannelSubscription;
   StreamSubscription<UsersCountUpdateEvent>? _usersCountChannelSubscription;
   StreamSubscription<MapInfoChangedEvent>? _mapInfoChannelSubscription;
+  StreamSubscription<CategoryPlayersUpdateEvent>?
+  _categoryPlayersChannelSubscription;
   bool _realtimeStarted = false;
 
   // 弱网模式切换监听
@@ -177,6 +184,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
     on<ServerApplyMapRuntimeSnapshot>(_onApplyMapRuntimeSnapshot);
     on<ServerApplyMapInfoChange>(_onApplyMapInfoChange);
+    on<ServerRealtimeCategoryPlayersUpdate>(
+      _onServerRealtimeCategoryPlayersUpdate,
+    );
     on<ServerClearRealtimeData>(_onClearRealtimeData);
     on<ServerToggleOldCategoriesExpanded>(_onToggleOldCategoriesExpanded);
 
@@ -278,6 +288,20 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (isClosed) return;
       add(ServerApplyMapInfoChange(mapName: event.mapName));
     });
+
+    _categoryPlayersChannel.subscribe();
+    _categoryPlayersChannelSubscription = _categoryPlayersChannel.events.listen(
+      (event) {
+        if (isClosed) return;
+        add(
+          ServerRealtimeCategoryPlayersUpdate(
+            counts: event.counts,
+            isSnapshot: event.kind == CategoryPlayersUpdateEventKind.snapshot,
+            isSyncing: event.kind == CategoryPlayersUpdateEventKind.syncing,
+          ),
+        );
+      },
+    );
   }
 
   void _stopRealtime() {
@@ -295,6 +319,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _mapInfoChannelSubscription?.cancel();
     _mapInfoChannelSubscription = null;
     _mapInfoChannel.unsubscribe();
+    _categoryPlayersChannelSubscription?.cancel();
+    _categoryPlayersChannelSubscription = null;
+    _categoryPlayersChannel.unsubscribe();
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -444,6 +471,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     // 如果是空分类（自定义分类没有服务器），不显示加载状态
     final isEmptyCategory = servers.isEmpty;
+
+    // 动态调整地图缓存上限，预留一定空间（底层实现会自动 +20）
+    ServerApi.setMaxCacheSize(servers.length);
+
+    // 动态调整 Bloc 内部的运行时缓存上限（预留 50 个缓冲位防抖）
+    _maxCacheSize = (servers.length + 50).clamp(100, 2000);
+    _trimCacheIfNeeded();
 
     emit(
       state.copyWith(
@@ -1624,13 +1658,41 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
+  void _onServerRealtimeCategoryPlayersUpdate(
+    ServerRealtimeCategoryPlayersUpdate event,
+    Emitter<ServerState> emit,
+  ) {
+    if (state.serverCategories.isEmpty) return;
+
+    // 合并当前所有的 counts
+    final latestCounts = Map<String, int>.from(state.categoryOnlineCounts);
+
+    // 使用 Group ID 映射（因为 API 返回的是 ID 而不是 ModelName）
+    for (final category in state.serverCategories) {
+      final categoryName = category.modelName ?? '';
+      final categoryId = category.id.toString();
+
+      if (event.counts.containsKey(categoryId)) {
+        latestCounts[categoryName] = event.counts[categoryId]!;
+      }
+    }
+
+    emit(
+      state.copyWith(
+        categoryOnlineCounts: latestCounts,
+        hasEverLoadedOnlineCounts: true,
+        onlineCountsLastFetched: DateTime.now(),
+      ),
+    );
+    LogService.d('[ServerBloc] 收到分类在线人数实时推送: \${event.counts}');
+  }
+
   Future<void> _onUpdateCategoryOnlineCounts(
     ServerUpdateCategoryOnlineCounts event,
     Emitter<ServerState> emit,
   ) async {
     if (state.serverCategories.isEmpty) return;
 
-    // 防重入：如果正在更新，直接返回，避免多次触发导致人数翻倍
     if (_isUpdatingCategoryOnlineCounts) return;
     _isUpdatingCategoryOnlineCounts = true;
 
@@ -1638,10 +1700,42 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final isFirstLoad = !state.hasEverLoadedOnlineCounts;
       if (isFirstLoad) emit(state.copyWith(isLoadingOnlineCounts: true));
 
-      // 记录当前选中分类名
-      final selectedCategoryName = state.selectedCategory?.modelName;
+      // 1. 尝试使用 REST API 获取
+      try {
+        final apiCounts = await ServerApi().getCategoryPlayersCounts();
+        if (apiCounts != null) {
+          final latestCounts = Map<String, int>.from(
+            state.categoryOnlineCounts,
+          );
+          for (final category in state.serverCategories) {
+            final categoryName = category.modelName ?? '';
+            final categoryId = category.id.toString();
+            if (apiCounts.containsKey(categoryId)) {
+              latestCounts[categoryName] = apiCounts[categoryId]!;
+            } else if (!latestCounts.containsKey(categoryName)) {
+              latestCounts[categoryName] = 0;
+            }
+          }
 
-      // 为所有分类初始化 categoryOnlineCounts 默认值（如果还没有记录）
+          if (!emit.isDone) {
+            emit(
+              state.copyWith(
+                categoryOnlineCounts: latestCounts,
+                isLoadingOnlineCounts: false,
+                hasEverLoadedOnlineCounts: true,
+                onlineCountsLastFetched: DateTime.now(),
+              ),
+            );
+          }
+          LogService.i('[ServerBloc] 通过 API 成功获取分类在线人数');
+          return;
+        }
+      } catch (e) {
+        LogService.w('[ServerBloc] API 获取分类在线人数失败，回退到自己获取: \$e');
+      }
+
+      // 2. 兜底回退：自己获取
+      final selectedCategoryName = state.selectedCategory?.modelName;
       final currentCounts = Map<String, int>.from(state.categoryOnlineCounts);
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
@@ -1650,27 +1744,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       }
 
-      // 先 emit 初始化的数据
-      if (!emit.isDone && isFirstLoad) {
-        emit(
-          state.copyWith(
-            categoryOnlineCounts: currentCounts,
-            isLoadingOnlineCounts: true,
-          ),
-        );
-      }
-
-      // 所有的待查询地址和所属分类映射（仅非选中分类）
       final pendingAddresses = <String>{};
       final categoryAddressesMap = <String, Set<String>>{};
 
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
 
-        // 跳过当前选中的分类，由 _updateCurrentCategoryOnlineCount 负责更新
-        // 避免与 _fetchServersInfo 并发查询导致数据覆盖
         if (categoryName == selectedCategoryName) {
-          // 如果已有服务器数据，立即更新；否则保留现有值，等待 _fetchServersInfo 完成
           if (state.servers.any((s) => s.serverData != null)) {
             final totalOnline = _calcCurrentCategoryOnlineCount();
             if (!emit.isDone) {
@@ -1684,10 +1764,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           continue;
         }
 
-        // 如果是旧版分类且未展开，跳过人数刷新
-        if (category.isOld && !state.isOldCategoriesExpanded) {
-          continue;
-        }
+        if (category.isOld && !state.isOldCategoriesExpanded) continue;
 
         final uniqueAddresses = <String>{};
         for (final serverItem in category.serverList) {
@@ -1700,11 +1777,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         categoryAddressesMap[categoryName] = uniqueAddresses;
       }
 
-      // 非选中分类：每台服务器查完立即累加到对应分类并 emit，实现实时增长效果
-      // serverPlayers 作为本轮查询结果的共享缓冲，用于计算分类总人数
       final serverPlayers = <String, int>{};
-
-      // 构建地址 → 所属分类名的反向映射，方便查完一台立即定位分类
       final addressToCategoryName = <String, String>{};
       for (final entry in categoryAddressesMap.entries) {
         for (final addr in entry.value) {
@@ -1712,8 +1785,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       }
 
-      // 并发控制：分批请求（20 个一批），防止并发爆 UDP 端口
-      // 每台服务器查完后立即更新对应分类的人数，不等整批完成
       const batchSize = 20;
       final addressList = pendingAddresses.toList();
 
@@ -1730,8 +1801,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
         if (emit.isDone) break;
 
-        // 一整批（20台）查完后，统一合并数据并进行单次 emit
-        // 极大减少 Map 复制和 UI 刷新带来的内存分配压力 (虚胖)
         bool hasChanges = false;
         final latestCounts = Map<String, int>.from(state.categoryOnlineCounts);
 
@@ -1743,7 +1812,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           int total = 0;
           for (final addr in addressSet) {
             total += batchServerPlayers[addr] ?? serverPlayers[addr] ?? 0;
-            // 将新获取的结果存入全局累计 Map，防止后续批次覆盖时丢失之前批次的数据
             if (batchServerPlayers.containsKey(addr)) {
               serverPlayers[addr] = batchServerPlayers[addr]!;
             }
@@ -1767,22 +1835,17 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       }
 
-      // 所有查询完成，关闭加载状态（仅首次加载时需要）并记录刷新时间
       if (!emit.isDone) {
-        if (isFirstLoad) {
-          emit(
-            state.copyWith(
-              isLoadingOnlineCounts: false,
-              onlineCountsLastFetched: DateTime.now(),
-              hasEverLoadedOnlineCounts: true,
-            ),
-          );
-        } else {
-          emit(state.copyWith(onlineCountsLastFetched: DateTime.now()));
-        }
+        emit(
+          state.copyWith(
+            isLoadingOnlineCounts: false,
+            onlineCountsLastFetched: DateTime.now(),
+            hasEverLoadedOnlineCounts: true,
+          ),
+        );
       }
     } catch (e) {
-      LogService.e('批量更新分类在线人数失败: $e', e);
+      LogService.e('查询分类服务器人数失败: \$e', e);
       if (!emit.isDone) {
         emit(state.copyWith(isLoadingOnlineCounts: false));
       }
@@ -2410,6 +2473,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       );
 
       if (mapInfo != null && !emit.isDone) {
+        // 如果用户手动强制刷新了缓存，我们同时清除该地图图片的本地和内存缓存
+        // 这样 UI 就能立刻下载新的图片，解决由于 URL 未变但内容变了导致的旧缓存问题
+        if (mapInfo.mapUrl.isNotEmpty) {
+          final imageUrl = MapUtils.getMapImageUrl(
+            mapInfo.mapName,
+            mapUrl: mapInfo.mapUrl,
+          );
+          await DiskImageCacheService.instance.deleteCache(imageUrl);
+        }
+
         // 更新服务器的地图信息
         add(ServerUpdateSingleServer(address: event.address, mapInfo: mapInfo));
         LogService.i('地图信息已更新: ${event.mapName}');
@@ -2453,6 +2526,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _usersCountChannel.forceResnapshot();
     _scoreChannel.forceResnapshot();
     _mapRuntimeChannel.forceResnapshot();
+    _categoryPlayersChannel.forceResnapshot();
     LogService.d('[ServerBloc] 手动刷新：已请求重拉实时 snapshot');
   }
 
