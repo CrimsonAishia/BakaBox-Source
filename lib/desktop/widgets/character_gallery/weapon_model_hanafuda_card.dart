@@ -13,6 +13,10 @@ class WeaponModelHanafudaCard extends StatefulWidget {
   final String? characterName;
   final AcquisitionInfo? acquisition;
   final List<ItemTagData>? tags;
+  final String? groupName;
+  final String? othercheckKeyName;
+  final int? othercheckPoint;
+  final int? viplevel;
   final bool isKnife;
   final bool isMenuSkin;
   final bool isSelected;
@@ -25,6 +29,10 @@ class WeaponModelHanafudaCard extends StatefulWidget {
     this.characterName,
     this.acquisition,
     this.tags,
+    this.groupName,
+    this.othercheckKeyName,
+    this.othercheckPoint,
+    this.viplevel,
     this.isKnife = false,
     this.isMenuSkin = false,
     required this.isSelected,
@@ -45,6 +53,10 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       characterName: model.characterName,
       acquisition: model.acquisition,
       tags: model.tags,
+      groupName: model.groupName,
+      othercheckKeyName: model.othercheckKeyName,
+      othercheckPoint: model.othercheckPoint,
+      viplevel: model.viplevel,
       isKnife: true,
       isSelected: isSelected,
       onTap: onTap,
@@ -65,6 +77,10 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       characterName: model.characterName,
       acquisition: model.acquisition,
       tags: model.tags,
+      groupName: model.groupName,
+      othercheckKeyName: model.othercheckKeyName,
+      othercheckPoint: model.othercheckPoint,
+      viplevel: model.viplevel,
       isKnife: false,
       isSelected: isSelected,
       onTap: onTap,
@@ -85,6 +101,10 @@ class WeaponModelHanafudaCard extends StatefulWidget {
       characterName: model.characterName,
       acquisition: model.acquisition,
       tags: model.tags,
+      groupName: model.groupName,
+      othercheckKeyName: model.othercheckKeyName,
+      othercheckPoint: model.othercheckPoint,
+      viplevel: model.viplevel,
       isMenuSkin: true,
       isSelected: isSelected,
       onTap: onTap,
@@ -231,8 +251,20 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
                       color: scrollBrown.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 4),
-                    // 获取方式
-                    AcquisitionTag(acquisition: widget.acquisition),
+                    // 获取方式或特殊要求标签
+                    if (widget.othercheckKeyName != null &&
+                        widget.othercheckKeyName!.isNotEmpty)
+                      _WeaponOtherCheckTag(
+                        keyName: widget.othercheckKeyName!,
+                        point: widget.othercheckPoint ?? 0,
+                      )
+                    else if (widget.groupName != null &&
+                        widget.groupName!.isNotEmpty)
+                      _WeaponGroupTag(groupName: widget.groupName!)
+                    else if (widget.viplevel != null && widget.viplevel! > 0)
+                      _WeaponViplevelTag(viplevel: widget.viplevel!)
+                    else
+                      AcquisitionTag(acquisition: widget.acquisition),
                     if (widget.tags != null && widget.tags!.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Wrap(
@@ -285,6 +317,100 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
         size: 40,
         color: scrollBrown.withValues(alpha: 0.3),
       ),
+    );
+  }
+}
+
+/// 分组标签
+class _WeaponGroupTag extends StatelessWidget {
+  final String groupName;
+
+  const _WeaponGroupTag({required this.groupName});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CharacterGalleryTheme.getScrollBrown(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.military_tech_outlined, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            groupName,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 捐助者标签
+class _WeaponViplevelTag extends StatelessWidget {
+  final int viplevel;
+
+  const _WeaponViplevelTag({required this.viplevel});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CharacterGalleryTheme.sakuraPink;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.volunteer_activism, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '捐助者 Lv.$viplevel',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 额外条件标签
+class _WeaponOtherCheckTag extends StatelessWidget {
+  final String keyName;
+  final int point;
+
+  const _WeaponOtherCheckTag({required this.keyName, required this.point});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CharacterGalleryTheme.getCustomSourceColor(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.card_giftcard_rounded, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '$keyName: $point',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

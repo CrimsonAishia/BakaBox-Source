@@ -95,17 +95,17 @@ class _HanafudaCardState extends State<HanafudaCard> {
               // 角色图片
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: CharacterGalleryTheme.getGold(
-                        context,
-                      ).withValues(alpha: _isHovered ? 0.8 : 0.5),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: CharacterGalleryTheme.getGold(
+                          context,
+                        ).withValues(alpha: _isHovered ? 0.8 : 0.5),
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.zero,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -204,8 +204,21 @@ class _HanafudaCardState extends State<HanafudaCard> {
                       color: scrollBrown.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 4),
-                    // 获取方式
-                    AcquisitionTag(acquisition: widget.character.acquisition),
+                    // 先显示 othercheck，然后 groupName，然后捐助者，最后获取方式
+                    if (widget.character.othercheckKeyName != null &&
+                        widget.character.othercheckKeyName!.isNotEmpty)
+                      _OtherCheckTag(
+                        keyName: widget.character.othercheckKeyName!,
+                        point: widget.character.othercheckPoint ?? 0,
+                      )
+                    else if (widget.character.groupName != null &&
+                        widget.character.groupName!.isNotEmpty)
+                      _GroupTag(groupName: widget.character.groupName!)
+                    else if (widget.character.viplevel != null &&
+                        widget.character.viplevel! > 0)
+                      _ViplevelTag(viplevel: widget.character.viplevel!)
+                    else
+                      AcquisitionTag(acquisition: widget.character.acquisition),
                   ],
                 ),
               ),
@@ -228,29 +241,39 @@ class AcquisitionTag extends StatelessWidget {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
 
     final (
-      icon,
-      text,
-      color,
+      IconData? icon,
+      String text,
+      Color color,
     ) = acquisition == null || acquisition!.type == AcquisitionType.unknown
-        ? ('', '获取途径未知', inkColor.withValues(alpha: 0.5))
+        ? (null, '获取途径未知', inkColor.withValues(alpha: 0.5))
         : switch (acquisition!.type) {
-            AcquisitionType.gold => (
-              '',
-              '${acquisition!.cost ?? 0} 金',
-              CharacterGalleryTheme.getGold(context),
-            ),
-            AcquisitionType.points => (
-              '',
-              '${acquisition!.cost ?? 0} 点',
-              CharacterGalleryTheme.getVermillion(context),
-            ),
+            AcquisitionType.gold =>
+              (acquisition!.cost ?? 0) == 0
+                  ? (
+                      Icons.money_off,
+                      '免费获取',
+                      const Color(0xFF10B981), // Emerald 500
+                    )
+                  : (
+                      Icons.monetization_on,
+                      '${acquisition!.cost ?? 0} 金',
+                      const Color(0xFFF59E0B), // AppColors.amber500
+                    ),
+            AcquisitionType.points =>
+              (acquisition!.cost ?? 0) == 0
+                  ? (Icons.money_off, '免费获取', const Color(0xFF10B981))
+                  : (
+                      Icons.bolt,
+                      '${acquisition!.cost ?? 0} 点',
+                      const Color(0xFF60A5FA),
+                    ),
             AcquisitionType.custom => (
-              '',
+              null,
               acquisition!.customSource ?? '特殊',
               CharacterGalleryTheme.getCustomSourceColor(context),
             ),
             AcquisitionType.unknown => (
-              '',
+              null,
               '获取途径未知',
               inkColor.withValues(alpha: 0.5),
             ),
@@ -258,14 +281,110 @@ class AcquisitionTag extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(icon, style: const TextStyle(fontSize: 12)),
-        const SizedBox(width: 4),
+        if (icon != null) ...[
+          Icon(icon, size: 12, color: color.withValues(alpha: 0.8)),
+          const SizedBox(width: 2),
+        ],
         Text(
           text,
           style: TextStyle(
             color: color,
             fontSize: 12,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 分组标签
+class _GroupTag extends StatelessWidget {
+  final String groupName;
+
+  const _GroupTag({required this.groupName});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CharacterGalleryTheme.getSpecialColor(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.military_tech_outlined, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            groupName,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 捐助者标签
+class _ViplevelTag extends StatelessWidget {
+  final int viplevel;
+
+  const _ViplevelTag({required this.viplevel});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CharacterGalleryTheme.sakuraPink;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.volunteer_activism, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '捐助者 Lv.$viplevel',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 额外条件标签
+class _OtherCheckTag extends StatelessWidget {
+  final String keyName;
+  final int point;
+
+  const _OtherCheckTag({required this.keyName, required this.point});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CharacterGalleryTheme.getCustomSourceColor(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.card_giftcard_rounded, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '$keyName: $point',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
