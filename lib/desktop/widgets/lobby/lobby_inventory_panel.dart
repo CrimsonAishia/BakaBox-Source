@@ -331,7 +331,7 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
               ),
             ),
           ),
-          // 金币
+          // 金
           Icon(
             Icons.monetization_on_outlined,
             color: AppColors.amber500,

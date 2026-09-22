@@ -246,6 +246,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       _buildCombinedHeaderAndCalendar(userInfo, isDark),
                       const SizedBox(height: 32),
 
+                      // CP 专属模块 (单行居中展示)
+                      if (_steamUserInfo != null &&
+                          _steamUserInfo!.hasCp()) ...[
+                        _buildSectionTitle(
+                          '我的 CP',
+                          Icons.favorite_rounded,
+                          Colors.pinkAccent,
+                          isDark,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildCpCard(_steamUserInfo!.cp, isDark),
+                        const SizedBox(height: 32),
+                      ],
+
                       // 双列数据布局
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -963,16 +977,17 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (info.cs2Gold.toInt() > 0 || info.onlineTimeTotal.toInt() > 0) ...[
-          _buildInfoCard('CS2 综合数据', [
-            _InfoItem('金币', _formatNumber(info.cs2Gold.toInt())),
-            _InfoItem('点数', _formatNumber(info.cs2Point.toInt())),
-            _InfoItem('已消耗点', _formatNumber(info.cs2SpentPoint.toInt())),
-            _InfoItem('今日在线', _formatDuration(info.onlineTimeDay.toInt())),
-            _InfoItem('累计在线', _formatDuration(info.onlineTimeTotal.toInt())),
-          ], isDark),
-          const SizedBox(height: 16),
-        ],
+        _buildInfoCard('CS2 综合数据', [
+          _InfoItem('金', _formatNumber(info.cs2Gold.toInt())),
+          _InfoItem('点', _formatNumber(info.cs2Point.toInt())),
+          _InfoItem('已消耗点', _formatNumber(info.cs2SpentPoint.toInt())),
+          _InfoItem('活动积分', _formatNumber(info.cs2EventPoint.toInt())),
+          _InfoItem('今日在线', _formatDuration(info.onlineTimeDay.toInt())),
+          _InfoItem('本月在线', _formatDuration(info.onlineTimeMonth.toInt())),
+          _InfoItem('上月在线', _formatDuration(info.onlineTimeLastMonth.toInt())),
+          _InfoItem('累计在线', _formatDuration(info.onlineTimeTotal.toInt())),
+        ], isDark),
+        const SizedBox(height: 16),
 
         if (info.csgoGold.toInt() > 0 || info.csgoOnlineTime.toInt() > 0) ...[
           _buildInfoCard('CS:GO 综合数据', [
@@ -1199,6 +1214,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
+                  '金 ',
+                  style: TextStyle(
+                    color: AppColors.amber500.withValues(alpha: 0.8),
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
                   _formatNumber(stats.totalGoldValue.toInt()),
                   style: const TextStyle(
                     color: AppColors.amber500,
@@ -1209,6 +1231,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 const SizedBox(width: 20),
                 const Icon(Icons.bolt, color: Color(0xFF60A5FA), size: 16),
                 const SizedBox(width: 4),
+                Text(
+                  '点 ',
+                  style: TextStyle(
+                    color: const Color(0xFF60A5FA).withValues(alpha: 0.8),
+                    fontSize: 13,
+                  ),
+                ),
                 Text(
                   _formatNumber(stats.totalPointValue.toInt()),
                   style: const TextStyle(
@@ -1354,6 +1383,207 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       return '$hours小时${minutes > 0 ? ' $minutes分' : ''}';
     }
     return '$minutes分';
+  }
+
+  Widget _buildCpCard(pb.CPData cp, bool isDark) {
+    // 强制 cp.owner 为“我”
+    final taUser = cp.owner;
+    final partnerUser = cp.partner;
+
+    int days = 0;
+    if (cp.bindDate.isNotEmpty) {
+      try {
+        final bindDateTime = DateTime.parse(cp.bindDate);
+        days = DateTime.now().difference(bindDateTime).inDays;
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      decoration: _getStandardCardDecoration(isDark),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 上半部分：头像和红心
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildCpAvatar(taUser, isTa: true, isDark: isDark),
+              const SizedBox(width: 24),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.favorite,
+                    color: Colors.pinkAccent,
+                    size: 36,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$days 天',
+                    style: TextStyle(
+                      color: _getSecondaryTextColor(isDark),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 24),
+              _buildCpAvatar(partnerUser, isTa: false, isDark: isDark),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+          Container(
+            height: 1,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
+          const SizedBox(height: 16),
+
+          // 下半部分：数据卡片
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: _buildCpDataBox('Lv.${cp.level}', 'CP 等级', isDark),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildCpDataBox(
+                  '${_formatNumber(cp.point)} pt',
+                  '亲密度',
+                  isDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCpAvatar(
+    pb.CPUserData user, {
+    required bool isTa,
+    required bool isDark,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.pinkAccent.withValues(alpha: 0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.pinkAccent.withValues(alpha: 0.2),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: BakaCachedImage(
+              user.avatarUrl.isNotEmpty ? user.avatarUrl : '',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  Icon(Icons.person, color: _getSecondaryTextColor(isDark)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: 72,
+          child: Text(
+            user.playerName,
+            style: TextStyle(
+              color: _getPrimaryTextColor(isDark),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 22,
+          child: isTa
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      '我',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Text(
+                    user.steamId.isNotEmpty ? user.steamId : 'Unbound',
+                    style: TextStyle(
+                      color: _getSecondaryTextColor(isDark),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCpDataBox(String value, String label, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.pink.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.pink.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: _getPrimaryTextColor(isDark),
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: _getSecondaryTextColor(isDark),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

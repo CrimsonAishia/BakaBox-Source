@@ -524,6 +524,28 @@ message SteamUserInfoResponse {
   string donate_end              = 62;  // 空字符串表示 null（永久）
   bool   donator_sign_today      = 63;
   string current_date            = 64;
+
+  int64  online_time_month       = 65;
+  int64  online_time_last_month  = 66;
+  int64  cs2_event_point         = 67;
+  CPData cp                      = 68;
+}
+
+message CPData {
+  int32 cp_id = 1;
+  int32 level = 2;
+  int32 point = 3;
+  string bind_date = 4;
+  CPUserData owner = 5;
+  CPUserData partner = 6;
+}
+
+message CPUserData {
+  string steam_id = 1;
+  string steam_id64 = 2;
+  string player_name = 3;
+  string avatar_url = 4;
+  string forum_avatar_url = 5;
 }
 
 // InventoryStatsRequest 查询玩家库存统计请求
@@ -545,8 +567,8 @@ message InventoryStatsResponse {
   int32 weapon_count      = 8;  // 武器数量
   int32 cheer_count       = 9;  // 喝彩数量
   int32 skinmenu_count    = 10; // 皮肤菜单数量
-  int64 total_gold_value  = 11; // 总金币价值
-  int64 total_point_value = 12; // 总积分价值
+  int64 total_gold_value  = 11; // 总金价值
+  int64 total_point_value = 12; // 总点价值
 }
 
 // PresenceDeltaResponse 增量 presence 帧（替代逐条 presence.join/leave）
