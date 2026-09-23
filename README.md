@@ -1,101 +1,129 @@
-# BakaBox App
+<div align="center">
+  <img src="windows/runner/resources/app_icon.ico" alt="Logo" width="80" height="80">
 
-一个用于快速启动和加入CS2服务器的登录器应用程序。
+  <h3>BakaBox</h3>
 
-## 功能特性
+  <p>
+    CS2 Launcher
+  </p>
 
-### 🚀 快速启动
-- 浏览不同类型的CS2服务器（竞技、休闲、死斗等）
-- 查看服务器详细信息（地图、玩家数量、延迟等）
-- 一键启动游戏并加入服务器
-- 实时服务器状态更新
+  <p>
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/graphs/contributors"><img src="https://img.shields.io/github/contributors/CrimsonAishia/BakaBox-Source.svg?style=flat-square" alt="Contributors"></a>
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/network/members"><img src="https://img.shields.io/github/forks/CrimsonAishia/BakaBox-Source.svg?style=flat-square" alt="Forks"></a>
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/stargazers"><img src="https://img.shields.io/github/stars/CrimsonAishia/BakaBox-Source.svg?style=flat-square" alt="Stargazers"></a>
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/issues"><img src="https://img.shields.io/github/issues/CrimsonAishia/BakaBox-Source.svg?style=flat-square" alt="Issues"></a>
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/blob/main/LICENSE"><img src="https://img.shields.io/github/license/CrimsonAishia/BakaBox-Source.svg?style=flat-square" alt="License"></a>
+  </p>
 
-### 📋 更新日志
-- 查看Steam工作坊的最新更新日志
-- 支持HTML内容解析和显示
-- 复制更新内容到剪贴板
-- 时间格式化显示
+  <p>
+    <strong>English</strong> · <a href="README_zh.md">简体中文</a>
+  </p>
 
-### 🎨 用户界面
-- 现代化的Material Design 3设计
-- 响应式布局适配不同屏幕尺寸
-- 流畅的动画和过渡效果
-- 深色/浅色主题支持
+  <p>
+    <a href="https://baka.aishia.cc/"><strong>Visit Official Website »</strong></a> ·
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/issues">Report Bug</a> ·
+    <a href="https://github.com/CrimsonAishia/BakaBox-Source/issues">Request Feature</a>
+  </p>
+</div>
 
-## 技术架构
+<div align="center">
+  <img src="assets/images/software-pic.png" alt="BakaBox Screenshot" />
+</div>
 
-### 状态管理
-- 使用Provider进行状态管理
-- 分离的数据层和UI层
+## Table of Contents
 
-### 网络请求
-- 基于Dio的HTTP客户端
-- 网络连接状态检测
-- 请求缓存和错误处理
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Project Structure](#project-structure)
+- [Built With](#built-with)
+- [Deployment and Build](#deployment-and-build)
+- [Version Control](#version-control)
+- [Author](#author)
 
-### 数据模型
-- 类型安全的数据模型
-- JSON序列化/反序列化
-- 扩展模型支持加载状态
+### Getting Started
 
-## 项目结构
+#### Prerequisites
 
+1. Flutter SDK >= 3.9.0
+2. Dart SDK >= 3.0.0
+3. (Windows only) Visual Studio 2022 with C++ Desktop Development workload
+
+#### Installation
+
+1. Clone the repo
+```sh
+git clone https://github.com/CrimsonAishia/BakaBox-Source.git
 ```
-lib/
-├── api/                    # API客户端和服务
-├── constants/              # 常量定义
-├── models/                 # 数据模型
-├── providers/              # 状态管理
-├── screens/                # 页面组件
-├── utils/                  # 工具类
-├── widgets/                # 可复用组件
-└── main.dart              # 应用入口
-```
-
-## 开发环境
-
-### 要求
-- Flutter SDK >= 3.0.0
-- Dart SDK >= 3.0.0
-
-### 依赖包
-- `provider`: 状态管理
-- `dio`: HTTP客户端
-- `connectivity_plus`: 网络连接检测
-- `intl`: 国际化和格式化
-
-## 运行应用
-
-1. 安装依赖：
-```bash
+2. Get dependencies
+```sh
 flutter pub get
 ```
-
-2. 运行应用：
-```bash
-flutter run
+3. Run the app
+```sh
+flutter run -d windows
 ```
 
-3. 构建发布版本：
-```bash
-flutter build apk  # Android
-flutter build ios  # iOS
+### Project Structure
+
+```text
+BakaBox/
+├── lib/
+│   ├── app/             # Application layer wrapper
+│   ├── core/            # Core business logic (API/BLoC/Models/Router)
+│   ├── desktop/         # Desktop-specific implementation (Windows)
+│   ├── mobile/          # Mobile-specific implementation
+│   ├── web/             # Web support layer
+│   └── main.dart        # Entry point
+├── proto/               # Protobuf definition files
+├── windows/             # Native Windows project & MSIX config
+├── android/             # Native Android project
+├── ios/                 # Native iOS project
+├── web/                 # Native Web project
+├── assets/              # Static assets (icons, localization, etc.)
+├── generate_proto.bat   # Protobuf one-click compilation script
+└── pubspec.yaml         # Dependencies configuration
 ```
 
-## API接口
+### Built With
 
-应用连接到BakaBox后端API，获取：
-- 服务器分类和列表
-- 服务器详细信息
-- Steam工作坊更新日志
+- [Flutter](https://flutter.dev/) - Cross-platform UI framework
+- [flutter_bloc](https://bloclibrary.dev/) - State management
+- [go_router](https://pub.dev/packages/go_router) - Routing
+- [dio](https://pub.dev/packages/dio) - HTTP client
+- [Nakama](https://heroiclabs.com/) - Realtime backend interaction
+- [Flame](https://flame-engine.org/) - 2D game engine integration
+- [sherpa_onnx](https://github.com/k2-fsa/sherpa-onnx) - Offline TTS (Text-to-Speech)
 
-## 贡献指南
+### Deployment and Build
 
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 创建Pull Request
+As a standard Flutter cross-platform project, the open-source branch does not include private CI/CD automation scripts. You can build and package the application directly using standard Flutter commands.
 
-## 许可证
+#### 1. Desktop (Windows)
+The desktop version can be built as a standard portable Windows executable or packaged as an MSIX installer for the Microsoft Store.
 
-MIT License
+```sh
+# 1. Build a standard Windows executable (outputs to build/windows/runner/Release)
+flutter build windows
+
+# 2. (Optional) Build an MSIX installer for distribution
+flutter pub run msix:create
+```
+
+#### 2. Mobile (Android / iOS)
+```sh
+# Android: Build APK (outputs to build/app/outputs/flutter-apk/app-release.apk)
+flutter build apk
+
+# iOS: Build (requires macOS and properly configured certificates in Xcode)
+flutter build ios
+```
+
+### Version Control
+
+This project uses Git for version management. You can refer to the repository for current available versions.
+
+### Author
+
+Aishia Studio 
+- Github: [@CrimsonAishia](https://github.com/CrimsonAishia)
