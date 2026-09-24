@@ -281,6 +281,20 @@ class CharacterGalleryBloc
                       acquisition: subModelDetail.acquisition ?? s.acquisition,
                       tags: subModelDetail.tags ?? s.tags,
                       voices: subModelDetail.voices ?? s.voices,
+                      source: subModelDetail.source ?? s.source,
+                      provider: subModelDetail.provider ?? s.provider,
+                      providerSteamid:
+                          subModelDetail.providerSteamid ?? s.providerSteamid,
+                      modeler: subModelDetail.modeler ?? s.modeler,
+                      modelerSteamid:
+                          subModelDetail.modelerSteamid ?? s.modelerSteamid,
+                      othercheckKey:
+                          subModelDetail.othercheckKey ?? s.othercheckKey,
+                      othercheckKeyName:
+                          subModelDetail.othercheckKeyName ??
+                          s.othercheckKeyName,
+                      othercheckPoint:
+                          subModelDetail.othercheckPoint ?? s.othercheckPoint,
                     );
                   }
                   return s;
@@ -340,6 +354,7 @@ class CharacterGalleryBloc
         selectedSubModelId: event.subModelId,
         previewPosition: 0,
         clearPendingRequest: true, // 切换子模型时清除待审核状态
+        isSubModelLoading: true,
       ),
     );
 
@@ -353,12 +368,22 @@ class CharacterGalleryBloc
       orElse: () => character.subModels!.first,
     );
 
-    if (currentSubModel?.preview == null || currentSubModel?.voices == null) {
+    bool needsFetch =
+        currentSubModel?.preview == null || currentSubModel?.voices == null;
+
+    if (needsFetch) {
       try {
         final subModelDetail = await _api.getSubModelDetail(
           character.id,
           event.subModelId,
         );
+
+        // 防止竞态条件：如果在此期间用户切换了其他角色或子模型，则忽略结果
+        if (state.selectedCharacter?.id != character.id ||
+            state.selectedSubModelId != event.subModelId) {
+          return;
+        }
+
         if (subModelDetail != null) {
           final updatedSubModels = character.subModels?.map((s) {
             if (s.id == event.subModelId) {
@@ -369,6 +394,18 @@ class CharacterGalleryBloc
                 acquisition: subModelDetail.acquisition ?? s.acquisition,
                 tags: subModelDetail.tags ?? s.tags,
                 voices: subModelDetail.voices ?? s.voices,
+                source: subModelDetail.source ?? s.source,
+                provider: subModelDetail.provider ?? s.provider,
+                providerSteamid:
+                    subModelDetail.providerSteamid ?? s.providerSteamid,
+                modeler: subModelDetail.modeler ?? s.modeler,
+                modelerSteamid:
+                    subModelDetail.modelerSteamid ?? s.modelerSteamid,
+                othercheckKey: subModelDetail.othercheckKey ?? s.othercheckKey,
+                othercheckKeyName:
+                    subModelDetail.othercheckKeyName ?? s.othercheckKeyName,
+                othercheckPoint:
+                    subModelDetail.othercheckPoint ?? s.othercheckPoint,
               );
             }
             return s;
@@ -385,12 +422,24 @@ class CharacterGalleryBloc
       } catch (e) {
         LogService.e('加载子模型详情失败: $e', e);
       }
+    } else {
+      // 如果不需要请求，提供一个短暂的加载过渡，以呈现刷新动画效果
+      await Future.delayed(const Duration(milliseconds: 250));
     }
 
-    if (character.category == CharacterCategory.touhou) {
-      add(
-        LoadSpellCards(characterId: character.id, subModelId: event.subModelId),
-      );
+    // 结束加载动画（同样需要检查竞态）
+    if (state.selectedCharacter?.id == character.id &&
+        state.selectedSubModelId == event.subModelId) {
+      emit(state.copyWith(isSubModelLoading: false));
+
+      if (character.category == CharacterCategory.touhou) {
+        add(
+          LoadSpellCards(
+            characterId: character.id,
+            subModelId: event.subModelId,
+          ),
+        );
+      }
     }
   }
 

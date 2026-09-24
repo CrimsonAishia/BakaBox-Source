@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import '../../../core/models/lobby_models.dart';
 import '../../../core/models/proto/lobby.pb.dart' as pb;
+import '../../../core/services/auth_service.dart';
 import '../../../core/services/lobby_nakama_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/constants/app_colors.dart';
@@ -124,8 +125,14 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
         child: Material(
           color: Colors.transparent,
           child: Container(
-            width: 680,
-            constraints: const BoxConstraints(maxHeight: 740),
+            width: MediaQuery.of(context).size.width > 700
+                ? 680
+                : MediaQuery.of(context).size.width * 0.96,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height > 800
+                  ? 740
+                  : MediaQuery.of(context).size.height * 0.9,
+            ),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
@@ -169,8 +176,16 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
   }
 
   Widget _buildHeader() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 24,
+        20,
+        isMobile ? 12 : 16,
+        20,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -397,13 +412,9 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
 
   Widget _buildContent() {
     final info = _userInfo!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
 
-    final hasCs2 =
-        info.cs2Gold.toInt() > 0 ||
-        info.cs2Point.toInt() > 0 ||
-        info.cs2SpentPoint.toInt() > 0 ||
-        info.onlineTimeDay.toInt() > 0 ||
-        info.onlineTimeTotal.toInt() > 0;
     final hasPts =
         info.mgPts.toInt() > 0 ||
         info.surfPts.toInt() > 0 ||
@@ -415,33 +426,47 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
         info.kzPtsRank.toInt() > 0;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 12 : 24,
+        0,
+        isMobile ? 12 : 24,
+        32,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // CS2 游戏数据
-          if (hasCs2) ...[
+          // CP 模块
+          if (info.hasCp()) ...[
             _buildSectionTitle(
-              'CS2 游戏数据',
-              Image.asset('assets/icons/cs2_logo.png', width: 22, height: 22),
+              'TA 的 CP',
+              const Icon(
+                Icons.favorite_border,
+                color: Colors.pinkAccent,
+                size: 22,
+              ),
             ),
-            _buildSubTitle('综合数据'),
-            _buildInfoCard([
-              if (info.cs2Gold.toInt() > 0)
-                _InfoItem('金', _formatNumber(info.cs2Gold.toInt())),
-              if (info.cs2Point.toInt() > 0)
-                _InfoItem('点', _formatNumber(info.cs2Point.toInt())),
-              if (info.cs2SpentPoint.toInt() > 0)
-                _InfoItem('已消耗点', _formatNumber(info.cs2SpentPoint.toInt())),
-              if (info.onlineTimeDay.toInt() > 0)
-                _InfoItem('今日在线', _formatDuration(info.onlineTimeDay.toInt())),
-              if (info.onlineTimeTotal.toInt() > 0)
-                _InfoItem(
-                  '累计在线',
-                  _formatDuration(info.onlineTimeTotal.toInt()),
-                ),
-            ]),
+            _buildCpCard(info.cp),
           ],
+
+          // CS2 游戏数据
+          _buildSectionTitle(
+            'CS2 游戏数据',
+            Image.asset('assets/icons/cs2_logo.png', width: 22, height: 22),
+          ),
+          _buildSubTitle('综合数据'),
+          _buildInfoCard([
+            _InfoItem('金', _formatNumber(info.cs2Gold.toInt())),
+            _InfoItem('点', _formatNumber(info.cs2Point.toInt())),
+            _InfoItem('已消耗点', _formatNumber(info.cs2SpentPoint.toInt())),
+            _InfoItem('活动点', _formatNumber(info.cs2EventPoint.toInt())),
+            _InfoItem('今日在线', _formatDuration(info.onlineTimeDay.toInt())),
+            _InfoItem('本月在线', _formatDuration(info.onlineTimeMonth.toInt())),
+            _InfoItem(
+              '上月在线',
+              _formatDuration(info.onlineTimeLastMonth.toInt()),
+            ),
+            _InfoItem('累计在线', _formatDuration(info.onlineTimeTotal.toInt())),
+          ]),
 
           // PTS 排名
           if (hasPts) ...[
@@ -549,13 +574,25 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
 
   Widget _buildInfoCard(List<_InfoItem> items) {
     if (items.isEmpty) return const SizedBox.shrink();
+
+    // 移动端适配：确保在一行放下2个
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    final panelWidth = screenWidth > 700 ? 680.0 : screenWidth * 0.96;
+    final availableWidth = panelWidth - (isMobile ? 24 : 48); // 根据移动端内边距调整
+    final itemWidth = isMobile ? (availableWidth - 16) / 2 : 146.0;
+
     return Wrap(
       spacing: 12,
       runSpacing: 12,
       children: items.map((item) {
         return Container(
-          width: 146,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          width: itemWidth,
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 12 : 16,
+            vertical: 14,
+          ),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(12),
@@ -890,6 +927,233 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
       return '$hours小时${minutes > 0 ? '$minutes分' : ''}';
     }
     return '$minutes分';
+  }
+
+  Widget _buildCpCard(pb.CPData cp) {
+    // 强制 cp.owner 为当前查看的玩家
+    final taUser = cp.owner;
+    final partnerUser = cp.partner;
+
+    // 检查当前查看的玩家是不是自己
+    final currentUserSteamId64 = AuthService.instance.userInfo?.steamProfileId;
+    final isMe =
+        currentUserSteamId64 != null &&
+        currentUserSteamId64 == cp.owner.steamId64;
+    final ownerBadge = isMe ? '我' : 'TA';
+
+    // 计算结伴天数
+    int days = 0;
+    if (cp.bindDate.isNotEmpty) {
+      try {
+        final bindDateTime = DateTime.parse(cp.bindDate);
+        days = DateTime.now().difference(bindDateTime).inDays;
+      } catch (e) {
+        // 解析失败忽略
+      }
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        vertical: 16,
+        horizontal: isMobile ? 12 : 24,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 上半部分：头像和红心
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Owner (TA/我)
+              _buildCpAvatar(taUser, badgeText: ownerBadge, isMobile: isMobile),
+              SizedBox(width: isMobile ? 12 : 24),
+              // 心形 + 天数
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: Colors.pinkAccent,
+                    size: isMobile ? 28 : 32,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$days 天',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(width: isMobile ? 12 : 24),
+              // Partner
+              _buildCpAvatar(partnerUser, badgeText: null, isMobile: isMobile),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+          // 分割线
+          Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.05),
+            margin: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24),
+          ),
+          const SizedBox(height: 16),
+
+          // 下半部分：数据块
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: _buildCpDataBox(context, 'Lv.${cp.level}', 'CP 等级'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildCpDataBox(
+                  context,
+                  '${_formatNumber(cp.point)} pt',
+                  '亲密度',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCpAvatar(
+    pb.CPUserData user, {
+    required String? badgeText,
+    bool isMobile = false,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: isMobile ? 52 : 60,
+          height: isMobile ? 52 : 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.pinkAccent.withValues(alpha: 0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.pinkAccent.withValues(alpha: 0.2),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: BakaCachedImage(
+              user.avatarUrl.isNotEmpty ? user.avatarUrl : '',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.person, color: Colors.white54),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: isMobile ? 90 : 80,
+          child: Text(
+            user.playerName,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isMobile ? 12 : 13,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 6),
+        // 占位符高度固定，使得左右头像不会因为有无标签而错位
+        SizedBox(
+          height: 22,
+          child: badgeText != null
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.lobbyBlue.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: const TextStyle(
+                        color: AppColors.lobbyBlue,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Text(
+                    user.steamId.isNotEmpty ? user.steamId : 'Unbound',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCpDataBox(BuildContext context, String value, String label) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 8 : 16,
+        vertical: 14,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.pink.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.pink.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

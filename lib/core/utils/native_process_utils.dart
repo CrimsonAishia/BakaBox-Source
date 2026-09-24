@@ -78,6 +78,17 @@ final _QueryFullProcessImageNameW = _kernel32
       int Function(Pointer<Void>, int, Pointer<Uint16>, Pointer<Uint32>)
     >('QueryFullProcessImageNameW');
 
+final _TerminateProcess = _kernel32
+    .lookupFunction<
+      Int32 Function(Pointer<Void>, Uint32),
+      int Function(Pointer<Void>, int)
+    >('TerminateProcess');
+
+final _GetCurrentProcess = _kernel32
+    .lookupFunction<Pointer<Void> Function(), Pointer<Void> Function()>(
+      'GetCurrentProcess',
+    );
+
 const _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
 class NativeProcessUtils {
@@ -212,5 +223,16 @@ class NativeProcessUtils {
     String processName,
   ) async {
     return Isolate.run(() => getProcessExecutablePath(processName));
+  }
+
+  /// 强制终止当前进程，跳过所有 DLL detach 和清理。
+  /// 用于规避由于原生插件未清理 COM 导致的关闭卡死（Task Manager Access Denied）或崩溃问题。
+  static void forceExit(int exitCode) {
+    try {
+      final hProcess = _GetCurrentProcess();
+      _TerminateProcess(hProcess, exitCode);
+    } catch (e) {
+      LogService.e('强制终止进程失败', e);
+    }
   }
 }

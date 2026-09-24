@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:win32_registry/win32_registry.dart';
 
 import '../utils/log_service.dart';
@@ -139,6 +140,39 @@ class SteamUserService {
       return _cachedSteamUserId;
     } catch (e) {
       LogService.d('[SteamUserService] 获取Steam用户ID失败: $e');
+      return null;
+    }
+  }
+
+  /// 通过公开的 Steam Community XML 接口获取 Steam 用户昵称
+  /// 使用内存缓存避免频繁请求
+  Future<String?> getSteamNameBySteamId64(String steamId64) async {
+    if (_cachedSteamUsername != null && _cachedSteamUserId == steamId64) {
+      return _cachedSteamUsername;
+    }
+
+    try {
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+        ),
+      );
+      final response = await dio.get(
+        'https://steamcommunity.com/profiles/$steamId64/?xml=1',
+      );
+      final content = response.data.toString();
+      final match = RegExp(
+        r'<steamID><!\[CDATA\[(.*?)\]\]></steamID>',
+      ).firstMatch(content);
+      if (match != null) {
+        _cachedSteamUsername = match.group(1);
+        _cachedSteamUserId = steamId64;
+        return _cachedSteamUsername;
+      }
+      return null;
+    } catch (e) {
+      LogService.e('[SteamUserService] 通过XML获取Steam昵称失败', e);
       return null;
     }
   }

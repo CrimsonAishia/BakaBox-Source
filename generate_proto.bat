@@ -9,10 +9,14 @@ echo.
 
 REM 检查本地 protoc 是否存在
 if not exist "tools\protoc\bin\protoc.exe" (
-    echo 错误: 本地 protoc 未找到
-    echo 请运行以下命令下载:
-    echo   dart run generate_proto.dart
-    exit /b 1
+    echo 本地 protoc 未找到，正在自动下载 ^(v25.1^)...
+    powershell -Command "New-Item -ItemType Directory -Force -Path 'tools\protoc' | Out-Null; Invoke-WebRequest -Uri 'https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protoc-25.1-win64.zip' -OutFile 'tools\protoc.zip' -UseBasicParsing; Expand-Archive -Path 'tools\protoc.zip' -DestinationPath 'tools\protoc' -Force; Remove-Item 'tools\protoc.zip'"
+    if not exist "tools\protoc\bin\protoc.exe" (
+        echo 错误: 下载或解压 protoc 失败
+        exit /b 1
+    )
+    echo protoc 下载并解压成功！
+    echo.
 )
 
 REM 检查 protoc-gen-dart 是否安装正确版本

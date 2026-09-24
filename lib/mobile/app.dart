@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../core/core.dart';
 import '../core/services/app_info_service.dart';
+import '../core/bloc/activity/activity_bloc.dart';
 import 'router/mobile_router.dart';
 import 'theme/mobile_theme.dart';
 import 'screens/mobile_home_screen.dart';
@@ -35,6 +36,13 @@ class _MobileAppState extends State<MobileApp> {
     await AppInfoService.instance.init();
     // 初始化日志服务
     await LogService.init();
+    // 检查并上报更新安装结果
+    try {
+      await UpdateService().checkAndReportInstallSuccess();
+    } catch (e) {
+      // 失败不影响应用启动，静默处理
+      LogService.e('检查更新安装结果失败', e);
+    }
     // 初始化广播通知服务
     await BroadcastNotificationService.instance.init();
     // 初始化前台保活服务配置（Android 平台）
@@ -78,6 +86,8 @@ class _MobileAppState extends State<MobileApp> {
             ..add(AnnouncementFetch())
             ..add(const AnnouncementStartRealtime()),
         ),
+        BlocProvider(create: (_) => ActivityBloc()),
+        BlocProvider(create: (_) => BilibiliContentBloc()),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {

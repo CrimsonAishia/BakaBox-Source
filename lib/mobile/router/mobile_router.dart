@@ -13,6 +13,9 @@ import '../screens/character_detail_mobile.dart';
 import '../screens/update_logs_mobile.dart';
 import '../screens/map_database_mobile.dart';
 import '../screens/bilibili_content_mobile.dart';
+import '../screens/community_guide_mobile.dart';
+import '../screens/guide_detail_mobile.dart';
+import '../screens/app_logs_mobile.dart';
 import '../app.dart';
 
 /// 移动端路由路径
@@ -29,6 +32,9 @@ class MobileRoutes {
   static const String updateLogs = '/update-logs';
   static const String mapDatabase = '/map-database';
   static const String bilibiliContent = '/bilibili-content';
+  static const String communityGuide = '/community-guide';
+  static const String guideDetail = '/community-guide/:id';
+  static const String appLogs = '/app-logs';
 }
 
 /// 移动端路由配置
@@ -129,6 +135,35 @@ class MobileRouter {
           create: (_) => BilibiliContentBloc(),
           child: const BilibiliContentMobile(),
         ),
+      ),
+      GoRoute(
+        path: MobileRoutes.communityGuide,
+        name: 'communityGuide',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) =>
+                  GuideListBloc()..add(const LoadGuides(reset: true)),
+            ),
+            BlocProvider(
+              create: (_) => GuideCategoriesBloc()..add(const LoadCategories()),
+            ),
+          ],
+          child: const CommunityGuideMobile(),
+        ),
+      ),
+      GoRoute(
+        path: MobileRoutes.guideDetail,
+        name: 'guideDetail',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          return GuideDetailMobile(id: id);
+        },
+      ),
+      GoRoute(
+        path: MobileRoutes.appLogs,
+        name: 'appLogs',
+        builder: (context, state) => const AppLogsMobile(),
       ),
     ],
   );

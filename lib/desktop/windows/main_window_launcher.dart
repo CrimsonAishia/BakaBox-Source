@@ -17,6 +17,7 @@ import '../../core/utils/storage_utils.dart';
 import '../app.dart';
 
 import '../../core/utils/log_service.dart';
+import '../../core/utils/native_process_utils.dart';
 
 /// 主窗口启动器
 class MainWindowLauncher {
@@ -135,20 +136,17 @@ class MainWindowLauncher {
 
   /// 桌面端完整退出流程
   ///
-  /// 关键：不再用 `exit(0)` ，而是走 `windowManager.destroy()`
-  ///   → 原生 `PostQuitMessage(0)`
-  ///   → `wWinMain` 消息循环自然退出
-  ///   → `CoUninitialize()` 被调用
+  /// 关键：不再用 `exit(0)` 也不能用 `windowManager.destroy()`，而是使用 `TerminateProcess`。
+  ///   因为：
+  ///   1. `exit(0)` 会触发 C++ CRT 的退出，导致 DllMain 被调用。由于此时 COM 未被反初始化，
+  ///      许多依赖 COM 的原生插件（如 WebView2、fvp）会导致 SEH 异常或奔溃。
+  ///   2. `windowManager.destroy()` 会发送 WM_DESTROY，正常应该退出消息循环，
+  ///      然后执行 `CoUninitialize`。但是由于部分插件的后台线程或 STA COM 对象仍
+  ///      存在并可能需要消息循环处理释放，`CoUninitialize` 会导致死锁，表现为应用
+  ///      关闭后进程挂起，且任务管理器因进程卡在 Loader Lock 而提示"拒绝访问"。
   ///
-  /// `exit(0)` 直接跳过消息循环，`CoInitializeEx` 对应的 `CoUninitialize`
-  /// 永远不会执行。WebView2 / tray_manager / windows_notification / fvp 等
-  /// 大量依赖 COM 的原生插件在"COM 未反初始化"状态下被 DLL_PROCESS_DETACH
-  /// 卸载，会触发 SEH 异常。WER 正常的机器上表现为静默 werfault；
-  /// WER 被禁的机器上则弹出 "Unknown Hard Error" 系统级弹窗
-  /// （部分精简版 Windows、优化软件、组策略环境会禁 WER）。
-  ///
-  /// desktop_multi_window 的子窗口本身用 `windowManager.destroy()` 关闭，
-  /// 是干净的；崩点在主进程。所以只需要修主进程退出路径。
+  /// 因此，我们在确保所有业务逻辑、子窗口、网络服务都已经关闭，并且日志已经 Flush 后，
+  /// 直接调用系统底层的 `TerminateProcess` 强制关闭进程，跳过所有 DLL detach，避免死锁或崩溃。
   static Future<void> _exitDesktop() async {
     const closeTimeout = Duration(seconds: 2);
     final stopwatch = Stopwatch()..start();
@@ -231,21 +229,22 @@ class MainWindowLauncher {
 
     try {
       LogService.i(
-        '[Exit] Destroying main window (Elapsed: ${stopwatch.elapsedMilliseconds}ms)...',
+        '[Exit] Destroying main process via TerminateProcess (Elapsed: ${stopwatch.elapsedMilliseconds}ms)...',
       );
-      // 在销毁窗口前，强制刷新一次内存中的所有日志到文件，
-      // 因为一旦 destroy，C++ 原生层会立刻终止进程，后续的异步日志将丢失。
+      // 在销毁窗口/进程前，强制刷新一次内存中的所有日志到文件，
+      // 因为一旦调用 TerminateProcess，进程将瞬间蒸发，后续异步日志将丢失。
       await LogService.flush();
 
-      await windowManager.destroy();
+      // 强制终止进程，规避各种插件退出时挂起导致的 "Access Denied" 问题。
+      NativeProcessUtils.forceExit(0);
     } catch (e) {
-      LogService.e('[Exit] destroy failed', e);
+      LogService.e('[Exit] forceExit failed', e);
       // 如果销毁失败，再刷新一次错误日志
       await LogService.flush();
     }
 
-    // 8. 兜底：正常路径下上面 destroy 后进程已终止，代码走不到这里。
-    //    极端情况（destroy 抛异常或消息循环卡住）10 秒后强退。
+    // 8. 兜底：正常路径下上面 forceExit 后进程已瞬间终止，代码走不到这里。
+    //    极端情况（抛异常）10 秒后强退。
     LogService.w(
       '[Exit] Reached fallback! Waiting 10 seconds before forced exit (Elapsed: ${stopwatch.elapsedMilliseconds}ms)',
     );

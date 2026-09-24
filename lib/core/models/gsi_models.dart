@@ -51,7 +51,6 @@ class GsiGameState {
       _$GsiGameStateFromJson(json);
   Map<String, dynamic> toJson() => _$GsiGameStateToJson(this);
 
-  // ==================== 便捷方法 ====================
 
   /// 玩家是否在主菜单
   bool get isInMenu => player?.activity == 'menu';

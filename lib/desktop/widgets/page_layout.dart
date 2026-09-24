@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/constants/app_colors.dart';
 
 /// 页面布局组件
@@ -15,11 +16,14 @@ class PageLayout extends StatefulWidget {
   /// 页面内容
   final Widget child;
 
-  /// 返回按钮的回调，如果提供，则会在标题旁边显示一个返回按钮
+  /// 返回按钮的回调，如果提供，则会在标题旁边显示一个返回按钮（或者作为面包屑父级的点击事件）
   final VoidCallback? onBack;
 
   /// 可选的页面背景组件（将显示在最底层）
   final Widget? background;
+
+  /// 面包屑父级标题，如果有提供，则显示为 "父级 / 标题"，点击父级触发 onBack，不再显示返回按钮
+  final String? breadcrumbParent;
 
   const PageLayout({
     super.key,
@@ -27,6 +31,7 @@ class PageLayout extends StatefulWidget {
     required this.child,
     this.onBack,
     this.background,
+    this.breadcrumbParent,
   });
 
   @override
@@ -35,6 +40,7 @@ class PageLayout extends StatefulWidget {
 
 class _PageLayoutState extends State<PageLayout> {
   bool _isHoveringTitle = false;
+  bool _isHoveringBreadcrumb = false;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +109,59 @@ class _PageLayoutState extends State<PageLayout> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            if (widget.breadcrumbParent != null) ...[
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                onEnter: (_) => setState(() => _isHoveringBreadcrumb = true),
+                onExit: (_) => setState(() => _isHoveringBreadcrumb = false),
+                child: GestureDetector(
+                  onTap: widget.onBack,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    transform: Matrix4.translationValues(
+                      _isHoveringBreadcrumb ? -4.0 : 0.0,
+                      0,
+                      0,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          MdiIcons.chevronLeft,
+                          size: 28,
+                          color: _isHoveringBreadcrumb
+                              ? (isDark ? Colors.white : AppColors.gray900)
+                              : (isDark ? Colors.white54 : AppColors.gray500),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          widget.breadcrumbParent!,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: _isHoveringBreadcrumb
+                                ? (isDark ? Colors.white : AppColors.gray900)
+                                : (isDark ? Colors.white54 : AppColors.gray500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  '/',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w300,
+                    color: isDark ? Colors.white24 : AppColors.gray300,
+                  ),
+                ),
+              ),
+            ],
             Text(
               widget.title,
               style: TextStyle(
@@ -111,7 +170,7 @@ class _PageLayoutState extends State<PageLayout> {
                 color: isDark ? Colors.white : const Color(0xFF111827),
               ),
             ),
-            if (widget.onBack != null) ...[
+            if (widget.breadcrumbParent == null && widget.onBack != null) ...[
               const SizedBox(width: 16),
               SizedBox(
                 height: 34, // 强制高度与 28px 字体视觉高度一致
@@ -158,9 +217,13 @@ class _PageLayoutState extends State<PageLayout> {
 
   /// 计算标题宽度（用于下划线动画）
   double _calculateTitleWidth() {
+    String text = widget.title;
+    if (widget.breadcrumbParent != null) {
+      text = '${widget.breadcrumbParent} / ${widget.title}';
+    }
     final textPainter = TextPainter(
       text: TextSpan(
-        text: widget.title,
+        text: text,
         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,

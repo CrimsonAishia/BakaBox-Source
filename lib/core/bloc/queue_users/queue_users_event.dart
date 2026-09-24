@@ -9,9 +9,7 @@ sealed class QueueUsersEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// ============================================================================
 // Public Events (UI triggered)
-// ============================================================================
 
 /// 连接到指定服务器的挤服 WebSocket
 ///
@@ -75,9 +73,7 @@ class QueueUsersSuccess extends QueueUsersEvent {
   const QueueUsersSuccess();
 }
 
-// ============================================================================
 // Internal Events (from QueueUsersService)
-// ============================================================================
 
 /// 全量同步用户列表
 ///

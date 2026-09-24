@@ -1,4 +1,4 @@
-﻿import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import '../../../core/services/quill_delta_codec.dart';
 import '../../../core/widgets/rich_text_editor.dart';
 import 'package:flutter/material.dart';
@@ -125,7 +125,6 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
     );
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isUltimate = widget.card.type == SpellCardType.ultimate;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -206,50 +205,7 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SpellCardNumberField(
-                                  label: '冷却时间',
-                                  controller: _cooldownController,
-                                  hint: '60',
-                                  icon: Icons.timer_outlined,
-                                  iconColor:
-                                      CharacterGalleryTheme.getCooldownColor(
-                                        context,
-                                      ),
-                                  suffix: '秒',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: SpellCardDamageField(
-                                  label: '伤害',
-                                  controller: _damageController,
-                                  hint: '150-300',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SpellCardCostField(
-                            controller: _costController,
-                            isUltimate: isUltimate,
-                          ),
-                          const SizedBox(height: 16),
-                          _SpellCardAdvancedFields(
-                            speedController: _speedController,
-                            countController: _countController,
-                            angleController: _angleController,
-                            punctureController: _punctureController,
-                            bounceController: _bounceController,
-                            explodeController: _explodeController,
-                            holdTimeController: _holdTimeController,
-                            trackSpeedController: _trackSpeedController,
-                            customCdController: _customCdController,
-                          ),
-                          const SizedBox(height: 16),
+
                           PreviewTypeSelector(
                             initialType:
                                 widget.existingEdit?.previewType ??

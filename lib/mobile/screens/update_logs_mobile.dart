@@ -143,104 +143,30 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
 
   Widget _buildAppBar(BuildContext context, UpdateLogState state) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-
-    String title = '更新日志';
-    String subtitle;
-    if (state.isLoading && state.logs.isEmpty) {
-      subtitle = '正在加载更新信息...';
-    } else if (state.totalCount > 0) {
-      subtitle = '共 ${state.totalCount} 条记录';
-    } else {
-      subtitle = '获取最新更新信息';
-    }
 
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: theme.appBarTheme.backgroundColor,
-      surfaceTintColor: theme.appBarTheme.backgroundColor,
-      toolbarHeight: 80,
+      scrolledUnderElevation: 0,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
         onPressed: () => context.pop(),
-        icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
       ),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          color: theme.appBarTheme.backgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: isDark ? 0.15 : 0.06),
-              offset: const Offset(0, 1),
-              blurRadius: 4,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(56, 12, 20, 12),
-            child: Row(
-              children: [
-                _buildAppBarIcon(isDark),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                          letterSpacing: 0.3,
-                        ),
-                      ).animate().fadeIn(duration: 300.ms),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+      title: const Text(
+        '更新日志',
+        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(
+          height: 1,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
         ),
       ),
-    );
-  }
-
-  Widget _buildAppBarIcon(bool isDark) {
-    final primaryColor = AppColors.red500;
-
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [primaryColor.withValues(alpha: 0.9), AppColors.red600]
-              : [primaryColor, AppColors.red600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: isDark ? 0.3 : 0.35),
-            offset: const Offset(0, 4),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: const Icon(Icons.article_rounded, color: Colors.white, size: 22),
     );
   }
 

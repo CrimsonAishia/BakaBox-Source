@@ -185,7 +185,6 @@ class SettingsSetBroadcastNotificationType extends SettingsEvent {
   List<Object?> get props => [notificationType];
 }
 
-// ==================== 黑名单管理事件 ====================
 
 /// 加载黑名单列表
 class SettingsLoadBlocklist extends SettingsEvent {}
@@ -207,7 +206,6 @@ class SettingsUnblockUser extends SettingsEvent {
   List<Object?> get props => [userId];
 }
 
-// ==================== 弱网模式 ====================
 
 /// 切换弱网模式
 class SettingsSetWeakNetworkMode extends SettingsEvent {

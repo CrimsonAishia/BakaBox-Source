@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -33,6 +34,7 @@ class LobbyImageCacheService {
   static const String _urlMappingFile = 'url_mapping.json';
 
   bool _initialized = false;
+  Future<void>? _initFuture;
 
   /// 是否已初始化
   bool get isInitialized => _initialized;
@@ -40,14 +42,46 @@ class LobbyImageCacheService {
   /// HTTP 客户端
   Dio? _dio;
 
-  /// 内存缓存：URL -> Uint8List
-  final Map<String, Uint8List> _memoryCache = {};
+  /// 最大内存缓存数量
+  static const int _maxMemoryCacheCount = 20;
+
+  /// 内存缓存：URL -> Uint8List (LRU 策略)
+  final LinkedHashMap<String, Uint8List> _memoryCache =
+      LinkedHashMap<String, Uint8List>();
+
+  /// 并发请求合并：URL -> Future
+  final Map<String, Future<Uint8List?>> _pendingTasks = {};
 
   /// 磁盘映射表：稳定 URL -> 文件名
   final Map<String, String> _diskMapping = {};
 
+  /// 写入 LRU 缓存
+  void _addMemoryCache(String key, Uint8List value) {
+    _memoryCache.remove(key);
+    _memoryCache[key] = value;
+    if (_memoryCache.length > _maxMemoryCacheCount) {
+      _memoryCache.remove(_memoryCache.keys.first);
+    }
+  }
+
+  /// 读取 LRU 缓存
+  Uint8List? _getMemoryCache(String key) {
+    if (_memoryCache.containsKey(key)) {
+      final value = _memoryCache.remove(key)!;
+      _memoryCache[key] = value; // 移到末尾，标记为最近使用
+      return value;
+    }
+    return null;
+  }
+
   /// 初始化服务
-  Future<void> init() async {
+  Future<void> init() {
+    if (_initialized) return Future.value();
+    _initFuture ??= _doInit().whenComplete(() => _initFuture = null);
+    return _initFuture!;
+  }
+
+  Future<void> _doInit() async {
     if (_initialized) return;
 
     try {
@@ -175,6 +209,7 @@ class LobbyImageCacheService {
     List<String> urls, {
     void Function(int completed, int total)? onProgress,
   }) async {
+    if (!_initialized) await init();
     if (urls.isEmpty) return;
 
     // 去重（避免重复下载）
@@ -223,79 +258,25 @@ class LobbyImageCacheService {
     }
   }
 
-  /// 下载并缓存图片
-  ///
-  /// 使用原始 URL 下载，然后用稳定 URL（去掉鉴权参数）作为 key 存储。
-  /// 这样后续用稳定 URL 查找时可以直接命中。
+  /// 下载并缓存图片（兼容旧方法，统一转调 getImage 走并发合并逻辑）
   ///
   /// 返回缓存后的数据，如果失败返回 null
   Future<Uint8List?> downloadWithStableKey(String rawUrl) async {
-    if (rawUrl.isEmpty) return null;
-
-    // 计算稳定 URL（去掉鉴权参数）
-    final stableUrl = _stripAuthParams(rawUrl);
-
-    // 用稳定 URL 检查是否已在缓存
-    if (_memoryCache.containsKey(stableUrl)) {
-      if (LogService.enableLobbyDebugLog) {
-        LogService.d('[LobbyImageCache] 内存缓存命中(稳定URL): $stableUrl');
-      }
-      return _memoryCache[stableUrl];
-    }
-
-    final diskData = await _loadFromDisk(stableUrl);
-    if (diskData != null) {
-      if (LogService.enableLobbyDebugLog) {
-        LogService.d('[LobbyImageCache] 磁盘缓存命中(稳定URL): $stableUrl');
-      }
-      _memoryCache[stableUrl] = diskData;
-      return diskData;
-    }
-
-    // 下载图片
-    if (LogService.enableLobbyDebugLog) {
-      LogService.d('[LobbyImageCache] 下载图片: $rawUrl -> 稳定URL: $stableUrl');
-    }
-    try {
-      final response = await _dio!.get<List<int>>(
-        rawUrl,
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      if (response.data == null) {
-        LogService.e('[LobbyImageCache] 下载数据为空: $rawUrl');
-        return null;
-      }
-
-      final bytes = Uint8List.fromList(response.data!);
-
-      // 用稳定 URL 保存到磁盘
-      await _saveToDisk(stableUrl, bytes);
-
-      // 用稳定 URL 添加到内存缓存
-      _memoryCache[stableUrl] = bytes;
-
-      if (LogService.enableLobbyDebugLog) {
-        LogService.d('[LobbyImageCache] 下载并缓存成功: $stableUrl');
-      }
-      return bytes;
-    } catch (e) {
-      LogService.e('[LobbyImageCache] 下载失败: $rawUrl', e);
-      return null;
-    }
+    return getImage(rawUrl);
   }
 
   /// 下载并缓存图片（保留旧方法兼容）
   ///
   /// 返回缓存后的数据，如果失败返回 null
   Future<Uint8List?> downloadAndCache(String url) async {
-    return downloadWithStableKey(url);
+    return getImage(url);
   }
 
   /// 检查本地缓存是否存在
   ///
   /// 会自动去掉 URL 的鉴权参数，用稳定 URL 查找
   Future<bool> hasLocalCache(String url) async {
+    if (!_initialized) await init();
     if (url.isEmpty) return false;
 
     // 转换为稳定 URL
@@ -371,34 +352,108 @@ class LobbyImageCacheService {
   /// 如果本地有缓存直接返回，否则下载后返回。
   /// 会自动去掉 URL 的鉴权参数，用稳定 URL 查找和存储。
   Future<Uint8List?> getImage(String url) async {
+    if (!_initialized) await init();
     if (url.isEmpty) return null;
 
     // 转换为稳定 URL
     final stableUrl = _stripAuthParams(url);
 
+    // 检查是否有并发加载任务
+    if (_pendingTasks.containsKey(stableUrl)) {
+      return await _pendingTasks[stableUrl];
+    }
+
+    // 创建新加载任务
+    final task = _executeGetImageTask(stableUrl, url);
+    _pendingTasks[stableUrl] = task;
+
+    try {
+      return await task;
+    } finally {
+      _pendingTasks.remove(stableUrl);
+    }
+  }
+
+  /// 执行获取图片的具体逻辑（缓存或下载）
+  Future<Uint8List?> _executeGetImageTask(
+    String stableUrl,
+    String rawUrl,
+  ) async {
     // 内存缓存
-    if (_memoryCache.containsKey(stableUrl)) {
-      return _memoryCache[stableUrl];
+    final cached = _getMemoryCache(stableUrl);
+    if (cached != null) {
+      return cached;
     }
 
     // 磁盘缓存
     final diskData = await _loadFromDisk(stableUrl);
     if (diskData != null) {
-      _memoryCache[stableUrl] = diskData;
+      _addMemoryCache(stableUrl, diskData);
       return diskData;
     }
 
     // 下载
-    return downloadWithStableKey(url);
+    return _downloadImage(stableUrl, rawUrl);
+  }
+
+  /// 执行真实的网络下载与本地存储
+  Future<Uint8List?> _downloadImage(String stableUrl, String rawUrl) async {
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[LobbyImageCache] 下载图片: $rawUrl -> 稳定URL: $stableUrl');
+    }
+    try {
+      final response = await _dio!.get<List<int>>(
+        rawUrl,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      if (response.data == null) {
+        LogService.e('[LobbyImageCache] 下载数据为空: $rawUrl');
+        return null;
+      }
+
+      final bytes = Uint8List.fromList(response.data!);
+
+      // 用稳定 URL 保存到磁盘
+      await _saveToDisk(stableUrl, bytes);
+
+      // 放入 LRU 内存缓存
+      _addMemoryCache(stableUrl, bytes);
+
+      if (LogService.enableLobbyDebugLog) {
+        LogService.d('[LobbyImageCache] 下载并缓存成功: $stableUrl');
+      }
+      return bytes;
+    } catch (e) {
+      LogService.e('[LobbyImageCache] 下载失败: $rawUrl', e);
+      return null;
+    }
   }
 
   /// 解码图片为 ui.Image
-  Future<ui.Image?> getDecodedImage(String url) async {
+  ///
+  /// 可以传入 [targetWidth] 和 [targetHeight] 限制解码后的内存占用
+  Future<ui.Image?> getDecodedImage(
+    String url, {
+    int? targetWidth,
+    int? targetHeight,
+  }) async {
     final bytes = await getImage(url);
     if (bytes == null) return null;
 
     try {
-      return await decodeImageFromList(bytes) as ui.Image?;
+      if (targetWidth != null || targetHeight != null) {
+        final codec = await ui.instantiateImageCodec(
+          bytes,
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+          allowUpscaling: false, // 像素风游戏：禁止放大图片，防止低像素原图被双线性模糊插值
+        );
+        final frame = await codec.getNextFrame();
+        return frame.image;
+      } else {
+        return await decodeImageFromList(bytes) as ui.Image?;
+      }
     } catch (e) {
       LogService.e('[LobbyImageCache] 解码图片失败: $url', e);
       return null;
@@ -409,6 +464,7 @@ class LobbyImageCacheService {
   Future<void> clearAll() async {
     // 清除内存缓存
     _memoryCache.clear();
+    _pendingTasks.clear();
 
     // 清除磁盘缓存
     try {
@@ -428,29 +484,29 @@ class LobbyImageCacheService {
     LogService.i('[LobbyImageCache] 已清除所有图片缓存');
   }
 
+  /// 仅清除内存缓存（不清除磁盘文件缓存）
+  /// 用于在应用切入后台或页面被回收时释放内存
+  void clearMemoryCache() {
+    _memoryCache.clear();
+    if (LogService.enableLobbyDebugLog) {
+      LogService.d('[LobbyImageCache] 已清理内存缓存');
+    }
+  }
+
   /// 获取缓存统计信息
   Map<String, dynamic> getCacheStats() {
     return {
       'memoryCacheCount': _memoryCache.length,
+      'pendingTasksCount': _pendingTasks.length,
       'diskCacheCount': _diskMapping.length,
       'cacheDir': _getCacheDir(),
     };
   }
 
-  /// 预热缓存：将已缓存的图片加载到内存
+  /// 预热缓存：由于已移除内存缓存，此方法仅保留空实现以避免严重内存泄漏
   Future<void> warmupMemoryCache() async {
-    int loaded = 0;
-    for (final url in _diskMapping.keys.toList()) {
-      if (!_memoryCache.containsKey(url)) {
-        final data = await _loadFromDisk(url);
-        if (data != null) {
-          _memoryCache[url] = data;
-          loaded++;
-        }
-      }
-    }
     if (LogService.enableLobbyDebugLog) {
-      LogService.d('[LobbyImageCache] 预热了 $loaded 个内存缓存');
+      LogService.d('[LobbyImageCache] 预热内存缓存逻辑已移除，由引擎自行管理');
     }
   }
 }

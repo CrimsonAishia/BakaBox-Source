@@ -19,6 +19,7 @@ class RealtimeChannels {
   static const String mapInfo = 'map.info';
   static const String scoreUpdates = 'score.updates';
   static const String serverUsersCount = 'server.users.count';
+  static const String serverCategoryPlayers = 'server.category.players';
   static const String notifications = 'notifications';
   static const String announcements = 'announcements';
   static const String workshopChangelog = 'workshop.changelog';
@@ -30,6 +31,7 @@ class RealtimeChannels {
     mapInfo,
     scoreUpdates,
     serverUsersCount,
+    serverCategoryPlayers,
     notifications,
     announcements,
     workshopChangelog,

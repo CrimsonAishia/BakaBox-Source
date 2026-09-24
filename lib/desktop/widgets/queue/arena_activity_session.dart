@@ -102,9 +102,7 @@ abstract class ArenaActivitySession extends ChangeNotifier {
   /// 上一次处理过的快照（用于检测一次性触发标记的变化）
   ArenaUsersSnapshot? _prevSnapshot;
 
-  // ==========================================================================
   // 子类需要实现：提供归一化后的当前状态与事件流
-  // ==========================================================================
 
   /// 当前用户状态快照
   ArenaUsersSnapshot get currentSnapshot;
@@ -115,9 +113,7 @@ abstract class ArenaActivitySession extends ChangeNotifier {
   /// 自己加入日志文案对应的动作名（仅用于区分，不影响逻辑）
   // 不需要额外文案，QueueActivityLog 内部用 isWarmup 区分。
 
-  // ==========================================================================
   // 公共 API
-  // ==========================================================================
 
   /// 当前是否有可用会话
   bool get hasSession => serverAddress != null;
@@ -156,9 +152,7 @@ abstract class ArenaActivitySession extends ChangeNotifier {
     }
   }
 
-  // ==========================================================================
   // 事件流订阅与日志记录
-  // ==========================================================================
 
   void _startListening() {
     _stopListening();

@@ -1469,16 +1469,28 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   /// 登录成功后主动绑定 Steam ID
   ///
-  /// 从 AuthService.userInfo.steamId 获取原始 Steam ID（STEAM_x:x:xxxxxxx 格式），
-  /// 转换为 Steam64 ID 后发送 profile.steam.bind。
-  /// 同时从 SteamUserService 获取本地 Steam 用户名一并发送。
+  /// 1. 优先从本地持久化读取绑定的 Steam ID
+  /// 2. 如果没有，则通过 AuthService 请求论坛页面解析 Steam ID，并持久化
+  /// 3. 将获取到的 Steam ID 转换为 Steam64 ID
+  /// 4. 每次启动主动同步名字：通过公开的 XML 接口获取最新的 Steam 昵称
+  /// 5. 最后发送 profile.steam.bind 到大厅服务器
   Future<void> _bindSteamAfterLogin() async {
     try {
-      final userInfo = AuthService.instance.userInfo;
-      if (userInfo == null) return;
+      if (!AuthService.instance.isLoggedIn) return;
 
-      // steamId 是 STEAM_x:x:xxxxxxx 格式，需要转换为 Steam64 ID
-      final rawSteamId = userInfo.steamId;
+      // 1. 读取本地持久化的 boundSteamId
+      String? rawSteamId = StorageUtils.getString('bound_steam_id');
+
+      // 2. 如果本地没有，则通过 AuthService 从论坛获取
+      if (rawSteamId == null || rawSteamId.isEmpty) {
+        rawSteamId = await AuthService.instance.getBoundSteamId();
+        if (rawSteamId != null && rawSteamId.isNotEmpty) {
+          await StorageUtils.setString('bound_steam_id', rawSteamId);
+          LogService.i('[LobbyBloc] 从论坛获取到绑定的 Steam ID 并持久化: $rawSteamId');
+        }
+      }
+
+      // 如果仍然没有，说明用户论坛未绑定 Steam
       if (rawSteamId == null || rawSteamId.isEmpty) {
         if (LogService.enableLobbyDebugLog) {
           LogService.d('[LobbyBloc] 用户未绑定 Steam，跳过 steam bind');
@@ -1486,17 +1498,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         return;
       }
 
-      // 将 STEAM_x:x:xxxxxxx 转换为 Steam64 ID
-      // 公式：76561197960265728 + Y * 2^32 / 2 + Z（其中 STEAM_W:Y:Z）
-      // 实际：steamId64 = 76561197960265728 + Z * 2 + Y
+      // 3. 将 STEAM_x:x:xxxxxxx 转换为 Steam64 ID
       final steamId64 = _convertSteamIdToSteam64(rawSteamId);
       if (steamId64 == null) {
         LogService.w('[LobbyBloc] Steam ID 格式无法解析: $rawSteamId');
         return;
       }
 
-      // 获取本地 Steam 用户名（可选）
-      final steamName = await SteamUserService().getCurrentUsername() ?? '';
+      // 4. 每次启动主动同步一次名字：通过公开的 XML 接口获取最新 Steam 昵称
+      final steamName =
+          await SteamUserService().getSteamNameBySteamId64(steamId64) ?? '';
 
       LogService.i(
         '[LobbyBloc] 登录成功后绑定 Steam: raw=$rawSteamId id64=$steamId64, name=$steamName',

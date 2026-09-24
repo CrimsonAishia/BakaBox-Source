@@ -114,7 +114,6 @@ class TtsService {
 
   /// 可用模型列表（仅支持中英文混合的模型）
   static const List<TtsModelInfo> availableModels = [
-    // ====== MeloTTS 系列（官方支持中英文混合） ======
     TtsModelInfo(
       id: 'vits-melo-tts-zh_en',
       name: 'MeloTTS 中英混合',
@@ -133,7 +132,6 @@ class TtsService {
       region: TtsModelRegion.domestic,
       estimatedSize: '~170MB',
     ),
-    // ====== Kokoro 系列（支持中英文混合，多音色） ======
     TtsModelInfo(
       id: 'kokoro-multi-lang-v1_0',
       name: 'Kokoro 中英混合 (53人)',
@@ -869,7 +867,6 @@ class TtsService {
     }
   }
 
-  // ======== 模型下载相关 ========
 
   /// 获取指定模型的存储目录
   Future<Directory> _getModelDirectoryFor(TtsModelInfo model) async {

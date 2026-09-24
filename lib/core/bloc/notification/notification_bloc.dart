@@ -52,7 +52,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     return super.close();
   }
 
-  // ---- 实时频道 ----
 
   void _startRealtime() {
     if (_realtimeStarted) return;
@@ -136,7 +135,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     );
   }
 
-  // ---- REST 操作 ----
 
   Future<void> _onFetch(
     NotificationFetch event,

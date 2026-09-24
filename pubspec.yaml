@@ -2,7 +2,7 @@ name: bakabox_app
 description: "BakaBox - CS2 Launcher"
 publish_to: 'none'
 
-version: 2.0.6+1
+version: 0.0.1+1
 
 environment:
   sdk: ^3.9.0
@@ -15,7 +15,9 @@ dependencies:
 
   # UI & Icons
   cupertino_icons: ^1.0.8
-  material_design_icons_flutter: ^7.0.7296
+  material_design_icons_flutter:
+    git:
+      url: https://github.com/CrimsonAishia/material_design_icons_flutter.git
   
   # HTTP & Network
   http: ^1.2.0
@@ -98,7 +100,7 @@ dependencies:
 
   # Video Player (lightweight, supports custom headers)
   video_player: ^2.9.2
-  fvp: ^0.35.0
+  fvp: ^0.38.1
 
   # TTS (Offline Text-to-Speech)
   sherpa_onnx: ^1.10.0
@@ -122,8 +124,8 @@ dependencies:
   # WebView (unified for all platforms)
   flutter_inappwebview: ^6.1.5
   
-  # Protobuf（与 nakama SDK 使用的 protobuf 4.x 保持一致）
-  protobuf: ^4.0.0
+  # Protobuf
+  protobuf: 5.1.0
   fixnum: ^1.1.0
   
   # JSON & Serialization
@@ -133,7 +135,10 @@ dependencies:
   flex_color_picker: ^3.7.2
   tray_manager: ^0.5.2
   web: ^1.1.1
-  nakama: ^1.3.0
+  nakama:
+    git:
+      url: https://github.com/CrimsonAishia/nakama-dart.git
+      path: nakama
   flutter_portal: ^1.1.4
   win32_registry: ^1.1.5
   flutter_colorpicker: ^1.1.0
@@ -158,21 +163,28 @@ dependency_overrides:
   # source_server 4.0.0 pins freezed_annotation ^2.0.3, but nakama ^1.3.0 needs ^3.0.0.
   # The breaking change in 3.0.0 only removes when/map options, which source_server doesn't use at runtime.
   freezed_annotation: ^3.0.0
+  html: 0.15.6
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
-    - assets/images/tutorials/
-    - assets/images/character_gallery/
     - assets/images/queue/
-    - assets/images/guide/
-    - assets/images/key_binding/
     - assets/icons/
-    - assets/icons/guide/
     - assets/audio/
     - assets/certs/
+    
+    # 桌面端专属资源 (Android 默认编译时会自动剔除)
+    - path: assets/images/tutorials/
+      flavors:
+        - pc
+    - assets/images/character_gallery/
+    - assets/images/guide/
+    - path: assets/images/key_binding/
+      flavors:
+        - pc
+    - assets/icons/guide/
 
 
 # MSIX Configuration for Microsoft Store

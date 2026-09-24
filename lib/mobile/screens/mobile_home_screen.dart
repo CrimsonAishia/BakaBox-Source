@@ -12,6 +12,7 @@ import '../widgets/exit_dialog_mobile.dart';
 import 'welcome_mobile.dart';
 import 'servers_mobile.dart';
 import 'lobby_page_mobile.dart';
+import 'discover_mobile.dart';
 import 'profile_mobile.dart';
 import '../../core/constants/app_colors.dart';
 
@@ -48,6 +49,13 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
       inactiveColor: AppColors.slate500,
     ),
     NavigationItemData(
+      icon: Icons.explore_outlined,
+      selectedIcon: Icons.explore,
+      label: '发现',
+      activeColor: AppColors.amber500,
+      inactiveColor: AppColors.slate500,
+    ),
+    NavigationItemData(
       icon: Icons.castle,
       selectedIcon: Icons.castle,
       label: '大厅',
@@ -74,6 +82,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
     _screens = [
       WelcomeMobile(onNavigateToServers: () => _navigateToPage(1)),
       const ServersMobile(),
+      const DiscoverMobile(),
       const LobbyPageMobile(),
       const ProfileMobile(),
     ];

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -6,6 +7,7 @@ import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/services/app_exit_service.dart';
 import '../../../core/utils/platform_utils.dart';
+import '../../../core/utils/app_directory_service.dart';
 import '../selective_cache_dialog.dart';
 import 'settings_group_title.dart';
 import 'settings_buttons.dart';
@@ -63,49 +65,85 @@ class CacheSettings extends StatelessWidget {
         ? settingsState.formattedTotalCacheSize
         : settingsState.cacheSize;
 
-    return _CacheInfoItem(
-      icon: MdiIcons.harddisk,
-      iconColor: AppColors.primary,
-      label: '缓存大小',
-      value: settingsState.isLoadingCacheDetails
-          ? const Text(
-              '计算中...',
-              style: TextStyle(fontSize: 14, color: AppColors.gray500),
-            )
-          : Text(
-              totalSize,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
-      action: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SettingsOutlinedButton(
-            onPressed: settingsState.isLoadingCacheDetails
-                ? null
-                : () => context.read<SettingsBloc>().add(
-                    SettingsLoadCacheDetails(),
+    return Column(
+      children: [
+        _CacheInfoItem(
+          icon: MdiIcons.harddisk,
+          iconColor: AppColors.primary,
+          label: '缓存大小',
+          value: settingsState.isLoadingCacheDetails
+              ? const Text(
+                  '计算中...',
+                  style: TextStyle(fontSize: 14, color: AppColors.gray500),
+                )
+              : Text(
+                  totalSize,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
-            label: '刷新',
-            icon: MdiIcons.refresh,
-            isLoading: settingsState.isLoadingCacheDetails,
+                ),
+          action: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SettingsOutlinedButton(
+                onPressed: settingsState.isLoadingCacheDetails
+                    ? null
+                    : () => context.read<SettingsBloc>().add(
+                        SettingsLoadCacheDetails(),
+                      ),
+                label: '刷新',
+                icon: MdiIcons.refresh,
+                isLoading: settingsState.isLoadingCacheDetails,
+              ),
+              const SizedBox(width: 8),
+              SettingsDangerButton(
+                onPressed:
+                    settingsState.isLoading ||
+                        settingsState.isLoadingCacheDetails
+                    ? null
+                    : () => _openSelectiveCacheDialog(context),
+                label: '清理缓存',
+                icon: MdiIcons.deleteOutline,
+                isLoading: settingsState.isLoading,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          SettingsDangerButton(
-            onPressed:
-                settingsState.isLoading || settingsState.isLoadingCacheDetails
-                ? null
-                : () => _openSelectiveCacheDialog(context),
-            label: '清理缓存',
-            icon: MdiIcons.deleteOutline,
-            isLoading: settingsState.isLoading,
+        ),
+        _CacheInfoItem(
+          icon: MdiIcons.fileDocumentOutline,
+          iconColor: AppColors.emerald500,
+          label: '应用日志',
+          value: Text(
+            AppDirectoryService.logsPath,
+            style: const TextStyle(fontSize: 14, color: AppColors.gray500),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+          action: SettingsOutlinedButton(
+            onPressed: () => _openLogFolder(),
+            label: '打开文件夹',
+            icon: MdiIcons.folderOpenOutline,
+          ),
+        ),
+      ],
     );
+  }
+
+  void _openLogFolder() async {
+    try {
+      final path = AppDirectoryService.logsPath;
+      if (Platform.isWindows) {
+        await Process.run('explorer', [path]);
+      } else if (Platform.isMacOS) {
+        await Process.run('open', [path]);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [path]);
+      }
+    } catch (e) {
+      debugPrint('无法打开日志文件夹: $e');
+    }
   }
 
   void _openSelectiveCacheDialog(BuildContext context) {

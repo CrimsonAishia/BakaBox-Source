@@ -52,6 +52,7 @@ class CharacterGalleryState extends Equatable {
   final int? loadingCharacterId; // 正在加载的角色ID（用于卡片选中状态）
   final CharacterModel? selectedCharacter;
   final int? selectedSubModelId;
+  final bool isSubModelLoading;
   final int previewPosition; // 0=front, 1=left, 2=right, 3=back, 4=hand, 5=leg
 
   // 符卡列表（根据子模型单独请求）
@@ -136,6 +137,7 @@ class CharacterGalleryState extends Equatable {
     this.loadingCharacterId,
     this.selectedCharacter,
     this.selectedSubModelId,
+    this.isSubModelLoading = false,
     this.previewPosition = 0,
     this.spellCardsLoadState = LoadState.initial,
     this.spellCards = const [],
@@ -206,6 +208,7 @@ class CharacterGalleryState extends Equatable {
     bool clearSelectedCharacter = false,
     int? selectedSubModelId,
     bool clearSelectedSubModel = false,
+    bool? isSubModelLoading,
     int? previewPosition,
     LoadState? spellCardsLoadState,
     List<SpellCard>? spellCards,
@@ -291,6 +294,7 @@ class CharacterGalleryState extends Equatable {
       selectedSubModelId: clearSelectedSubModel
           ? null
           : (selectedSubModelId ?? this.selectedSubModelId),
+      isSubModelLoading: isSubModelLoading ?? this.isSubModelLoading,
       previewPosition: previewPosition ?? this.previewPosition,
       spellCardsLoadState: spellCardsLoadState ?? this.spellCardsLoadState,
       spellCards: spellCards ?? this.spellCards,
@@ -477,6 +481,7 @@ class CharacterGalleryState extends Equatable {
     loadingCharacterId,
     selectedCharacter,
     selectedSubModelId,
+    isSubModelLoading,
     previewPosition,
     spellCardsLoadState,
     spellCards,

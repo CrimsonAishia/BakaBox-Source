@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../../../core/core.dart';
 import 'character_gallery_theme.dart';
 
@@ -85,18 +84,21 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
     try {
       await _voiceService.togglePlay(widget.voices[index].url);
     } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.cancel) {
-        return; // Ignore downloads cancelled by clicking another voice
-      }
-
       if (mounted) {
         setState(() {
           _hasError = true;
         });
-        ToastUtils.showError(
-          context,
-          '播放语音失败: ${e.toString().split('\n').first}',
-        );
+
+        String errMsg;
+        if (e is ApiException) {
+          errMsg = e.message;
+        } else if (e is Exception) {
+          errMsg = e.toString().replaceFirst('Exception: ', '');
+        } else {
+          errMsg = e.toString();
+        }
+
+        ToastUtils.showError(context, '播放语音失败: $errMsg');
       }
     }
   }
@@ -147,33 +149,21 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
               ),
             ),
 
-            // Gradient Mask
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration:
-                    CharacterGalleryTheme.getCardBottomGradientDecoration(
-                      context,
-                    ),
-              ),
-            ),
-
             // Content Area
             Material(
               color: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                child: Row(
-                  children: [
-                    // Message on the left
-                    Expanded(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _togglePlay(
-                          0,
-                        ), // Play the first variant when tapping the text area
+              child: InkWell(
+                onTap: widget.voices.length == 1 ? () => _togglePlay(0) : null,
+                borderRadius: BorderRadius.circular(5),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    children: [
+                      // Message on the left
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -234,100 +224,116 @@ class _CharacterVoiceCardState extends State<CharacterVoiceCard> {
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Row of play buttons on the right
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      alignment: WrapAlignment.end,
-                      children: List.generate(widget.voices.length, (index) {
-                        final url = _fullUrls[index];
-                        final isThisPlaying =
-                            _voiceService.currentPlayingUrl.value == url;
-                        final isThisLoading =
-                            _voiceService.currentLoadingUrl.value == url;
+                      const SizedBox(width: 8),
+                      // Row of play buttons on the right
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        alignment: WrapAlignment.end,
+                        children: List.generate(widget.voices.length, (index) {
+                          final url = _fullUrls[index];
+                          final isThisPlaying =
+                              _voiceService.currentPlayingUrl.value == url;
+                          final isThisLoading =
+                              _voiceService.currentLoadingUrl.value == url;
 
-                        String tooltipMessage = widget.voices[index].message;
-                        if (tooltipMessage.isEmpty ||
-                            tooltipMessage.startsWith(' (')) {
-                          tooltipMessage =
-                              '${widget.voices[index].type} ${index + 1}';
-                        }
+                          String tooltipMessage = widget.voices[index].message;
+                          if (tooltipMessage.isEmpty ||
+                              tooltipMessage.startsWith(' (')) {
+                            tooltipMessage =
+                                '${widget.voices[index].type} ${index + 1}';
+                          }
 
-                        return Tooltip(
-                          message: tooltipMessage,
-                          child: InkWell(
-                            onTap: () => _togglePlay(index),
-                            borderRadius: BorderRadius.circular(13),
-                            child: SizedBox(
-                              width: 26,
-                              height: 26,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isThisPlaying
-                                          ? activeColor.withValues(alpha: 0.2)
-                                          : vermillion.withValues(alpha: 0.05),
-                                    ),
-                                  ),
-                                  if (isThisPlaying)
-                                    ValueListenableBuilder<double>(
-                                      valueListenable:
-                                          _voiceService.currentProgress,
-                                      builder: (context, progress, child) {
-                                        return CircularProgressIndicator(
-                                          value: progress,
-                                          strokeWidth: 1.0,
-                                          valueColor: AlwaysStoppedAnimation(
-                                            vermillion.withValues(alpha: 0.8),
-                                          ),
-                                          backgroundColor: vermillion
-                                              .withValues(alpha: 0.1),
-                                        );
-                                      },
-                                    )
-                                  else
-                                    CircularProgressIndicator(
-                                      value: 1.0,
-                                      strokeWidth: 1.0,
-                                      valueColor: AlwaysStoppedAnimation(
-                                        vermillion.withValues(alpha: 0.3),
+                          return Tooltip(
+                            message: tooltipMessage,
+                            child: InkWell(
+                              onTap: () => _togglePlay(index),
+                              borderRadius: BorderRadius.circular(13),
+                              child: SizedBox(
+                                width: 26,
+                                height: 26,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isThisPlaying
+                                            ? activeColor.withValues(alpha: 0.2)
+                                            : vermillion.withValues(
+                                                alpha: 0.05,
+                                              ),
                                       ),
-                                      backgroundColor: Colors.transparent,
                                     ),
-                                  if (isThisLoading)
-                                    const Padding(
-                                      padding: EdgeInsets.all(6.0),
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 1.5,
+                                    if (isThisPlaying)
+                                      ValueListenableBuilder<double>(
+                                        valueListenable:
+                                            _voiceService.currentProgress,
+                                        builder: (context, progress, child) {
+                                          return CircularProgressIndicator(
+                                            value: progress,
+                                            strokeWidth: 1.0,
+                                            valueColor: AlwaysStoppedAnimation(
+                                              vermillion.withValues(alpha: 0.8),
+                                            ),
+                                            backgroundColor: vermillion
+                                                .withValues(alpha: 0.1),
+                                          );
+                                        },
+                                      )
+                                    else
+                                      CircularProgressIndicator(
+                                        value: 1.0,
+                                        strokeWidth: 1.0,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          vermillion.withValues(alpha: 0.3),
+                                        ),
+                                        backgroundColor: Colors.transparent,
                                       ),
-                                    )
-                                  else
-                                    Icon(
-                                      _hasError && isThisPlaying
-                                          ? Icons.error_outline_rounded
-                                          : (isThisPlaying
-                                                ? Icons.pause_rounded
-                                                : Icons.play_arrow_rounded),
-                                      color: _hasError && isThisPlaying
-                                          ? Colors.red
-                                          : (isThisPlaying
-                                                ? activeColor
-                                                : vermillion),
-                                      size: 14,
-                                    ),
-                                ],
+                                    if (isThisLoading)
+                                      const Padding(
+                                        padding: EdgeInsets.all(6.0),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                        ),
+                                      )
+                                    else
+                                      Icon(
+                                        _hasError && isThisPlaying
+                                            ? Icons.error_outline_rounded
+                                            : (isThisPlaying
+                                                  ? Icons.stop_rounded
+                                                  : Icons.play_arrow_rounded),
+                                        color: _hasError && isThisPlaying
+                                            ? Colors.red
+                                            : (isThisPlaying
+                                                  ? Colors.red
+                                                  : vermillion),
+                                        size: 14,
+                                        shadows: isDark
+                                            ? [
+                                                Shadow(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.8),
+                                                  blurRadius: 2,
+                                                ),
+                                                Shadow(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.4),
+                                                  blurRadius: 4,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

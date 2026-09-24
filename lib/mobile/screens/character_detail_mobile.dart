@@ -6,7 +6,10 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import '../../core/core.dart';
 import '../../desktop/widgets/character_gallery/character_gallery_theme.dart';
+import '../../desktop/widgets/character_gallery/model_author_tags.dart';
+import '../widgets/character_gallery/mobile_acquisition_seal_badge.dart';
 import '../widgets/character_gallery/character_preview_mobile.dart';
+import '../widgets/character_gallery/character_voice_card_mobile.dart';
 import '../widgets/character_gallery/spell_card_mobile.dart';
 import '../widgets/character_gallery/sub_model_selector_mobile.dart';
 import '../widgets/character_gallery/zombie_skill_card_mobile.dart';
@@ -105,6 +108,12 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                   ],
                   const SizedBox(height: 16),
                   _buildDescription(state),
+                  // 角色语音
+                  if (state.currentSubModel?.voices != null &&
+                      state.currentSubModel!.voices!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildVoiceSection(state),
+                  ],
                   // 東方角色显示符卡
                   if (state.selectedCharacter?.category ==
                       CharacterCategory.touhou) ...[
@@ -201,7 +210,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   }
 
   /// 构建角色信息区域（名称、获取渠道徽章）
-  /// 与桌面端保持一致的显示逻辑
   Widget _buildCharacterInfo(CharacterGalleryState state) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -209,7 +217,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     if (character == null) return const SizedBox.shrink();
 
     final currentSubModel = state.currentSubModel;
-    // 如果是默认皮肤，显示角色名；否则显示子模型名（与桌面端一致）
+    // 如果是默认皮肤，显示角色名；否则显示子模型名
     final displayName = (currentSubModel?.isDefault ?? true)
         ? character.name
         : (currentSubModel?.name ?? character.name);
@@ -297,11 +305,22 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                       ],
                     ),
                   ),
-                  // 获取渠道徽章（僵尸角色不显示，与桌面端一致）
-                  if (character.category != CharacterCategory.zombie)
-                    _buildAcquisitionBadge(acquisition),
                 ],
               ),
+              // 获取渠道徽章
+              if (character.category != CharacterCategory.zombie) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildAcquisitionBadge(currentSubModel, acquisition),
+                ),
+              ],
+              // 来源、作者、投稿人
+              if (currentSubModel != null)
+                ModelAuthorTagsSection(
+                  model: currentSubModel,
+                  alignment: WrapAlignment.end,
+                ),
             ],
           ),
         )
@@ -310,70 +329,65 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
         .slideY(begin: 0.05, end: 0);
   }
 
-  /// 获取渠道徽章（与桌面端一致）
-  Widget _buildAcquisitionBadge(AcquisitionInfo? acquisition) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+  /// 获取渠道徽章
+  Widget _buildAcquisitionBadge(
+    ModelAuthorMetadata? authorMetadata,
+    AcquisitionInfo? acquisition,
+  ) {
+    List<Widget> badges = [];
 
-    if (acquisition == null || acquisition.type == AcquisitionType.unknown) {
-      return const SizedBox.shrink();
+    // 1. 额外检查
+    if (authorMetadata?.othercheckKeyName != null &&
+        authorMetadata!.othercheckKeyName!.isNotEmpty) {
+      badges.add(ModelOtherCheckBadge(model: authorMetadata));
     }
 
-    final (text, color, icon) = switch (acquisition.type) {
-      AcquisitionType.gold => (
-        '${acquisition.cost ?? 0} 金',
-        CharacterGalleryTheme.getGold(context),
-        Icons.monetization_on_outlined,
-      ),
-      AcquisitionType.points => (
-        '${acquisition.cost ?? 0} 点',
-        CharacterGalleryTheme.getVermillion(context),
-        Icons.stars_rounded,
-      ),
-      AcquisitionType.custom => (
-        acquisition.customSource ?? '特殊',
-        CharacterGalleryTheme.getCustomSourceColor(context),
-        Icons.auto_awesome_rounded,
-      ),
-      AcquisitionType.unknown => (
-        '未知',
-        theme.colorScheme.onSurfaceVariant,
-        Icons.help_outline_rounded,
-      ),
-    };
+    // 2. 特殊用户组
+    if (authorMetadata?.groupName != null &&
+        authorMetadata!.groupName!.isNotEmpty) {
+      badges.add(ModelGroupBadge(model: authorMetadata));
+    }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: isDark ? 0.15 : 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: isDark ? 0.4 : 0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: color,
+    // 3. 捐助者
+    if (authorMetadata?.viplevel != null && authorMetadata!.viplevel! > 0) {
+      badges.add(ModelViplevelBadge(model: authorMetadata));
+    }
+
+    // 4. 基础获取方式
+    if (acquisition != null && acquisition.type != AcquisitionType.unknown) {
+      badges.add(MobileAcquisitionSealBadge(acquisition: acquisition));
+    }
+
+    if (badges.isEmpty) return const SizedBox.shrink();
+
+    // 插入加号
+    List<Widget> childrenWithPlus = [];
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    for (int i = 0; i < badges.length; i++) {
+      childrenWithPlus.add(badges[i]);
+      if (i < badges.length - 1) {
+        childrenWithPlus.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              '+',
+              style: TextStyle(
+                color: inkColor.withValues(alpha: 0.5),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ],
-      ),
+        );
+      }
+    }
+
+    return Wrap(
+      spacing: 4,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: childrenWithPlus,
     );
   }
 
@@ -397,7 +411,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final subModel = state.currentSubModel;
-    // 优先使用子模型介绍（非空），兜底使用角色介绍（与桌面端一致）
+    // 优先使用子模型介绍（非空），兜底使用角色介绍
     final description = (subModel?.description?.isNotEmpty ?? false)
         ? subModel!.description!
         : (state.selectedCharacter?.description ?? '暂无介绍');
@@ -481,6 +495,115 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
         .animate()
         .fadeIn(duration: 300.ms, delay: 200.ms)
         .slideY(begin: 0.05, end: 0);
+  }
+
+  /// 构建角色语音区域
+  Widget _buildVoiceSection(CharacterGalleryState state) {
+    final voices = state.currentSubModel?.voices ?? [];
+    if (voices.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = const Color(0xFF0EA5E9); // 蓝色强调
+
+    return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: accentColor.withValues(alpha: isDark ? 0.2 : 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: isDark ? 0.1 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: isDark ? 0.15 : 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      MdiIcons.accountVoice,
+                      size: 18,
+                      color: accentColor,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '角色语音',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${voices.length}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: accentColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ..._buildGroupedVoices(voices),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 250.ms)
+        .slideY(begin: 0.05, end: 0);
+  }
+
+  List<Widget> _buildGroupedVoices(List<VoiceItem> voices) {
+    final Map<String, List<VoiceItem>> groupedVoices = {};
+    for (final voice in voices) {
+      if (!groupedVoices.containsKey(voice.type)) {
+        groupedVoices[voice.type] = [];
+      }
+      groupedVoices[voice.type]!.add(voice);
+    }
+    final voiceGroups = groupedVoices.values.toList();
+
+    return List.generate(voiceGroups.length, (index) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: index == voiceGroups.length - 1 ? 0 : 12,
+        ),
+        child: CharacterVoiceCardMobile(
+          voices: voiceGroups[index],
+          showType: false,
+        ),
+      );
+    });
   }
 
   /// 构建符卡区域（東方角色）
@@ -1001,77 +1124,96 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
         ? theme.colorScheme.surfaceContainerHighest
         : Colors.grey[100]!;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: Icon(MdiIcons.arrowLeft, color: theme.colorScheme.onSurface),
-        ),
-        title: Container(
-          width: 120,
-          height: 24,
-          decoration: BoxDecoration(
-            color: shimmerBaseColor,
-            borderRadius: BorderRadius.circular(4),
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          elevation: 0,
+          backgroundColor: theme.appBarTheme.backgroundColor,
+          surfaceTintColor: theme.appBarTheme.backgroundColor,
+          toolbarHeight: 56,
+          leading: IconButton(
+            onPressed: () => context.pop(),
+            icon: Icon(MdiIcons.arrowLeft, color: theme.colorScheme.onSurface),
           ),
+          title:
+              Container(
+                    width: 120,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: shimmerBaseColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  )
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(
+                    duration: 1500.ms,
+                    colors: [
+                      shimmerBaseColor,
+                      shimmerHighlightColor,
+                      shimmerBaseColor,
+                    ],
+                  ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 预览图骨架
-            _buildSkeletonBox(
-              height: 300,
-              borderRadius: 16,
-              shimmerBaseColor: shimmerBaseColor,
-              shimmerHighlightColor: shimmerHighlightColor,
-            ),
-            const SizedBox(height: 16),
-            // 角色信息骨架
-            _buildSkeletonBox(
-              height: 80,
-              borderRadius: 12,
-              shimmerBaseColor: shimmerBaseColor,
-              shimmerHighlightColor: shimmerHighlightColor,
-            ),
-            const SizedBox(height: 16),
-            // 子模型选择器骨架
-            Row(
-              children: List.generate(
-                3,
-                (index) => Padding(
-                  padding: EdgeInsets.only(right: index < 2 ? 8 : 0),
-                  child: _buildSkeletonBox(
-                    width: 80,
-                    height: 80,
-                    borderRadius: 12,
-                    shimmerBaseColor: shimmerBaseColor,
-                    shimmerHighlightColor: shimmerHighlightColor,
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 预览图骨架
+                _buildSkeletonBox(
+                  height: 300,
+                  borderRadius: 16,
+                  shimmerBaseColor: shimmerBaseColor,
+                  shimmerHighlightColor: shimmerHighlightColor,
+                ),
+                const SizedBox(height: 16),
+                // 角色信息骨架
+                _buildSkeletonBox(
+                  height: 140,
+                  borderRadius: 16,
+                  shimmerBaseColor: shimmerBaseColor,
+                  shimmerHighlightColor: shimmerHighlightColor,
+                ),
+                const SizedBox(height: 16),
+                // 子模型选择器骨架
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Padding(
+                      padding: EdgeInsets.only(right: index < 2 ? 8 : 0),
+                      child: _buildSkeletonBox(
+                        width: 80,
+                        height: 80,
+                        borderRadius: 16,
+                        shimmerBaseColor: shimmerBaseColor,
+                        shimmerHighlightColor: shimmerHighlightColor,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                // 描述骨架
+                _buildSkeletonBox(
+                  height: 160,
+                  borderRadius: 16,
+                  shimmerBaseColor: shimmerBaseColor,
+                  shimmerHighlightColor: shimmerHighlightColor,
+                ),
+                const SizedBox(height: 24),
+                // 符卡/技能区域骨架
+                _buildSkeletonBox(
+                  height: 200,
+                  borderRadius: 16,
+                  shimmerBaseColor: shimmerBaseColor,
+                  shimmerHighlightColor: shimmerHighlightColor,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            // 描述骨架
-            _buildSkeletonBox(
-              height: 120,
-              borderRadius: 12,
-              shimmerBaseColor: shimmerBaseColor,
-              shimmerHighlightColor: shimmerHighlightColor,
-            ),
-            const SizedBox(height: 24),
-            // 符卡/技能区域骨架
-            _buildSkeletonBox(
-              height: 200,
-              borderRadius: 12,
-              shimmerBaseColor: shimmerBaseColor,
-              shimmerHighlightColor: shimmerHighlightColor,
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

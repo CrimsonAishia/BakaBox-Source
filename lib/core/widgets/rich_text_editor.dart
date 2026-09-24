@@ -125,6 +125,7 @@ class RichTextEditor extends StatefulWidget {
   static QuillController createController({
     Document? document,
     TextSelection? selection,
+    // ignore: experimental_member_use
     QuillClipboardConfig? clipboardConfig,
   }) {
     late QuillController controller;
@@ -132,8 +133,10 @@ class RichTextEditor extends StatefulWidget {
       document: document ?? Document(),
       selection: selection ?? const TextSelection.collapsed(offset: 0),
       config: QuillControllerConfig(
+        // ignore: experimental_member_use
         clipboardConfig:
             clipboardConfig ??
+            // ignore: experimental_member_use
             QuillClipboardConfig(
               onImagePaste: (bytes) async {
                 final state = RichTextEditorState.registry[controller];

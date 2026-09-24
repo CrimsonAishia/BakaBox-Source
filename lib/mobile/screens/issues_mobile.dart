@@ -200,133 +200,28 @@ class _IssuesMobileState extends State<IssuesMobile> {
 
   Widget _buildAppBar(BuildContext context, IssueState state) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: theme.appBarTheme.backgroundColor,
-      surfaceTintColor: theme.appBarTheme.backgroundColor,
-      toolbarHeight: 80,
+      scrolledUnderElevation: 0,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
         onPressed: () => context.pop(),
-        icon: Icon(MdiIcons.arrowLeft, color: colorScheme.onSurface),
       ),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          color: theme.appBarTheme.backgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: isDark ? 0.1 : 0.05),
-              offset: const Offset(0, 1),
-              blurRadius: 3,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(56, 12, 20, 12),
-            child: Row(
-              children: [
-                Container(
-                      width: 56,
-                      height: 56,
-                      padding: const EdgeInsets.all(4),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isDark
-                                ? [
-                                    const Color(0xFF0066CC),
-                                    const Color(0xFF004499),
-                                  ]
-                                : [AppColors.primary, const Color(0xFF0066CC)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF0080FF,
-                              ).withValues(alpha: isDark ? 0.2 : 0.3),
-                              offset: const Offset(0, 4),
-                              blurRadius: 12,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          MdiIcons.commentQuestionOutline,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    )
-                    .animate()
-                    .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1.0, 1.0),
-                      duration: 600.ms,
-                      curve: Curves.elasticOut,
-                    )
-                    .fadeIn(duration: 200.ms)
-                    .then()
-                    .scale(
-                      begin: const Offset(1.0, 1.0),
-                      end: const Offset(1.05, 1.05),
-                      duration: 200.ms,
-                      curve: Curves.easeOut,
-                    )
-                    .then()
-                    .scale(
-                      begin: const Offset(1.05, 1.05),
-                      end: const Offset(1.0, 1.0),
-                      duration: 200.ms,
-                      curve: Curves.easeIn,
-                    )
-                    .then()
-                    .shimmer(
-                      duration: 1000.ms,
-                      delay: 100.ms,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.0),
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.8),
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                    ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '问题反馈',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ).animate().fadeIn(duration: 300.ms),
-                      const SizedBox(height: 2),
-                      Text(
-                        state.isLoading ? '加载中...' : '共 ${state.totalCount} 条',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+      title: const Text(
+        '问题反馈',
+        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(
+          height: 1,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
         ),
       ),
     );

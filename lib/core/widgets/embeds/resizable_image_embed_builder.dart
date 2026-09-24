@@ -300,9 +300,11 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
             : MediaQuery.of(context).size.width;
 
         final data = _effectiveData;
+        final isMobile = parentWidth < 600;
 
         // 大小：仅由 width 决定，与对齐完全无关。
-        final widthFactor = data.width.clamp(0.2, 1.0);
+        final rawWidthFactor = data.width.clamp(0.2, 1.0);
+        final widthFactor = isMobile ? 1.0 : rawWidthFactor;
         final imageWidth = parentWidth * widthFactor;
 
         // 对齐：把 gridCol 映射为 -1(左) ~ 0(中) ~ 1(右) 的水平对齐，

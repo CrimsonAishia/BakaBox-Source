@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
+import '../../core/widgets/marquee_text.dart';
 import '../../core/models/map_tag_models.dart';
 import '../../core/utils/map_runtime_utils.dart';
 import '../../core/utils/map_tag_utils.dart';
-import 'animated_player_count.dart';
 
 class ServerListItem extends StatelessWidget {
   final ExtendedServerItem server;
@@ -49,55 +48,63 @@ class ServerListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1.0),
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.transparent,
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: SizedBox(
-          height: 165,
+          height: 145,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 8,
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Stack(
                 children: [
-                  MapBackground.fromMap(
-                    mapName: _serverInfo?.map,
-                    mapUrl: server.mapInfo?.mapUrl,
-                    cacheWidth: 600,
-                    cacheHeight: 250,
+                  // Full background image
+                  Positioned.fill(
+                    child: MapBackground.fromMap(
+                      mapName: _serverInfo?.map,
+                      mapUrl: server.mapInfo?.mapUrl,
+                      cacheWidth: 600,
+                      cacheHeight: 250,
+                    ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          Colors.black.withValues(alpha: 0.6),
-                        ],
+                  // Top slight gradient for better text readability
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 80,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.6),
+                            Colors.transparent,
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: _hasServerData
-                        ? _buildNormalContent()
-                        : _buildFallbackContent(),
-                  ),
+                  // Content
+                  if (_hasServerData)
+                    _buildModernNormalContent(context)
+                  else
+                    _buildModernFallbackContent(context),
                 ],
               ),
             ),
@@ -105,14 +112,6 @@ class ServerListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getPlayerCountColor(int current, int max) {
-    if (max <= 0) return const Color(0xFF4CAF50);
-    final ratio = current / max;
-    if (ratio < 0.5) return const Color(0xFF4CAF50);
-    if (ratio < 0.8) return AppColors.orange;
-    return const Color(0xFFF44336);
   }
 
   String _getMapRuntimeDisplay() {
@@ -124,27 +123,19 @@ class ServerListItem extends StatelessWidget {
   }
 
   String _formatDuration(int seconds) {
-    if (seconds < 60) return '小于1分钟';
+    if (seconds < 60) return '<1分';
     if (seconds < 3600) return '${seconds ~/ 60}分';
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
     return minutes > 0 ? '$hours时$minutes分' : '$hours时';
   }
 
-  /// 检测是否为僵尸地图
-  ///
-  /// 僵尸地图前缀：ze_（zombie escape）、zm_（zombie mod）
   bool _isZombieMap(String? mapName) {
     if (mapName == null || mapName.isEmpty) return false;
     final lowerName = mapName.toLowerCase();
     return lowerName.startsWith('ze_') || lowerName.startsWith('zm_');
   }
 
-  /// 构建比分显示组件
-  ///
-  /// 普通模式：CT(蓝) X : Y T(黄) - 用文字标签
-  /// 僵尸模式：人类(绿) X : Y 僵尸(红) - 用人和骷髅图标
-  /// 数据过期（unknown）：全部灰色显示
   Widget _buildScoreDisplay(
     int ctScore,
     int tScore,
@@ -154,25 +145,23 @@ class ServerListItem extends StatelessWidget {
     final isZombie = _isZombieMap(mapName);
     final isUnknown = dataQuality == 'unknown';
 
-    // 颜色定义（unknown 时全部灰色）
     final Color leftColor;
     final Color rightColor;
 
     if (isUnknown) {
-      leftColor = AppColors.gray400; // 灰色
-      rightColor = AppColors.gray400; // 灰色
+      leftColor = AppColors.gray400;
+      rightColor = AppColors.gray400;
     } else if (isZombie) {
-      leftColor = AppColors.green500; // 人类 - 绿色
-      rightColor = AppColors.red500; // 僵尸 - 红色
+      leftColor = AppColors.green500;
+      rightColor = AppColors.red500;
     } else {
-      leftColor = AppColors.blue500; // CT - 蓝色
-      rightColor = const Color(0xFFEAB308); // T - 黄色
+      leftColor = AppColors.blue500;
+      rightColor = const Color(0xFFEAB308);
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 僵尸模式用图标，普通模式用文字
         if (isZombie)
           Icon(MdiIcons.runFast, size: 12, color: leftColor)
         else
@@ -189,18 +178,18 @@ class ServerListItem extends StatelessWidget {
           '$ctScore',
           style: TextStyle(
             color: leftColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 3),
+          padding: EdgeInsets.symmetric(horizontal: 2),
           child: Text(
             ':',
             style: TextStyle(
-              color: AppColors.gray500,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+              color: AppColors.gray400,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -208,8 +197,8 @@ class ServerListItem extends StatelessWidget {
           '$tScore',
           style: TextStyle(
             color: rightColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(width: 3),
@@ -239,560 +228,598 @@ class ServerListItem extends StatelessWidget {
     ToastUtils.showSuccess(context, '已复制连接命令');
   }
 
-  Widget _buildNormalContent() {
-    return Builder(
-      builder: (context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 服务器名称
-          Text(
-            _serverName,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              shadows: [
-                Shadow(
-                  color: Colors.black45,
-                  offset: Offset(1, 1),
-                  blurRadius: 2,
-                ),
-              ],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 3),
-          // 地图名称（图标 + 滚动文本）
-          Row(
-            children: [
-              Icon(
-                MdiIcons.map,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _AutoScrollingText(
-                  text: _mapDisplayName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black54,
-                        offset: Offset(1, 1),
-                        blurRadius: 3,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          // IP 地址 + 复制按钮
-          Row(
-            children: [
-              Icon(
-                MdiIcons.ip,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _serverAddress,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'monospace',
-                  shadows: [
-                    Shadow(
-                      color: Colors.black,
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                    Shadow(color: Colors.black, blurRadius: 6),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _copyConnectCommand(context, _serverAddress),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Icon(Icons.copy, size: 16, color: Colors.white70),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          // 标签行
-          _buildMapTagRow(
-            MapTagUtils.prepareTags(
-              server.mapInfo?.tags ?? [],
-              isCustomServer: server.serverItem.isCustom,
-            ),
-          ),
-          const SizedBox(height: 6),
-          // 底部信息行
-          Row(
-            children: [
-              _buildInfoChip(
-                child: AnimatedPlayerCount(
-                  currentPlayers: _currentPlayers,
-                  maxPlayers: _maxPlayers,
-                  queueCount: server.queueCount,
-                  warmupCount: server.warmupCount,
-                  iconColor: _getPlayerCountColor(_currentPlayers, _maxPlayers),
-                  textStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: _getPlayerCountColor(_currentPlayers, _maxPlayers),
-                  ),
-                ),
-              ),
-              if (!server.mapRuntimeError &&
-                  (server.mapRuntime != null || server.mapRuntimeFetching)) ...[
-                const SizedBox(width: 6),
-                _buildInfoChip(
+  Widget _buildModernNormalContent(BuildContext context) {
+    return Column(
+      children: [
+        // Top Area (Server Name & Player Badge)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Server Name
+                Expanded(
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: Colors.green.shade300,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _getMapRuntimeDisplay(),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                      if (server.serverData?.password == true) ...[
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2, right: 6),
+                          child: Icon(
+                            Icons.lock_rounded,
+                            color: Colors.white,
+                            size: 16,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      Expanded(
+                        child: Text(
+                          _serverName,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.25,
+                            letterSpacing: 0.2,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black87,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                if (!MapRuntimeUtils.isWarmingUp(
-                      server.mapRuntime,
-                      fetchedAt: server.mapRuntimeLastFetched,
-                      mapName: server.serverData?.map,
-                      hasError: server.mapRuntimeError,
-                    ) &&
-                    server.teamScores?.ctScore != null &&
-                    server.teamScores?.tScore != null &&
-                    (server.teamScores!.ctScore! > 0 ||
-                        server.teamScores!.tScore! > 0))
-                  _buildInfoChip(
-                    child: _buildScoreDisplay(
-                      server.teamScores!.ctScore!,
-                      server.teamScores!.tScore!,
-                      _mapName,
-                      dataQuality: server.teamScores!.dataQuality,
-                    ),
-                  )
-                else if (server.mapRuntime?.weeklyOccurrences != null)
-                  _buildInfoChip(
-                    child: Text(
-                      '七天内出现${server.mapRuntime!.weeklyOccurrences!}次',
+                const SizedBox(width: 10),
+                // Player Count Badge (Floating top right)
+                _buildModernPlayerCountBadge(),
+              ],
+            ),
+          ),
+        ),
+
+        // Bottom Area (Gradient Panel)
+        Container(
+          padding: const EdgeInsets.only(
+            left: 14,
+            right: 14,
+            bottom: 10,
+            top: 16,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.7),
+                Colors.black.withValues(alpha: 0.95),
+              ],
+              stops: const [0.0, 0.4, 1.0],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Row 1: Map Name & Info Chips
+              Row(
+                children: [
+                  Icon(
+                    MdiIcons.map,
+                    size: 15,
+                    color: Colors.white.withValues(alpha: 0.95),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: MarqueeText(
+                      text: _mapDisplayName,
                       style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
                         color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// 地图标签行（复刻桌面端）
-  Widget _buildMapTagRow(List<MapTagSimple> tags) {
-    if (tags.isEmpty) {
-      return Row(
-        children: [
-          Icon(
-            MdiIcons.tagOffOutline,
-            size: 18,
-            color: Colors.white.withValues(alpha: 0.8),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 1,
+                  // Info chips on the right
+                  if (!server.mapRuntimeError &&
+                      (server.mapRuntime != null ||
+                          server.mapRuntimeFetching)) ...[
+                    const SizedBox(width: 8),
+                    _buildModernInfoChip(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 12,
+                            color: Colors.green.shade300,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _getMapRuntimeDisplay(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Score or occurrences
+                    Builder(
+                      builder: (context) {
+                        Widget? rightChip;
+                        if (!MapRuntimeUtils.isWarmingUp(
+                              server.mapRuntime,
+                              fetchedAt: server.mapRuntimeLastFetched,
+                              mapName: server.serverData?.map,
+                              hasError: server.mapRuntimeError,
+                            ) &&
+                            server.teamScores?.ctScore != null &&
+                            server.teamScores?.tScore != null &&
+                            (server.teamScores!.ctScore! > 0 ||
+                                server.teamScores!.tScore! > 0)) {
+                          rightChip = _buildModernInfoChip(
+                            child: _buildScoreDisplay(
+                              server.teamScores!.ctScore!,
+                              server.teamScores!.tScore!,
+                              _mapName,
+                              dataQuality: server.teamScores!.dataQuality,
+                            ),
+                          );
+                        } else if (server.mapRuntime?.weeklyOccurrences !=
+                            null) {
+                          rightChip = _buildModernInfoChip(
+                            child: Text(
+                              '7天内${server.mapRuntime!.weeklyOccurrences!}次',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        }
+                        if (rightChip != null) {
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: rightChip,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
+                ],
               ),
-            ),
-            child: Text(
-              '暂无标签',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
+              const SizedBox(height: 8),
+
+              // Row 2: Tags & IP Copy
+              Row(
+                children: [
+                  // Tags
+                  Expanded(
+                    child: _buildModernMapTagRow(
+                      MapTagUtils.prepareTags(
+                        server.mapInfo?.tags ?? [],
+                        isCustomServer: server.serverItem.isCustom,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // IP Copy Button
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _copyConnectCommand(context, _serverAddress),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.copy,
+                            size: 12,
+                            color: Colors.white70,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            '复制 IP',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      children: [
-        Icon(
-          MdiIcons.tagOutline,
-          size: 18,
-          color: Colors.white.withValues(alpha: 0.8),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                for (int i = 0; i < tags.length; i++) ...[
-                  _buildTagChip(tags[i]),
-                  if (i < tags.length - 1) const SizedBox(width: 6),
-                ],
-              ],
-            ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  /// 单个标签（复刻桌面端样式）
-  Widget _buildTagChip(MapTagSimple tag) {
+  Widget _buildModernPlayerCountBadge() {
+    Color primaryColor;
+    if (_currentPlayers >= _maxPlayers && _maxPlayers > 0) {
+      primaryColor = const Color(0xFFF44336); // Red
+    } else if (_currentPlayers >= _maxPlayers * 0.8 && _maxPlayers > 0) {
+      primaryColor = AppColors.orange;
+    } else {
+      primaryColor = Colors.white;
+    }
+
+    final int queueCount = server.queueCount;
+    final int warmupCount = server.warmupCount;
+    final int extraCount = queueCount + warmupCount;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          '$_currentPlayers',
+          style: TextStyle(
+            color: primaryColor,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            height: 1,
+            shadows: const [
+              Shadow(
+                color: Colors.black87,
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+              Shadow(
+                color: Colors.black45,
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
+        if (extraCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(left: 2),
+            child: _buildExtraCountBadge(queueCount, warmupCount, extraCount),
+          ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            '/',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              height: 1,
+              shadows: [
+                Shadow(
+                  color: Colors.black87,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Text(
+          '$_maxPlayers',
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            height: 1,
+            shadows: [
+              Shadow(
+                color: Colors.black87,
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExtraCountBadge(
+    int queueCount,
+    int warmupCount,
+    int extraCount,
+  ) {
+    const shadowList = [
+      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+    ];
+
+    if (queueCount > 0 && warmupCount > 0) {
+      // 同时存在：使用渐变（红→黄），与桌面端一致
+      return ShaderMask(
+        shaderCallback: (bounds) =>
+            OperationColors.queueWarmupGradient.createShader(bounds),
+        child: Text(
+          '+$extraCount',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            height: 1,
+            shadows: shadowList,
+          ),
+        ),
+      );
+    } else if (queueCount > 0) {
+      // 仅挤服：红色
+      return Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: OperationColors.queue,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          height: 1,
+          shadows: shadowList,
+        ),
+      );
+    } else {
+      // 仅暖服：黄色
+      return Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: OperationColors.warmup,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          height: 1,
+          shadows: shadowList,
+        ),
+      );
+    }
+  }
+
+  Widget _buildModernMapTagRow(List<MapTagSimple> tags) {
+    if (tags.isEmpty) {
+      return Row(
+        children: [
+          Icon(
+            MdiIcons.tagOffOutline,
+            size: 14,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '暂无标签',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          Icon(
+            MdiIcons.tagOutline,
+            size: 14,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          const SizedBox(width: 6),
+          for (int i = 0; i < tags.length; i++) ...[
+            _buildModernTagChip(tags[i]),
+            if (i < tags.length - 1) const SizedBox(width: 4),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernTagChip(MapTagSimple tag) {
     final tagColorValue = tag.colorValue;
 
     if (tagColorValue != null) {
-      final darkColor = Color.lerp(tagColorValue, Colors.black, 0.2)!;
-      final lightColor = Color.lerp(tagColorValue, Colors.white, 0.6)!;
-
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              lightColor.withValues(alpha: 0.4),
-              tagColorValue.withValues(alpha: 0.5),
-              darkColor.withValues(alpha: 0.45),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
+          color: tagColorValue.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: tagColorValue.withValues(alpha: 0.7),
-            width: 1,
+            color: tagColorValue.withValues(alpha: 0.4),
+            width: 0.5,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: tagColorValue.withValues(alpha: 0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
         ),
         child: Text(
           tag.name,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 13,
+            color: Color.lerp(tagColorValue, Colors.white, 0.5),
+            fontSize: 11,
             fontWeight: FontWeight.w600,
-            shadows: [
-              Shadow(
-                color: tagColorValue.withValues(alpha: 0.8),
-                blurRadius: 2,
-                offset: const Offset(0, 0),
-              ),
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 1,
-                offset: const Offset(1, 1),
-              ),
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 1,
-                offset: const Offset(-1, -1),
-              ),
-            ],
           ),
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
-        ),
       ),
       child: Text(
         tag.name,
         style: TextStyle(
           color: Colors.white.withValues(alpha: 0.9),
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          shadows: [
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip({required Widget child}) {
+  Widget _buildModernInfoChip({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(6),
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.25),
-          width: 1,
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 0.5,
         ),
       ),
       child: child,
     );
   }
 
-  Widget _buildFallbackContent() {
+  Widget _buildModernFallbackContent(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          _serverName,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            shadows: [
-              Shadow(
-                color: Colors.black45,
-                offset: Offset(1, 1),
-                blurRadius: 2,
-              ),
-            ],
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Icon(
-              server.hasError
-                  ? Icons.error_outline
-                  : server.isLoading
-                  ? Icons.hourglass_empty
-                  : Icons.info_outline,
-              color: server.hasError
-                  ? Colors.red.shade300
-                  : Colors.orange.shade300,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                _serverStatusText,
-                style: TextStyle(
-                  color: server.hasError
-                      ? Colors.red.shade300
-                      : Colors.orange.shade300,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    _serverName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.2,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black87,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                        Shadow(
+                          color: Colors.black45,
+                          blurRadius: 2,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 1,
+              ],
             ),
           ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
+        ),
+        Container(
+          padding: const EdgeInsets.only(
+            left: 14,
+            right: 14,
+            bottom: 12,
+            top: 16,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.7),
+                Colors.black.withValues(alpha: 0.95),
+              ],
+              stops: const [0.0, 0.4, 1.0],
+            ),
+          ),
+          child: Row(
             children: [
-              Icon(Icons.ads_click, size: 13, color: Colors.white70),
-              SizedBox(width: 6),
-              Text(
-                '点击查看历史',
-                style: TextStyle(fontSize: 12, color: Colors.white70),
+              Icon(
+                server.hasError
+                    ? Icons.error_outline
+                    : server.isLoading
+                    ? Icons.hourglass_empty
+                    : Icons.info_outline,
+                color: server.hasError
+                    ? Colors.red.shade300
+                    : Colors.orange.shade300,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _serverStatusText,
+                  style: TextStyle(
+                    color: server.hasError
+                        ? Colors.red.shade300
+                        : Colors.orange.shade300,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.history, size: 12, color: Colors.white70),
+                    SizedBox(width: 4),
+                    Text(
+                      '历史记录',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AutoScrollingText extends StatefulWidget {
-  final String text;
-  final TextStyle style;
-
-  const _AutoScrollingText({required this.text, required this.style});
-
-  @override
-  State<_AutoScrollingText> createState() => _AutoScrollingTextState();
-}
-
-class _AutoScrollingTextState extends State<_AutoScrollingText>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-  late ScrollController _scrollController;
-  bool _needsScrolling = false;
-  Timer? _forwardDelayTimer;
-  Timer? _reverseDelayTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController();
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkIfScrollingNeeded();
-    });
-  }
-
-  @override
-  void didUpdateWidget(_AutoScrollingText oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text) {
-      _forwardDelayTimer?.cancel();
-      _reverseDelayTimer?.cancel();
-      _animationController.stop();
-      _animationController.reset();
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _checkIfScrollingNeeded();
-      });
-    }
-  }
-
-  void _checkIfScrollingNeeded() {
-    if (!mounted) return;
-
-    final textPainter = TextPainter(
-      text: TextSpan(text: widget.text, style: widget.style),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox != null) {
-      final availableWidth = renderBox.size.width;
-      _needsScrolling = textPainter.width > availableWidth;
-
-      if (_needsScrolling) {
-        _startScrolling();
-      } else {
-        _animationController.stop();
-      }
-    }
-  }
-
-  void _startScrolling() {
-    if (!_needsScrolling || !mounted) return;
-    if (!_scrollController.hasClients) return;
-
-    final maxScrollExtent = _scrollController.position.maxScrollExtent;
-    if (maxScrollExtent <= 0) return;
-
-    _animation = Tween<double>(begin: 0.0, end: maxScrollExtent).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.linear),
-    );
-
-    _animation.addListener(() {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_animation.value);
-      }
-    });
-
-    _animationController.addStatusListener((status) {
-      if (!mounted) return;
-
-      if (status == AnimationStatus.completed) {
-        _reverseDelayTimer?.cancel();
-        _reverseDelayTimer = Timer(const Duration(seconds: 1), () {
-          if (mounted && _needsScrolling) {
-            _animationController.reverse();
-          }
-        });
-      } else if (status == AnimationStatus.dismissed) {
-        _forwardDelayTimer?.cancel();
-        _forwardDelayTimer = Timer(const Duration(seconds: 1), () {
-          if (mounted && _needsScrolling) {
-            _animationController.forward();
-          }
-        });
-      }
-    });
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _forwardDelayTimer?.cancel();
-    _reverseDelayTimer?.cancel();
-    _animationController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Text(widget.text, style: widget.style, maxLines: 1),
     );
   }
 }

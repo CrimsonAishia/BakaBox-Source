@@ -94,13 +94,13 @@ class DetailPanelSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 预览图区域
-          _buildPreviewSectionSkeleton(context, scrollBrown),
+          buildPreviewSectionSkeleton(context, scrollBrown),
           const SizedBox(height: 20),
           // 名称区域
-          _buildNameSectionSkeleton(context, scrollBrown),
+          buildNameSectionSkeleton(context, scrollBrown),
           const SizedBox(height: 16),
           // 角色介绍分隔线
-          _buildSectionDividerSkeleton(scrollBrown, '角色介绍'),
+          buildSectionDividerSkeleton(scrollBrown, '角色介绍'),
           const SizedBox(height: 12),
           // 描述文字
           ...List.generate(
@@ -117,29 +117,29 @@ class DetailPanelSkeleton extends StatelessWidget {
             ),
           ),
           // 符卡系统分隔线
-          _buildSectionDividerSkeleton(scrollBrown, '符卡系统'),
+          buildSectionDividerSkeleton(scrollBrown, '符卡系统'),
           const SizedBox(height: 12),
           // 符卡分组标题 - 被动技能
-          _buildGroupHeaderSkeleton(scrollBrown, AppColors.skillGreen),
+          buildGroupHeaderSkeleton(scrollBrown, AppColors.skillGreen),
           const SizedBox(height: 8),
-          _buildSkillCardSkeleton(context, scrollBrown, cardBg),
+          buildSkillCardSkeleton(context, scrollBrown, cardBg),
           const SizedBox(height: 16),
           // 符卡分组标题 - 大符卡
-          _buildGroupHeaderSkeleton(
+          buildGroupHeaderSkeleton(
             scrollBrown,
             CharacterGalleryTheme.getGold(context),
           ),
           const SizedBox(height: 8),
-          _buildSkillCardSkeleton(context, scrollBrown, cardBg),
+          buildSkillCardSkeleton(context, scrollBrown, cardBg),
           const SizedBox(height: 16),
           // 符卡分组标题 - 小符卡
-          _buildGroupHeaderSkeleton(
+          buildGroupHeaderSkeleton(
             scrollBrown,
             CharacterGalleryTheme.getVermillion(context),
           ),
           const SizedBox(height: 8),
-          _buildSkillCardSkeleton(context, scrollBrown, cardBg),
-          _buildSkillCardSkeleton(context, scrollBrown, cardBg),
+          buildSkillCardSkeleton(context, scrollBrown, cardBg),
+          buildSkillCardSkeleton(context, scrollBrown, cardBg),
           // 底部留白
           const SizedBox(height: 60),
         ],
@@ -148,7 +148,10 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 预览图区域骨架
-  Widget _buildPreviewSectionSkeleton(BuildContext context, Color scrollBrown) {
+  static Widget buildPreviewSectionSkeleton(
+    BuildContext context,
+    Color scrollBrown,
+  ) {
     return Column(
       children: [
         // 预览图
@@ -206,7 +209,10 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 名称区域骨架
-  Widget _buildNameSectionSkeleton(BuildContext context, Color scrollBrown) {
+  static Widget buildNameSectionSkeleton(
+    BuildContext context,
+    Color scrollBrown,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -262,7 +268,7 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 分隔线骨架（模拟 SectionDivider）
-  Widget _buildSectionDividerSkeleton(Color scrollBrown, String title) {
+  static Widget buildSectionDividerSkeleton(Color scrollBrown, String title) {
     final titleWidth = title.length * 14.0;
     return Padding(
       padding: const EdgeInsets.only(top: 20),
@@ -294,7 +300,7 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 符卡分组标题骨架
-  Widget _buildGroupHeaderSkeleton(Color scrollBrown, Color accentColor) {
+  static Widget buildGroupHeaderSkeleton(Color scrollBrown, Color accentColor) {
     return Row(
       children: [
         Container(
@@ -318,7 +324,7 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 技能卡片骨架
-  Widget _buildSkillCardSkeleton(
+  static Widget buildSkillCardSkeleton(
     BuildContext context,
     Color scrollBrown,
     Color cardBg,
@@ -380,17 +386,17 @@ class DetailPanelSkeleton extends StatelessWidget {
           // 属性行：冷却、伤害、消耗
           Row(
             children: [
-              _buildStatItemSkeleton(
+              buildStatItemSkeleton(
                 scrollBrown,
                 CharacterGalleryTheme.getCooldownColor(context),
               ),
               const SizedBox(width: 12),
-              _buildStatItemSkeleton(
+              buildStatItemSkeleton(
                 scrollBrown,
                 CharacterGalleryTheme.getDamageColor(context),
               ),
               const SizedBox(width: 12),
-              _buildStatItemSkeleton(
+              buildStatItemSkeleton(
                 scrollBrown,
                 CharacterGalleryTheme.getBCostColor(context),
               ),
@@ -402,7 +408,7 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 属性项骨架（图标+标签+数值）
-  Widget _buildStatItemSkeleton(Color scrollBrown, Color color) {
+  static Widget buildStatItemSkeleton(Color scrollBrown, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

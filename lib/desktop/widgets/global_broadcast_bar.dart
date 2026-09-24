@@ -429,7 +429,7 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
 
     return SizeTransition(
       sizeFactor: _size,
-      axisAlignment: -1.0,
+      alignment: const Alignment(-1.0, 0.0),
       child: FadeTransition(
         opacity: _fade,
         child: SlideTransition(

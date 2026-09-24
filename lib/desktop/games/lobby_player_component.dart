@@ -490,6 +490,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 优先从本地缓存获取
     final cachedImage = await LobbyImageCacheService.instance.getDecodedImage(
       url,
+      targetWidth: 128, // 限制头像解码尺寸，极大减少 VRAM 占用
     );
     if (cachedImage != null) {
       return cachedImage;
@@ -502,7 +503,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   Future<ui.Image?> _loadNetworkImage(String url) async {
     if (_disposed) return null;
-    final imageProvider = bakaCachedImageProvider(url);
+    // 使用 maxWidth 限制网络图片解码内存
+    final imageProvider = bakaCachedImageProvider(url, maxWidth: 128);
     final completer = Completer<ui.Image>();
     final stream = imageProvider.resolve(ImageConfiguration.empty);
     late final ImageStreamListener listener;

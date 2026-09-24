@@ -10,6 +10,7 @@ import '../../../core/services/lobby_map_loader_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../desktop/games/lobby_game.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/page_view_with_listener.dart';
 
 /// 移动端大厅地图场景组件
 ///
@@ -28,18 +29,70 @@ class LobbySceneMobile extends StatefulWidget {
   State<LobbySceneMobile> createState() => _LobbySceneMobileState();
 }
 
-class _LobbySceneMobileState extends State<LobbySceneMobile> {
+class _LobbySceneMobileState extends State<LobbySceneMobile>
+    with WidgetsBindingObserver, PageLifecycleMixin<LobbySceneMobile> {
   LobbyGame? _game;
   StreamSubscription<MapLoadState>? _mapLoadSubscription;
   MapLoadState? _currentMapState;
   bool _isWaitingForMapLoad = false;
   bool _isTransitioning = false;
   String? _targetMapId;
+  ScrollPosition? _scrollPosition;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _createGame();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scrollPosition?.removeListener(_onScroll);
+    _scrollPosition = Scrollable.maybeOf(context)?.position;
+    _scrollPosition?.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollPosition == null ||
+        _game == null ||
+        !_scrollPosition!.hasPixels ||
+        !_scrollPosition!.hasViewportDimension) {
+      return;
+    }
+
+    // 如果正在滑动页面，为了保证动画流畅，暂停引擎
+    final remainder =
+        _scrollPosition!.pixels % _scrollPosition!.viewportDimension;
+    final isScrolling =
+        remainder > 0.1 &&
+        remainder < (_scrollPosition!.viewportDimension - 0.1);
+
+    if (isScrolling) {
+      if (!_game!.paused) _game!.pauseEngine();
+    } else {
+      // 滑动结束，如果当前页面处于 active 状态则恢复
+      if (isPageActive && _game!.paused) {
+        _game!.resumeEngine();
+      }
+    }
+  }
+
+  @override
+  void onPageBecameActive() {
+    super.onPageBecameActive();
+    if (_game != null && _game!.paused) {
+      _game!.resumeEngine();
+    }
+  }
+
+  @override
+  void onPageBecameInactive() {
+    super.onPageBecameInactive();
+    if (_game != null && !_game!.paused) {
+      _game!.pauseEngine();
+    }
   }
 
   @override
@@ -116,6 +169,8 @@ class _LobbySceneMobileState extends State<LobbySceneMobile> {
 
   @override
   void dispose() {
+    _scrollPosition?.removeListener(_onScroll);
+    WidgetsBinding.instance.removeObserver(this);
     _mapLoadSubscription?.cancel();
     _disposeGame();
     super.dispose();
@@ -154,11 +209,13 @@ class _LobbySceneMobileState extends State<LobbySceneMobile> {
       );
     }
 
-    return RepaintBoundary(
-      child: ExcludeFocus(
-        child: GameWidget<LobbyGame>.controlled(
-          gameFactory: () => _game!,
-          backgroundBuilder: (_) => const SizedBox.expand(),
+    return ClipRect(
+      child: RepaintBoundary(
+        child: ExcludeFocus(
+          child: GameWidget<LobbyGame>.controlled(
+            gameFactory: () => _game!,
+            backgroundBuilder: (_) => const SizedBox.expand(),
+          ),
         ),
       ),
     );

@@ -51,6 +51,8 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
   File? _imageFile;
   bool _isLoading = true;
   bool _hasError = false;
+  int? _lastMemWidth;
+  int? _lastMemHeight;
 
   @override
   void initState() {
@@ -168,8 +170,33 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
         width: widget.width,
         height: widget.height,
       );
-      memWidth ??= memSize.width;
-      memHeight ??= memSize.height;
+
+      int? calculatedWidth = memSize.width;
+      int? calculatedHeight = memSize.height;
+
+      // 允许 15 像素（约等于 DPR=2 下的 7 逻辑像素）的容差。
+      // 这完美解决了卡片 hover 动画（如边框变粗）导致物理像素发生个位数微变，
+      // 从而触发 cacheWidth 改变并重新解码闪烁图片的深层 Bug。
+      if (calculatedWidth != null) {
+        if (_lastMemWidth != null &&
+            (calculatedWidth - _lastMemWidth!).abs() <= 15) {
+          calculatedWidth = _lastMemWidth;
+        } else {
+          _lastMemWidth = calculatedWidth;
+        }
+      }
+
+      if (calculatedHeight != null) {
+        if (_lastMemHeight != null &&
+            (calculatedHeight - _lastMemHeight!).abs() <= 15) {
+          calculatedHeight = _lastMemHeight;
+        } else {
+          _lastMemHeight = calculatedHeight;
+        }
+      }
+
+      memWidth ??= calculatedWidth;
+      memHeight ??= calculatedHeight;
     }
 
     return Image.file(

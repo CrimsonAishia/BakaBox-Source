@@ -20,7 +20,10 @@ class WebViewEnvironmentService {
   WebViewEnvironmentService._();
 
   static WebViewEnvironment? _environment;
-  static bool _initialized = false;
+
+  static Future<void>? _initFuture;
+  static Future<void>? _disposeFuture;
+  static int _activeCount = 0;
 
   /// 全局共享的 WebView 环境，非 Windows 平台为 null
   static WebViewEnvironment? get environment => _environment;
@@ -37,18 +40,61 @@ class WebViewEnvironmentService {
   static CookieManager get cookieManager =>
       CookieManager.instance(webViewEnvironment: _environment);
 
-  /// 初始化 WebView 环境
-  ///
-  /// 必须在创建任何 [InAppWebView] 之前调用，
-  /// 且需在 [AppDirectoryService.init] 之后调用。
-  static Future<void> init() async {
-    if (_initialized) return;
-    // 仅 Windows 需要自定义 userDataFolder
+  /// 增加使用计数，首次调用时会异步初始化环境。
+  /// 请在需要使用 WebView2 之前（如 StatefulWidget 的 initState）调用。
+  static Future<void> retain() async {
     if (!PlatformUtils.isDesktopPlatform || !Platform.isWindows) {
-      _initialized = true;
       return;
     }
 
+    _activeCount++;
+    LogService.d('WebViewEnvironment 引用增加: $_activeCount');
+
+    if (_activeCount == 1) {
+      // 如果刚好有还没执行完的 dispose 操作，先等它完成
+      if (_disposeFuture != null) {
+        await _disposeFuture;
+      }
+      _initFuture = _doInit();
+    }
+
+    if (_initFuture != null) {
+      await _initFuture;
+    }
+  }
+
+  /// 减少使用计数，归零时会销毁环境以释放 70MB 的 WebView2 内存占用。
+  /// 请在不再使用时（如 StatefulWidget 的 dispose）调用。
+  static Future<void> release() async {
+    if (!PlatformUtils.isDesktopPlatform || !Platform.isWindows) {
+      return;
+    }
+
+    _activeCount--;
+    LogService.d('WebViewEnvironment 引用减少: $_activeCount');
+
+    if (_activeCount <= 0) {
+      _activeCount = 0;
+      _disposeFuture = _disposeEnvironment();
+    }
+  }
+
+  static Future<void> _disposeEnvironment() async {
+    if (_environment != null) {
+      LogService.i('销毁 WebView2 环境，释放常驻内存');
+      try {
+        await _environment?.dispose();
+      } catch (e) {
+        LogService.e('WebViewEnvironment 销毁失败', e);
+      }
+      _environment = null;
+    }
+    _initFuture = null;
+    _disposeFuture = null;
+  }
+
+  /// 内部执行初始化的逻辑
+  static Future<void> _doInit() async {
     try {
       final sep = Platform.pathSeparator;
       final targetPath = '${AppDirectoryService.cachePath}${sep}webview2';
@@ -72,8 +118,6 @@ class WebViewEnvironmentService {
     } catch (e) {
       // 初始化失败不阻塞启动，WebView 将回退到默认目录
       LogService.e('WebView 环境初始化失败', e);
-    } finally {
-      _initialized = true;
     }
   }
 

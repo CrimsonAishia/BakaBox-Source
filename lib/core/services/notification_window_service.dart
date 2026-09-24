@@ -137,12 +137,14 @@ class NotificationData {
 /// 通知窗口信息
 class _NotificationWindowInfo {
   final String notificationId;
+  final NotificationData notification;
   final WindowController controller;
   final double cardHeight;
   int position;
 
   _NotificationWindowInfo({
     required this.notificationId,
+    required this.notification,
     required this.controller,
     required this.position,
     required this.cardHeight,
@@ -310,6 +312,20 @@ class NotificationWindowService {
     return _activeWindows.length + 1;
   }
 
+  /// 获取地图相关通知的优先级（优先级高的会覆盖优先级低的）
+  int _getMapNotificationPriority(NotificationType type) {
+    switch (type) {
+      case NotificationType.warmup:
+        return 3;
+      case NotificationType.mapSubscription:
+        return 2;
+      case NotificationType.mapChange:
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
   /// 显示通知
   Future<void> show(NotificationData notification) async {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
@@ -321,6 +337,66 @@ class NotificationWindowService {
       );
       return;
     }
+
+    // --- 相同服务器下的地图类通知去重逻辑 ---
+    if (notification.type == NotificationType.warmup ||
+        notification.type == NotificationType.mapChange ||
+        notification.type == NotificationType.mapSubscription) {
+      final serverAddress = notification.serverAddress;
+      final mapName = notification.mapName;
+
+      if (serverAddress != null &&
+          serverAddress.isNotEmpty &&
+          mapName != null &&
+          mapName.isNotEmpty) {
+        final currentPriority = _getMapNotificationPriority(notification.type);
+        bool shouldIgnore = false;
+        final idsToDismiss = <String>[];
+
+        void checkConflict(NotificationData n) {
+          if (n.id == notification.id) return;
+          if (n.serverAddress != serverAddress) return;
+          if (n.mapName?.toLowerCase() != mapName.toLowerCase()) return;
+          if (n.type != NotificationType.warmup &&
+              n.type != NotificationType.mapChange &&
+              n.type != NotificationType.mapSubscription) {
+            return;
+          }
+
+          final p = _getMapNotificationPriority(n.type);
+          if (p >= currentPriority) {
+            shouldIgnore = true;
+          } else {
+            idsToDismiss.add(n.id);
+          }
+        }
+
+        for (final info in _activeWindows.values) {
+          checkConflict(info.notification);
+        }
+        for (final n in _createQueue) {
+          checkConflict(n);
+        }
+        for (final n in _pendingQueue) {
+          checkConflict(n);
+        }
+
+        if (shouldIgnore) {
+          LogService.d(
+            '[NotificationWindow] Ignore lower priority notification: ${notification.id} (priority $currentPriority)',
+          );
+          return;
+        }
+
+        for (final id in idsToDismiss) {
+          LogService.d(
+            '[NotificationWindow] Dismiss lower priority notification: $id in favor of ${notification.id}',
+          );
+          await dismiss(id);
+        }
+      }
+    }
+    // --- 去重逻辑结束 ---
 
     // 检查是否已存在相同 ID 的通知（活跃窗口中）
     if (_activeWindows.containsKey(notification.id)) {
@@ -419,6 +495,7 @@ class NotificationWindowService {
 
       _activeWindows[notification.id] = _NotificationWindowInfo(
         notificationId: notification.id,
+        notification: notification,
         controller: controller,
         position: position,
         cardHeight: _getCardHeight(notification),

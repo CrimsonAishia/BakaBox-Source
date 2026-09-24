@@ -389,9 +389,24 @@ class VoiceItem extends Equatable {
   List<Object?> get props => [type, url, message];
 }
 
+/// 提供模型作者及相关元数据信息的接口
+abstract class ModelAuthorMetadata {
+  String? get source;
+  String? get provider;
+  String? get providerSteamid;
+  String? get modeler;
+  String? get modelerSteamid;
+  String? get othercheckKey;
+  String? get othercheckKeyName;
+  int? get othercheckPoint;
+  String? get group;
+  String? get groupName;
+  int? get viplevel;
+}
+
 /// 子模型
 @JsonSerializable()
-class CharacterSubModel extends Equatable {
+class CharacterSubModel extends Equatable implements ModelAuthorMetadata {
   final int id;
   final int? characterId; // 在角色详情的子模型列表中可能不返回
   final String name;
@@ -403,6 +418,28 @@ class CharacterSubModel extends Equatable {
   final AcquisitionInfo? acquisition;
   final List<ItemTagData>? tags;
   final List<VoiceItem>? voices;
+  @override
+  final String? source;
+  @override
+  final String? provider;
+  @override
+  final String? providerSteamid;
+  @override
+  final String? modeler;
+  @override
+  final String? modelerSteamid;
+  @override
+  final String? othercheckKey;
+  @override
+  final String? othercheckKeyName;
+  @override
+  final int? othercheckPoint;
+  @override
+  final String? group;
+  @override
+  final String? groupName;
+  @override
+  final int? viplevel;
   @JsonKey(defaultValue: false)
   final bool isDefault;
   @JsonKey(defaultValue: 0)
@@ -420,6 +457,17 @@ class CharacterSubModel extends Equatable {
     this.acquisition,
     this.tags,
     this.voices,
+    this.source,
+    this.provider,
+    this.providerSteamid,
+    this.modeler,
+    this.modelerSteamid,
+    this.othercheckKey,
+    this.othercheckKeyName,
+    this.othercheckPoint,
+    this.group,
+    this.groupName,
+    this.viplevel,
     this.isDefault = false,
     this.sortOrder = 0,
   });
@@ -441,6 +489,17 @@ class CharacterSubModel extends Equatable {
     acquisition,
     tags,
     voices,
+    source,
+    provider,
+    providerSteamid,
+    modeler,
+    modelerSteamid,
+    othercheckKey,
+    othercheckKeyName,
+    othercheckPoint,
+    group,
+    groupName,
+    viplevel,
     isDefault,
     sortOrder,
   ];
@@ -457,6 +516,17 @@ class CharacterSubModel extends Equatable {
     AcquisitionInfo? acquisition,
     List<ItemTagData>? tags,
     List<VoiceItem>? voices,
+    String? source,
+    String? provider,
+    String? providerSteamid,
+    String? modeler,
+    String? modelerSteamid,
+    String? othercheckKey,
+    String? othercheckKeyName,
+    int? othercheckPoint,
+    String? group,
+    String? groupName,
+    int? viplevel,
     bool? isDefault,
     int? sortOrder,
   }) {
@@ -472,6 +542,17 @@ class CharacterSubModel extends Equatable {
       acquisition: acquisition ?? this.acquisition,
       tags: tags ?? this.tags,
       voices: voices ?? this.voices,
+      source: source ?? this.source,
+      provider: provider ?? this.provider,
+      providerSteamid: providerSteamid ?? this.providerSteamid,
+      modeler: modeler ?? this.modeler,
+      modelerSteamid: modelerSteamid ?? this.modelerSteamid,
+      othercheckKey: othercheckKey ?? this.othercheckKey,
+      othercheckKeyName: othercheckKeyName ?? this.othercheckKeyName,
+      othercheckPoint: othercheckPoint ?? this.othercheckPoint,
+      group: group ?? this.group,
+      groupName: groupName ?? this.groupName,
+      viplevel: viplevel ?? this.viplevel,
       isDefault: isDefault ?? this.isDefault,
       sortOrder: sortOrder ?? this.sortOrder,
     );
@@ -596,6 +677,10 @@ class CharacterListItem extends Equatable {
   final bool hasSpellCards;
   final bool hasZombieSkills;
   final int subModelCount;
+  final String? groupName;
+  final String? othercheckKeyName;
+  final int? othercheckPoint;
+  final int? viplevel;
 
   const CharacterListItem({
     required this.id,
@@ -608,6 +693,10 @@ class CharacterListItem extends Equatable {
     required this.hasSpellCards,
     required this.hasZombieSkills,
     required this.subModelCount,
+    this.groupName,
+    this.othercheckKeyName,
+    this.othercheckPoint,
+    this.viplevel,
   });
 
   factory CharacterListItem.fromJson(Map<String, dynamic> json) =>
@@ -626,6 +715,10 @@ class CharacterListItem extends Equatable {
     hasSpellCards,
     hasZombieSkills,
     subModelCount,
+    groupName,
+    othercheckKeyName,
+    othercheckPoint,
+    viplevel,
   ];
 
   CharacterListItem copyWith({
@@ -639,6 +732,10 @@ class CharacterListItem extends Equatable {
     bool? hasSpellCards,
     bool? hasZombieSkills,
     int? subModelCount,
+    String? groupName,
+    String? othercheckKeyName,
+    int? othercheckPoint,
+    int? viplevel,
   }) {
     return CharacterListItem(
       id: id ?? this.id,
@@ -651,6 +748,10 @@ class CharacterListItem extends Equatable {
       hasSpellCards: hasSpellCards ?? this.hasSpellCards,
       hasZombieSkills: hasZombieSkills ?? this.hasZombieSkills,
       subModelCount: subModelCount ?? this.subModelCount,
+      groupName: groupName ?? this.groupName,
+      othercheckKeyName: othercheckKeyName ?? this.othercheckKeyName,
+      othercheckPoint: othercheckPoint ?? this.othercheckPoint,
+      viplevel: viplevel ?? this.viplevel,
     );
   }
 }
@@ -1949,7 +2050,7 @@ class WeaponModelPreview extends Equatable {
 
 /// 刀模
 @JsonSerializable()
-class KnifeModel extends Equatable {
+class KnifeModel extends Equatable implements ModelAuthorMetadata {
   final int id;
   final int? characterId; // 角色专属刀模才有此字段
   final String? characterName; // 角色名称（列表API返回）
@@ -1960,6 +2061,28 @@ class KnifeModel extends Equatable {
   final String? glbModelUrl;
   final AcquisitionInfo? acquisition;
   final List<ItemTagData>? tags;
+  @override
+  final String? source;
+  @override
+  final String? provider;
+  @override
+  final String? providerSteamid;
+  @override
+  final String? modeler;
+  @override
+  final String? modelerSteamid;
+  @override
+  final String? othercheckKey;
+  @override
+  final String? othercheckKeyName;
+  @override
+  final int? othercheckPoint;
+  @override
+  final String? group;
+  @override
+  final String? groupName;
+  @override
+  final int? viplevel;
 
   const KnifeModel({
     required this.id,
@@ -1972,6 +2095,17 @@ class KnifeModel extends Equatable {
     this.glbModelUrl,
     this.acquisition,
     this.tags,
+    this.source,
+    this.provider,
+    this.providerSteamid,
+    this.modeler,
+    this.modelerSteamid,
+    this.othercheckKey,
+    this.othercheckKeyName,
+    this.othercheckPoint,
+    this.group,
+    this.groupName,
+    this.viplevel,
   });
 
   factory KnifeModel.fromJson(Map<String, dynamic> json) =>
@@ -1989,12 +2123,23 @@ class KnifeModel extends Equatable {
     preview,
     glbModelUrl,
     acquisition,
+    source,
+    provider,
+    providerSteamid,
+    modeler,
+    modelerSteamid,
+    othercheckKey,
+    othercheckKeyName,
+    othercheckPoint,
+    group,
+    groupName,
+    viplevel,
   ];
 }
 
 /// 枪模
 @JsonSerializable()
-class GunModel extends Equatable {
+class GunModel extends Equatable implements ModelAuthorMetadata {
   final int id;
   final int? characterId; // 角色专属枪模才有此字段
   final String? characterName; // 角色名称（列表API返回）
@@ -2005,6 +2150,28 @@ class GunModel extends Equatable {
   final String? glbModelUrl;
   final AcquisitionInfo? acquisition;
   final List<ItemTagData>? tags;
+  @override
+  final String? source;
+  @override
+  final String? provider;
+  @override
+  final String? providerSteamid;
+  @override
+  final String? modeler;
+  @override
+  final String? modelerSteamid;
+  @override
+  final String? othercheckKey;
+  @override
+  final String? othercheckKeyName;
+  @override
+  final int? othercheckPoint;
+  @override
+  final String? group;
+  @override
+  final String? groupName;
+  @override
+  final int? viplevel;
 
   const GunModel({
     required this.id,
@@ -2017,6 +2184,17 @@ class GunModel extends Equatable {
     this.glbModelUrl,
     this.acquisition,
     this.tags,
+    this.source,
+    this.provider,
+    this.providerSteamid,
+    this.modeler,
+    this.modelerSteamid,
+    this.othercheckKey,
+    this.othercheckKeyName,
+    this.othercheckPoint,
+    this.group,
+    this.groupName,
+    this.viplevel,
   });
 
   factory GunModel.fromJson(Map<String, dynamic> json) =>
@@ -2034,6 +2212,17 @@ class GunModel extends Equatable {
     preview,
     glbModelUrl,
     acquisition,
+    source,
+    provider,
+    providerSteamid,
+    modeler,
+    modelerSteamid,
+    othercheckKey,
+    othercheckKeyName,
+    othercheckPoint,
+    group,
+    groupName,
+    viplevel,
   ];
 }
 
@@ -2101,7 +2290,7 @@ class AllGunModelsResponse extends Equatable {
 
 /// 菜单皮肤
 @JsonSerializable()
-class MenuSkinModel extends Equatable {
+class MenuSkinModel extends Equatable implements ModelAuthorMetadata {
   final int id;
   final int? characterId;
   final String? characterName;
@@ -2111,6 +2300,28 @@ class MenuSkinModel extends Equatable {
   final String? previewUrl;
   final AcquisitionInfo? acquisition;
   final List<ItemTagData>? tags;
+  @override
+  final String? source;
+  @override
+  final String? provider;
+  @override
+  final String? providerSteamid;
+  @override
+  final String? modeler;
+  @override
+  final String? modelerSteamid;
+  @override
+  final String? othercheckKey;
+  @override
+  final String? othercheckKeyName;
+  @override
+  final int? othercheckPoint;
+  @override
+  final String? group;
+  @override
+  final String? groupName;
+  @override
+  final int? viplevel;
 
   const MenuSkinModel({
     required this.id,
@@ -2122,6 +2333,17 @@ class MenuSkinModel extends Equatable {
     this.previewUrl,
     this.acquisition,
     this.tags,
+    this.source,
+    this.provider,
+    this.providerSteamid,
+    this.modeler,
+    this.modelerSteamid,
+    this.othercheckKey,
+    this.othercheckKeyName,
+    this.othercheckPoint,
+    this.group,
+    this.groupName,
+    this.viplevel,
   });
 
   factory MenuSkinModel.fromJson(Map<String, dynamic> json) =>
@@ -2139,6 +2361,17 @@ class MenuSkinModel extends Equatable {
     previewUrl,
     acquisition,
     tags,
+    source,
+    provider,
+    providerSteamid,
+    modeler,
+    modelerSteamid,
+    othercheckKey,
+    othercheckKeyName,
+    othercheckPoint,
+    group,
+    groupName,
+    viplevel,
   ];
 }
 

@@ -135,7 +135,13 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       // 从后台恢复时，判断是否需要执行完整恢复
       _checkForegroundRecovery();
     }
-    // 首次进入时不自动连接，等用户手动点击"加入大厅"按钮
+
+    // 如果大厅服务已经建立连接（例如通过个人中心页面的连接按钮），则自动启动，无需用户再次点击加入
+    if (!_started && LobbyNakamaService.instance.isConnected) {
+      LogService.i('[LobbyPageMobile] 检测到 WebSocket 已连接，自动加入大厅');
+      _ensureStarted();
+    }
+    // 否则首次进入时不自动连接，等用户手动点击"加入大厅"按钮
   }
 
   /// 从后台恢复时的处理：根据后台时长决定是否需要刷新 snapshot
@@ -180,7 +186,8 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
   void _ensureStarted() {
     if (_started) return;
-    if (_lobbyBloc.state.pageStatus != LobbyPageStatus.idle) return;
+    // 不检查 pageStatus != idle，因为可能因为接收到缓存的 snapshot 而已经进入 ready 状态
+    // 我们必须派发 LobbyStarted() 来执行完整的大厅初始化流程（如在线轮询、状态上报等）
 
     final authBloc = context.read<AuthBloc>();
     final authStatus = authBloc.state.status;
@@ -532,7 +539,8 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             previous.queueTicket != current.queueTicket ||
             previous.queuePosition != current.queuePosition ||
             previous.queueTotal != current.queueTotal ||
-            previous.queueEtaSeconds != current.queueEtaSeconds,
+            previous.queueEtaSeconds != current.queueEtaSeconds ||
+            previous.queueIsRequeue != current.queueIsRequeue,
         builder: (context, state) {
           return Scaffold(body: _buildBody(context, state));
         },
@@ -719,6 +727,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
       builder: (_) => BlocProvider.value(
         value: _lobbyBloc,
         child: const OnlinePlayersSheet(),

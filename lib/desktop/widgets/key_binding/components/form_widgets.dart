@@ -319,22 +319,47 @@ class _PlaceholderCardState extends State<_PlaceholderCard>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = AppColors.emerald500;
-    final textColor = AppColors.emerald500;
+    // 根据 label 计算不同的基础颜色，增加到 11 种颜色并使用质数取模来减少碰撞概率
+    final List<Color> palette = [
+      AppColors.blue400,
+      AppColors.emerald500,
+      AppColors.orange400,
+      AppColors.violet400,
+      AppColors.rose400,
+      AppColors.amber400,
+      AppColors.sky400,
+      AppColors.green500,
+      AppColors.indigo400,
+      AppColors.red400,
+      AppColors.primary,
+    ];
+
+    int hash = 0;
+    for (int i = 0; i < widget.label.length; i++) {
+      hash = (hash * 31 + widget.label.codeUnitAt(i)) & 0x7FFFFFFF;
+    }
+
+    final int colorIndex = hash % palette.length;
+    final Color baseColor = palette[colorIndex];
+
+    // 根据基础颜色稍微提亮作为文字颜色，确保在深色背景上的可读性
+    final Color textColor =
+        Color.lerp(baseColor, Colors.white, 0.1) ?? baseColor;
+
     final bgColor = baseColor.withValues(alpha: _isHovered ? 0.25 : 0.15);
     final shadowColor = baseColor.withValues(alpha: _isHovered ? 0.6 : 0.3);
 
     final String displayText =
         widget.defaultKey != null && widget.defaultKey!.isNotEmpty
-        ? '${widget.label} (${widget.defaultKey})'
-        : widget.label;
+        ? '设置按键: ${widget.label} (${widget.defaultKey})'
+        : '设置按键: ${widget.label}';
 
     final content = ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 240),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(MdiIcons.keyboardOutline, size: 14, color: textColor),
+          Icon(Icons.ads_click, size: 14, color: textColor),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -489,14 +514,14 @@ class _PlaceholderCardState extends State<_PlaceholderCard>
                     return Transform.rotate(
                       angle: _controller.value * 2 * 3.141592653589793,
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: SweepGradient(
                             colors: [
                               Colors.transparent,
-                              AppColors.emerald500,
+                              baseColor,
                               Colors.transparent,
                             ],
-                            stops: [0.0, 0.5, 1.0],
+                            stops: const [0.0, 0.5, 1.0],
                           ),
                         ),
                       ),

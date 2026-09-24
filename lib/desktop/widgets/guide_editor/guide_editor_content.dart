@@ -45,6 +45,7 @@ class _GuideEditorContentState extends State<GuideEditorContent> {
     // 配置 onImagePaste：粘贴图片时上传并插入 resizableImage 节点
     _quillController = QuillController.basic(
       config: QuillControllerConfig(
+        // ignore: experimental_member_use
         clipboardConfig: QuillClipboardConfig(onImagePaste: _onImagePaste),
       ),
     );

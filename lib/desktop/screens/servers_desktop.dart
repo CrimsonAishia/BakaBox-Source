@@ -6,6 +6,9 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../core/core.dart';
 import '../../core/services/status_window_service.dart';
 import '../../core/utils/map_runtime_utils.dart';
+import '../../core/services/game_status_service.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_portal/flutter_portal.dart';
 import '../widgets/server/server_card.dart';
 import '../widgets/server/server_card_skeleton.dart';
 import '../widgets/category_card.dart';
@@ -43,6 +46,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   // 游戏状态监听订阅
   StreamSubscription? _gameStatusSubscription;
+  StreamSubscription? _rawGameStatusSubscription;
+
+  // Tooltip 状态
+  bool _showTooltip = false;
+  bool _tooltipUserDismissed = false;
 
   // 游戏运行状态（从 StatusWindowService 共享）
   bool _isGameRunning = false;
@@ -98,6 +106,41 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
     // 监听游戏状态变化
     _initGameStatusListener();
+
+    _rawGameStatusSubscription = GameStatusService().statusStream.listen((
+      event,
+    ) {
+      if (!mounted) return;
+      if (!event.isRunning) {
+        _tooltipUserDismissed = false;
+        if (_showTooltip) {
+          setState(() {
+            _showTooltip = false;
+          });
+        }
+      }
+      _checkTooltipStatus();
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _checkTooltipStatus();
+    });
+  }
+
+  void _checkTooltipStatus() {
+    if (!mounted) return;
+
+    final service = GameStatusService();
+    final shouldShow =
+        service.isMonitoredGameRunning &&
+        !service.isMonitorable &&
+        !_tooltipUserDismissed;
+
+    if (_showTooltip != shouldShow) {
+      setState(() {
+        _showTooltip = shouldShow;
+      });
+    }
   }
 
   /// 初始化游戏状态监听
@@ -307,6 +350,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     _stopCategoryCountsRefreshTimer();
     _networkModeSubscription?.cancel();
     _gameStatusSubscription?.cancel();
+    _rawGameStatusSubscription?.cancel();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
     _serversScrollController.dispose();
     super.dispose();
@@ -496,9 +540,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 启动游戏按钮
   Widget _buildLaunchGameButton(bool isDark) {
+    Widget buttonContent;
+
     // 正在启动游戏时显示启动中状态
     if (_isLaunchingGame) {
-      return Container(
+      buttonContent = Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: AppColors.blue500.withValues(alpha: 0.1),
@@ -529,10 +575,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
         ),
       );
     }
-
     // 游戏已运行时显示已启动状态
-    if (_isGameRunning) {
-      return Container(
+    else if (_isGameRunning) {
+      buttonContent = Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.green.withValues(alpha: 0.1),
@@ -556,11 +601,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
         ),
       );
     }
-
     // 游戏未运行时显示启动按钮
-    return Tooltip(
-      message: '启动游戏',
-      child: InkWell(
+    else {
+      buttonContent = InkWell(
         onTap: _launchGame,
         borderRadius: BorderRadius.circular(6),
         child: Container(
@@ -591,7 +634,174 @@ class _ServersDesktopState extends State<ServersDesktop> {
             ],
           ),
         ),
+      );
+    }
+
+    return PortalTarget(
+      visible: _showTooltip,
+      anchor: const Aligned(
+        follower: Alignment.topRight,
+        target: Alignment.bottomRight,
+        offset: Offset(0, 4),
       ),
+      portalFollower: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 36),
+            child: CustomPaint(
+              size: const Size(14, 8),
+              painter: _TrianglePainter(
+                color: isDark
+                    ? const Color(0xFF3B2F10)
+                    : const Color(0xFFFFF9E6),
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF3B2F10) : const Color(0xFFFFF9E6),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppColors.amber500,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '功能受限提醒',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 220,
+                      child: Text(
+                        '检测到非登录器启动游戏，会导致部分功能无法使用，如果习惯从 Steam 启动游戏，需要添加启动项以支持。',
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black87,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width:
+                          220, // Match the width of the text so MainAxisAlignment.end aligns to the right edge
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              Clipboard.setData(
+                                const ClipboardData(text: '-condebug'),
+                              );
+                              if (mounted) {
+                                ToastUtils.showSuccess(
+                                  context,
+                                  '已复制启动项: -condebug',
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(4),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.amber500.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.copy_rounded,
+                                    color: AppColors.amber500,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '复制启动项',
+                                    style: TextStyle(
+                                      color: AppColors.amber500,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          InkWell(
+                            onTap: () {
+                              _tooltipUserDismissed = true;
+                              _checkTooltipStatus();
+                            },
+                            borderRadius: BorderRadius.circular(4),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white12 : Colors.black12,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '知道了',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      child: buttonContent,
     );
   }
 
@@ -1025,11 +1235,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
         padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: servers.length,
         buildDefaultDragHandles: false, // 禁用默认拖拽手柄，使用自定义的
-        onReorder: (oldIndex, newIndex) {
-          // ReorderableListView 的 newIndex 在向下移动时需要调整
-          if (newIndex > oldIndex) {
-            newIndex -= 1;
-          }
+        onReorderItem: (oldIndex, newIndex) {
+          // onReorderItem 不再需要手动调整 newIndex
           if (oldIndex != newIndex) {
             context.read<ServerBloc>().add(
               ServerReorderServers(
@@ -2195,8 +2402,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
         itemCount: filteredCategories.length,
         buildDefaultDragHandles: false,
-        onReorder: (oldIndex, newIndex) {
-          if (newIndex > oldIndex) newIndex -= 1;
+        onReorderItem: (oldIndex, newIndex) {
           if (oldIndex != newIndex) {
             context.read<ServerBloc>().add(
               ServerReorderCategories(oldIndex: oldIndex, newIndex: newIndex),
@@ -2774,4 +2980,27 @@ class _DraggableServerCardItemContainerState
       },
     );
   }
+}
+
+class _TrianglePainter extends CustomPainter {
+  final Color color;
+
+  _TrianglePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrianglePainter oldDelegate) =>
+      color != oldDelegate.color;
 }

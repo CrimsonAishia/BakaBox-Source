@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:nakama/nakama.dart';
 import 'package:uuid/uuid.dart';
 
@@ -33,7 +34,7 @@ class _NakamaClientManager {
   static const int _sessionExpiryBufferSeconds = 30;
 
   /// 初始化 Nakama 客户端
-  void init(NakamaConfig config) {
+  void init(NakamaConfig config, {List<int>? certificates}) {
     _config = config;
     _client = getNakamaClient(
       host: config.host,
@@ -42,6 +43,7 @@ class _NakamaClientManager {
       httpPort: config.port,
       grpcPort: config.grpcPort,
       ssl: config.ssl,
+      certificates: certificates,
     );
     if (LogService.enableLobbyDebugLog) {
       LogService.d(
@@ -661,6 +663,9 @@ class LobbyNakamaService {
   /// 获取最新的 assets payload
   pb.AssetsResponse? getLastAssetsPayload() => _latestAssetsPayload;
 
+  /// 当前 Nakama 会话的联机用户 ID
+  String? get currentUserId => _clientManager.session?.userId;
+
   /// 重置被踢状态
   void resetKicked() {
     _isKicked = false;
@@ -836,7 +841,14 @@ class LobbyNakamaService {
 
     try {
       // 1. 初始化客户端
-      _clientManager.init(config);
+      List<int>? certBytes;
+      try {
+        final data = await rootBundle.load('assets/certs/cacert.pem');
+        certBytes = data.buffer.asUint8List();
+      } catch (e) {
+        LogService.e('[LobbyNakamaService] 无法加载自建根证书: $e');
+      }
+      _clientManager.init(config, certificates: certBytes);
 
       // 2. 认证
       final jwtToken =

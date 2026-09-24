@@ -4,19 +4,17 @@ import '../../../core/models/character_models.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
+import '../../../desktop/widgets/character_gallery/video_embed_dialog.dart';
+import '../../../core/widgets/image_viewer_dialog.dart';
 
-/// 移动端符卡卡片组件 - 与桌面端完全一致的设计
-///
-/// 使用符卡背景图片和符号装饰，显示符卡名称、描述、属性和评级。
-/// 支持不同符卡类型（被动、大符卡、小符卡）的视觉区分。
-///
+/// 移动端符卡卡片组件
 class SpellCardMobile extends StatelessWidget {
   /// 符卡数据
   final SpellCard spellCard;
 
   const SpellCardMobile({super.key, required this.spellCard});
 
-  /// 获取符卡类型对应的样式配置（与桌面端一致）
+  /// 获取符卡类型对应的样式配置
   (Color borderColor, Color bgColor, String symbol, String bgAsset)
   _getTypeStyle(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -45,7 +43,7 @@ class SpellCardMobile extends StatelessWidget {
     };
   }
 
-  /// 获取评级颜色（与桌面端一致）
+  /// 获取评级颜色
   Color _getTierColor(SpellCardTier tier) {
     return switch (tier) {
       SpellCardTier.t0 => const Color(0xFFFF4444),
@@ -64,62 +62,139 @@ class SpellCardMobile extends StatelessWidget {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final (borderColor, bgColor, symbol, bgAsset) = _getTypeStyle(context);
 
-    return Container(
-      constraints: const BoxConstraints(minHeight: 80),
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(color: borderColor, width: 1.5),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(5),
-        child: Stack(
-          children: [
-            // 背景图层（与桌面端一致）
-            Positioned.fill(
-              child: Image.asset(
-                bgAsset,
-                fit: BoxFit.cover,
-                opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+    return GestureDetector(
+      onTap: () => _handlePreviewTap(context),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 80),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: borderColor, width: 1.5),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Stack(
+            children: [
+              // 背景图层
+              Positioned.fill(
+                child: Image.asset(
+                  bgAsset,
+                  fit: BoxFit.cover,
+                  opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+                ),
               ),
-            ),
-            // 渐变蒙版（顶部透明 → 底部加深，让属性行落在清晰区域）
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration:
-                    CharacterGalleryTheme.getCardBottomGradientDecoration(
+              // 渐变蒙版（顶部透明 → 底部加深，让属性行落在清晰区域）
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration:
+                      CharacterGalleryTheme.getCardBottomGradientDecoration(
+                        context,
+                      ),
+                ),
+              ),
+              // 内容层
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 标题行：符号 + 名称 + 评级
+                    _buildHeader(
                       context,
+                      inkColor,
+                      borderColor,
+                      symbol,
+                      isDark,
                     ),
-              ),
-            ),
-            // 内容层
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题行：符号 + 名称 + 评级
-                  _buildHeader(context, inkColor, borderColor, symbol, isDark),
-                  // 分隔线（与桌面端一致）
-                  _buildDivider(borderColor),
-                  // 描述
-                  _buildDescription(context, inkColor, isDark),
-                  // 属性区域
-                  if (_hasAttributes) ...[
-                    const SizedBox(height: 10),
-                    _buildAttributes(context, isDark),
+                    // 分隔线
+                    _buildDivider(borderColor),
+                    // 描述
+                    _buildDescription(context, inkColor, isDark),
+                    // 属性区域
+                    if (_hasAttributes) ...[
+                      const SizedBox(height: 10),
+                      _buildAttributes(context, isDark),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+              // 右上角预览指示器
+              if (spellCard.previewType != PreviewType.none)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      _getPreviewIcon(),
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// 构建头部（符号 + 名称 + 评级）- 与桌面端完全一致
+  IconData _getPreviewIcon() {
+    return switch (spellCard.previewType) {
+      PreviewType.image => Icons.photo_outlined,
+      PreviewType.videoUrl || PreviewType.video => Icons.play_circle_outline,
+      PreviewType.none => Icons.visibility,
+    };
+  }
+
+  void _handlePreviewTap(BuildContext context) {
+    if (spellCard.previewType == PreviewType.none) return;
+
+    if (spellCard.previewType == PreviewType.image &&
+        spellCard.previewImageUrl != null &&
+        spellCard.previewImageUrl!.isNotEmpty) {
+      ImageViewerDialog.show(
+        context,
+        imageUrls: [spellCard.previewImageUrl!],
+        initialIndex: 0,
+      );
+      return;
+    }
+
+    if ((spellCard.previewType == PreviewType.videoUrl ||
+            spellCard.previewType == PreviewType.video) &&
+        spellCard.previewVideoUrl != null &&
+        spellCard.previewVideoUrl!.isNotEmpty) {
+      if (!VideoEmbedDialog.canEmbed(
+        spellCard.previewVideoUrl!,
+        videoUrlSource: spellCard.videoUrlSource,
+      )) {
+        return;
+      }
+      showDialog(
+        context: context,
+        builder: (_) => VideoEmbedDialog(
+          videoUrl: spellCard.previewVideoUrl!,
+          videoUrlSource: spellCard.videoUrlSource,
+          videoOriginUrl: spellCard.previewVideoOrigin,
+        ),
+      );
+    }
+  }
+
+  /// 构建头部（符号 + 名称 + 评级）
   Widget _buildHeader(
     BuildContext context,
     Color inkColor,
@@ -129,7 +204,7 @@ class SpellCardMobile extends StatelessWidget {
   ) {
     return Row(
       children: [
-        // 符号（与桌面端一致的阴影）
+        // 符号
         Text(
           symbol,
           style: TextStyle(
@@ -147,7 +222,7 @@ class SpellCardMobile extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        // 名称（与桌面端一致的阴影）
+        // 名称
         Expanded(
           child: Text(
             spellCard.name,
@@ -171,7 +246,7 @@ class SpellCardMobile extends StatelessWidget {
             ),
           ),
         ),
-        // 评级标签（与桌面端一致）
+        // 评级标签
         if (spellCard.tier != null && spellCard.tier != SpellCardTier.unranked)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -195,7 +270,7 @@ class SpellCardMobile extends StatelessWidget {
     );
   }
 
-  /// 构建分隔线（与桌面端完全一致）
+  /// 构建分隔线
   Widget _buildDivider(Color borderColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -216,10 +291,11 @@ class SpellCardMobile extends StatelessWidget {
     );
   }
 
-  /// 构建描述文本（与桌面端一致的阴影）
+  /// 构建描述文本
   Widget _buildDescription(BuildContext context, Color inkColor, bool isDark) {
     return RichTextViewer(
       content: spellCard.description,
+      compact: true,
       textStyle: TextStyle(
         color: inkColor,
         fontSize: 13,
@@ -406,7 +482,7 @@ class SpellCardMobile extends StatelessWidget {
     return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
 
-  /// 构建单个属性项（与桌面端完全一致）
+  /// 构建单个属性项
   Widget _buildStatItem(
     IconData icon,
     String label,

@@ -19,6 +19,7 @@ import '../widgets/character_gallery/character_unified_edit_dialog.dart';
 import '../widgets/character_gallery/character_unified_history_dialog.dart';
 import '../widgets/character_gallery/skill_preview_indicator.dart';
 import '../widgets/character_gallery/character_voice_card.dart';
+import '../widgets/character_gallery/model_author_tags.dart';
 
 /// 格式化数值：整数不显示小数点，小数保留原样
 String _formatNumber(num value) {
@@ -667,9 +668,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             return Stack(
               children: [
                 KeyedSubtree(
-                  key: ValueKey(
-                    '${state.selectedCharacter!.id}_${state.selectedSubModelId}',
-                  ),
+                  key: ValueKey('${state.selectedCharacter!.id}'),
                   child: _buildCharacterDetail(state),
                 ),
                 Positioned(
@@ -710,9 +709,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         return Stack(
           children: [
             KeyedSubtree(
-              key: ValueKey(
-                '${state.selectedCharacter!.id}_${state.selectedSubModelId}',
-              ),
+              key: ValueKey('${state.selectedCharacter!.id}'),
               child: _buildCharacterDetail(state),
             ),
             // 编辑浮动按钮（包含待审核状态）- 监听登录状态变化
@@ -763,6 +760,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final acquisition =
         knife?.acquisition ?? gun?.acquisition ?? menuSkin?.acquisition;
     final tags = knife?.tags ?? gun?.tags ?? menuSkin?.tags;
+    final authorMetadata = (knife ?? gun ?? menuSkin) as ModelAuthorMetadata?;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateDetailScrollIndicators();
@@ -780,7 +778,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               _buildWeaponPreviewSection(state),
               const SizedBox(height: 20),
               // 名称区域
-              _buildWeaponNameSection(name, acquisition, tags),
+              _buildWeaponNameSection(name, acquisition, tags, authorMetadata),
               const SizedBox(height: 16),
               // 专属角色区域（参照人物详情中专属刀模/枪模的布局）
               if (characterId != null &&
@@ -807,6 +805,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   ),
                 ),
               ],
+              if (authorMetadata != null)
+                ModelAuthorTagsSection(model: authorMetadata),
               // 底部留白
               const SizedBox(height: 60),
             ],
@@ -940,6 +940,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     String name,
     AcquisitionInfo? acquisition,
     List<ItemTagData>? tags,
+    ModelAuthorMetadata? authorMetadata,
   ) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
 
@@ -972,9 +973,73 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             ],
           ),
         ),
-        // 来源途径徽章
-        if (acquisition != null && acquisition.type != AcquisitionType.unknown)
-          _AcquisitionSealBadge(acquisition: acquisition),
+        // 来源途径徽章与解锁条件
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (authorMetadata?.othercheckKeyName != null &&
+                authorMetadata!.othercheckKeyName!.isNotEmpty) ...[
+              ModelOtherCheckBadge(model: authorMetadata),
+              if ((authorMetadata.groupName != null &&
+                      authorMetadata.groupName!.isNotEmpty) ||
+                  (authorMetadata.viplevel != null &&
+                      authorMetadata.viplevel! > 0) ||
+                  (acquisition != null &&
+                      acquisition.type != AcquisitionType.unknown))
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.5),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+            if (authorMetadata?.groupName != null &&
+                authorMetadata!.groupName!.isNotEmpty) ...[
+              ModelGroupBadge(model: authorMetadata),
+              if ((authorMetadata.viplevel != null &&
+                      authorMetadata.viplevel! > 0) ||
+                  (acquisition != null &&
+                      acquisition.type != AcquisitionType.unknown))
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.5),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+            if (authorMetadata?.viplevel != null &&
+                authorMetadata!.viplevel! > 0) ...[
+              ModelViplevelBadge(model: authorMetadata),
+              if (acquisition != null &&
+                  acquisition.type != AcquisitionType.unknown)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.5),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+            if (acquisition != null &&
+                acquisition.type != AcquisitionType.unknown)
+              _AcquisitionSealBadge(acquisition: acquisition),
+          ],
+        ),
       ],
     );
   }
@@ -1532,6 +1597,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   Widget _buildCharacterDetail(CharacterGalleryState state) {
     final character = state.selectedCharacter!;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final cardBg = CharacterGalleryTheme.getOverlayColor(context, alpha: 0.5);
+    final isSubModelLoading = state.isSubModelLoading;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateDetailScrollIndicators();
@@ -1545,38 +1613,113 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPreviewSection(state),
-              const SizedBox(height: 20),
-              _buildNameSection(character, state),
+              _buildCrossFadeSection(
+                isLoading: isSubModelLoading,
+                skeleton: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DetailPanelSkeleton.buildPreviewSectionSkeleton(
+                      context,
+                      scrollBrown,
+                    ),
+                    const SizedBox(height: 20),
+                    DetailPanelSkeleton.buildNameSectionSkeleton(
+                      context,
+                      scrollBrown,
+                    ),
+                  ],
+                ),
+                content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildPreviewSection(state),
+                    const SizedBox(height: 20),
+                    _buildNameSection(character, state),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
               if (character.subModels != null &&
                   character.subModels!.length > 1)
                 _buildSubModelSelector(state),
-              // 角色介绍（优先使用子模型介绍，兜底使用角色介绍）
-              SectionDivider(title: '角色介绍'),
-              const SizedBox(height: 12),
-              RichTextViewer(
-                content:
-                    (state.currentSubModel?.description?.isNotEmpty ?? false)
-                    ? state.currentSubModel!.description!
-                    : character.description,
-                compact: true,
-                textStyle: TextStyle(
-                  color: inkColor.withValues(alpha: 0.8),
-                  fontSize: 14,
-                  height: 1.8,
+
+              _buildCrossFadeSection(
+                isLoading: isSubModelLoading,
+                skeleton: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DetailPanelSkeleton.buildSectionDividerSkeleton(
+                      scrollBrown,
+                      '角色介绍',
+                    ),
+                    const SizedBox(height: 12),
+                    ...List.generate(
+                      3,
+                      (i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SkeletonBox(
+                          width: i == 2 ? 200 : double.infinity,
+                          height: 14,
+                          borderRadius: 2,
+                          baseColor: scrollBrown.withValues(alpha: 0.06),
+                          highlightColor: scrollBrown.withValues(alpha: 0.12),
+                        ),
+                      ),
+                    ),
+                    DetailPanelSkeleton.buildSectionDividerSkeleton(
+                      scrollBrown,
+                      '符卡系统',
+                    ),
+                    const SizedBox(height: 12),
+                    DetailPanelSkeleton.buildGroupHeaderSkeleton(
+                      scrollBrown,
+                      AppColors.skillGreen,
+                    ),
+                    const SizedBox(height: 8),
+                    DetailPanelSkeleton.buildSkillCardSkeleton(
+                      context,
+                      scrollBrown,
+                      cardBg,
+                    ),
+                  ],
+                ),
+                content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 角色介绍（优先使用子模型介绍，兜底使用角色介绍）
+                    SectionDivider(title: '角色介绍'),
+                    const SizedBox(height: 12),
+                    RichTextViewer(
+                      content:
+                          (state.currentSubModel?.description?.isNotEmpty ??
+                              false)
+                          ? state.currentSubModel!.description!
+                          : character.description,
+                      compact: true,
+                      textStyle: TextStyle(
+                        color: inkColor.withValues(alpha: 0.8),
+                        fontSize: 14,
+                        height: 1.8,
+                      ),
+                    ),
+                    ModelAuthorTagsSection(
+                      model:
+                          state.currentSubModel ??
+                          _createDefaultSubModel(character),
+                    ),
+                    if (state.currentSubModel?.voices != null &&
+                        state.currentSubModel!.voices!.isNotEmpty)
+                      _buildVoicesSection(state.currentSubModel!.voices!),
+                    // 符卡/技能区域
+                    if (character.category == CharacterCategory.touhou)
+                      _buildSpellCardsSection(state),
+                    if (character.category == CharacterCategory.zombie)
+                      _buildZombieSkillsSection(character),
+                    // 刀模/枪模区域
+                    _buildWeaponModelsSection(state),
+                  ],
                 ),
               ),
-              if (state.currentSubModel?.voices != null &&
-                  state.currentSubModel!.voices!.isNotEmpty)
-                _buildVoicesSection(state.currentSubModel!.voices!),
-              // 符卡/技能区域
-              if (character.category == CharacterCategory.touhou)
-                _buildSpellCardsSection(state),
-              if (character.category == CharacterCategory.zombie)
-                _buildZombieSkillsSection(character),
-              // 刀模/枪模区域
-              _buildWeaponModelsSection(state),
               // 底部留白，避免被浮动按钮遮挡
               const SizedBox(height: 60),
             ],
@@ -1597,6 +1740,21 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             child: ScrollIndicator(isTop: false),
           ),
       ],
+    );
+  }
+
+  Widget _buildCrossFadeSection({
+    required bool isLoading,
+    required Widget skeleton,
+    required Widget content,
+  }) {
+    return AnimatedCrossFade(
+      duration: const Duration(milliseconds: 300),
+      crossFadeState: isLoading
+          ? CrossFadeState.showFirst
+          : CrossFadeState.showSecond,
+      firstChild: SizedBox(width: double.infinity, child: skeleton),
+      secondChild: SizedBox(width: double.infinity, child: content),
     );
   }
 
@@ -3109,6 +3267,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     // 获取当前子模型的标签
     final tags = currentSubModel?.tags;
 
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3123,7 +3283,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         Expanded(
           child: Builder(
             builder: (context) {
-              final inkColor = CharacterGalleryTheme.getInkColor(context);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -3150,8 +3309,74 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             },
           ),
         ),
-        // 来源途径显示在角色名右侧
-        _buildAcquisitionBadge(acquisition, character, currentSubModel),
+        // 来源途径和额外检查信息显示在右上角
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (currentSubModel?.othercheckKeyName != null &&
+                currentSubModel!.othercheckKeyName!.isNotEmpty) ...[
+              ModelOtherCheckBadge(model: currentSubModel),
+              if ((currentSubModel.groupName != null &&
+                      currentSubModel.groupName!.isNotEmpty) ||
+                  (currentSubModel.viplevel != null &&
+                      currentSubModel.viplevel! > 0) ||
+                  (acquisition != null &&
+                      acquisition.type != AcquisitionType.unknown &&
+                      character.category != CharacterCategory.zombie))
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.5),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+            if (currentSubModel?.groupName != null &&
+                currentSubModel!.groupName!.isNotEmpty) ...[
+              ModelGroupBadge(model: currentSubModel),
+              if ((currentSubModel.viplevel != null &&
+                      currentSubModel.viplevel! > 0) ||
+                  (acquisition != null &&
+                      acquisition.type != AcquisitionType.unknown &&
+                      character.category != CharacterCategory.zombie))
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.5),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+            if (currentSubModel?.viplevel != null &&
+                currentSubModel!.viplevel! > 0) ...[
+              ModelViplevelBadge(model: currentSubModel),
+              if (acquisition != null &&
+                  acquisition.type != AcquisitionType.unknown &&
+                  character.category != CharacterCategory.zombie)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.5),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+            _buildAcquisitionBadge(acquisition, character, currentSubModel),
+          ],
+        ),
       ],
     );
   }
@@ -3834,72 +4059,48 @@ class _AcquisitionSealBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    final vermillion = CharacterGalleryTheme.getVermillion(context);
-    final gold = CharacterGalleryTheme.getGold(context);
 
-    final (label, subLabel, color) = switch (acquisition.type) {
-      AcquisitionType.gold => ('金', '${acquisition.cost ?? 0}', gold),
-      AcquisitionType.points => ('点', '${acquisition.cost ?? 0}', vermillion),
+    final (
+      IconData? icon,
+      String label,
+      String subLabel,
+      Color color,
+    ) = switch (acquisition.type) {
+      AcquisitionType.gold =>
+        (acquisition.cost ?? 0) == 0
+            ? (
+                Icons.money_off,
+                '免费',
+                '获取',
+                const Color(0xFF10B981), // Emerald 500
+              )
+            : (
+                Icons.monetization_on,
+                '金',
+                '${acquisition.cost ?? 0}',
+                const Color(0xFFF59E0B), // AppColors.amber500
+              ),
+      AcquisitionType.points =>
+        (acquisition.cost ?? 0) == 0
+            ? (Icons.money_off, '免费', '获取', const Color(0xFF10B981))
+            : (
+                Icons.bolt,
+                '点',
+                '${acquisition.cost ?? 0}',
+                const Color(0xFF60A5FA),
+              ),
       AcquisitionType.custom => (
+        null,
         '特',
         acquisition.customSource ?? '活动',
         AppColors.skillGreen,
       ),
-      _ => ('？', '未知', scrollBrown),
+      _ => (null, '？', '未知', scrollBrown),
     };
 
-    // 自定义来源使用横向布局
-    if (acquisition.type == AcquisitionType.custom) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 80),
-              child: Text(
-                subLabel,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 金/点使用印章风格
+    // 统一使用印章风格，自适应宽度
     return Container(
-      width: 44,
+      constraints: const BoxConstraints(minWidth: 44, maxWidth: 74),
       height: 44,
       decoration: BoxDecoration(
         color: washiColor,
@@ -3913,29 +4114,61 @@ class _AcquisitionSealBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              height: 1,
+      child: IntrinsicWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 22,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(2),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, color: Colors.white, size: 12),
+                    const SizedBox(width: 2),
+                  ],
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white, // 镂空效果
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subLabel,
-            style: TextStyle(
-              color: color.withValues(alpha: 0.8),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              height: 1,
+            Expanded(
+              child: Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  subLabel,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12, // 还原回12
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -4543,31 +4776,65 @@ class _CharacterAcquisitionTag extends StatelessWidget {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
 
     final (
-      text,
-      color,
+      IconData? icon,
+      String text,
+      Color color,
     ) = acquisition == null || acquisition!.type == AcquisitionType.unknown
-        ? ('未知', inkColor.withValues(alpha: 0.5))
+        ? (null, '未知', inkColor.withValues(alpha: 0.5))
         : switch (acquisition!.type) {
-            AcquisitionType.gold => (
-              '${acquisition!.cost ?? 0} 金',
-              CharacterGalleryTheme.getGold(context),
-            ),
-            AcquisitionType.points => (
-              '${acquisition!.cost ?? 0} 点',
-              CharacterGalleryTheme.getVermillion(context),
-            ),
+            AcquisitionType.gold =>
+              (acquisition!.cost ?? 0) == 0
+                  ? (
+                      Icons.money_off,
+                      '免费获取',
+                      const Color(0xFF10B981), // Emerald 500
+                    )
+                  : (
+                      Icons.monetization_on,
+                      '${acquisition!.cost ?? 0} 金',
+                      const Color(0xFFF59E0B), // AppColors.amber500
+                    ),
+            AcquisitionType.points =>
+              (acquisition!.cost ?? 0) == 0
+                  ? (Icons.money_off, '免费获取', const Color(0xFF10B981))
+                  : (
+                      Icons.bolt,
+                      '${acquisition!.cost ?? 0} 点',
+                      const Color(0xFF60A5FA),
+                    ),
             AcquisitionType.custom => (
+              null,
               acquisition!.customSource ?? '特殊',
               CharacterGalleryTheme.getCustomSourceColor(context),
             ),
-            AcquisitionType.unknown => ('未知', inkColor.withValues(alpha: 0.5)),
+            AcquisitionType.unknown => (
+              null,
+              '未知',
+              inkColor.withValues(alpha: 0.5),
+            ),
           };
-    return Text(
-      text,
-      style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w500),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 9, color: color.withValues(alpha: 0.8)),
+          const SizedBox(width: 2),
+        ],
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }

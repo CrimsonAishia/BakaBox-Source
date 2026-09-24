@@ -48,6 +48,11 @@ class WarmupMonitorService {
   bool _isWarmingUp = false;
   bool _enabled = true;
 
+  String? get _activeNotificationAddress {
+    if (_currentServerAddress == null) return null;
+    return _currentServerDomainAddress ?? _currentServerAddress;
+  }
+
   StreamSubscription<ConsoleLogState>? _consoleStateSubscription;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   StreamSubscription<ServerMapRuntimeEvent>? _realtimeSubscription;
@@ -79,8 +84,8 @@ class WarmupMonitorService {
   }
 
   void _onNotificationClosed(String notificationId) {
-    if (_currentServerAddress != null &&
-        notificationId == 'warmup_$_currentServerAddress') {
+    final addr = _activeNotificationAddress;
+    if (addr != null && notificationId == 'warmup_$addr') {
       if (_isWarmingUp) {
         LogService.d('[WarmupMonitor] 用户手动关闭了热身通知，停止倒计时刷新');
         _isWarmingUp = false;
@@ -138,7 +143,7 @@ class WarmupMonitorService {
     if (_isWarmingUp) {
       _isWarmingUp = false;
       await _notificationService.dismissWarmupNotification(
-        _currentServerAddress!,
+        _activeNotificationAddress!,
       );
       _stopWarmupTimer();
     }
@@ -228,9 +233,9 @@ class WarmupMonitorService {
     if (remaining <= 0) {
       _isWarmingUp = false;
       _stopWarmupTimer();
-      if (_currentServerAddress != null) {
+      if (_activeNotificationAddress != null) {
         await _notificationService.dismissWarmupNotification(
-          _currentServerAddress!,
+          _activeNotificationAddress!,
         );
       }
       return;
@@ -241,7 +246,9 @@ class WarmupMonitorService {
 
   void _showWarmupNotification() {
     if (!_enabled) return;
-    if (_currentServerAddress == null || _currentMapRuntime == null) return;
+    if (_activeNotificationAddress == null || _currentMapRuntime == null) {
+      return;
+    }
 
     final remaining = MapRuntimeUtils.getWarmupTimeRemaining(
       _currentMapRuntime,
@@ -251,7 +258,7 @@ class WarmupMonitorService {
     if (remaining <= 0) return;
 
     _notificationService.showWarmupNotification(
-      serverAddress: _currentServerAddress!,
+      serverAddress: _activeNotificationAddress!,
       serverName: _currentServerName ?? _currentServerAddress!,
       mapName: _currentMapName,
       mapNameCn: _currentMapInfo?.mapLabel,
@@ -277,8 +284,10 @@ class WarmupMonitorService {
     if (!event.isRunning) {
       _stopWarmupTimer();
       _stopRealtime();
-      if (_isWarmingUp && _currentServerAddress != null) {
-        _notificationService.dismissWarmupNotification(_currentServerAddress!);
+      if (_isWarmingUp && _activeNotificationAddress != null) {
+        _notificationService.dismissWarmupNotification(
+          _activeNotificationAddress!,
+        );
         _isWarmingUp = false;
       }
       _currentServerAddress = null;
@@ -302,9 +311,9 @@ class WarmupMonitorService {
       if (serverAddress.isEmpty) return;
 
       if (serverAddress != _currentServerAddress) {
-        if (_isWarmingUp && _currentServerAddress != null) {
+        if (_isWarmingUp && _activeNotificationAddress != null) {
           _notificationService.dismissWarmupNotification(
-            _currentServerAddress!,
+            _activeNotificationAddress!,
           );
         }
         _currentServerAddress = serverAddress;
@@ -337,8 +346,10 @@ class WarmupMonitorService {
     } else if (newGameState == GameState.mainMenu ||
         newGameState == GameState.unknown ||
         newGameState == GameState.failed) {
-      if (_isWarmingUp && _currentServerAddress != null) {
-        _notificationService.dismissWarmupNotification(_currentServerAddress!);
+      if (_isWarmingUp && _activeNotificationAddress != null) {
+        _notificationService.dismissWarmupNotification(
+          _activeNotificationAddress!,
+        );
         _isWarmingUp = false;
       }
       _stopWarmupTimer();
@@ -376,8 +387,10 @@ class WarmupMonitorService {
   void setEnabled(bool enabled) {
     _enabled = enabled;
     LogService.d('[WarmupMonitor] 热身通知已${enabled ? '启用' : '禁用'}');
-    if (!enabled && _isWarmingUp && _currentServerAddress != null) {
-      _notificationService.dismissWarmupNotification(_currentServerAddress!);
+    if (!enabled && _isWarmingUp && _activeNotificationAddress != null) {
+      _notificationService.dismissWarmupNotification(
+        _activeNotificationAddress!,
+      );
       _isWarmingUp = false;
       _stopWarmupTimer();
     }
@@ -389,8 +402,10 @@ class WarmupMonitorService {
     _consoleStateSubscription?.cancel();
     _gameStatusSubscription?.cancel();
     _notificationClosedSubscription?.cancel();
-    if (_isWarmingUp && _currentServerAddress != null) {
-      _notificationService.dismissWarmupNotification(_currentServerAddress!);
+    if (_isWarmingUp && _activeNotificationAddress != null) {
+      _notificationService.dismissWarmupNotification(
+        _activeNotificationAddress!,
+      );
     }
   }
 }

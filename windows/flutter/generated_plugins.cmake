@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   awesome_notifications
   desktop_multi_window
   file_selector_windows
+  flutter_inappwebview_windows
   fvp
   irondash_engine_context
   permission_handler_windows
@@ -14,12 +15,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   super_native_extensions
   tray_manager
   url_launcher_windows
-  webview_windows
   window_manager
+  windows_notification
   windows_single_instance
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  jni
   sherpa_onnx_windows
 )
 

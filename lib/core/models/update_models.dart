@@ -213,6 +213,17 @@ class UpdateReportRequest {
     this.errorMessage,
   });
 
+  factory UpdateReportRequest.fromJson(Map<String, dynamic> json) {
+    return UpdateReportRequest(
+      platform: json['platform'] as String? ?? 'unknown',
+      os: json['os'] as String?,
+      fromVersion: json['fromVersion'] as String? ?? 'unknown',
+      toVersion: json['toVersion'] as String? ?? 'unknown',
+      status: json['status'] as String? ?? 'unknown',
+      errorMessage: json['errorMessage'] as String?,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'platform': platform,
     if (os != null) 'os': os,

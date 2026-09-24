@@ -134,6 +134,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       backgroundColor: isDark ? AppColors.slate900 : AppColors.gray100,
       body: PageLayout(
         title: tool.name,
+        breadcrumbParent: '工具箱',
         onBack: () {
           setState(() {
             _openedToolId = null;

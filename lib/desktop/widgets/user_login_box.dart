@@ -1,13 +1,11 @@
-// ============================================================
-// STUB FILE - Private implementation not included in open source
-// See: https://github.com/CrimsonAishia/BakaBox-Core (private)
-// Original content replaced during open-source history rewrite.
-// ============================================================
-
+// 这是开源版专用占位文件 (Stub)
 import 'package:flutter/material.dart';
 
 class UserLoginBox extends StatelessWidget {
-  const UserLoginBox({super.key});
+  final VoidCallback? onProfileTap;
+  final bool? isSelected;
+  const UserLoginBox({super.key, this.onProfileTap, this.isSelected});
+
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();
 }

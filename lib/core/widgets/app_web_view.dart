@@ -18,7 +18,7 @@ import '../services/webview_environment_service.dart';
 /// 同时统一了默认行为：
 /// - 默认拒绝所有权限请求（摄像头/麦克风/地理位置等），可通过
 ///   [onPermissionRequest] 覆盖。
-class AppWebView extends StatelessWidget {
+class AppWebView extends StatefulWidget {
   const AppWebView({
     super.key,
     this.initialUrlRequest,
@@ -31,6 +31,7 @@ class AppWebView extends StatelessWidget {
     this.onReceivedError,
     this.onCreateWindow,
     this.onPermissionRequest,
+    this.onProgressChanged,
   });
 
   /// 初始加载的请求。
@@ -83,21 +84,58 @@ class AppWebView extends StatelessWidget {
   )?
   onPermissionRequest;
 
+  /// 进度变更回调。
+  final void Function(InAppWebViewController controller, int progress)?
+  onProgressChanged;
+
+  @override
+  State<AppWebView> createState() => _AppWebViewState();
+}
+
+class _AppWebViewState extends State<AppWebView> {
+  bool _isEnvReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initEnv();
+  }
+
+  Future<void> _initEnv() async {
+    await WebViewEnvironmentService.retain();
+    if (mounted) {
+      setState(() {
+        _isEnvReady = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    WebViewEnvironmentService.release();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isEnvReady) {
+      return const SizedBox.shrink();
+    }
+
     return InAppWebView(
       // 关键：强制使用项目统一的可写缓存环境，避免缓存落到安装目录。
       webViewEnvironment: WebViewEnvironmentService.environment,
-      initialUrlRequest: initialUrlRequest,
-      initialSettings: initialSettings,
-      initialUserScripts: initialUserScripts,
-      onWebViewCreated: onWebViewCreated,
-      onLoadStart: onLoadStart,
-      onLoadStop: onLoadStop,
-      onUpdateVisitedHistory: onUpdateVisitedHistory,
-      onReceivedError: onReceivedError,
-      onCreateWindow: onCreateWindow,
-      onPermissionRequest: onPermissionRequest ?? _denyPermission,
+      initialUrlRequest: widget.initialUrlRequest,
+      initialSettings: widget.initialSettings,
+      initialUserScripts: widget.initialUserScripts,
+      onWebViewCreated: widget.onWebViewCreated,
+      onLoadStart: widget.onLoadStart,
+      onLoadStop: widget.onLoadStop,
+      onUpdateVisitedHistory: widget.onUpdateVisitedHistory,
+      onReceivedError: widget.onReceivedError,
+      onCreateWindow: widget.onCreateWindow,
+      onPermissionRequest: widget.onPermissionRequest ?? _denyPermission,
+      onProgressChanged: widget.onProgressChanged,
     );
   }
 

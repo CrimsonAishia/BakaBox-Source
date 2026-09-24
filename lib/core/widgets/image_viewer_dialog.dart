@@ -200,6 +200,7 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
                                 : DiskCachedImage(
                                     imageUrl: widget.imageUrls[index],
                                     fit: BoxFit.contain,
+                                    disableMemCache: true,
                                     placeholder: const Center(
                                       child: CircularProgressIndicator(
                                         color: Colors.white,

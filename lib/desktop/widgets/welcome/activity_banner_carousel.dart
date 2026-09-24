@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/bloc/activity/activity_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/activity_model.dart';
@@ -11,7 +10,8 @@ import '../../../core/widgets/signed_network_image.dart';
 import '../activity/activity_detail_dialog.dart';
 
 class ActivityBannerCarousel extends StatefulWidget {
-  const ActivityBannerCarousel({super.key});
+  final bool isMobile;
+  const ActivityBannerCarousel({super.key, this.isMobile = false});
 
   @override
   State<ActivityBannerCarousel> createState() => _ActivityBannerCarouselState();
@@ -123,126 +123,121 @@ class _ActivityBannerCarouselState extends State<ActivityBannerCarousel> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Container(
-              height: 230,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          height: widget.isMobile ? 140 : 230,
+          margin: EdgeInsets.only(bottom: widget.isMobile ? 0 : 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.05),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: MouseRegion(
-                onEnter: (_) => setState(() => _isHovered = true),
-                onExit: (_) => setState(() => _isHovered = false),
-                child: Stack(
-                  children: [
-                    PageView.builder(
-                      key: ValueKey(
-                        activities.length,
-                      ), // 强制重建 PageView，彻底解决无法滚动的问题
-                      controller: _pageController,
-                      onPageChanged: _onPageChanged,
-                      itemCount: activities.length,
-                      itemBuilder: (context, index) {
-                        final activity = activities[index];
-                        return _BannerItemWidget(activity: activity);
-                      },
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _isHovered = true),
+            onExit: (_) => setState(() => _isHovered = false),
+            child: Stack(
+              children: [
+                PageView.builder(
+                  key: ValueKey(activities.length), // 强制重建 PageView，彻底解决无法滚动的问题
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: activities.length,
+                  itemBuilder: (context, index) {
+                    final activity = activities[index];
+                    return _BannerItemWidget(
+                      activity: activity,
+                      isMobile: widget.isMobile,
+                    );
+                  },
+                ),
+
+                if (activities.length > 1)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: AnimatedOpacity(
+                        opacity: _isHovered ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: _NavButton(
+                          icon: Icons.chevron_left_rounded,
+                          onTap: _goToPrevious,
+                        ),
+                      ),
                     ),
+                  ),
 
-                    if (activities.length > 1)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 16),
-                          child: AnimatedOpacity(
-                            opacity: _isHovered ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: _NavButton(
-                              icon: Icons.chevron_left_rounded,
-                              onTap: _goToPrevious,
-                            ),
-                          ),
+                if (activities.length > 1)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: AnimatedOpacity(
+                        opacity: _isHovered ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: _NavButton(
+                          icon: Icons.chevron_right_rounded,
+                          onTap: _goToNext,
                         ),
                       ),
+                    ),
+                  ),
 
-                    if (activities.length > 1)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 16),
-                          child: AnimatedOpacity(
-                            opacity: _isHovered ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: _NavButton(
-                              icon: Icons.chevron_right_rounded,
-                              onTap: _goToNext,
-                            ),
+                if (activities.length > 1)
+                  Align(
+                    alignment: widget.isMobile
+                        ? Alignment.topRight
+                        : Alignment.bottomRight,
+                    child: Padding(
+                      padding: widget.isMobile
+                          ? const EdgeInsets.only(top: 8, right: 8)
+                          : const EdgeInsets.only(bottom: 16, right: 24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
-                      ),
-
-                    if (activities.length > 1)
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16, right: 24),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.15),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: List.generate(
-                                activities.length,
-                                (index) => AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  width: _currentPage == index ? 16 : 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: _currentPage == index
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(
+                            activities.length,
+                            (index) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentPage == index ? 16 : 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _currentPage == index
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(4),
                               ),
                             ),
                           ),
                         ),
                       ),
-                  ],
-                ),
-              ),
-            )
-            .animate()
-            .fadeIn(duration: 500.ms, delay: 500.ms)
-            .slideY(
-              begin: 0.2,
-              end: 0,
-              duration: 400.ms,
-              curve: Curves.easeOutCubic,
-            );
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -290,8 +285,9 @@ class _NavButtonState extends State<_NavButton> {
 
 class _BannerItemWidget extends StatefulWidget {
   final ActivityModel activity;
+  final bool isMobile;
 
-  const _BannerItemWidget({required this.activity});
+  const _BannerItemWidget({required this.activity, this.isMobile = false});
 
   @override
   State<_BannerItemWidget> createState() => _BannerItemWidgetState();
@@ -331,7 +327,10 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: const EdgeInsets.only(top: 16, left: 16),
+                padding: EdgeInsets.only(
+                  top: widget.isMobile ? 8 : 16,
+                  left: widget.isMobile ? 8 : 16,
+                ),
                 child: Row(
                   children: [
                     if (widget.activity.isPinned)
@@ -406,10 +405,10 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
             Align(
               alignment: Alignment.bottomLeft,
               child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 24,
-                  bottom: 24,
-                  right: 120,
+                padding: EdgeInsets.only(
+                  left: widget.isMobile ? 12 : 24,
+                  bottom: widget.isMobile ? 12 : 24,
+                  right: widget.isMobile ? 40 : 120,
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -425,9 +424,9 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
                         const SizedBox(height: 8),
                         Text(
                           widget.activity.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
+                            fontSize: widget.isMobile ? 16 : 24,
                             fontWeight: FontWeight.bold,
                             height: 1.2,
                           ),
@@ -440,7 +439,7 @@ class _BannerItemWidgetState extends State<_BannerItemWidget> {
                             widget.activity.description,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: 14,
+                              fontSize: widget.isMobile ? 12 : 14,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

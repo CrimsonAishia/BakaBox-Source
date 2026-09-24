@@ -162,9 +162,316 @@ class ActivityDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 600;
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? AppColors.slate800 : Colors.white;
     final borderColor = isDark ? AppColors.slate700 : AppColors.gray200;
+
+    final contentWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 头部：关闭按钮
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: borderColor)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.celebration_rounded, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                '活动详情',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                splashRadius: 24,
+              ),
+            ],
+          ),
+        ),
+
+        // 内容区
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Hero 封面 (全宽，不留白)
+                if (activity.bannerUrl.isNotEmpty)
+                  Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 200,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: const BoxDecoration(),
+                        child: SignedNetworkImage(
+                          url: activity.bannerUrl,
+                          fit: BoxFit.cover,
+                          fallback: Container(
+                            color: isDark
+                                ? AppColors.slate700
+                                : AppColors.sky100,
+                            child: Center(
+                              child: Icon(
+                                Icons.image_outlined,
+                                size: 48,
+                                color: isDark
+                                    ? AppColors.slate600
+                                    : AppColors.sky200,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // 底部平滑渐变遮罩
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.85),
+                                Colors.black.withValues(alpha: 0.3),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.5, 0.8],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // 左上角角标
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: Row(
+                          children: [
+                            if (activity.isPinned)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFF43F5E),
+                                      Color(0xFFE11D48),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFFE11D48,
+                                      ).withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.push_pin_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '置顶',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // 左下角标题与简介
+                      Positioned(
+                        bottom: isMobile ? 16 : 24,
+                        left: isMobile ? 16 : 32,
+                        right: isMobile ? 16 : 32,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildTimeAndStatusRow(context, isOverlay: true),
+                            const SizedBox(height: 8),
+                            Text(
+                              activity.title,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isMobile ? 22 : 28,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
+                                letterSpacing: -0.5,
+                                shadows: const [
+                                  Shadow(
+                                    color: Colors.black54,
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (activity.description.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                activity.description,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 15,
+                                  height: 1.4,
+                                  shadows: const [
+                                    Shadow(
+                                      color: Colors.black54,
+                                      offset: Offset(0, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                Padding(
+                  padding: EdgeInsets.all(isMobile ? 16 : 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (activity.bannerUrl.isEmpty) ...[
+                        // 当没有图片时，退化显示在正文顶部
+                        Row(
+                          children: [
+                            if (activity.isPinned)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFF43F5E),
+                                      Color(0xFFE11D48),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFFE11D48,
+                                      ).withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.push_pin_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '置顶',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (activity.isPinned) const SizedBox(width: 12),
+                            _buildTimeAndStatusRow(context, isOverlay: false),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 标题
+                        Text(
+                          activity.title,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            height: 1.3,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+
+                        if (activity.description.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            activity.description,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 24),
+                      ],
+
+                      // 顶部分隔线 (如果上方没有图片，则这里作为分割正文的线；如果有图片，则不需要分隔线，因为文字就在图片上，这里直接开始正文会更好，所以如果有banner我们甚至可以隐藏线，不过留着也行)
+                      if (activity.bannerUrl.isEmpty) ...[
+                        Container(height: 1, color: borderColor),
+                        const SizedBox(height: 32),
+                      ],
+
+                      // 富文本正文
+                      if (activity.content.isNotEmpty)
+                        RichTextViewer(
+                          key: ValueKey('activity-rich-${activity.id}'),
+                          content: activity.content,
+                          embedBuilders: const [BilibiliEmbedBuilder()],
+                          sliceForToc: false,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (isMobile) {
+      return Dialog.fullscreen(
+        backgroundColor: cardColor,
+        child: contentWidget,
+      );
+    }
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -185,315 +492,7 @@ class ActivityDetailDialog extends StatelessWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 头部：关闭按钮
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: borderColor)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.celebration_rounded,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '活动详情',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                    splashRadius: 24,
-                  ),
-                ],
-              ),
-            ),
-
-            // 内容区
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Hero 封面 (全宽，不留白)
-                    if (activity.bannerUrl.isNotEmpty)
-                      Stack(
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            height: 200,
-                            clipBehavior: Clip.antiAlias,
-                            decoration: const BoxDecoration(),
-                            child: SignedNetworkImage(
-                              url: activity.bannerUrl,
-                              fit: BoxFit.cover,
-                              fallback: Container(
-                                color: isDark
-                                    ? AppColors.slate700
-                                    : AppColors.sky100,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    size: 48,
-                                    color: isDark
-                                        ? AppColors.slate600
-                                        : AppColors.sky200,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 底部平滑渐变遮罩
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.85),
-                                    Colors.black.withValues(alpha: 0.3),
-                                    Colors.transparent,
-                                  ],
-                                  stops: const [0.0, 0.5, 0.8],
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 左上角角标
-                          Positioned(
-                            top: 16,
-                            left: 16,
-                            child: Row(
-                              children: [
-                                if (activity.isPinned)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFF43F5E),
-                                          Color(0xFFE11D48),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFFE11D48,
-                                          ).withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.push_pin_rounded,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '置顶',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          // 左下角标题与简介
-                          Positioned(
-                            bottom: 24,
-                            left: 32,
-                            right: 32,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildTimeAndStatusRow(
-                                  context,
-                                  isOverlay: true,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  activity.title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.2,
-                                    letterSpacing: -0.5,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black54,
-                                        offset: Offset(0, 2),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (activity.description.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    activity.description,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      fontSize: 15,
-                                      height: 1.4,
-                                      shadows: const [
-                                        Shadow(
-                                          color: Colors.black54,
-                                          offset: Offset(0, 1),
-                                          blurRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                    Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (activity.bannerUrl.isEmpty) ...[
-                            // 当没有图片时，退化显示在正文顶部
-                            Row(
-                              children: [
-                                if (activity.isPinned)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFF43F5E),
-                                          Color(0xFFE11D48),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFFE11D48,
-                                          ).withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.push_pin_rounded,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '置顶',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                if (activity.isPinned)
-                                  const SizedBox(width: 12),
-                                _buildTimeAndStatusRow(
-                                  context,
-                                  isOverlay: false,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // 标题
-                            Text(
-                              activity.title,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                height: 1.3,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-
-                            if (activity.description.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                activity.description,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-
-                            const SizedBox(height: 24),
-                          ],
-
-                          // 顶部分隔线 (如果上方没有图片，则这里作为分割正文的线；如果有图片，则不需要分隔线，因为文字就在图片上，这里直接开始正文会更好，所以如果有banner我们甚至可以隐藏线，不过留着也行)
-                          if (activity.bannerUrl.isEmpty) ...[
-                            Container(height: 1, color: borderColor),
-                            const SizedBox(height: 32),
-                          ],
-
-                          // 富文本正文
-                          if (activity.content.isNotEmpty)
-                            RichTextViewer(
-                              key: ValueKey('activity-rich-${activity.id}'),
-                              content: activity.content,
-                              embedBuilders: const [BilibiliEmbedBuilder()],
-                              sliceForToc: false,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: contentWidget,
       ),
     );
   }

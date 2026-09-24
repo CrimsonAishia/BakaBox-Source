@@ -51,7 +51,6 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     return super.close();
   }
 
-  // ---- 实时频道 ----
 
   void _startRealtime() {
     if (_realtimeStarted) return;
@@ -130,7 +129,6 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     });
   }
 
-  // ---- REST 操作 ----
 
   Future<void> _onFetch(
     AnnouncementFetch event,

@@ -9,6 +9,9 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../core/core.dart';
 import '../../desktop/widgets/character_gallery/character_gallery_theme.dart';
 import '../widgets/character_gallery/character_card_mobile.dart';
+import '../widgets/character_gallery/weapon_model_card_mobile.dart';
+import '../widgets/character_gallery/character_voice_card_mobile.dart';
+import 'weapon_model_detail_mobile.dart';
 
 /// 移动端角色图鉴列表页面
 class CharacterGalleryMobile extends StatefulWidget {
@@ -24,6 +27,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   final Map<String, GlobalKey> _tierKeys = {};
   Timer? _searchDebounce;
   bool _hasSearchText = false;
+  bool _isCategoryExpanded = false;
 
   @override
   void initState() {
@@ -73,10 +77,6 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     context.read<CharacterGalleryBloc>().add(ChangeCategory(category));
   }
 
-  void _onSpellCardTierTap() {
-    context.read<CharacterGalleryBloc>().add(const LoadSpellCardTierList());
-  }
-
   void _navigateToDetail(int characterId) {
     context.push('/character-gallery/$characterId');
   }
@@ -123,14 +123,61 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                               current.characters.isEmpty),
                   builder: (context, state) => _buildAppBar(context, state),
                 ),
-                // 工具栏（分类按钮 + 搜索框）- 只在分类或视图模式变化时重建
+                // 工具栏（分类按钮 + 搜索框）- 使用 SliverPersistentHeader 实现吸顶
                 BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
                   buildWhen: (previous, current) =>
                       previous.selectedCategory != current.selectedCategory ||
                       previous.showSpellCardTierView !=
-                          current.showSpellCardTierView,
-                  builder: (context, state) =>
-                      SliverToBoxAdapter(child: _buildToolbar(state)),
+                          current.showSpellCardTierView ||
+                      previous.showWeaponModelView !=
+                          current.showWeaponModelView ||
+                      previous.showCheerSoundsView !=
+                          current.showCheerSoundsView ||
+                      previous.sortBy != current.sortBy,
+                  builder: (context, state) {
+                    final showSearch = !state.showCheerSoundsView;
+                    double height = 20; // top 12 + bottom 8 padding
+                    height += 10; // category container padding(8) + border(2)
+                    height += _isCategoryExpanded ? 84 : 40; // chips height
+                    if (showSearch) {
+                      height += 12; // gap
+                      height += 48; // search box
+                    }
+                    return SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _ToolbarHeaderDelegate(
+                        height: height,
+                        child: _buildToolbar(state),
+                      ),
+                    );
+                  },
+                ),
+                // 武器二级菜单（仅在装备视图显示）吸顶
+                BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
+                  buildWhen: (previous, current) =>
+                      previous.showWeaponModelView !=
+                          current.showWeaponModelView ||
+                      previous.weaponModelTab != current.weaponModelTab,
+                  builder: (context, state) {
+                    if (!state.showWeaponModelView) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    return SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _ToolbarHeaderDelegate(
+                        height:
+                            54, // 10 top padding + 34 height + 10 bottom padding
+                        child: Container(
+                          color: Theme.of(context).appBarTheme.backgroundColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 5,
+                          ),
+                          child: _buildWeaponModelTabs(state),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 // 内容区域 - 只在内容相关状态变化时重建
                 BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
@@ -139,6 +186,19 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                       previous.characters != current.characters ||
                       previous.showSpellCardTierView !=
                           current.showSpellCardTierView ||
+                      previous.showWeaponModelView !=
+                          current.showWeaponModelView ||
+                      previous.showCheerSoundsView !=
+                          current.showCheerSoundsView ||
+                      previous.allWeaponModelsLoadState !=
+                          current.allWeaponModelsLoadState ||
+                      previous.allKnifeModels != current.allKnifeModels ||
+                      previous.allGunModels != current.allGunModels ||
+                      previous.allMenuSkins != current.allMenuSkins ||
+                      previous.weaponModelTab != current.weaponModelTab ||
+                      previous.cheerSoundsLoadState !=
+                          current.cheerSoundsLoadState ||
+                      previous.cheerSounds != current.cheerSounds ||
                       previous.spellCardTierLoadState !=
                           current.spellCardTierLoadState ||
                       previous.spellCardTierGroups !=
@@ -160,105 +220,31 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   /// 构建 AppBar
   Widget _buildAppBar(BuildContext context, CharacterGalleryState state) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: theme.appBarTheme.backgroundColor,
-      surfaceTintColor: theme.appBarTheme.backgroundColor,
-      toolbarHeight: 80,
+      scrolledUnderElevation: 0,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
         onPressed: () => context.pop(),
-        icon: Icon(MdiIcons.arrowLeft, color: colorScheme.onSurface),
       ),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          color: theme.appBarTheme.backgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: isDark ? 0.15 : 0.06),
-              offset: const Offset(0, 1),
-              blurRadius: 4,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(56, 12, 20, 12),
-            child: Row(
-              children: [
-                _buildAppBarIcon(isDark),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '人物图鉴',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                          letterSpacing: 0.3,
-                        ),
-                      ).animate().fadeIn(duration: 300.ms),
-                      const SizedBox(height: 2),
-                      Text(
-                        _getSubtitle(state),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+      title: const Text(
+        '人物图鉴',
+        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(
+          height: 1,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
         ),
       ),
     );
-  }
-
-  Widget _buildAppBarIcon(bool isDark) {
-    final primaryColor = AppColors.violet500;
-
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [primaryColor.withValues(alpha: 0.9), const Color(0xFF6D28D9)]
-              : [primaryColor, const Color(0xFF7C3AED)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: isDark ? 0.3 : 0.35),
-            offset: const Offset(0, 4),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: Icon(MdiIcons.cardsOutline, color: Colors.white, size: 22),
-    );
-  }
-
-  String _getSubtitle(CharacterGalleryState state) {
-    if (state.listLoadState == LoadState.loading && state.characters.isEmpty) {
-      return '加载中...';
-    }
-    if (state.showSpellCardTierView) {
-      return '共 ${state.spellCardTierTotalCount} 张符卡';
-    }
-    return '共 ${state.totalCount} 个角色';
   }
 
   /// 构建内容区域（Sliver 版本）
@@ -268,7 +254,9 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   ) {
     // 加载中状态
     if (state.listLoadState == LoadState.loading && state.characters.isEmpty) {
-      if (!state.showSpellCardTierView) {
+      if (!state.showSpellCardTierView &&
+          !state.showWeaponModelView &&
+          !state.showCheerSoundsView) {
         return SliverFillRemaining(child: _buildLoadingState());
       }
     }
@@ -279,9 +267,24 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
       return SliverFillRemaining(child: _buildLoadingState());
     }
 
+    if (state.showWeaponModelView &&
+        state.allWeaponModelsLoadState == LoadState.loading) {
+      return SliverFillRemaining(child: _buildLoadingState());
+    }
+
+    if (state.showCheerSoundsView &&
+        state.cheerSoundsLoadState == LoadState.loading &&
+        state.cheerSounds.isEmpty) {
+      return SliverFillRemaining(child: _buildLoadingState());
+    }
+
     // 错误状态
     if (state.listLoadState == LoadState.failure && state.characters.isEmpty) {
-      return SliverFillRemaining(child: _buildErrorState(state.error));
+      if (!state.showSpellCardTierView &&
+          !state.showWeaponModelView &&
+          !state.showCheerSoundsView) {
+        return SliverFillRemaining(child: _buildErrorState(state.error));
+      }
     }
 
     if (state.showSpellCardTierView &&
@@ -290,15 +293,33 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
       return SliverFillRemaining(child: _buildErrorState(state.error));
     }
 
+    if (state.showWeaponModelView &&
+        state.allWeaponModelsLoadState == LoadState.failure) {
+      return SliverFillRemaining(child: _buildErrorState(state.error));
+    }
+
+    if (state.showCheerSoundsView &&
+        state.cheerSoundsLoadState == LoadState.failure &&
+        state.cheerSounds.isEmpty) {
+      return SliverFillRemaining(child: _buildErrorState(state.error));
+    }
+
     return SliverList(
       delegate: SliverChildListDelegate([
         if (state.showSpellCardTierView)
           _buildSpellCardTierList(state)
+        else if (state.showWeaponModelView)
+          _buildWeaponModelList(state)
+        else if (state.showCheerSoundsView)
+          _buildCheerSoundsList(state)
         else if (state.characters.isEmpty)
           _buildEmptyState()
         else
           _buildCharacterGrid(state),
-        if (!state.showSpellCardTierView && state.characters.isNotEmpty)
+        if (!state.showSpellCardTierView &&
+            !state.showWeaponModelView &&
+            !state.showCheerSoundsView &&
+            state.characters.isNotEmpty)
           _buildBottomIndicator(state),
         const SizedBox(height: 20),
       ]),
@@ -310,11 +331,70 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final isNormalView =
+        !state.showSpellCardTierView &&
+        !state.showWeaponModelView &&
+        !state.showCheerSoundsView;
+
+    // 所有分类定义
+    final allCats = [
+      (
+        '東方',
+        state.selectedCategory == CharacterCategory.touhou && isNormalView,
+        () => _onCategoryChanged(CharacterCategory.touhou),
+        AppColors.red600,
+      ),
+      (
+        '僵尸',
+        state.selectedCategory == CharacterCategory.zombie && isNormalView,
+        () => _onCategoryChanged(CharacterCategory.zombie),
+        const Color(0xFF16A34A),
+      ),
+      (
+        '普通',
+        state.selectedCategory == CharacterCategory.normal && isNormalView,
+        () => _onCategoryChanged(CharacterCategory.normal),
+        const Color(0xFF2563EB),
+      ),
+      (
+        '符卡',
+        state.showSpellCardTierView,
+        () => context.read<CharacterGalleryBloc>().add(
+          const LoadSpellCardTierList(),
+        ),
+        AppColors.amber500,
+      ),
+      (
+        '装备',
+        state.showWeaponModelView,
+        () => context.read<CharacterGalleryBloc>().add(
+          const LoadAllWeaponModels(),
+        ),
+        AppColors.slate500,
+      ),
+      (
+        'Meme',
+        state.showCheerSoundsView,
+        () => context.read<CharacterGalleryBloc>().add(const LoadCheerSounds()),
+        Colors.cyan,
+      ),
+    ];
+
+    // 将选中的分类放到第一个（仅在折叠时改变顺序）
+    if (!_isCategoryExpanded) {
+      final selectedIndex = allCats.indexWhere((c) => c.$2);
+      if (selectedIndex > 0) {
+        final selected = allCats.removeAt(selectedIndex);
+        allCats.insert(0, selected);
+      }
+    }
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      color: theme.appBarTheme.backgroundColor, // 防止透明遮挡
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         children: [
-          // 分类切换按钮 - 简洁文字设计
+          // 分类切换按钮容器
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -334,49 +414,211 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
               ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _buildCategoryChip(
-                    '東方',
-                    state.selectedCategory == CharacterCategory.touhou &&
-                        !state.showSpellCardTierView,
-                    () => _onCategoryChanged(CharacterCategory.touhou),
-                    color: AppColors.red600,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildCategoryChip(
+                              allCats[0].$1,
+                              allCats[0].$2,
+                              allCats[0].$3,
+                              color: allCats[0].$4,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildCategoryChip(
+                              allCats[1].$1,
+                              allCats[1].$2,
+                              allCats[1].$3,
+                              color: allCats[1].$4,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildCategoryChip(
+                              allCats[2].$1,
+                              allCats[2].$2,
+                              allCats[2].$3,
+                              color: allCats[2].$4,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_isCategoryExpanded) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCategoryChip(
+                                allCats[3].$1,
+                                allCats[3].$2,
+                                allCats[3].$3,
+                                color: allCats[3].$4,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: _buildCategoryChip(
+                                allCats[4].$1,
+                                allCats[4].$2,
+                                allCats[4].$3,
+                                color: allCats[4].$4,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: _buildCategoryChip(
+                                allCats[5].$1,
+                                allCats[5].$2,
+                                allCats[5].$3,
+                                color: allCats[5].$4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: _buildCategoryChip(
-                    '僵尸',
-                    state.selectedCategory == CharacterCategory.zombie &&
-                        !state.showSpellCardTierView,
-                    () => _onCategoryChanged(CharacterCategory.zombie),
-                    color: const Color(0xFF16A34A),
+                // 展开/收起按钮
+                GestureDetector(
+                  onTap: () => setState(
+                    () => _isCategoryExpanded = !_isCategoryExpanded,
                   ),
-                ),
-                Expanded(
-                  child: _buildCategoryChip(
-                    '普通',
-                    state.selectedCategory == CharacterCategory.normal &&
-                        !state.showSpellCardTierView,
-                    () => _onCategoryChanged(CharacterCategory.normal),
-                    color: const Color(0xFF2563EB),
-                  ),
-                ),
-                Expanded(
-                  child: _buildCategoryChip(
-                    '符卡',
-                    state.showSpellCardTierView,
-                    _onSpellCardTierTap,
-                    color: AppColors.amber500,
+                  child: Container(
+                    width: 36,
+                    height: _isCategoryExpanded ? 84 : 40,
+                    alignment: Alignment.center,
+                    color: Colors.transparent, // 扩大点击区域
+                    child: Icon(
+                      _isCategoryExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          // 搜索框
-          _buildSearchBox(),
+          // 搜索框和排序 (Meme模式下不显示)
+          if (!state.showCheerSoundsView) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (!state.showWeaponModelView) ...[
+                  _buildSortButton(state.sortBy),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(child: _buildSearchBox()),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildSortButton(String currentSortBy) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isUpdate = currentSortBy == 'update';
+
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 40),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
+      ),
+      color: isDark
+          ? theme.colorScheme.surfaceContainer
+          : theme.colorScheme.surface,
+      onSelected: (value) {
+        context.read<CharacterGalleryBloc>().add(ChangeSortBy(value));
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: '',
+          height: 44,
+          child: Row(
+            children: [
+              Icon(
+                Icons.sort,
+                size: 18,
+                color: !isUpdate
+                    ? AppColors.violet500
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '默认排序',
+                style: TextStyle(
+                  color: !isUpdate
+                      ? AppColors.violet500
+                      : theme.colorScheme.onSurface,
+                  fontWeight: !isUpdate ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'update',
+          height: 44,
+          child: Row(
+            children: [
+              Icon(
+                Icons.access_time_rounded,
+                size: 18,
+                color: isUpdate
+                    ? AppColors.violet500
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '最近更新',
+                style: TextStyle(
+                  color: isUpdate
+                      ? AppColors.violet500
+                      : theme.colorScheme.onSurface,
+                  fontWeight: isUpdate ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: SizedBox(
+        height: 48, // 固定高度
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                offset: const Offset(0, 2),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Icon(
+            isUpdate ? Icons.access_time_rounded : Icons.sort,
+            color: AppColors.violet500,
+            size: 20,
+          ),
+        ),
       ),
     );
   }
@@ -393,23 +635,29 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? chipColor.withValues(alpha: isDark ? 0.2 : 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? chipColor : theme.colorScheme.onSurfaceVariant,
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      child: SizedBox(
+        height: 40, // 固定高度
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? chipColor.withValues(alpha: isDark ? 0.2 : 0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected
+                  ? chipColor
+                  : theme.colorScheme.onSurfaceVariant,
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -421,70 +669,73 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = AppColors.violet500;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainer
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-      ),
-      child: TextField(
-        controller: _searchController,
-        style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
-        decoration: InputDecoration(
-          hintText: '搜索角色名称...',
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-            fontSize: 14,
-          ),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Icon(
-              Icons.search_rounded,
-              color: primaryColor.withValues(alpha: isDark ? 0.8 : 0.7),
-              size: 22,
+    return SizedBox(
+      height: 48, // 固定高度
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainer
+              : theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+              offset: const Offset(0, 2),
+              blurRadius: 8,
             ),
-          ),
-          suffixIcon: _hasSearchText
-              ? Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: GestureDetector(
-                    onTap: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.1,
+          ],
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+        ),
+        child: TextField(
+          controller: _searchController,
+          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: '搜索名称...',
+            hintStyle: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              fontSize: 14,
+            ),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                Icons.search_rounded,
+                color: primaryColor.withValues(alpha: isDark ? 0.8 : 0.7),
+                size: 22,
+              ),
+            ),
+            suffixIcon: _hasSearchText
+                ? Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: GestureDetector(
+                      onTap: () {
+                        _searchController.clear();
+                        _onSearchChanged('');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        size: 16,
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 16,
+                        ),
                       ),
                     ),
-                  ),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
+          onChanged: _onSearchChanged,
         ),
-        onChanged: _onSearchChanged,
       ),
     );
   }
@@ -494,6 +745,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.builder(
+        padding: const EdgeInsets.only(top: 14),
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -506,6 +758,258 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
         itemBuilder: (context, index) {
           final character = state.characters[index];
           return _buildCharacterCard(character, index);
+        },
+      ),
+    );
+  }
+
+  /// 构建装备/武器网格列表
+  Widget _buildWeaponModelList(CharacterGalleryState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(children: [_buildWeaponModelListContent(state)]),
+    );
+  }
+
+  Widget _buildWeaponModelTabs(CharacterGalleryState state) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildWeaponTabButton(
+            '刀模',
+            MdiIcons.knife,
+            state.weaponModelTab == 0,
+            () => context.read<CharacterGalleryBloc>().add(
+              const ChangeWeaponModelTab(0),
+            ),
+          ),
+          const SizedBox(width: 8),
+          _buildWeaponTabButton(
+            '枪模',
+            MdiIcons.pistol,
+            state.weaponModelTab == 1,
+            () => context.read<CharacterGalleryBloc>().add(
+              const ChangeWeaponModelTab(1),
+            ),
+          ),
+          const SizedBox(width: 8),
+          _buildWeaponTabButton(
+            '菜单皮肤',
+            Icons.view_sidebar_outlined,
+            state.weaponModelTab == 2,
+            () => context.read<CharacterGalleryBloc>().add(
+              const ChangeWeaponModelTab(2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeaponTabButton(
+    String label,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    final theme = Theme.of(context);
+    final vermillion = AppColors.red600;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? vermillion : theme.colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? vermillion
+                : theme.dividerColor.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? Colors.white
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : theme.colorScheme.onSurfaceVariant,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeaponModelListContent(CharacterGalleryState state) {
+    if (state.allWeaponModelsLoadState == LoadState.loading) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: CircularProgressIndicator(color: AppColors.red600),
+        ),
+      );
+    }
+
+    final items = state.weaponModelTab == 0
+        ? state.allKnifeModels
+        : state.weaponModelTab == 1
+        ? state.allGunModels
+        : state.allMenuSkins;
+
+    if (items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              state.weaponModelTab == 0
+                  ? MdiIcons.knife
+                  : state.weaponModelTab == 1
+                  ? MdiIcons.pistol
+                  : Icons.view_sidebar_outlined,
+              size: 48,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无数据',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.only(top: 14),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.72,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        if (state.weaponModelTab == 0) {
+          final knife = items[index] as KnifeModel;
+          return WeaponModelCardMobile.fromKnifeModel(
+            model: knife,
+            onTap: () {
+              final bloc = context.read<CharacterGalleryBloc>();
+              context.read<CharacterGalleryBloc>().add(
+                SelectWeaponModel(id: knife.id, type: WeaponModelType.knife),
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider.value(
+                    value: bloc,
+                    child: const WeaponModelDetailMobile(),
+                  ),
+                ),
+              );
+            },
+          );
+        } else if (state.weaponModelTab == 1) {
+          final gun = items[index] as GunModel;
+          return WeaponModelCardMobile.fromGunModel(
+            model: gun,
+            onTap: () {
+              final bloc = context.read<CharacterGalleryBloc>();
+              context.read<CharacterGalleryBloc>().add(
+                SelectWeaponModel(id: gun.id, type: WeaponModelType.gun),
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider.value(
+                    value: bloc,
+                    child: const WeaponModelDetailMobile(),
+                  ),
+                ),
+              );
+            },
+          );
+        } else {
+          final menuSkin = items[index] as MenuSkinModel;
+          return WeaponModelCardMobile.fromMenuSkinModel(
+            model: menuSkin,
+            onTap: () {
+              final bloc = context.read<CharacterGalleryBloc>();
+              context.read<CharacterGalleryBloc>().add(
+                SelectWeaponModel(
+                  id: menuSkin.id,
+                  type: WeaponModelType.menuSkin,
+                ),
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider.value(
+                    value: bloc,
+                    child: const WeaponModelDetailMobile(),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
+  /// 构建Meme语音列表
+  Widget _buildCheerSoundsList(CharacterGalleryState state) {
+    if (state.cheerSounds.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    final Map<String, List<VoiceItem>> groupedVoices = {};
+    for (final voice in state.cheerSounds) {
+      if (!groupedVoices.containsKey(voice.type)) {
+        groupedVoices[voice.type] = [];
+      }
+      groupedVoices[voice.type]!.add(voice);
+    }
+    final voiceGroups = groupedVoices.values.toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.separated(
+        padding: const EdgeInsets.only(top: 12),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: voiceGroups.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          return CharacterVoiceCardMobile(
+            voices: voiceGroups[index],
+            showType: false,
+          );
         },
       ),
     );
@@ -689,7 +1193,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     );
   }
 
-  /// 构建符卡评级列表项（与桌面端完全一致）
+  /// 构建符卡评级列表项
   Widget _buildSpellCardTierItem(
     SpellCardTierItem spellCard, {
     bool isLast = false,
@@ -700,7 +1204,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     final gold = CharacterGalleryTheme.getGold(context);
 
-    // 类型对应的颜色、符号和背景图（与桌面端完全一致）
+    // 类型对应的颜色、符号和背景图
     final (
       Color borderColor,
       Color bgColor,
@@ -746,7 +1250,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
           borderRadius: BorderRadius.circular(5),
           child: Stack(
             children: [
-              // 背景图层（与桌面端一致）
+              // 背景图层
               Positioned.fill(
                 child: Image.asset(
                   bgAsset,
@@ -847,7 +1351,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                         ),
                       ],
                     ),
-                    // 分隔线（与桌面端一致）
+                    // 分隔线
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Container(
@@ -919,7 +1423,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     );
   }
 
-  /// 评级列表项属性行（与桌面端完全一致）
+  /// 评级列表项属性行
   Widget _buildTierItemStats(
     SpellCardTierItem spellCard,
     Color accentColor,
@@ -1069,7 +1573,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
 
-  /// 单个属性项（与桌面端完全一致）
+  /// 单个属性项
   Widget _buildStatItem(
     IconData icon,
     String label,
@@ -1421,5 +1925,32 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     }
 
     return const SizedBox.shrink();
+  }
+}
+
+class _ToolbarHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double height;
+  final Widget child;
+
+  _ToolbarHeaderDelegate({required this.height, required this.child});
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return SizedBox(height: maxExtent, child: child);
+  }
+
+  @override
+  bool shouldRebuild(covariant _ToolbarHeaderDelegate oldDelegate) {
+    return height != oldDelegate.height || child != oldDelegate.child;
   }
 }

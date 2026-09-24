@@ -213,6 +213,15 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
     );
   }
 
+  String _formatViewCount(int count) {
+    if (count >= 10000) {
+      return '${(count / 10000).toStringAsFixed(1)}w';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}k';
+    }
+    return count.toString();
+  }
+
   /// 角色缩略图
   Widget _buildCharacterImage(
     BuildContext context,
@@ -223,25 +232,18 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
     bool isDark,
   ) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(8, 8, 8, 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: widget.isSelected
-              ? goldColor.withValues(alpha: 0.6)
-              : scrollBrown.withValues(alpha: isDark ? 0.3 : 0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+        border: Border(
+          bottom: BorderSide(
+            color: widget.isSelected
+                ? goldColor.withValues(alpha: 0.6)
+                : scrollBrown.withValues(alpha: isDark ? 0.3 : 0.2),
+            width: 1.5,
           ),
-        ],
+        ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.zero,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -302,6 +304,43 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
                 ),
               ),
             ),
+            // 浏览量显示（图片右上角）
+            if (widget.character.viewCount > 0)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(6),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.visibility,
+                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        _formatViewCount(widget.character.viewCount),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -390,43 +429,7 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
     );
   }
 
-  /// 获取渠道标签
-  Widget _buildAcquisitionTag(
-    BuildContext context,
-    Color inkColor,
-    bool isDark,
-  ) {
-    final acquisition = widget.character.acquisition;
-
-    final (
-      text,
-      color,
-      icon,
-    ) = acquisition == null || acquisition.type == AcquisitionType.unknown
-        ? ('未知', inkColor.withValues(alpha: 0.5), Icons.help_outline_rounded)
-        : switch (acquisition.type) {
-            AcquisitionType.gold => (
-              '${acquisition.cost ?? 0} 金',
-              CharacterGalleryTheme.getGold(context),
-              Icons.monetization_on_outlined,
-            ),
-            AcquisitionType.points => (
-              '${acquisition.cost ?? 0} 点',
-              CharacterGalleryTheme.getVermillion(context),
-              Icons.stars_rounded,
-            ),
-            AcquisitionType.custom => (
-              acquisition.customSource ?? '特殊',
-              CharacterGalleryTheme.getCustomSourceColor(context),
-              Icons.auto_awesome_rounded,
-            ),
-            AcquisitionType.unknown => (
-              '未知',
-              inkColor.withValues(alpha: 0.5),
-              Icons.help_outline_rounded,
-            ),
-          };
-
+  Widget _buildTagBadge(String text, Color color, IconData icon, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -443,17 +446,131 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
         children: [
           Icon(icon, size: 11, color: color),
           const SizedBox(width: 3),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// 获取渠道标签 (包含额外检查、用户组、VIP等级的优先级判断)
+  Widget _buildAcquisitionTag(
+    BuildContext context,
+    Color inkColor,
+    bool isDark,
+  ) {
+    // 1. 额外检查
+    if (widget.character.othercheckKeyName != null &&
+        widget.character.othercheckKeyName!.isNotEmpty) {
+      return _buildTagBadge(
+        '${widget.character.othercheckKeyName}: ${widget.character.othercheckPoint ?? 0}',
+        CharacterGalleryTheme.getCustomSourceColor(context),
+        Icons.card_giftcard_rounded,
+        isDark,
+      );
+    }
+
+    // 2. 特殊用户组
+    if (widget.character.groupName != null &&
+        widget.character.groupName!.isNotEmpty) {
+      return _buildTagBadge(
+        widget.character.groupName!,
+        CharacterGalleryTheme.getSpecialColor(context),
+        Icons.military_tech_outlined,
+        isDark,
+      );
+    }
+
+    // 3. 捐助者
+    if (widget.character.viplevel != null && widget.character.viplevel! > 0) {
+      return _buildTagBadge(
+        '捐助者 Lv.${widget.character.viplevel}',
+        CharacterGalleryTheme.sakuraPink,
+        Icons.volunteer_activism,
+        isDark,
+      );
+    }
+
+    // 4. 基础获取方式
+    final acquisition = widget.character.acquisition;
+    final (
+      String text,
+      Color color,
+      IconData? icon,
+    ) = acquisition == null || acquisition.type == AcquisitionType.unknown
+        ? ('未知', inkColor.withValues(alpha: 0.5), Icons.help_outline_rounded)
+        : switch (acquisition.type) {
+            AcquisitionType.gold =>
+              (acquisition.cost ?? 0) == 0
+                  ? ('免费获取', const Color(0xFF10B981), Icons.money_off)
+                  : (
+                      '${acquisition.cost ?? 0} 金',
+                      const Color(0xFFF59E0B),
+                      Icons.monetization_on,
+                    ),
+            AcquisitionType.points =>
+              (acquisition.cost ?? 0) == 0
+                  ? ('免费获取', const Color(0xFF10B981), Icons.money_off)
+                  : (
+                      '${acquisition.cost ?? 0} 点',
+                      const Color(0xFF60A5FA),
+                      Icons.bolt,
+                    ),
+            AcquisitionType.custom => (
+              acquisition.customSource ?? '特殊',
+              CharacterGalleryTheme.getCustomSourceColor(context),
+              null,
+            ),
+            AcquisitionType.unknown => (
+              '未知',
+              inkColor.withValues(alpha: 0.5),
+              Icons.help_outline_rounded,
+            ),
+          };
+
+    if (icon == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: isDark ? 0.15 : 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.3 : 0.2),
+            width: 0.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return _buildTagBadge(text, color, icon, isDark);
   }
 }
 

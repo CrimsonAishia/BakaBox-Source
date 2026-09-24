@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/core.dart';
 import '../../../desktop/widgets/lobby/lobby_user_profile_panel.dart';
+import '../../../desktop/games/lobby_game.dart';
 
 /// 移动端在线玩家列表 BottomSheet 组件
 ///
@@ -26,9 +27,13 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
   /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中, 'warming'=暖服中
   String? _statusFilter;
 
+  Set<String> _followedIds = {};
+  String? _highlightedUserId;
+
   @override
   void initState() {
     super.initState();
+    _loadFollowedIds();
     // 打开时请求一次全服在线用户列表
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -37,9 +42,15 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
     });
   }
 
+  void _loadFollowedIds() {
+    final list = StorageUtils.getStringList('lobby_followed_user_ids');
+    _followedIds = list.toSet();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    LobbyGame.activeInstance?.cancelFocus();
     super.dispose();
   }
 
@@ -87,6 +98,108 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
     return searchedUsers.where((u) => _matchesFilter(u, filter)).length;
   }
 
+  /// 兜底去重，确保列表中同一用户只出现一次。
+  List<LobbyUser> _dedupUsers(List<LobbyUser> users) {
+    String? selfBizId;
+    for (final user in users) {
+      if (user.isSelf &&
+          user.businessUserId != null &&
+          user.businessUserId!.isNotEmpty) {
+        selfBizId = user.businessUserId;
+        break;
+      }
+    }
+
+    final seen = <String>{};
+    var selfKept = false;
+    final result = <LobbyUser>[];
+    for (final user in users) {
+      if (user.isSelf) {
+        if (selfKept) continue;
+        selfKept = true;
+        result.add(user);
+        continue;
+      }
+      if (selfBizId != null &&
+          user.businessUserId != null &&
+          user.businessUserId!.isNotEmpty &&
+          user.businessUserId == selfBizId) {
+        continue;
+      }
+      final key =
+          (user.businessUserId != null && user.businessUserId!.isNotEmpty)
+          ? 'biz_${user.businessUserId}'
+          : 'uid_${user.userId}';
+      if (seen.add(key)) {
+        result.add(user);
+      }
+    }
+    return result;
+  }
+
+  void _showPlayerContextMenu(
+    BuildContext context,
+    LobbyUser user,
+    bool isFollowed,
+    Offset globalPosition,
+  ) {
+    setState(() => _highlightedUserId = user.userId);
+
+    // 移动端面板位于底部，遮挡了下方 70% 的高度
+    // 为了让角色显示在上方 30% 可视区域的中心稍偏下一点（防贴顶），偏移量设为屏幕高度的 25%
+    final screenHeight = MediaQuery.of(context).size.height;
+    LobbyGame.activeInstance?.focusOnUser(
+      user.userId,
+      panelOffset: Offset(0, screenHeight * 0.25),
+    );
+
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (ctx) => _MobilePlayerPopupMenu(
+        position: globalPosition,
+        isFollowed: isFollowed,
+        onInvestigate: () {
+          entry.remove();
+          LobbyGame.activeInstance?.cancelFocus();
+          setState(() => _highlightedUserId = null);
+          LobbyUserProfilePanel.show(context, user);
+        },
+        onToggleFollow: () {
+          entry.remove();
+          _toggleFollow(user, isFollowed);
+          LobbyGame.activeInstance?.cancelFocus();
+          setState(() => _highlightedUserId = null);
+        },
+        onDismiss: () {
+          entry.remove();
+          LobbyGame.activeInstance?.cancelFocus();
+          setState(() => _highlightedUserId = null);
+        },
+      ),
+    );
+
+    overlay.insert(entry);
+  }
+
+  void _toggleFollow(LobbyUser user, bool isFollowed) {
+    setState(() {
+      if (isFollowed) {
+        _followedIds.remove(user.businessUserId);
+      } else {
+        if (user.businessUserId != null && user.businessUserId!.isNotEmpty) {
+          _followedIds.add(user.businessUserId!);
+        }
+      }
+      StorageUtils.setStringList(
+        'lobby_followed_user_ids',
+        _followedIds.toList(),
+      );
+    });
+    LobbyGame.activeInstance?.reloadFollowedUsers();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -105,15 +218,34 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
           final countQueuing = _countForFilter(searchedUsers, 'queuing');
           final countWarming = _countForFilter(searchedUsers, 'warming');
 
+          final currentMapUserIds = state.users.map((u) => u.userId).toSet();
+
           final displayUsers =
               searchedUsers
                   .where((u) => _matchesFilter(u, _statusFilter))
                   .toList()
                 ..sort((a, b) {
-                  if (a.isSelf) return -1;
-                  if (b.isSelf) return 1;
-                  return a.displayName.compareTo(b.displayName);
+                  // 1. 自己最前
+                  if (a.isSelf != b.isSelf) return a.isSelf ? -1 : 1;
+                  // 2. 无名玩家最后
+                  final aNoName = a.displayName.trim().isEmpty || a.isAnonymous;
+                  final bNoName = b.displayName.trim().isEmpty || b.isAnonymous;
+                  if (aNoName != bNoName) return aNoName ? 1 : -1;
+                  // 3. 关注用户靠前
+                  final aFollowed = _followedIds.contains(a.businessUserId);
+                  final bFollowed = _followedIds.contains(b.businessUserId);
+                  if (aFollowed != bFollowed) return aFollowed ? -1 : 1;
+                  // 4. 当前地图靠前
+                  final aOnMap = currentMapUserIds.contains(a.userId);
+                  final bOnMap = currentMapUserIds.contains(b.userId);
+                  if (aOnMap != bOnMap) return aOnMap ? -1 : 1;
+                  // 5. 按名称排序
+                  return a.displayName.toLowerCase().compareTo(
+                    b.displayName.toLowerCase(),
+                  );
                 });
+
+          final dedupedUsers = _dedupUsers(displayUsers);
 
           return SafeArea(
             top: false,
@@ -179,9 +311,59 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
                             horizontal: 12,
                             vertical: 4,
                           ),
-                          itemCount: displayUsers.length,
+                          itemCount: dedupedUsers.length,
+                          findChildIndexCallback: (Key key) {
+                            if (key is ValueKey<String>) {
+                              final id = key.value;
+                              final index = dedupedUsers.indexWhere((u) {
+                                final uid = u.businessUserId?.isNotEmpty == true
+                                    ? 'biz_${u.businessUserId}'
+                                    : 'uid_${u.userId}';
+                                return uid == id;
+                              });
+                              if (index >= 0) return index;
+                            }
+                            return null;
+                          },
                           itemBuilder: (context, index) {
-                            return _PlayerTileMobile(user: displayUsers[index]);
+                            final user = dedupedUsers[index];
+                            final isFollowed = _followedIds.contains(
+                              user.businessUserId,
+                            );
+                            final isHighlighted =
+                                _highlightedUserId == user.userId;
+                            final isOnCurrentMap = currentMapUserIds.contains(
+                              user.userId,
+                            );
+                            String? userMapName;
+                            if (isOnCurrentMap) {
+                              userMapName = state.mapConfig?.displayName;
+                            } else if (user.mapId != null) {
+                              userMapName = '地图 ${user.mapId}';
+                            }
+
+                            return _PlayerListTileMobile(
+                              user: user,
+                              isFollowed: isFollowed,
+                              isHighlighted: isHighlighted,
+                              isOnCurrentMap: isOnCurrentMap,
+                              currentMapName: isOnCurrentMap
+                                  ? state.mapConfig?.displayName
+                                  : userMapName,
+                              onTapDown: user.isAnonymous
+                                  ? null
+                                  : user.isSelf
+                                  ? (_) => LobbyUserProfilePanel.show(
+                                      context,
+                                      user,
+                                    )
+                                  : (details) => _showPlayerContextMenu(
+                                      context,
+                                      user,
+                                      isFollowed,
+                                      details.globalPosition,
+                                    ),
+                            );
                           },
                         ),
                 ),
@@ -393,33 +575,54 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
 }
 
 /// 玩家列表项（移动端）
-///
-/// 点击已登录用户弹出 [LobbyUserProfilePanel] 九宫格面板。
-class _PlayerTileMobile extends StatelessWidget {
+class _PlayerListTileMobile extends StatelessWidget {
   final LobbyUser user;
+  final bool isFollowed;
+  final bool isHighlighted;
+  final bool isOnCurrentMap;
+  final String? currentMapName;
+  final void Function(TapDownDetails)? onTapDown;
 
-  const _PlayerTileMobile({required this.user});
+  const _PlayerListTileMobile({
+    required this.user,
+    this.isFollowed = false,
+    this.isHighlighted = false,
+    this.isOnCurrentMap = true,
+    this.currentMapName,
+    this.onTapDown,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: isHighlighted
+            ? const Color(0xFF40C4FF).withValues(alpha: 0.10)
+            : Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: user.isSelf
+          color: isHighlighted
+              ? const Color(0xFF40C4FF).withValues(alpha: 0.7)
+              : user.isSelf
               ? AppColors.lobbyBlue.withValues(alpha: 0.4)
               : Colors.white.withValues(alpha: 0.05),
-          width: 1,
+          width: isHighlighted ? 1.5 : 1,
         ),
+        boxShadow: isHighlighted
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF40C4FF).withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: user.isAnonymous
-              ? null
-              : () => LobbyUserProfilePanel.show(context, user),
+          onTapDown: onTapDown,
           borderRadius: BorderRadius.circular(10),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -428,15 +631,19 @@ class _PlayerTileMobile extends StatelessWidget {
                 // 头像
                 _buildAvatar(user),
                 const SizedBox(width: 12),
-                // 名称和状态
+                // 名称、状态、地图
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         user.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isFollowed
+                              ? const Color(0xFFFFD740)
+                              : isHighlighted
+                              ? const Color(0xFF40C4FF)
+                              : Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -461,7 +668,9 @@ class _PlayerTileMobile extends StatelessWidget {
                             child: Text(
                               user.statusText ?? '在线',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: isHighlighted
+                                    ? const Color(0xFF81D4FA)
+                                    : Colors.white.withValues(alpha: 0.5),
                                 fontSize: 12,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -469,10 +678,43 @@ class _PlayerTileMobile extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      // 第三行：地图标签
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isOnCurrentMap
+                              ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
+                              : Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: isOnCurrentMap
+                                ? const Color(0xFF4ADE80).withValues(alpha: 0.3)
+                                : Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Text(
+                          isOnCurrentMap
+                              ? currentMapName != null
+                                    ? '$currentMapName（本地图）'
+                                    : '本地图'
+                              : (currentMapName ?? '其他地图'),
+                          style: TextStyle(
+                            color: isOnCurrentMap
+                                ? const Color(0xFF4ADE80).withValues(alpha: 0.8)
+                                : Colors.white.withValues(alpha: 0.4),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                // 自己的标识
+                // 自己的标识或箭头
                 if (user.isSelf)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -551,6 +793,133 @@ class _PlayerTileMobile extends StatelessWidget {
           ? AppColors.lobbyBlue.withValues(alpha: 0.3)
           : Colors.white.withValues(alpha: 0.1),
       child: const Icon(Icons.person, size: 22, color: Colors.white54),
+    );
+  }
+}
+
+/// 移动端玩家交互弹出菜单
+class _MobilePlayerPopupMenu extends StatelessWidget {
+  final Offset position;
+  final bool isFollowed;
+  final VoidCallback onInvestigate;
+  final VoidCallback onToggleFollow;
+  final VoidCallback onDismiss;
+
+  const _MobilePlayerPopupMenu({
+    required this.position,
+    required this.isFollowed,
+    required this.onInvestigate,
+    required this.onToggleFollow,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 获取屏幕尺寸，计算菜单实际位置（防止溢出）
+    final screenSize = MediaQuery.of(context).size;
+    const menuWidth = 120.0;
+    const menuHeight = 90.0; // 适当增加高度适应移动端触控
+    final dx = (position.dx + menuWidth > screenSize.width)
+        ? position.dx - menuWidth
+        : position.dx;
+    final dy = (position.dy + menuHeight > screenSize.height)
+        ? position.dy - menuHeight
+        : position.dy;
+
+    return Stack(
+      children: [
+        // 背景遮罩（透明，点击关闭）
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onDismiss,
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+        // 菜单本体
+        Positioned(
+          left: dx,
+          top: dy,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: menuWidth,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117).withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _MobilePopupMenuItem(
+                    icon: Icons.search,
+                    label: '调查',
+                    onTap: onInvestigate,
+                  ),
+                  _MobilePopupMenuItem(
+                    icon: isFollowed ? Icons.favorite : Icons.favorite_border,
+                    iconColor: isFollowed ? const Color(0xFFFFD740) : null,
+                    label: isFollowed ? '取消关注' : '关注',
+                    onTap: onToggleFollow,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 移动端弹出菜单项
+class _MobilePopupMenuItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color? iconColor;
+  final VoidCallback onTap;
+
+  const _MobilePopupMenuItem({
+    required this.label,
+    required this.icon,
+    this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: iconColor ?? Colors.white70),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.95),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -103,7 +103,7 @@ class SubModelSelectorMobile extends StatelessWidget {
           const SizedBox(height: 14),
           // 子模型卡片列表
           SizedBox(
-            height: 110,
+            height: 140,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: subModels.length,
@@ -196,45 +196,45 @@ class _SubModelCardState extends State<_SubModelCard> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 顶部装饰条
-            Container(
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: widget.isSelected
-                      ? [
-                          goldColor.withValues(alpha: 0.8),
-                          goldColor,
-                          goldColor.withValues(alpha: 0.8),
-                        ]
-                      : [
-                          vermillionColor.withValues(alpha: 0.8),
-                          vermillionColor,
-                          vermillionColor.withValues(alpha: 0.8),
-                        ],
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 顶部装饰条
+              Container(
+                height: 4,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: widget.isSelected
+                        ? [
+                            goldColor.withValues(alpha: 0.8),
+                            goldColor,
+                            goldColor.withValues(alpha: 0.8),
+                          ]
+                        : [
+                            vermillionColor.withValues(alpha: 0.8),
+                            vermillionColor,
+                            vermillionColor.withValues(alpha: 0.8),
+                          ],
+                  ),
                 ),
               ),
-            ),
-            // 缩略图
-            Expanded(
-              child: _buildThumbnail(
-                context,
-                washiColor,
-                scrollBrown,
-                goldColor,
-                vermillionColor,
-                isDark,
+              // 缩略图
+              Expanded(
+                child: _buildThumbnail(
+                  context,
+                  washiColor,
+                  scrollBrown,
+                  goldColor,
+                  vermillionColor,
+                  isDark,
+                ),
               ),
-            ),
-            // 名称和获取渠道
-            _buildName(context, inkColor, goldColor, isDark),
-          ],
+              // 名称和获取渠道
+              _buildName(context, inkColor, goldColor, isDark),
+            ],
+          ),
         ),
       ),
     );
@@ -250,25 +250,18 @@ class _SubModelCardState extends State<_SubModelCard> {
     bool isDark,
   ) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(6, 6, 6, 4),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: widget.isSelected
-              ? goldColor.withValues(alpha: 0.5)
-              : scrollBrown.withValues(alpha: isDark ? 0.25 : 0.2),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+        border: Border(
+          bottom: BorderSide(
+            color: widget.isSelected
+                ? goldColor.withValues(alpha: 0.5)
+                : scrollBrown.withValues(alpha: isDark ? 0.25 : 0.2),
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.zero,
         child: DiskCachedImage(
           imageUrl: widget.subModel.thumbnailUrl,
           fit: BoxFit.cover,
@@ -322,8 +315,111 @@ class _SubModelCardState extends State<_SubModelCard> {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 3),
-          // 获取渠道
-          _buildAcquisitionTag(context, inkColor, isDark),
+          // 先显示 othercheck，然后 groupName，然后捐助者，最后获取方式
+          if (widget.subModel.othercheckKeyName != null &&
+              widget.subModel.othercheckKeyName!.isNotEmpty)
+            _buildOtherCheckTag(context, isDark)
+          else if (widget.subModel.groupName != null &&
+              widget.subModel.groupName!.isNotEmpty)
+            _buildGroupTag(context, isDark)
+          else if (widget.subModel.viplevel != null &&
+              widget.subModel.viplevel! > 0)
+            _buildViplevelTag(context, isDark)
+          else
+            _buildAcquisitionTag(context, inkColor, isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtherCheckTag(BuildContext context, bool isDark) {
+    final color = CharacterGalleryTheme.getCustomSourceColor(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.15 : 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.card_giftcard_rounded, size: 9, color: color),
+          const SizedBox(width: 2),
+          Flexible(
+            child: Text(
+              '${widget.subModel.othercheckKeyName}: ${widget.subModel.othercheckPoint ?? 0}',
+              style: TextStyle(
+                color: color,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupTag(BuildContext context, bool isDark) {
+    final color = CharacterGalleryTheme.getSpecialColor(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.15 : 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.military_tech_outlined, size: 9, color: color),
+          const SizedBox(width: 2),
+          Flexible(
+            child: Text(
+              widget.subModel.groupName!,
+              style: TextStyle(
+                color: color,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViplevelTag(BuildContext context, bool isDark) {
+    final color = CharacterGalleryTheme.sakuraPink;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.15 : 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.volunteer_activism, size: 9, color: color),
+          const SizedBox(width: 2),
+          Flexible(
+            child: Text(
+              'Lv.${widget.subModel.viplevel}',
+              style: TextStyle(
+                color: color,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
@@ -338,26 +434,32 @@ class _SubModelCardState extends State<_SubModelCard> {
     final acquisition = widget.subModel.acquisition;
 
     final (
-      text,
-      color,
-      icon,
+      String text,
+      Color color,
+      IconData? icon,
     ) = acquisition == null || acquisition.type == AcquisitionType.unknown
         ? ('未知', inkColor.withValues(alpha: 0.5), Icons.help_outline_rounded)
         : switch (acquisition.type) {
-            AcquisitionType.gold => (
-              '${acquisition.cost ?? 0} 金',
-              CharacterGalleryTheme.getGold(context),
-              Icons.monetization_on_outlined,
-            ),
-            AcquisitionType.points => (
-              '${acquisition.cost ?? 0} 点',
-              CharacterGalleryTheme.getVermillion(context),
-              Icons.stars_rounded,
-            ),
+            AcquisitionType.gold =>
+              (acquisition.cost ?? 0) == 0
+                  ? ('免费获取', const Color(0xFF10B981), Icons.money_off)
+                  : (
+                      '${acquisition.cost ?? 0} 金',
+                      CharacterGalleryTheme.getGold(context),
+                      Icons.monetization_on,
+                    ),
+            AcquisitionType.points =>
+              (acquisition.cost ?? 0) == 0
+                  ? ('免费获取', const Color(0xFF10B981), Icons.money_off)
+                  : (
+                      '${acquisition.cost ?? 0} 点',
+                      const Color(0xFF60A5FA),
+                      Icons.bolt,
+                    ),
             AcquisitionType.custom => (
               acquisition.customSource ?? '特殊',
               CharacterGalleryTheme.getCustomSourceColor(context),
-              Icons.auto_awesome_rounded,
+              null,
             ),
             AcquisitionType.unknown => (
               '未知',
@@ -376,8 +478,10 @@ class _SubModelCardState extends State<_SubModelCard> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 9, color: color),
-          const SizedBox(width: 2),
+          if (icon != null) ...[
+            Icon(icon, size: 9, color: color),
+            const SizedBox(width: 2),
+          ],
           Flexible(
             child: Text(
               text,

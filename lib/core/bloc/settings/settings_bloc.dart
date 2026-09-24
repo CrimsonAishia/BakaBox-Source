@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:async';
+// ignore: depend_on_referenced_packages
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -379,6 +381,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     emit(state.copyWith(isLoading: true));
     try {
+      // 清理 CachedNetworkImage 的默认缓存管理器缓存
+      try {
+        await DefaultCacheManager().emptyCache();
+      } catch (e) {
+        LogService.d('清理 DefaultCacheManager 失败: $e');
+      }
+
       // 清理磁盘图片缓存
       await DiskImageCacheService.instance.clearCache();
 

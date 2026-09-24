@@ -1,14 +1,14 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/core.dart';
-import '../../core/widgets/disk_cached_image.dart';
+import '../../core/bloc/activity/activity_bloc.dart';
+import '../../desktop/widgets/welcome/activity_banner_carousel.dart';
+import '../../desktop/widgets/welcome/online_trend_chart.dart';
+import '../../desktop/widgets/welcome/update_logs_panel.dart';
 
 /// 移动端首页
 class WelcomeMobile extends StatefulWidget {
@@ -27,12 +27,16 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   void _loadData() {
     final serverBloc = context.read<ServerBloc>();
     final serverStatsBloc = context.read<ServerStatsBloc>();
+    final updateLogBloc = context.read<UpdateLogBloc>();
+    final activityBloc = context.read<ActivityBloc>();
 
     if (serverBloc.state.serverCategories.isEmpty &&
         !serverBloc.state.isLoading) {
@@ -44,6 +48,14 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
     if (serverStatsBloc.state.stats == null &&
         !serverStatsBloc.state.isLoading) {
       serverStatsBloc.add(const ServerStatsFetch());
+    }
+
+    if (activityBloc.state.activities.isEmpty &&
+        activityBloc.state.status != ActivityStatus.loading) {
+      activityBloc.add(const ActivityFetch());
+    }
+    if (updateLogBloc.state.logs.isEmpty && !updateLogBloc.state.isLoading) {
+      updateLogBloc.add(const UpdateLogFetch());
     }
   }
 
@@ -77,10 +89,79 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              SliverToBoxAdapter(child: _buildHeader(context, isDark)),
+              SliverToBoxAdapter(child: _buildHeaderAndStats(context, isDark)),
               SliverToBoxAdapter(child: _buildQuickActions(context, isDark)),
-              SliverToBoxAdapter(child: _buildLiveStats(context, isDark)),
-              SliverToBoxAdapter(child: _buildTrendSection(context, isDark)),
+              BlocBuilder<ActivityBloc, ActivityState>(
+                builder: (context, state) {
+                  if (state.activities.isEmpty) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: const ActivityBannerCarousel(isMobile: true),
+                    ),
+                  );
+                },
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: SizedBox(
+                    height: 280,
+                    child: UpdateLogsPanel(isDark: isDark),
+                  ),
+                ),
+              ),
+              BlocBuilder<ServerStatsBloc, ServerStatsState>(
+                builder: (context, statsState) {
+                  final stats = statsState.stats;
+                  if (stats == null) {
+                    return const SliverToBoxAdapter(child: SizedBox());
+                  }
+                  return SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildChartCard(
+                        context,
+                        isDark,
+                        '在线趋势',
+                        SizedBox(
+                          height: 160,
+                          child: DailyTrendChartWidget(
+                            isDark: isDark,
+                            stats: stats,
+                          ),
+                        ),
+                        0,
+                      ),
+                      _buildChartCard(
+                        context,
+                        isDark,
+                        '热门时段',
+                        SizedBox(
+                          height: 160,
+                          child: HourlyBarChartWidget(
+                            isDark: isDark,
+                            stats: stats,
+                          ),
+                        ),
+                        1,
+                      ),
+                      _buildChartCard(
+                        context,
+                        isDark,
+                        '热门地图',
+                        TopMapsListWidget(
+                          isDark: isDark,
+                          maps: stats.topMaps,
+                          isMobile: true,
+                        ),
+                        2,
+                      ),
+                    ]),
+                  );
+                },
+              ),
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
@@ -89,213 +170,380 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark) {
-    return Container(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            MediaQuery.of(context).padding.top + 16,
-            20,
-            20,
-          ),
+  Widget _buildHeaderAndStats(BuildContext context, bool isDark) {
+    final paddingTop = MediaQuery.of(context).padding.top;
+    return Stack(
+      children: [
+        // 顶部背景渐变 (类似于桌面端的背景)
+        Container(
+          height: paddingTop + 180,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDark
-                  ? [AppColors.slate800, AppColors.slate900]
-                  : [AppColors.blue500, const Color(0xFF1D4ED8)],
+                  ? [
+                      AppColors.slate900,
+                      AppColors.slate800,
+                      const Color(0xFF1A1A2E),
+                    ]
+                  : [
+                      const Color(0xFFE3F2FD),
+                      const Color(0xFFE0F7FA),
+                      const Color(0xFFEDE7F6),
+                    ],
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 40,
-                  height: 40,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'BakaBox',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.red500, Color(0xFFF97316)],
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'CS2',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '查看服务器状态和数据统计',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: -0.1, end: 0, duration: 350.ms);
+        ),
+        Column(
+          children: [
+            SizedBox(height: paddingTop + 16),
+            // 问候语头部
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _WelcomeHeaderMobile(isDark: isDark),
+            ),
+            const SizedBox(height: 24),
+            // 悬浮数据统计卡片
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _StatsBoardMobile(isDark: isDark),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildQuickActions(BuildContext context, bool isDark) {
     return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: _QuickActionCard(
-                  icon: MdiIcons.forum,
-                  label: '社区论坛',
-                  color: AppColors.amber500,
-                  onTap: () => _openUrl(_forumUrl),
-                  isDark: isDark,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _QuickActionItem(
+                icon: MdiIcons.forum,
+                label: '社区论坛',
+                color: AppColors.amber500,
+                onTap: () => _openUrl(_forumUrl),
+                isDark: isDark,
+              ),
+            ),
+            SizedBox(
+              height: 40,
+              width: 1,
+              child: CustomPaint(
+                painter: _DashedLinePainter(
+                  color: isDark ? Colors.white24 : Colors.black12,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _QuickActionCard(
-                  icon: MdiIcons.web,
-                  label: '官方网站',
-                  color: AppColors.violet500,
-                  onTap: () => _openUrl(_websiteUrl),
-                  isDark: isDark,
+            ),
+            Expanded(
+              child: _QuickActionItem(
+                icon: MdiIcons.web,
+                label: '官方网站',
+                color: AppColors.violet500,
+                onTap: () => _openUrl(_websiteUrl),
+                isDark: isDark,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChartCard(
+    BuildContext context,
+    bool isDark,
+    String title,
+    Widget child,
+    int index,
+  ) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.blue500,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : AppColors.slate800,
                 ),
               ),
             ],
           ),
-        )
-        .animate()
-        .fadeIn(duration: 400.ms, delay: 100.ms)
-        .slideY(begin: 0.1, end: 0, duration: 350.ms);
-  }
-
-  Widget _buildLiveStats(BuildContext context, bool isDark) {
-    return BlocBuilder<ServerStatsBloc, ServerStatsState>(
-      builder: (context, statsState) {
-        final totalServers = statsState.stats?.totalServerCount ?? 0;
-        final totalOnlinePlayers = statsState.stats?.currentPlayers ?? 0;
-
-        return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _LiveStatCard(
-                      icon: MdiIcons.server,
-                      value: totalServers.toString(),
-                      label: '服务器',
-                      color: AppColors.blue500,
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _LiveStatCard(
-                      icon: MdiIcons.accountGroup,
-                      value: totalOnlinePlayers.toString(),
-                      label: '在线玩家',
-                      color: AppColors.emerald500,
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
-              ),
-            )
-            .animate()
-            .fadeIn(duration: 400.ms, delay: 200.ms)
-            .slideY(begin: 0.1, end: 0, duration: 350.ms);
-      },
-    );
-  }
-
-  Widget _buildTrendSection(BuildContext context, bool isDark) {
-    return BlocBuilder<ServerStatsBloc, ServerStatsState>(
-      builder: (context, statsState) {
-        return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        MdiIcons.chartLine,
-                        size: 18,
-                        color: isDark ? Colors.white70 : AppColors.slate500,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '数据统计',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : AppColors.slate800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _TrendCard(isDark: isDark, stats: statsState.stats),
-                ],
-              ),
-            )
-            .animate()
-            .fadeIn(duration: 400.ms, delay: 300.ms)
-            .slideY(begin: 0.1, end: 0, duration: 350.ms);
-      },
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
     );
   }
 }
 
-/// 快捷入口卡片 - 统一风格
-class _QuickActionCard extends StatelessWidget {
+/// 移动端专属问候语头部
+class _WelcomeHeaderMobile extends StatelessWidget {
+  final bool isDark;
+
+  const _WelcomeHeaderMobile({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final username = authState.userInfo?.username;
+        final greeting = _getGreeting();
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    username != null
+                        ? '$greeting，\n$username 👋'
+                        : '$greeting 👋',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : AppColors.slate800,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _getSubtitle(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : AppColors.slate600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 右侧 Logo 或 头像
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 28,
+                backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+                backgroundImage: const AssetImage('assets/images/logo.png'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 6) return '夜深了';
+    if (hour < 12) return '早上好';
+    if (hour < 14) return '中午好';
+    if (hour < 18) return '下午好';
+    if (hour < 22) return '晚上好';
+    return '夜深了';
+  }
+
+  String _getSubtitle() {
+    final hour = DateTime.now().hour;
+    if (hour < 6) return '还在熬夜？注意休息哦 🌙';
+    if (hour < 12) return '今天也是充满活力的一天！☀️';
+    if (hour < 14) return '午饭吃了吗？🍱';
+    if (hour < 18) return '下午好，来一局？🎮';
+    if (hour < 22) return '晚上好，服务器正在等你 🚀';
+    return '这么晚还在玩？注意休息哦 ☕';
+  }
+}
+
+/// 移动端数据概览卡片 (悬浮在顶部渐变之上)
+class _StatsBoardMobile extends StatelessWidget {
+  final bool isDark;
+
+  const _StatsBoardMobile({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.slate800.withValues(alpha: 0.8)
+            : Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: BlocBuilder<ServerStatsBloc, ServerStatsState>(
+        builder: (context, statsState) {
+          final totalServers = statsState.stats?.totalServerCount ?? 0;
+          final currentPlayers = statsState.stats?.currentPlayers ?? 0;
+          final todayMax = statsState.stats?.todayMax ?? 0;
+
+          return Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  context,
+                  icon: MdiIcons.accountGroup,
+                  color: AppColors.emerald500,
+                  value: currentPlayers.toString(),
+                  label: '在线玩家',
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  context,
+                  icon: MdiIcons.server,
+                  color: AppColors.blue500,
+                  value: totalServers.toString(),
+                  label: '服务器',
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  context,
+                  icon: MdiIcons.trendingUp,
+                  color: AppColors.amber500,
+                  value: todayMax.toString(),
+                  label: '今日峰值',
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.slate800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white54 : AppColors.slate500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
   final bool isDark;
 
-  const _QuickActionCard({
+  const _QuickActionItem({
     required this.icon,
     required this.label,
     required this.color,
@@ -312,18 +560,9 @@ class _QuickActionCard extends StatelessWidget {
           HapticFeedback.lightImpact();
           onTap();
         },
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.05),
-            ),
-          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -335,7 +574,7 @@ class _QuickActionCard extends StatelessWidget {
                 ),
                 child: Icon(icon, color: color, size: 18),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
@@ -352,1039 +591,25 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-/// 实时数据卡片
-class _LiveStatCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
+class _DashedLinePainter extends CustomPainter {
   final Color color;
-  final bool isDark;
 
-  const _LiveStatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-    required this.isDark,
-  });
+  _DashedLinePainter({required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : AppColors.slate800,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white54 : AppColors.slate400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 趋势卡片
-class _TrendCard extends StatefulWidget {
-  final bool isDark;
-  final ServerStatsResponse? stats;
-
-  const _TrendCard({required this.isDark, this.stats});
-
-  @override
-  State<_TrendCard> createState() => _TrendCardState();
-}
-
-class _TrendCardState extends State<_TrendCard>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  static const _tabs = ['趋势', '时段', '服务器', '地图'];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final stats = widget.stats;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: widget.isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: widget.isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15), // 略小于外层圆角，避免边框被裁剪
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: widget.isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.05),
-                  ),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: AppColors.blue500,
-                unselectedLabelColor: widget.isDark
-                    ? Colors.white54
-                    : AppColors.slate400,
-                labelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-                indicatorColor: AppColors.blue500,
-                indicatorSize: TabBarIndicatorSize.label,
-                dividerColor: Colors.transparent,
-                tabs: _tabs.map((t) => Tab(text: t, height: 40)).toList(),
-              ),
-            ),
-            SizedBox(
-              height: 240,
-              child: stats == null || stats.dailyStats.isEmpty
-                  ? _buildLoading()
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _DailyTrendChart(isDark: widget.isDark, stats: stats),
-                        _HourlyChart(
-                          isDark: widget.isDark,
-                          hourlyStats: stats.hourlyStats,
-                          peakHour: stats.peakHour,
-                        ),
-                        _TopServersList(
-                          isDark: widget.isDark,
-                          servers: stats.topServers,
-                        ),
-                        _TopMapsList(
-                          isDark: widget.isDark,
-                          maps: stats.topMaps,
-                        ),
-                      ],
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: widget.isDark ? Colors.white38 : AppColors.slate400,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '加载中...',
-            style: TextStyle(
-              fontSize: 13,
-              color: widget.isDark ? Colors.white38 : AppColors.slate400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 每日趋势图 - 点击显示数据
-class _DailyTrendChart extends StatelessWidget {
-  final bool isDark;
-  final ServerStatsResponse stats;
-
-  const _DailyTrendChart({required this.isDark, required this.stats});
-
-  @override
-  Widget build(BuildContext context) {
-    final dailyStats = stats.dailyStats;
-    final maxY = dailyStats
-        .map((d) => d.maxPlayers)
-        .reduce(math.max)
-        .toDouble();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _LegendDot(
-                color: AppColors.blue500,
-                label: '最高 ${stats.weeklyMax}',
-              ),
-              const SizedBox(width: 20),
-              _LegendDot(
-                color: AppColors.emerald500,
-                label: '平均 ${stats.weeklyAvg}',
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: maxY / 3,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.06)
-                        : Colors.black.withValues(alpha: 0.04),
-                    strokeWidth: 1,
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 20,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= dailyStats.length) {
-                          return const SizedBox();
-                        }
-                        final parts = dailyStats[index].date.split('-');
-                        return Text(
-                          '${parts[1]}/${parts[2]}',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: isDark ? Colors.white38 : AppColors.slate400,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: (dailyStats.length - 1).toDouble(),
-                minY: 0,
-                maxY: maxY * 1.15,
-                lineBarsData: [
-                  _buildLine(
-                    dailyStats
-                        .asMap()
-                        .entries
-                        .map(
-                          (e) => FlSpot(
-                            e.key.toDouble(),
-                            e.value.maxPlayers.toDouble(),
-                          ),
-                        )
-                        .toList(),
-                    AppColors.blue500,
-                  ),
-                  _buildLine(
-                    dailyStats
-                        .asMap()
-                        .entries
-                        .map(
-                          (e) => FlSpot(
-                            e.key.toDouble(),
-                            e.value.avgPlayers.toDouble(),
-                          ),
-                        )
-                        .toList(),
-                    AppColors.emerald500,
-                  ),
-                ],
-                lineTouchData: LineTouchData(
-                  handleBuiltInTouches: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    fitInsideHorizontally: true,
-                    fitInsideVertically: true,
-                    getTooltipColor: (_) =>
-                        isDark ? AppColors.gray700 : Colors.white,
-                    tooltipRoundedRadius: 6,
-                    getTooltipItems: (spots) => spots
-                        .map(
-                          (s) => LineTooltipItem(
-                            '${s.barIndex == 0 ? "最高" : "平均"}: ${s.y.toInt()}',
-                            TextStyle(
-                              color: s.barIndex == 0
-                                  ? AppColors.blue500
-                                  : AppColors.emerald500,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  LineChartBarData _buildLine(List<FlSpot> spots, Color color) {
-    return LineChartBarData(
-      spots: spots,
-      isCurved: true,
-      color: color,
-      barWidth: 2.5,
-      isStrokeCapRound: true,
-      dotData: FlDotData(
-        show: true,
-        getDotPainter: (_, __, ___, ____) =>
-            FlDotCirclePainter(radius: 3, color: color, strokeWidth: 0),
-      ),
-      belowBarData: BarAreaData(
-        show: true,
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.0)],
-        ),
-      ),
-    );
-  }
-}
-
-/// 24小时热门时段 - 点击显示数据
-class _HourlyChart extends StatelessWidget {
-  final bool isDark;
-  final List<HourlyStat> hourlyStats;
-  final int peakHour;
-
-  const _HourlyChart({
-    required this.isDark,
-    required this.hourlyStats,
-    required this.peakHour,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (hourlyStats.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无数据',
-          style: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
-        ),
-      );
-    }
-
-    final maxY = hourlyStats
-        .map((h) => h.avgPlayers)
-        .reduce(math.max)
-        .toDouble();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(MdiIcons.fire, size: 14, color: AppColors.red500),
-              const SizedBox(width: 4),
-              Text(
-                '峰值时段 $peakHour:00',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : AppColors.slate500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxY * 1.15,
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    fitInsideHorizontally: true,
-                    fitInsideVertically: true,
-                    getTooltipColor: (_) =>
-                        isDark ? AppColors.gray700 : Colors.white,
-                    tooltipRoundedRadius: 6,
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) =>
-                        BarTooltipItem(
-                          '${hourlyStats[groupIndex].hour}:00\n${rod.toY.toInt()} 人',
-                          TextStyle(
-                            color: isDark ? Colors.white : AppColors.slate800,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11,
-                          ),
-                        ),
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 20,
-                      getTitlesWidget: (value, meta) {
-                        final hour = value.toInt();
-                        if (hour % 6 != 0) return const SizedBox();
-                        return Text(
-                          '$hour',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: isDark ? Colors.white38 : AppColors.slate400,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                gridData: FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                barGroups: hourlyStats.asMap().entries.map((e) {
-                  final isPeak = e.value.hour == peakHour;
-                  return BarChartGroupData(
-                    x: e.key,
-                    barRods: [
-                      BarChartRodData(
-                        toY: e.value.avgPlayers.toDouble(),
-                        color: isPeak
-                            ? AppColors.red500
-                            : AppColors.violet500.withValues(alpha: 0.7),
-                        width: 5,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(3),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 热门服务器列表 - 带滚动指示器
-class _TopServersList extends StatefulWidget {
-  final bool isDark;
-  final List<TopServer> servers;
-
-  const _TopServersList({required this.isDark, required this.servers});
-
-  @override
-  State<_TopServersList> createState() => _TopServersListState();
-}
-
-class _TopServersListState extends State<_TopServersList> {
-  final Map<String, String> _nameCache = {};
-  final ScrollController _scrollController = ScrollController();
-  bool _canScrollUp = false;
-  bool _canScrollDown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_updateScrollIndicators);
-    _loadNames();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _updateScrollIndicators(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_updateScrollIndicators);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(_TopServersList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.servers != widget.servers) {
-      _loadNames();
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _updateScrollIndicators(),
-      );
-    }
-  }
-
-  void _updateScrollIndicators() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    final canUp = position.pixels > 0;
-    final canDown = position.pixels < position.maxScrollExtent;
-    if (canUp != _canScrollUp || canDown != _canScrollDown) {
-      setState(() {
-        _canScrollUp = canUp;
-        _canScrollDown = canDown;
-      });
-    }
-  }
-
-  Future<void> _loadNames() async {
-    for (final server in widget.servers) {
-      if (_nameCache.containsKey(server.address)) continue;
-      final parts = server.address.split(':');
-      if (parts.length != 2) continue;
-      try {
-        final info = await SourceServerService.getServerInfo(
-          parts[0],
-          int.parse(parts[1]),
-          timeout: 3000,
-        );
-        if (mounted && info != null && info.name.isNotEmpty) {
-          setState(() => _nameCache[server.address] = info.name);
-        }
-      } catch (_) {}
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    const dashHeight = 4.0;
+    const dashSpace = 4.0;
+    double startY = 0;
+    while (startY < size.height) {
+      canvas.drawLine(Offset(0, startY), Offset(0, startY + dashHeight), paint);
+      startY += dashHeight + dashSpace;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.servers.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无数据',
-          style: TextStyle(
-            color: widget.isDark ? Colors.white38 : Colors.black38,
-          ),
-        ),
-      );
-    }
-
-    final maxVal = widget.servers.first.avgPlayers.toDouble();
-
-    return Stack(
-      children: [
-        ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          itemCount: widget.servers.length,
-          itemBuilder: (context, index) {
-            final server = widget.servers[index];
-            final ratio = server.avgPlayers / maxVal;
-            final name = _nameCache[server.address] ?? server.address;
-            final isTop3 = index < 3;
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isTop3
-                          ? AppColors.amber500.withValues(alpha: 0.15)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isTop3
-                            ? AppColors.amber500
-                            : (widget.isDark
-                                  ? Colors.white38
-                                  : AppColors.slate400),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: widget.isDark
-                                ? Colors.white
-                                : AppColors.slate800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Stack(
-                          children: [
-                            Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: widget.isDark
-                                    ? Colors.white.withValues(alpha: 0.06)
-                                    : Colors.black.withValues(alpha: 0.04),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            FractionallySizedBox(
-                              widthFactor: ratio,
-                              child: Container(
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: isTop3
-                                      ? AppColors.amber500
-                                      : AppColors.violet500,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${server.avgPlayers}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: widget.isDark
-                          ? Colors.white54
-                          : AppColors.slate500,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        // 上滚动指示器
-        if (_canScrollUp)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _ScrollIndicator(isTop: true, isDark: widget.isDark),
-          ),
-        // 下滚动指示器
-        if (_canScrollDown)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _ScrollIndicator(isTop: false, isDark: widget.isDark),
-          ),
-      ],
-    );
-  }
-}
-
-/// 热门地图列表 - 带滚动指示器
-class _TopMapsList extends StatefulWidget {
-  final bool isDark;
-  final List<TopMap> maps;
-
-  const _TopMapsList({required this.isDark, required this.maps});
-
-  @override
-  State<_TopMapsList> createState() => _TopMapsListState();
-}
-
-class _TopMapsListState extends State<_TopMapsList> {
-  final ServerApi _api = ServerApi();
-  final Map<String, MapData?> _mapCache = {};
-  final ScrollController _scrollController = ScrollController();
-  bool _canScrollUp = false;
-  bool _canScrollDown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_updateScrollIndicators);
-    _loadMaps();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _updateScrollIndicators(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_updateScrollIndicators);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(_TopMapsList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.maps != widget.maps) {
-      _loadMaps();
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _updateScrollIndicators(),
-      );
-    }
-  }
-
-  void _updateScrollIndicators() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    final canUp = position.pixels > 0;
-    final canDown = position.pixels < position.maxScrollExtent;
-    if (canUp != _canScrollUp || canDown != _canScrollDown) {
-      setState(() {
-        _canScrollUp = canUp;
-        _canScrollDown = canDown;
-      });
-    }
-  }
-
-  Future<void> _loadMaps() async {
-    for (final map in widget.maps) {
-      if (!_mapCache.containsKey(map.mapName)) {
-        final info = await _api.getMapInfo(map.mapName);
-        if (mounted) setState(() => _mapCache[map.mapName] = info);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.maps.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无数据',
-          style: TextStyle(
-            color: widget.isDark ? Colors.white38 : Colors.black38,
-          ),
-        ),
-      );
-    }
-
-    final maxVal = widget.maps.first.playCount.toDouble();
-
-    return Stack(
-      children: [
-        ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          itemCount: widget.maps.length,
-          itemBuilder: (context, index) {
-            final map = widget.maps[index];
-            final ratio = map.playCount / maxVal;
-            final mapInfo = _mapCache[map.mapName];
-            final displayName = mapInfo?.mapLabel.isNotEmpty == true
-                ? '${mapInfo!.mapLabel} (${map.mapName})'
-                : map.mapName;
-            final isTop3 = index < 3;
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isTop3
-                          ? AppColors.emerald500.withValues(alpha: 0.15)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isTop3
-                            ? AppColors.emerald500
-                            : (widget.isDark
-                                  ? Colors.white38
-                                  : AppColors.slate400),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: SizedBox(
-                        height: 32,
-                        child: Stack(
-                          children: [
-                            // 背景色
-                            Container(
-                              color: widget.isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.black.withValues(alpha: 0.03),
-                            ),
-                            // 地图背景图
-                            Positioned.fill(
-                              child: ColorFiltered(
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black.withValues(alpha: 0.5),
-                                  BlendMode.darken,
-                                ),
-                                child: DiskCachedImage(
-                                  imageUrl: mapInfo?.mapUrl ?? '',
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fallbackAsset:
-                                      'assets/images/default-map-bg.jpg',
-                                ),
-                              ),
-                            ),
-                            // 进度条
-                            FractionallySizedBox(
-                              widthFactor: ratio,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isTop3
-                                        ? [
-                                            const Color(
-                                              0xFF10B981,
-                                            ).withValues(alpha: 0.5),
-                                            const Color(
-                                              0xFF10B981,
-                                            ).withValues(alpha: 0.2),
-                                          ]
-                                        : [
-                                            const Color(
-                                              0xFF3B82F6,
-                                            ).withValues(alpha: 0.5),
-                                            const Color(
-                                              0xFF3B82F6,
-                                            ).withValues(alpha: 0.2),
-                                          ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // 文字
-                            Positioned.fill(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        displayName,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black54,
-                                              blurRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${map.playCount} 次',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white70,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black54,
-                                            blurRadius: 2,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        // 上滚动指示器
-        if (_canScrollUp)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _ScrollIndicator(isTop: true, isDark: widget.isDark),
-          ),
-        // 下滚动指示器
-        if (_canScrollDown)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _ScrollIndicator(isTop: false, isDark: widget.isDark),
-          ),
-      ],
-    );
-  }
-}
-
-/// 滚动指示器
-class _ScrollIndicator extends StatelessWidget {
-  final bool isTop;
-  final bool isDark;
-
-  const _ScrollIndicator({required this.isTop, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor = isDark ? AppColors.slate800 : Colors.white;
-    return IgnorePointer(
-      child: Container(
-        height: 20,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
-            end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
-            colors: [
-              bgColor,
-              bgColor.withValues(alpha: 0.8),
-              bgColor.withValues(alpha: 0),
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
-        ),
-        alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
-        child: Icon(
-          isTop ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: AppColors.gray500,
-          size: 14,
-        ),
-      ),
-    );
-  }
-}
-
-/// 图例点
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  final String label;
-
-  const _LegendDot({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

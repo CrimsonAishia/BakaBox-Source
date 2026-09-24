@@ -75,6 +75,7 @@ class HoverButton extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
   final bool small;
+  final Color? bgColor;
 
   const HoverButton({
     super.key,
@@ -82,6 +83,7 @@ class HoverButton extends StatefulWidget {
     required this.label,
     required this.onTap,
     this.small = false,
+    this.bgColor,
   });
 
   @override
@@ -115,10 +117,13 @@ class _HoverButtonState extends State<HoverButton> {
           ),
           decoration: BoxDecoration(
             color: _isHovered
-                ? CharacterGalleryTheme.getVermillion(
-                    context,
-                  ).withValues(alpha: isDark ? 0.2 : 0.1)
-                : Colors.transparent,
+                ? Color.alphaBlend(
+                    CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: isDark ? 0.2 : 0.1),
+                    widget.bgColor ?? Colors.transparent,
+                  )
+                : widget.bgColor ?? Colors.transparent,
             border: Border.all(
               color: _isHovered
                   ? CharacterGalleryTheme.getVermillion(context)

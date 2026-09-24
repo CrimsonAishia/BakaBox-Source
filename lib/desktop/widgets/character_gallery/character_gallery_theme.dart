@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 class CharacterGalleryTheme {
   CharacterGalleryTheme._();
 
-  // ===== 亮色模式颜色 =====
   /// 和纸米黄
   static const washiColorLight = Color(0xFFF5F0E6);
 
@@ -14,7 +13,6 @@ class CharacterGalleryTheme {
   /// 墨色
   static const inkColorLight = Color(0xFF2C1810);
 
-  // ===== 暗色模式颜色 =====
   /// 暗色和纸（深灰带暖调）
   static const washiColorDark = Color(0xFF2A2520);
 
@@ -24,7 +22,6 @@ class CharacterGalleryTheme {
   /// 暗色墨色（浅色文字）
   static const inkColorDark = Color(0xFFE8E0D8);
 
-  // ===== 通用颜色（两种模式共用） =====
   /// 朱红
   static const vermillion = Color(0xFFC41E3A);
 
@@ -40,7 +37,6 @@ class CharacterGalleryTheme {
   /// 樱花粉
   static const sakuraPink = Color(0xFFFFB7C5);
 
-  // ===== 静态颜色（兼容旧代码） =====
   static const washiColor = washiColorLight;
   static const scrollBrown = scrollBrownLight;
   static const inkColor = inkColorLight;
@@ -118,7 +114,6 @@ class CharacterGalleryTheme {
     return Theme.of(context).brightness == Brightness.dark ? goldBright : gold;
   }
 
-  // ===== 属性数值颜色（冷却、伤害、消耗等） =====
 
   /// 冷却时间颜色（青色系）
   static Color getCooldownColor(BuildContext context) {

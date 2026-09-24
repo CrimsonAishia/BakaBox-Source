@@ -1122,9 +1122,33 @@ class _InlineKeyCardState extends State<_InlineKeyCard>
   Widget build(BuildContext context) {
     final hasKey = widget.boundKey != null && widget.boundKey!.isNotEmpty;
 
-    // Unbound: Emerald Green; Bound: Primary
-    final baseColor = hasKey ? AppColors.primary : AppColors.emerald500;
-    final textColor = hasKey ? AppColors.primary : const Color(0xFF6EE7B7);
+    // 根据 label 计算不同的基础颜色，增加到 11 种颜色并使用质数取模来减少碰撞概率
+    final List<Color> palette = [
+      AppColors.blue400,
+      AppColors.emerald500,
+      AppColors.orange400,
+      AppColors.violet400,
+      AppColors.rose400,
+      AppColors.amber400,
+      AppColors.sky400,
+      AppColors.green500,
+      AppColors.indigo400,
+      AppColors.red400,
+      AppColors.primary,
+    ];
+
+    // 使用简单的乘法哈希，让哪怕只差一个字的中文（如大跳和跳投）哈希值也能差很多
+    int hash = 0;
+    for (int i = 0; i < widget.label.length; i++) {
+      hash = (hash * 31 + widget.label.codeUnitAt(i)) & 0x7FFFFFFF;
+    }
+
+    final int colorIndex = hash % palette.length;
+    final Color distinctColor = palette[colorIndex];
+
+    final baseColor = distinctColor;
+    final textColor = Color.lerp(baseColor, Colors.white, 0.1) ?? baseColor;
+
     final bgColor = hasKey
         ? baseColor.withValues(alpha: _isHovered ? 0.25 : 0.15)
         : baseColor.withValues(alpha: _isHovered ? 0.3 : 0.2);
@@ -1136,9 +1160,13 @@ class _InlineKeyCardState extends State<_InlineKeyCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(Icons.ads_click, size: 14, color: textColor),
+          const SizedBox(width: 4),
           Flexible(
             child: Text(
-              hasKey ? widget.boundKey!.toUpperCase() : '此处需要设置按键',
+              hasKey
+                  ? '${widget.label}: ${widget.boundKey!.toUpperCase()}'
+                  : '设置按键: ${widget.label}',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontWeight: FontWeight.w900,
@@ -1228,14 +1256,14 @@ class _InlineKeyCardState extends State<_InlineKeyCard>
                             return Transform.rotate(
                               angle: _controller.value * 2 * math.pi,
                               child: Container(
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   gradient: SweepGradient(
                                     colors: [
                                       Colors.transparent,
-                                      AppColors.emerald500,
+                                      baseColor,
                                       Colors.transparent,
                                     ],
-                                    stops: [0.0, 0.5, 1.0],
+                                    stops: const [0.0, 0.5, 1.0],
                                   ),
                                 ),
                               ),

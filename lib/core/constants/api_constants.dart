@@ -18,14 +18,6 @@ class ApiConstants {
   static String get serverHistoryUrl => '$apiBaseUrl/stub';
   static String get serverInfoFallbackUrl => '$apiBaseUrl/stub';
 
-  // 私有端点路径（占位值，真实路径见私有仓库）
-  static const String analyticsEventPath = '/stub';
-  static const String serverInfoPath = '/stub';
-  static const String realtimeWsPath = '/stub';
-  static const String webServerListWsPath = '/stub';
-  static String serverUsersWsPath(String encodedAddress, String roomType) =>
-      '/stub/$encodedAddress?roomType=$roomType';
-
   static const Duration defaultTimeout = Duration(seconds: 10);
   static const Duration shortTimeout = Duration(seconds: 3);
   static const Duration uploadTimeout = Duration(seconds: 30);
@@ -38,6 +30,15 @@ class ApiConstants {
   static const int updateLogPageSize = 10;
 
   static const Duration minRequestInterval = Duration(milliseconds: 500);
+
+  // ---- 通用路径（stub） ----
+  static const String analyticsEventPath = '/stub/analytics/event';
+  static const String serverInfoPath = '/stub/server/info';
+  static const String realtimeWsPath = '/stub/realtime/ws';
+  static const String webServerListWsPath = '/stub/web-server-list/ws';
+
+  static String serverUsersWsPath(String encodedAddress, String roomType) =>
+      '/stub/server-users/ws/$encodedAddress?roomType=$roomType';
 
   static String get issueListUrl => '$apiBaseUrl/stub';
   static String get issueCreateUrl => '$apiBaseUrl/stub';

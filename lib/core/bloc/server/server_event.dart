@@ -372,6 +372,22 @@ class ServerApplyUsersCountUpdates extends ServerEvent {
   List<Object?> get props => [counts, isSnapshot, isSyncing];
 }
 
+/// 内部事件：来自 `server.category.players` WS 频道的分类人数更新
+class ServerRealtimeCategoryPlayersUpdate extends ServerEvent {
+  final Map<String, int> counts;
+  final bool isSnapshot;
+  final bool isSyncing;
+
+  const ServerRealtimeCategoryPlayersUpdate({
+    required this.counts,
+    required this.isSnapshot,
+    this.isSyncing = false,
+  });
+
+  @override
+  List<Object?> get props => [counts, isSnapshot, isSyncing];
+}
+
 /// 清除实时数据（进入弱网模式时调用）
 /// 清除所有服务器卡片上通过 Realtime 推送获得的数据（比分、人数等），
 /// 避免推送停止后卡片仍显示过期的实时数据。

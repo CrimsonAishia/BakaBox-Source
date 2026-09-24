@@ -144,7 +144,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               const SizedBox(height: 12),
 
               // 活动轮播图
-              const ActivityBannerCarousel(),
+              const ActivityBannerCarousel()
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 500.ms)
+                  .slideY(
+                    begin: 0.2,
+                    end: 0,
+                    duration: 400.ms,
+                    curve: Curves.easeOutCubic,
+                  ),
 
               // 上半区：在线趋势（左）+ 公告/更新日志（右）
               SizedBox(
@@ -163,7 +171,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         children: [
                           Expanded(child: AnnouncementsPanel(isDark: isDark)),
                           const SizedBox(height: 6),
-                          Expanded(child: UpdateLogsPanel(isDark: isDark)),
+                          Expanded(
+                            child: UpdateLogsPanel(isDark: isDark)
+                                .animate()
+                                .fadeIn(duration: 500.ms, delay: 950.ms)
+                                .slideY(
+                                  begin: 0.2,
+                                  end: 0,
+                                  duration: 400.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                          ),
                         ],
                       ),
                     ),

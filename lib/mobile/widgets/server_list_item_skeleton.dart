@@ -35,263 +35,119 @@ class ServerListItemSkeleton extends StatelessWidget {
           ),
         );
 
-    // 骨架屏直接渲染和真实卡片完全相同的 Text/Icon，
-    // 只把颜色设为透明，让 widget 自然撑起行高，
-    // 再用 Stack 把色块叠在上面覆盖文字。
-    Widget skeletonRow({required Widget realWidget, required Widget overlay}) {
-      return Stack(
-        children: [
-          Opacity(opacity: 0, child: realWidget),
-          Positioned.fill(child: overlay),
-        ],
-      );
-    }
-
     Widget skeleton = Opacity(
       opacity: opacity,
       child: Transform.scale(
         scale: scale,
         child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Colors.grey.withValues(alpha: 0.3),
-              width: 1.0,
-            ),
+            borderRadius: BorderRadius.circular(16),
           ),
+          color: Colors.transparent,
+          elevation: 0,
           child: SizedBox(
-            height: 165,
+            height: 145,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Stack(
                 children: [
                   // 背景
                   Positioned.fill(child: Container(color: baseColor)),
-                  // 内容：与真实卡片完全相同的 Padding + Column
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 名称行：用真实 Text 撑高，色块覆盖
-                        skeletonRow(
-                          realWidget: const Text(
-                            'placeholder',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                          ),
-                          overlay: Align(
-                            alignment: Alignment.centerLeft,
-                            child: block(
-                              width: double.infinity,
-                              height: 14,
-                              radius: 4,
+
+                  // 顶部区域：服务器名称 + 人数
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 服务器名称骨架（左侧）
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                block(width: 180, height: 16, radius: 4),
+                                const SizedBox(height: 6),
+                                block(width: 120, height: 14, radius: 4),
+                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 3),
+                          const SizedBox(width: 12),
+                          // 人数骨架（右侧）
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              block(width: 28, height: 22, radius: 4),
+                              const SizedBox(width: 4),
+                              block(width: 8, height: 14, radius: 2),
+                              const SizedBox(width: 4),
+                              block(width: 20, height: 12, radius: 3),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-                        // 地图行：Icon(18) + Text(15)
-                        skeletonRow(
-                          realWidget: Row(
-                            children: [
-                              const Icon(Icons.map, size: 18),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'placeholder map name',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          overlay: Row(
-                            children: [
-                              block(width: 18, height: 18, radius: 3),
-                              const SizedBox(width: 6),
-                              block(width: 160, height: 12, radius: 4),
-                            ],
-                          ),
+                  // 底部渐变区域
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                        left: 14,
+                        right: 14,
+                        bottom: 10,
+                        top: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            baseColor.withValues(alpha: 0.7),
+                            baseColor,
+                          ],
+                          stops: const [0.0, 0.4, 1.0],
                         ),
-                        const SizedBox(height: 3),
-
-                        // IP 行：Icon(18) + Text(14) + Padding(h:8,v:4)+Icon(16)
-                        skeletonRow(
-                          realWidget: Row(
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Row 1: 地图名 + info chips
+                          Row(
                             children: [
-                              const Icon(Icons.language, size: 18),
+                              block(width: 15, height: 15, radius: 3),
                               const SizedBox(width: 6),
-                              const Text(
-                                '000.000.000.000:00000',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                child: Icon(Icons.copy, size: 16),
-                              ),
+                              Expanded(child: block(height: 12, radius: 4)),
+                              const SizedBox(width: 8),
+                              block(width: 50, height: 18, radius: 4),
+                              const SizedBox(width: 6),
+                              block(width: 40, height: 18, radius: 4),
                             ],
                           ),
-                          overlay: Row(
+                          const SizedBox(height: 8),
+                          // Row 2: 标签 + 复制IP
+                          Row(
                             children: [
-                              block(width: 18, height: 18, radius: 3),
+                              block(width: 42, height: 18, radius: 4),
                               const SizedBox(width: 6),
-                              block(width: 130, height: 11, radius: 4),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                child: SizedBox(width: 16, height: 16),
-                              ),
+                              block(width: 36, height: 18, radius: 4),
+                              const Spacer(),
+                              block(width: 60, height: 18, radius: 4),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 3),
-
-                        // 标签行：Icon(18) + Container(padding v:4) + Text(14)
-                        skeletonRow(
-                          realWidget: Row(
-                            children: [
-                              const Icon(Icons.label_outline, size: 18),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                child: const Text(
-                                  'tag',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                child: const Text(
-                                  'tag2',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          overlay: Row(
-                            children: [
-                              block(width: 18, height: 18, radius: 3),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: blockColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: block(width: 36, height: 14, radius: 2),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: blockColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: block(width: 28, height: 14, radius: 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-
-                        // 底部 chips：Container(padding h:10,v:6) + child(fontSize:13)
-                        skeletonRow(
-                          realWidget: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                child: const Text(
-                                  '00/00',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                child: const Text(
-                                  '00分钟',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          overlay: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: blockColor.withValues(alpha: 0.6),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                  ),
-                                ),
-                                child: block(width: 48, height: 13, radius: 3),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: blockColor.withValues(alpha: 0.6),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                  ),
-                                ),
-                                child: block(width: 40, height: 13, radius: 3),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],

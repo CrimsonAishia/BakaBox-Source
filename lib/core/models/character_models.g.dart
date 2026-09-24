@@ -262,6 +262,17 @@ CharacterSubModel _$CharacterSubModelFromJson(Map<String, dynamic> json) =>
       voices: (json['voices'] as List<dynamic>?)
           ?.map((e) => VoiceItem.fromJson(e as Map<String, dynamic>))
           .toList(),
+      source: json['source'] as String?,
+      provider: json['provider'] as String?,
+      providerSteamid: json['providerSteamid'] as String?,
+      modeler: json['modeler'] as String?,
+      modelerSteamid: json['modelerSteamid'] as String?,
+      othercheckKey: json['othercheckKey'] as String?,
+      othercheckKeyName: json['othercheckKeyName'] as String?,
+      othercheckPoint: (json['othercheckPoint'] as num?)?.toInt(),
+      group: json['group'] as String?,
+      groupName: json['groupName'] as String?,
+      viplevel: (json['viplevel'] as num?)?.toInt(),
       isDefault: json['isDefault'] as bool? ?? false,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
     );
@@ -279,6 +290,17 @@ Map<String, dynamic> _$CharacterSubModelToJson(CharacterSubModel instance) =>
       'acquisition': instance.acquisition,
       'tags': instance.tags,
       'voices': instance.voices,
+      'source': instance.source,
+      'provider': instance.provider,
+      'providerSteamid': instance.providerSteamid,
+      'modeler': instance.modeler,
+      'modelerSteamid': instance.modelerSteamid,
+      'othercheckKey': instance.othercheckKey,
+      'othercheckKeyName': instance.othercheckKeyName,
+      'othercheckPoint': instance.othercheckPoint,
+      'group': instance.group,
+      'groupName': instance.groupName,
+      'viplevel': instance.viplevel,
       'isDefault': instance.isDefault,
       'sortOrder': instance.sortOrder,
     };
@@ -366,6 +388,10 @@ CharacterListItem _$CharacterListItemFromJson(Map<String, dynamic> json) =>
       hasSpellCards: json['hasSpellCards'] as bool,
       hasZombieSkills: json['hasZombieSkills'] as bool,
       subModelCount: (json['subModelCount'] as num).toInt(),
+      groupName: json['groupName'] as String?,
+      othercheckKeyName: json['othercheckKeyName'] as String?,
+      othercheckPoint: (json['othercheckPoint'] as num?)?.toInt(),
+      viplevel: (json['viplevel'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$CharacterListItemToJson(CharacterListItem instance) =>
@@ -380,6 +406,10 @@ Map<String, dynamic> _$CharacterListItemToJson(CharacterListItem instance) =>
       'hasSpellCards': instance.hasSpellCards,
       'hasZombieSkills': instance.hasZombieSkills,
       'subModelCount': instance.subModelCount,
+      'groupName': instance.groupName,
+      'othercheckKeyName': instance.othercheckKeyName,
+      'othercheckPoint': instance.othercheckPoint,
+      'viplevel': instance.viplevel,
     };
 
 CharacterListResponse _$CharacterListResponseFromJson(
@@ -1284,6 +1314,17 @@ KnifeModel _$KnifeModelFromJson(Map<String, dynamic> json) => KnifeModel(
   tags: (json['tags'] as List<dynamic>?)
       ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
       .toList(),
+  source: json['source'] as String?,
+  provider: json['provider'] as String?,
+  providerSteamid: json['providerSteamid'] as String?,
+  modeler: json['modeler'] as String?,
+  modelerSteamid: json['modelerSteamid'] as String?,
+  othercheckKey: json['othercheckKey'] as String?,
+  othercheckKeyName: json['othercheckKeyName'] as String?,
+  othercheckPoint: (json['othercheckPoint'] as num?)?.toInt(),
+  group: json['group'] as String?,
+  groupName: json['groupName'] as String?,
+  viplevel: (json['viplevel'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$KnifeModelToJson(KnifeModel instance) =>
@@ -1298,6 +1339,17 @@ Map<String, dynamic> _$KnifeModelToJson(KnifeModel instance) =>
       'glbModelUrl': instance.glbModelUrl,
       'acquisition': instance.acquisition,
       'tags': instance.tags,
+      'source': instance.source,
+      'provider': instance.provider,
+      'providerSteamid': instance.providerSteamid,
+      'modeler': instance.modeler,
+      'modelerSteamid': instance.modelerSteamid,
+      'othercheckKey': instance.othercheckKey,
+      'othercheckKeyName': instance.othercheckKeyName,
+      'othercheckPoint': instance.othercheckPoint,
+      'group': instance.group,
+      'groupName': instance.groupName,
+      'viplevel': instance.viplevel,
     };
 
 GunModel _$GunModelFromJson(Map<String, dynamic> json) => GunModel(
@@ -1317,6 +1369,17 @@ GunModel _$GunModelFromJson(Map<String, dynamic> json) => GunModel(
   tags: (json['tags'] as List<dynamic>?)
       ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
       .toList(),
+  source: json['source'] as String?,
+  provider: json['provider'] as String?,
+  providerSteamid: json['providerSteamid'] as String?,
+  modeler: json['modeler'] as String?,
+  modelerSteamid: json['modelerSteamid'] as String?,
+  othercheckKey: json['othercheckKey'] as String?,
+  othercheckKeyName: json['othercheckKeyName'] as String?,
+  othercheckPoint: (json['othercheckPoint'] as num?)?.toInt(),
+  group: json['group'] as String?,
+  groupName: json['groupName'] as String?,
+  viplevel: (json['viplevel'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$GunModelToJson(GunModel instance) => <String, dynamic>{
@@ -1330,6 +1393,17 @@ Map<String, dynamic> _$GunModelToJson(GunModel instance) => <String, dynamic>{
   'glbModelUrl': instance.glbModelUrl,
   'acquisition': instance.acquisition,
   'tags': instance.tags,
+  'source': instance.source,
+  'provider': instance.provider,
+  'providerSteamid': instance.providerSteamid,
+  'modeler': instance.modeler,
+  'modelerSteamid': instance.modelerSteamid,
+  'othercheckKey': instance.othercheckKey,
+  'othercheckKeyName': instance.othercheckKeyName,
+  'othercheckPoint': instance.othercheckPoint,
+  'group': instance.group,
+  'groupName': instance.groupName,
+  'viplevel': instance.viplevel,
 };
 
 KnifeModelListResponse _$KnifeModelListResponseFromJson(
@@ -1405,6 +1479,17 @@ MenuSkinModel _$MenuSkinModelFromJson(Map<String, dynamic> json) =>
       tags: (json['tags'] as List<dynamic>?)
           ?.map((e) => ItemTagData.fromJson(e as Map<String, dynamic>))
           .toList(),
+      source: json['source'] as String?,
+      provider: json['provider'] as String?,
+      providerSteamid: json['providerSteamid'] as String?,
+      modeler: json['modeler'] as String?,
+      modelerSteamid: json['modelerSteamid'] as String?,
+      othercheckKey: json['othercheckKey'] as String?,
+      othercheckKeyName: json['othercheckKeyName'] as String?,
+      othercheckPoint: (json['othercheckPoint'] as num?)?.toInt(),
+      group: json['group'] as String?,
+      groupName: json['groupName'] as String?,
+      viplevel: (json['viplevel'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MenuSkinModelToJson(MenuSkinModel instance) =>
@@ -1418,6 +1503,17 @@ Map<String, dynamic> _$MenuSkinModelToJson(MenuSkinModel instance) =>
       'previewUrl': instance.previewUrl,
       'acquisition': instance.acquisition,
       'tags': instance.tags,
+      'source': instance.source,
+      'provider': instance.provider,
+      'providerSteamid': instance.providerSteamid,
+      'modeler': instance.modeler,
+      'modelerSteamid': instance.modelerSteamid,
+      'othercheckKey': instance.othercheckKey,
+      'othercheckKeyName': instance.othercheckKeyName,
+      'othercheckPoint': instance.othercheckPoint,
+      'group': instance.group,
+      'groupName': instance.groupName,
+      'viplevel': instance.viplevel,
     };
 
 MenuSkinListResponse _$MenuSkinListResponseFromJson(

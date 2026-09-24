@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 
+import 'app_exit_service.dart';
+
 /// 单实例服务
 ///
 /// 负责管理 Windows 平台的单实例检查和窗口唤醒。
@@ -90,6 +92,12 @@ class SingleInstanceService {
   ///   这里用一次 `alwaysOnTop` 翻转强制把窗口提到最上层后再取消。
   /// - 全程包裹 try/catch，任何一步失败都不应影响已运行实例继续工作。
   Future<void> _wakeExistingInstance(List<String> args) async {
+    // 如果程序已经在退出流程中，忽略唤醒请求，防止窗口在隐藏后被重新拉出
+    if (AppExitService.instance.isExiting) {
+      debugPrint('[SingleInstance] 正在退出，忽略唤醒请求');
+      return;
+    }
+
     try {
       // 1. 若窗口被隐藏（最小化到托盘），重新显示
       final isVisible = await windowManager.isVisible();

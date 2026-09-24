@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/core.dart';
 
 /// 移动端设置页面
@@ -65,6 +66,15 @@ class SettingsPageMobile extends StatelessWidget {
                     onTap: settingsState.isCheckingUpdate
                         ? null
                         : () => _checkForUpdates(context),
+                  ),
+                  _buildDivider(context),
+                  _buildSettingsItem(
+                    context,
+                    icon: MdiIcons.textBoxOutline,
+                    iconColor: AppColors.blue500,
+                    title: '运行日志',
+                    subtitle: '查看应用运行日志',
+                    onTap: () => context.push('/app-logs'),
                   ),
                   _buildDivider(context),
                   _buildSettingsItem(

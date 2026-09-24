@@ -13,6 +13,7 @@
 library;
 
 // API
+export 'api/api.dart';
 export 'api/env_config.dart';
 export 'api/api_client.dart';
 export 'api/announcement_api.dart';

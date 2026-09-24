@@ -86,7 +86,37 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
     _hideTimer = Timer(const Duration(milliseconds: 150), () {
       if (!mounted) return;
       if (_portalController.isShowing) _portalController.hide();
+      setState(() => _isHovering = false);
     });
+  }
+
+  void _toggle() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (isMobile) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black54,
+        builder: (context) => Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: HoverInfoCard(data: widget.data),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_portalController.isShowing) {
+      _hideTimer?.cancel();
+      _portalController.hide();
+      setState(() => _isHovering = false);
+    } else {
+      _showTimer?.cancel();
+      _hideTimer?.cancel();
+      _decideDirection();
+      _portalController.show();
+      setState(() => _isHovering = true);
+    }
   }
 
   /// 根据徽章在屏幕中的位置决定卡片弹出方向，避免超出顶部
@@ -116,6 +146,15 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
   Widget build(BuildContext context) {
     final color = HoverInfoColors.color(widget.data.type);
     final icon = HoverInfoColors.icon(widget.data.type);
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (isMobile) {
+      return GestureDetector(
+        onTap: _toggle,
+        behavior: HitTestBehavior.opaque,
+        child: _buildBadge(color, icon),
+      );
+    }
 
     return CompositedTransformTarget(
       link: _link,
@@ -134,7 +173,11 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
             _scheduleHide();
             if (mounted) setState(() => _isHovering = false);
           },
-          child: _buildBadge(color, icon),
+          child: GestureDetector(
+            onTap: _toggle,
+            behavior: HitTestBehavior.opaque,
+            child: _buildBadge(color, icon),
+          ),
         ),
       ),
     );

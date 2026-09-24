@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,90 +17,82 @@ class UpdateLogsPanel extends StatelessWidget {
     return BlocBuilder<UpdateLogBloc, UpdateLogState>(
       builder: (context, state) {
         return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.05),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题行
+              Row(
                 children: [
-                  // 标题行
-                  Row(
-                    children: [
-                      Icon(MdiIcons.update, size: 16, color: AppColors.blue500),
-                      const SizedBox(width: 8),
-                      Text(
-                        '更新日志',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : AppColors.slate800,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (state.isLoading)
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.5)
-                                : AppColors.slate400,
-                          ),
-                        ),
-                    ],
+                  Icon(MdiIcons.update, size: 16, color: AppColors.blue500),
+                  const SizedBox(width: 8),
+                  Text(
+                    '更新日志',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : AppColors.slate800,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-
-                  // 日志列表
-                  if (state.logs.isEmpty && !state.isLoading)
-                    Expanded(child: _buildEmpty())
-                  else
-                    Expanded(
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: state.logs.length,
-                        itemBuilder: (context, index) {
-                          final log = state.logs[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
-                            child: _UpdateLogItem(
-                              log: log,
-                              isDark: isDark,
-                              onTap: () => _showDetail(context, log),
-                            ),
-                          );
-                        },
+                  const Spacer(),
+                  if (state.isLoading)
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : AppColors.slate400,
                       ),
                     ),
                 ],
               ),
-            )
-            .animate()
-            .fadeIn(duration: 500.ms, delay: 950.ms)
-            .slideY(
-              begin: 0.2,
-              end: 0,
-              duration: 400.ms,
-              curve: Curves.easeOutCubic,
-            );
+              const SizedBox(height: 12),
+
+              // 日志列表
+              if (state.logs.isEmpty && !state.isLoading)
+                Expanded(child: _buildEmpty())
+              else
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: state.logs.length,
+                    itemBuilder: (context, index) {
+                      final log = state.logs[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: _UpdateLogItem(
+                          log: log,
+                          isDark: isDark,
+                          onTap: () => _showDetail(context, log),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
       },
     );
   }

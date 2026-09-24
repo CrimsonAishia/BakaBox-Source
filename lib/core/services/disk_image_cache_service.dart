@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/painting.dart';
 import '../api/api_client.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
@@ -269,6 +270,12 @@ class DiskImageCacheService {
 
           // 保存到磁盘
           await file.writeAsBytes(bytes);
+
+          // 如果内存缓存中已有该文件（磁盘已删但内存还在的情况），清除它，强制重新从磁盘加载
+          try {
+            await FileImage(file).evict();
+          } catch (_) {}
+
           LogService.d(
             '[DiskImageCacheService] Cached image: $url (${bytes.length} bytes)',
           );
@@ -305,6 +312,27 @@ class DiskImageCacheService {
     return file.existsSync() ? file : null;
   }
 
+  /// 清除单张图片的缓存（包含磁盘和内存）
+  Future<void> deleteCache(String url) async {
+    if (url.isEmpty) return;
+    try {
+      final filePath = getCacheFilePath(url);
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+      try {
+        await FileImage(file).evict();
+      } catch (_) {}
+      LogService.d('[DiskImageCacheService] Deleted cache for: $url');
+    } catch (e) {
+      LogService.e(
+        '[DiskImageCacheService] Failed to delete cache for $url',
+        e,
+      );
+    }
+  }
+
   /// 清除所有缓存
   Future<void> clearCache() async {
     try {
@@ -312,6 +340,13 @@ class DiskImageCacheService {
       if (await dir.exists()) {
         await dir.delete(recursive: true);
         await dir.create(recursive: true);
+
+        // 同时清理内存图片缓存，避免还在使用旧缓存
+        try {
+          imageCache.clear();
+          imageCache.clearLiveImages();
+        } catch (_) {}
+
         LogService.i('[DiskImageCacheService] Cache cleared successfully');
       }
     } catch (e) {

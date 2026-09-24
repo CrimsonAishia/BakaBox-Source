@@ -11,6 +11,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/map_tag_utils.dart';
 import '../server/server_card_components/hover_tag_popover.dart';
 import '../server/server_card_components/server_card_overflow_tag_row.dart';
+import '../server/server_card_components/server_card_marquee_text.dart';
 
 /// 地图大卡片组件
 ///
@@ -201,49 +202,52 @@ class _MapGroupCardState extends State<MapGroupCard> {
                               ),
                               const SizedBox(width: 6),
                               Expanded(
-                                child: MarqueeText(
-                                  text: mapInfo.mapName,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    height: 1.2,
-                                    fontFamily: 'monospace',
-                                    letterSpacing: 0.5,
-                                    shadows: [
-                                      const Shadow(
-                                        color: Colors.black,
-                                        blurRadius: 8,
-                                      ),
-                                      Shadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.9,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: ServerCardMarqueeText(
+                                    text: mapInfo.mapName,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      height: 1.2,
+                                      fontFamily: 'monospace',
+                                      letterSpacing: 0.5,
+                                      shadows: [
+                                        const Shadow(
+                                          color: Colors.black,
+                                          blurRadius: 8,
                                         ),
-                                        offset: const Offset(1, 1),
-                                        blurRadius: 2,
-                                      ),
-                                      Shadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.9,
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          offset: const Offset(1, 1),
+                                          blurRadius: 2,
                                         ),
-                                        offset: const Offset(-1, -1),
-                                        blurRadius: 2,
-                                      ),
-                                      Shadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.9,
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          offset: const Offset(-1, -1),
+                                          blurRadius: 2,
                                         ),
-                                        offset: const Offset(1, -1),
-                                        blurRadius: 2,
-                                      ),
-                                      Shadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.9,
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          offset: const Offset(1, -1),
+                                          blurRadius: 2,
                                         ),
-                                        offset: const Offset(-1, 1),
-                                        blurRadius: 2,
-                                      ),
-                                    ],
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          offset: const Offset(-1, 1),
+                                          blurRadius: 2,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -577,6 +581,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
     return MapCdBadge(
       mapName: widget.group.mapInfo.mapName,
       triggerOnHover: false,
+      isCompact: true,
     );
   }
 }

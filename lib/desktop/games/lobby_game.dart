@@ -245,9 +245,8 @@ class LobbyGame extends FlameGame
   /// 当前聚焦的用户 ID（面板点击后临时将视角移到该用户）
   String? _focusedUserId;
 
-  /// 面板聚焦时的相机水平偏移量（像素），用于将目标显示在面板左侧可视区域中心
-  /// 值为面板宽度的一半（320 / 2 = 160）
-  static const double _focusPanelOffsetX = 160.0;
+  /// 面板聚焦时的相机偏移量（像素）。桌面端为 (160, 0)，移动端可能为 (0, height*0.35)
+  Offset? _focusedPanelOffset;
 
   /// 当前是否悬停在可交互的玩家上（用于切换鼠标光标）
   bool get isHoveringInteractablePlayer {
@@ -393,7 +392,10 @@ class LobbyGame extends FlameGame
       return _followSelf();
     }
 
-    _applyCameraTarget(targetPos, panelOffset: _focusPanelOffsetX);
+    _applyCameraTarget(
+      targetPos,
+      panelOffset: _focusedPanelOffset ?? const Offset(160.0, 0.0),
+    );
   }
 
   /// 跟随自己的角色
@@ -421,30 +423,53 @@ class LobbyGame extends FlameGame
 
   /// 将相机平滑移动到目标位置
   ///
-  /// [panelOffset] 当右侧有面板遮挡时，传入面板宽度的一半，
-  /// 使目标显示在可视区域（面板左侧）的中心，同时允许相机超出地图右边界。
-  void _applyCameraTarget(LobbyPosition targetPos, {double panelOffset = 0.0}) {
+  /// [panelOffset] 当有面板遮挡时传入偏移量。例如桌面端右侧面板传入 Offset(160, 0)，
+  /// 使目标显示在可视区域中心，同时允许相机超出地图边缘。
+  void _applyCameraTarget(
+    LobbyPosition targetPos, {
+    Offset panelOffset = Offset.zero,
+  }) {
     final screenCenter = _cameraComponent.viewport.size / 2;
     final viewportWidth = _cameraComponent.viewport.size.x;
+    final viewportHeight = _cameraComponent.viewport.size.y;
 
-    // 地图比视口窄时，不需要偏移（所有玩家本来就在视野内）
-    final effectiveOffset = _worldSize.x > viewportWidth ? panelOffset : 0.0;
+    // 地图比视口窄/矮时，不需要对应方向的偏移
+    final effectiveOffsetX = _worldSize.x > viewportWidth
+        ? panelOffset.dx
+        : 0.0;
+    final effectiveOffsetY = _worldSize.y > viewportHeight
+        ? panelOffset.dy
+        : 0.0;
 
     // 计算目标相机位置，确保角色在屏幕中心
-    // 当有面板偏移时，将目标向右移动 effectiveOffset，使角色出现在可视区域中心
-    double targetCamX = targetPos.x - screenCenter.x + effectiveOffset;
-    double targetCamY = targetPos.y - screenCenter.y;
+    // 当有面板偏移时，将目标移动 effectiveOffset，使角色出现在可视区域中心
+    double targetCamX = targetPos.x - screenCenter.x + effectiveOffsetX;
+    double targetCamY = targetPos.y - screenCenter.y + effectiveOffsetY;
 
     // 边界限制：相机不能超出世界范围
-    // 当有面板偏移时，允许相机右边界额外扩展 effectiveOffset * 2（整个面板宽度），
-    // 这样地图右边缘的玩家也能正确显示在面板左侧
+    // 允许相机边缘额外扩展 effectiveOffset * 2，
+    // 这样地图边缘的玩家也能正确显示在可视区域内
     final maxX = math.max(
       0.0,
-      _worldSize.x - viewportWidth + effectiveOffset * 2,
+      _worldSize.x - viewportWidth + effectiveOffsetX.abs() * 2,
     );
-    final maxY = math.max(0.0, _worldSize.y - _cameraComponent.viewport.size.y);
-    targetCamX = targetCamX.clamp(0.0, maxX);
-    targetCamY = targetCamY.clamp(0.0, maxY);
+    final maxY = math.max(
+      0.0,
+      _worldSize.y - viewportHeight + effectiveOffsetY.abs() * 2,
+    );
+
+    // 如果偏移是正数（向左或向上移动视野），最小值为0，最大值为maxX
+    // 这里简单处理：允许超出的范围取决于 offset
+    targetCamX = targetCamX.clamp(
+      effectiveOffsetX < 0 ? effectiveOffsetX * 2 : 0.0,
+      effectiveOffsetX > 0 ? maxX : math.max(0.0, _worldSize.x - viewportWidth),
+    );
+    targetCamY = targetCamY.clamp(
+      effectiveOffsetY < 0 ? effectiveOffsetY * 2 : 0.0,
+      effectiveOffsetY > 0
+          ? maxY
+          : math.max(0.0, _worldSize.y - viewportHeight),
+    );
 
     // 平滑插值跟随（只在地图大于视野时生效）
     final lerpSpeed = _getCameraLerpSpeed();
@@ -684,10 +709,11 @@ class LobbyGame extends FlameGame
   /// 将视角聚焦到指定用户（菜单关闭时调用 cancelFocus 恢复）
   /// 仅对本地图用户有效（用户必须在 _playerComponents 中）
   /// 同时高亮该用户角色（与游戏内右键交互一致的闪动边框）
-  void focusOnUser(String userId) {
+  void focusOnUser(String userId, {Offset? panelOffset}) {
     final comp = _playerComponents[userId];
     if (comp == null) return;
     _focusedUserId = userId;
+    _focusedPanelOffset = panelOffset;
     comp.setContextMenuTarget(true);
   }
 
@@ -699,6 +725,7 @@ class LobbyGame extends FlameGame
         comp.setContextMenuTarget(false);
       }
       _focusedUserId = null;
+      _focusedPanelOffset = null;
     }
   }
 

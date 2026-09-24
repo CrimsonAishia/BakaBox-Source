@@ -156,29 +156,34 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
   Widget _buildPanel(BuildContext context, GuideCommentState state) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     final total = state.total > 0 ? state.total : widget.totalCountFromGuide;
 
     return Container(
-      decoration: BoxDecoration(
-        color: GuideTokens.cardSurface(context),
-        borderRadius: BorderRadius.zero,
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : GuideTokens.borderLight,
-        ),
-        boxShadow: isDark
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
-      ),
-      padding: const EdgeInsets.all(GuideTokens.space32),
+      decoration: isMobile
+          ? null
+          : BoxDecoration(
+              color: GuideTokens.cardSurface(context),
+              borderRadius: BorderRadius.zero,
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : GuideTokens.borderLight,
+              ),
+              boxShadow: isDark
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ]
+                  : null,
+            ),
+      padding: isMobile
+          ? const EdgeInsets.symmetric(horizontal: 0, vertical: 24)
+          : const EdgeInsets.all(GuideTokens.space32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -702,8 +707,13 @@ class _CommentActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final tertiary = GuideTokens.textTertiary(context);
     final theme = Theme.of(context);
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final spacing = isMobile ? GuideTokens.space12 : GuideTokens.space20;
 
-    return Row(
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: spacing,
+      runSpacing: 8,
       children: [
         // 时间
         Text(
@@ -713,7 +723,6 @@ class _CommentActions extends StatelessWidget {
             fontSize: 12,
           ),
         ),
-        const SizedBox(width: GuideTokens.space20),
         // 赞（常显）
         _IconAction(
           icon: comment.isLiked
@@ -723,7 +732,6 @@ class _CommentActions extends StatelessWidget {
           color: comment.isLiked ? GuideTokens.likeColor(context) : tertiary,
           onTap: onLike,
         ),
-        const SizedBox(width: GuideTokens.space16),
         // 踩（常显）
         _IconAction(
           icon: comment.isDisliked
@@ -734,18 +742,15 @@ class _CommentActions extends StatelessWidget {
           onTap: onDislike,
         ),
         // 回复（常显，自己的评论不显示）
-        if (onReply != null) ...[
-          const SizedBox(width: GuideTokens.space20),
+        if (onReply != null)
           _IconAction(
             icon: Icons.reply_rounded,
             label: '回复',
             color: tertiary,
             onTap: onReply,
           ),
-        ],
         // 删除 / 举报（hover 时显示）
-        if ((isOwn && onDelete != null) || (!isOwn && onReport != null)) ...[
-          const SizedBox(width: GuideTokens.space20),
+        if ((isOwn && onDelete != null) || (!isOwn && onReport != null))
           AnimatedOpacity(
             duration: GuideTokens.durationFast,
             opacity: showActions ? 1.0 : 0.0,
@@ -766,7 +771,6 @@ class _CommentActions extends StatelessWidget {
                     ),
             ),
           ),
-        ],
       ],
     );
   }

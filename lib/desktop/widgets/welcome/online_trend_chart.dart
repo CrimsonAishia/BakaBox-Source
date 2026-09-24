@@ -112,9 +112,9 @@ class _OnlineTrendChartState extends State<OnlineTrendChart> {
     }
 
     return switch (_selectedTab) {
-      0 => _DailyTrendChart(isDark: widget.isDark, stats: stats),
-      1 => _HourlyBarChart(isDark: widget.isDark, stats: stats),
-      2 => _TopMapsList(isDark: widget.isDark, maps: stats.topMaps),
+      0 => DailyTrendChartWidget(isDark: widget.isDark, stats: stats),
+      1 => HourlyBarChartWidget(isDark: widget.isDark, stats: stats),
+      2 => TopMapsListWidget(isDark: widget.isDark, maps: stats.topMaps),
       _ => const SizedBox(),
     };
   }
@@ -170,11 +170,15 @@ class _TabChip extends StatelessWidget {
 }
 
 /// 7日每日趋势折线图
-class _DailyTrendChart extends StatelessWidget {
+class DailyTrendChartWidget extends StatelessWidget {
   final bool isDark;
   final ServerStatsResponse stats;
 
-  const _DailyTrendChart({required this.isDark, required this.stats});
+  const DailyTrendChartWidget({
+    super.key,
+    required this.isDark,
+    required this.stats,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -318,11 +322,15 @@ class _DailyTrendChart extends StatelessWidget {
 }
 
 /// 热门时段柱状图
-class _HourlyBarChart extends StatelessWidget {
+class HourlyBarChartWidget extends StatelessWidget {
   final bool isDark;
   final ServerStatsResponse stats;
 
-  const _HourlyBarChart({required this.isDark, required this.stats});
+  const HourlyBarChartWidget({
+    super.key,
+    required this.isDark,
+    required this.stats,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -423,11 +431,17 @@ class _HourlyBarChart extends StatelessWidget {
 }
 
 /// 热门地图列表
-class _TopMapsList extends StatelessWidget {
+class TopMapsListWidget extends StatelessWidget {
   final bool isDark;
   final List<TopMap> maps;
+  final bool isMobile;
 
-  const _TopMapsList({required this.isDark, required this.maps});
+  const TopMapsListWidget({
+    super.key,
+    required this.isDark,
+    required this.maps,
+    this.isMobile = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -439,6 +453,10 @@ class _TopMapsList extends StatelessWidget {
 
     return ListView.separated(
       padding: EdgeInsets.zero,
+      shrinkWrap: isMobile,
+      physics: isMobile
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       itemCount: math.min(maps.length, 10),
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {

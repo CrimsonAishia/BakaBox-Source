@@ -9,9 +9,7 @@ sealed class WarmupUsersEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// ============================================================================
 // Public Events (UI triggered)
-// ============================================================================
 
 /// 连接到指定服务器的暖服 WebSocket
 class WarmupUsersConnect extends WarmupUsersEvent {
@@ -56,9 +54,7 @@ class WarmupUsersSuccess extends WarmupUsersEvent {
   const WarmupUsersSuccess();
 }
 
-// ============================================================================
 // Internal Events (from WarmupUsersService)
-// ============================================================================
 
 /// 全量同步用户列表
 class WarmupUsersSynced extends WarmupUsersEvent {

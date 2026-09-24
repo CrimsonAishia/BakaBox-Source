@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/widgets/rich_text_editor.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -13,6 +13,7 @@ import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
 import 'character_dialogs.dart';
 import 'character_edit_data_models.dart';
+import 'character_common_widgets.dart';
 import 'character_spell_card_edit_dialogs.dart';
 import 'character_zombie_skill_edit_dialogs.dart';
 import 'preview_images_upload_widget.dart';
@@ -77,14 +78,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   bool _previewImagesChanged = false;
   final GlobalKey<PreviewImagesUploadWidgetState> _previewImagesKey =
       GlobalKey();
-
-  // 内联编辑状态
-  int? _editingSpellCardId;
-  TextEditingController? _tempDescriptionController;
-  TextEditingController? _tempCooldownController;
-  TextEditingController? _tempDamageController;
-  TextEditingController? _tempCostController;
-  SpellCardTier? _tempTier;
 
   // 僵尸技能内联编辑状态
   int? _editingZombieSkillId;
@@ -334,11 +327,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     _descriptionController.dispose();
     _acquisitionCostController.dispose();
     _acquisitionCustomController.dispose();
-    // 释放内联编辑的临时控制器
-    _tempDescriptionController?.dispose();
-    _tempCooldownController?.dispose();
-    _tempDamageController?.dispose();
-    _tempCostController?.dispose();
     // 释放僵尸技能内联编辑的临时控制器
     _zombieTempDescriptionController?.dispose();
     _zombieTempCooldownController?.dispose();
@@ -691,7 +679,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   Widget _buildAcquisitionTab() {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    final vermillion = CharacterGalleryTheme.getVermillion(context);
     final gold = CharacterGalleryTheme.getGold(context);
 
     // 判断是否已维护：如果原始数据不为null且不是unknown，则认为已维护
@@ -716,7 +703,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
               _buildAcquisitionTypeChip(
                 '点',
                 AcquisitionType.points,
-                vermillion,
+                const Color(0xFF60A5FA),
               ),
               _buildAcquisitionTypeChip(
                 '自定义',
@@ -737,7 +724,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
               _acquisitionType == AcquisitionType.points) ...[
             _buildSectionTitle(
               _acquisitionType == AcquisitionType.gold ? '金数量' : '点数量',
-              Icons.monetization_on_outlined,
+              _acquisitionType == AcquisitionType.gold
+                  ? Icons.monetization_on_outlined
+                  : Icons.bolt,
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -983,23 +972,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         .where((c) => c.type == SpellCardType.normal)
         .toList();
 
-    // 新增符卡也按类型分组
-    final newPassive = _spellCardCreates
-        .asMap()
-        .entries
-        .where((e) => e.value.type == 'passive')
-        .toList();
-    final newUltimate = _spellCardCreates
-        .asMap()
-        .entries
-        .where((e) => e.value.type == 'ultimate')
-        .toList();
-    final newNormal = _spellCardCreates
-        .asMap()
-        .entries
-        .where((e) => e.value.type == 'normal')
-        .toList();
-
     final gold = CharacterGalleryTheme.getGold(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
 
@@ -1008,45 +980,30 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _buildSectionTitle('符卡列表', Icons.auto_awesome),
-              const Spacer(),
-              _buildAddButton('新增符卡', () => _showAddSpellCardDialog()),
-            ],
-          ),
+          Row(children: [_buildSectionTitle('符卡列表', Icons.auto_awesome)]),
           const SizedBox(height: 16),
-          if (spellCards.isEmpty && _spellCardCreates.isEmpty)
+          if (spellCards.isEmpty)
             _buildEmptyHint('暂无符卡数据')
           else ...[
             // 被动技能
-            if (passive.isNotEmpty || newPassive.isNotEmpty) ...[
+            if (passive.isNotEmpty) ...[
               _buildSpellCardGroupHeader('被动技能', AppColors.skillGreen),
               const SizedBox(height: 8),
               ...passive.map((card) => _buildSpellCardItem(card)),
-              ...newPassive.map(
-                (entry) => _buildNewSpellCardItem(entry.key, entry.value),
-              ),
               const SizedBox(height: 16),
             ],
             // 大符卡
-            if (ultimate.isNotEmpty || newUltimate.isNotEmpty) ...[
+            if (ultimate.isNotEmpty) ...[
               _buildSpellCardGroupHeader('大符卡', gold),
               const SizedBox(height: 8),
               ...ultimate.map((card) => _buildSpellCardItem(card)),
-              ...newUltimate.map(
-                (entry) => _buildNewSpellCardItem(entry.key, entry.value),
-              ),
               const SizedBox(height: 16),
             ],
             // 小符卡
-            if (normal.isNotEmpty || newNormal.isNotEmpty) ...[
+            if (normal.isNotEmpty) ...[
               _buildSpellCardGroupHeader('小符卡', vermillion),
               const SizedBox(height: 8),
               ...normal.map((card) => _buildSpellCardItem(card)),
-              ...newNormal.map(
-                (entry) => _buildNewSpellCardItem(entry.key, entry.value),
-              ),
             ],
           ],
         ],
@@ -1122,10 +1079,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   Widget _buildSpellCardItem(SpellCard card) {
     final editData = _spellCardEdits[card.id];
     final isEdited = editData != null;
-    final isEditing = _editingSpellCardId == card.id;
     final type = card.type;
     // 获取当前评级（优先使用编辑后的值）
-    final currentTier = isEditing ? _tempTier : (editData?.tier ?? card.tier);
+    final currentTier = editData?.tier ?? card.tier;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final overlayColor = CharacterGalleryTheme.getOverlayColor(
@@ -1144,19 +1100,19 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     ) = switch (type) {
       SpellCardType.passive => (
         AppColors.skillGreen,
-        AppColors.skillGreen.withValues(alpha: 0.08),
+        AppColors.skillGreen.withValues(alpha: isDark ? 0.15 : 0.08),
         '✦',
         'assets/images/character_gallery/spell_card_bg_passive.png',
       ),
       SpellCardType.ultimate => (
         gold,
-        gold.withValues(alpha: 0.08),
+        gold.withValues(alpha: isDark ? 0.15 : 0.08),
         '◈',
         'assets/images/character_gallery/spell_card_bg_ultimate.png',
       ),
       SpellCardType.normal => (
         vermillion,
-        vermillion.withValues(alpha: 0.06),
+        vermillion.withValues(alpha: isDark ? 0.12 : 0.06),
         '✧',
         'assets/images/character_gallery/spell_card_bg_normal.png',
       ),
@@ -1168,8 +1124,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       decoration: BoxDecoration(
         color: bgColor,
         border: Border.all(
-          color: isEditing ? gold : (isEdited ? vermillion : borderColor),
-          width: isEditing ? 2.5 : (isEdited ? 2 : 1.5),
+          color: isEdited ? vermillion : borderColor,
+          width: isEdited ? 2 : 1.5,
         ),
         borderRadius: BorderRadius.circular(6),
       ),
@@ -1182,9 +1138,20 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
               child: Image.asset(
                 bgAsset,
                 fit: BoxFit.cover,
-                opacity: AlwaysStoppedAnimation(isDark ? 0.2 : 0.5),
+                opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
               ),
             ),
+
+            // 渐变蒙版
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration:
+                    CharacterGalleryTheme.getCardBottomGradientDecoration(
+                      context,
+                    ),
+              ),
+            ),
+
             // 内容层
             Padding(
               padding: const EdgeInsets.all(12),
@@ -1192,7 +1159,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 标题行：符号 + 名称 + 评级 + 状态 + 操作按钮
+                  // 标题行
                   Row(
                     children: [
                       Text(
@@ -1200,7 +1167,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                         style: TextStyle(
                           color: borderColor,
                           fontSize: 14,
-                          shadows: [Shadow(color: overlayColor, blurRadius: 2)],
+                          shadows: isDark
+                              ? null
+                              : [
+                                  Shadow(color: Colors.white, blurRadius: 3),
+                                  Shadow(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    blurRadius: 6,
+                                  ),
+                                ],
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -1211,135 +1186,55 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                             color: inkColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            shadows: [
-                              Shadow(color: overlayColor, blurRadius: 3),
-                            ],
+                            shadows: isDark
+                                ? null
+                                : [
+                                    Shadow(color: Colors.white, blurRadius: 4),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      blurRadius: 8,
+                                    ),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
                           ),
                         ),
                       ),
-                      // 评级标签（编辑模式下可点击修改）
-                      if (isEditing) ...[
-                        PopupMenuButton<SpellCardTier?>(
-                          initialValue: currentTier,
-                          onSelected: (tier) =>
-                              setState(() => _tempTier = tier),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: overlayColor,
-                              border: Border.all(
-                                color:
-                                    currentTier != null &&
-                                        currentTier != SpellCardTier.unranked
-                                    ? _getTierColor(currentTier)
-                                    : inkColor.withValues(alpha: 0.3),
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  currentTier?.label ?? '选择评级',
-                                  style: TextStyle(
-                                    color:
-                                        currentTier != null &&
-                                            currentTier !=
-                                                SpellCardTier.unranked
-                                        ? _getTierColor(currentTier)
-                                        : inkColor.withValues(alpha: 0.6),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.arrow_drop_down,
-                                  size: 18,
-                                  color:
-                                      currentTier != null &&
-                                          currentTier != SpellCardTier.unranked
-                                      ? _getTierColor(currentTier)
-                                      : inkColor.withValues(alpha: 0.6),
-                                ),
-                              ],
-                            ),
-                          ),
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: null,
-                              child: Text(
-                                '未选择',
-                                style: TextStyle(color: inkColor, fontSize: 13),
-                              ),
-                            ),
-                            ...SpellCardTier.values.map(
-                              (tier) => PopupMenuItem(
-                                value: tier,
-                                child: Text(
-                                  tier.label,
-                                  style: TextStyle(
-                                    color: _getTierColor(tier),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 8),
-                      ] else if (currentTier != null &&
+                      // 评级标签
+                      if (currentTier != null &&
                           currentTier != SpellCardTier.unranked) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
+                            horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: overlayColor,
+                            color: (isDark ? Colors.black : Colors.white)
+                                .withValues(alpha: 0.85),
                             border: Border.all(
                               color: _getTierColor(currentTier),
-                              width: 1.5,
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            currentTier.label,
+                            currentTier.shortLabel,
                             style: TextStyle(
                               color: _getTierColor(currentTier),
-                              fontSize: 13,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                       ],
-                      // 已修改/编辑中标签
-                      if (isEditing)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: overlayColor,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '编辑中',
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
-                      else if (isEdited)
+                      // 已修改标签
+                      if (isEdited) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -1358,30 +1253,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                             ),
                           ),
                         ),
-                      const SizedBox(width: 8),
-                      // 操作按钮
-                      if (isEditing) ...[
-                        _buildIconButton(
-                          Icons.check,
-                          () => _saveInlineSpellCardEdit(card),
-                          color: Colors.green,
-                        ),
-                        _buildIconButton(
-                          Icons.close,
-                          _cancelInlineSpellCardEdit,
-                          color: Colors.grey,
-                        ),
-                      ] else ...[
-                        _buildIconButton(
-                          Icons.edit_outlined,
-                          () => _editSpellCard(card),
-                        ),
-                        _buildIconButton(
-                          Icons.delete_outline,
-                          () => _deleteSpellCard(card.id),
-                          color: Colors.red,
-                        ),
+                        const SizedBox(width: 8),
                       ],
+                      // 操作按钮
+                      HoverButton(
+                        icon: Icons.edit_outlined,
+                        label: '编辑',
+                        onTap: () => _editSpellCard(card),
+                        small: true,
+                        bgColor: overlayColor,
+                      ),
                     ],
                   ),
 
@@ -1404,135 +1285,61 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                     ),
                   ),
 
-                  // 描述区域：编辑时显示带边框的输入框
-                  isEditing
-                      ? Stack(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.only(
-                                left: 10,
-                                right: 10,
-                                top: 8,
-                                bottom: 24,
+                  // 描述区域
+                  RichTextViewer(
+                    content: editData?.description ?? card.description,
+                    compact: true,
+                    textStyle: TextStyle(
+                      color: inkColor,
+                      fontSize: 13,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      shadows: isDark
+                          ? null
+                          : [
+                              Shadow(color: Colors.white, blurRadius: 4),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                blurRadius: 8,
                               ),
-                              decoration: BoxDecoration(
-                                color: overlayColor.withValues(alpha: 0.3),
-                                border: Border.all(
-                                  color: borderColor.withValues(alpha: 0.4),
-                                  width: 1.5,
-                                ),
-                                borderRadius: BorderRadius.circular(1),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                blurRadius: 12,
                               ),
-                              child: TextField(
-                                controller: _tempDescriptionController!,
-                                maxLines: null,
-                                minLines: 2,
-                                maxLength: 200,
-                                style: TextStyle(
-                                  color: inkColor.withValues(alpha: 0.9),
-                                  fontSize: 13,
-                                  height: 1.5,
-                                ),
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(1),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(1),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(1),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: EdgeInsets.zero,
-                                  isDense: true,
-                                  hintText: '描述符卡的效果...',
-                                  hintStyle: TextStyle(
-                                    color: inkColor.withValues(alpha: 0.4),
-                                    fontSize: 13,
-                                  ),
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                            // 字数统计浮于右下角
-                            Positioned(
-                              right: 8,
-                              bottom: 6,
-                              child: ValueListenableBuilder<TextEditingValue>(
-                                valueListenable: _tempDescriptionController!,
-                                builder: (context, value, child) {
-                                  final count = value.text.length;
-                                  final isOverLimit = count > 200;
-                                  return Text(
-                                    '$count/200',
-                                    style: TextStyle(
-                                      color: isOverLimit
-                                          ? Colors.red
-                                          : inkColor.withValues(alpha: 0.5),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        )
-                      : RichTextViewer(
-                          content: editData?.description ?? card.description,
-                          compact: true,
-                          textStyle: TextStyle(
-                            color: inkColor.withValues(alpha: 0.9),
-                            fontSize: 13,
-                            height: 1.4,
-                            shadows: [
-                              Shadow(color: overlayColor, blurRadius: 2),
                             ],
-                          ),
-                        ),
+                    ),
+                  ),
 
-                  // 属性行 - 编辑模式下始终显示，非编辑模式下有数据才显示
-                  if (isEditing ||
-                      ((editData?.cooldown ?? card.cooldown) != null ||
-                          (editData?.damage ?? card.damage) != null ||
-                          (editData?.cost ?? card.cost) != null ||
-                          (editData?.speed ?? card.speed) != null ||
-                          (editData?.count ?? card.count) != null ||
-                          (editData?.angle ?? card.angle) != null ||
-                          (editData?.puncture ?? card.puncture) != null ||
-                          (editData?.bounce ?? card.bounce) != null ||
-                          (editData?.explode ?? card.explode) != null ||
-                          (editData?.holdTime ?? card.holdTime) != null ||
-                          (editData?.trackSpeed ?? card.trackSpeed) != null ||
-                          (editData?.customCd ?? card.customCd) != null)) ...[
+                  // 属性行
+                  if (((editData?.cooldown ?? card.cooldown) != null ||
+                      (editData?.damage ?? card.damage) != null ||
+                      (editData?.cost ?? card.cost) != null ||
+                      (editData?.speed ?? card.speed) != null ||
+                      (editData?.count ?? card.count) != null ||
+                      (editData?.angle ?? card.angle) != null ||
+                      (editData?.puncture ?? card.puncture) != null ||
+                      (editData?.bounce ?? card.bounce) != null ||
+                      (editData?.explode ?? card.explode) != null ||
+                      (editData?.holdTime ?? card.holdTime) != null ||
+                      (editData?.trackSpeed ?? card.trackSpeed) != null ||
+                      (editData?.customCd ?? card.customCd) != null)) ...[
                     const SizedBox(height: 10),
-                    if (isEditing)
-                      _buildEditableStatsRow(
-                        card,
-                        borderColor,
-                        inkColor,
-                        overlayColor,
-                      )
-                    else
-                      _buildSpellCardStatsRow(
-                        cooldown: editData?.cooldown ?? card.cooldown,
-                        damage: editData?.damage ?? card.damage,
-                        cost: editData?.cost ?? card.cost,
-                        speed: editData?.speed ?? card.speed,
-                        count: editData?.count ?? card.count,
-                        angle: editData?.angle ?? card.angle,
-                        puncture: editData?.puncture ?? card.puncture,
-                        bounce: editData?.bounce ?? card.bounce,
-                        explode: editData?.explode ?? card.explode,
-                        holdTime: editData?.holdTime ?? card.holdTime,
-                        trackSpeed: editData?.trackSpeed ?? card.trackSpeed,
-                        customCd: editData?.customCd ?? card.customCd,
-                        type: card.type.name,
-                        accentColor: borderColor,
-                      ),
+                    _buildSpellCardStatsRow(
+                      cooldown: editData?.cooldown ?? card.cooldown,
+                      damage: editData?.damage ?? card.damage,
+                      cost: editData?.cost ?? card.cost,
+                      speed: editData?.speed ?? card.speed,
+                      count: editData?.count ?? card.count,
+                      angle: editData?.angle ?? card.angle,
+                      puncture: editData?.puncture ?? card.puncture,
+                      bounce: editData?.bounce ?? card.bounce,
+                      explode: editData?.explode ?? card.explode,
+                      holdTime: editData?.holdTime ?? card.holdTime,
+                      trackSpeed: editData?.trackSpeed ?? card.trackSpeed,
+                      customCd: editData?.customCd ?? card.customCd,
+                      type: card.type.name,
+                      accentColor: borderColor,
+                    ),
                   ],
                 ],
               ),
@@ -1543,59 +1350,18 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     );
   }
 
-  // 可编辑的属性行
-  Widget _buildEditableStatsRow(
-    SpellCard card,
-    Color accentColor,
-    Color inkColor,
-    Color overlayColor,
-  ) {
-    return Row(
-      children: [
-        // 冷却时间
-        Expanded(
-          child: _buildInlineStatFieldExpanded(
-            icon: Icons.timer_outlined,
-            iconColor: CharacterGalleryTheme.getCooldownColor(context),
-            controller: _tempCooldownController!,
-            hint: '60',
-            suffix: '秒',
-            inkColor: inkColor,
-            overlayColor: overlayColor,
-            fieldType: StatFieldType.number,
-          ),
-        ),
-        const SizedBox(width: 8),
-        // 伤害
-        Expanded(
-          child: _buildInlineStatFieldExpanded(
-            icon: Icons.flash_on,
-            iconColor: CharacterGalleryTheme.getDamageColor(context),
-            controller: _tempDamageController!,
-            hint: '150-300',
-            inkColor: inkColor,
-            overlayColor: overlayColor,
-            fieldType: StatFieldType.damage,
-          ),
-        ),
-        const SizedBox(width: 8),
-        // 消耗
-        Expanded(
-          child: _buildInlineStatFieldExpanded(
-            icon: Icons.local_fire_department,
-            iconColor: card.type == SpellCardType.ultimate
-                ? CharacterGalleryTheme.getGold(context)
-                : CharacterGalleryTheme.getPCostColor(context),
-            controller: _tempCostController!,
-            hint: card.type == SpellCardType.ultimate ? '100' : '50',
-            suffix: card.type == SpellCardType.ultimate ? 'B' : 'P',
-            inkColor: inkColor,
-            overlayColor: overlayColor,
-            fieldType: StatFieldType.number,
-          ),
-        ),
-      ],
-    );
+  Color _getTierColor(SpellCardTier tier) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+
+    return switch (tier) {
+      SpellCardTier.t0 => const Color(0xFFFF4444),
+      SpellCardTier.t1 => const Color(0xFFFF8800),
+      SpellCardTier.t2 => const Color(0xFFFFCC00),
+      SpellCardTier.t3 => const Color(0xFF44BB44),
+      SpellCardTier.t4 => const Color(0xFF4488FF),
+      SpellCardTier.t5 => const Color(0xFF8888AA),
+      SpellCardTier.unranked => scrollBrown,
+    };
   }
 
   // 等宽内联属性输入框
@@ -1684,225 +1450,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       ],
       StatFieldType.text => null,
     };
-  }
-
-  Widget _buildNewSpellCardItem(int index, SpellCardCreateData data) {
-    // 类型对应的颜色、符号和背景图
-    final type = data.type;
-    final inkColor = CharacterGalleryTheme.getInkColor(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlayColor = CharacterGalleryTheme.getOverlayColor(
-      context,
-      alpha: isDark ? 0.6 : 0.8,
-    );
-    final vermillion = CharacterGalleryTheme.getVermillion(context);
-    final gold = CharacterGalleryTheme.getGold(context);
-
-    final (
-      Color borderColor,
-      Color bgColor,
-      String symbol,
-      String bgAsset,
-    ) = switch (type) {
-      'passive' => (
-        AppColors.skillGreen,
-        AppColors.skillGreen.withValues(alpha: 0.08),
-        '✦',
-        'assets/images/character_gallery/spell_card_bg_passive.png',
-      ),
-      'ultimate' => (
-        gold,
-        gold.withValues(alpha: 0.08),
-        '◈',
-        'assets/images/character_gallery/spell_card_bg_ultimate.png',
-      ),
-      _ => (
-        vermillion,
-        vermillion.withValues(alpha: 0.06),
-        '✧',
-        'assets/images/character_gallery/spell_card_bg_normal.png',
-      ),
-    };
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      constraints: const BoxConstraints(minHeight: 80),
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(color: AppColors.skillGreen, width: 2),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(5),
-        child: Stack(
-          children: [
-            // 背景图层
-            Positioned.fill(
-              child: Image.asset(
-                bgAsset,
-                fit: BoxFit.cover,
-                opacity: AlwaysStoppedAnimation(isDark ? 0.2 : 0.5),
-              ),
-            ),
-            // 内容层
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题行
-                  Row(
-                    children: [
-                      Text(
-                        symbol,
-                        style: TextStyle(
-                          color: borderColor,
-                          fontSize: 14,
-                          shadows: [Shadow(color: overlayColor, blurRadius: 2)],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          data.name,
-                          style: TextStyle(
-                            color: inkColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            shadows: [
-                              Shadow(color: overlayColor, blurRadius: 3),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // 评级标签
-                      if (data.tier != null &&
-                          data.tier != SpellCardTier.unranked) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: overlayColor,
-                            border: Border.all(
-                              color: _getTierColor(data.tier!),
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            data.tier!.label,
-                            style: TextStyle(
-                              color: _getTierColor(data.tier!),
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      // 新增标签
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: overlayColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '新增',
-                          style: TextStyle(
-                            color: AppColors.skillGreen,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildIconButton(
-                        Icons.edit_outlined,
-                        () => _editNewSpellCard(index, data),
-                      ),
-                      _buildIconButton(
-                        Icons.delete_outline,
-                        () => setState(() => _spellCardCreates.removeAt(index)),
-                        color: Colors.red,
-                      ),
-                    ],
-                  ),
-
-                  // 分隔线
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Container(
-                      height: 1,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            borderColor.withValues(alpha: 0),
-                            borderColor.withValues(alpha: 0.5),
-                            borderColor.withValues(alpha: 0.5),
-                            borderColor.withValues(alpha: 0),
-                          ],
-                          stops: const [0, 0.2, 0.8, 1],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // 描述
-                  RichTextViewer(
-                    content: data.description ?? '暂无描述',
-                    compact: true,
-                    textStyle: TextStyle(
-                      color: inkColor.withValues(alpha: 0.9),
-                      fontSize: 13,
-                      height: 1.4,
-                      shadows: [Shadow(color: overlayColor, blurRadius: 2)],
-                    ),
-                  ),
-
-                  // 属性行
-                  if (data.cooldown != null ||
-                      data.damage != null ||
-                      data.cost != null ||
-                      data.speed != null ||
-                      data.count != null ||
-                      data.angle != null ||
-                      data.puncture != null ||
-                      data.bounce != null ||
-                      data.explode != null ||
-                      data.holdTime != null ||
-                      data.trackSpeed != null ||
-                      data.customCd != null) ...[
-                    const SizedBox(height: 10),
-                    _buildSpellCardStatsRow(
-                      cooldown: data.cooldown,
-                      damage: data.damage,
-                      cost: data.cost,
-                      speed: data.speed,
-                      count: data.count,
-                      angle: data.angle,
-                      puncture: data.puncture,
-                      bounce: data.bounce,
-                      explode: data.explode,
-                      holdTime: data.holdTime,
-                      trackSpeed: data.trackSpeed,
-                      customCd: data.customCd,
-                      type: data.type,
-                      accentColor: borderColor,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildZombieSkillItem(ZombieSkill skill) {
@@ -2783,20 +2330,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     );
   }
 
-  Color _getTierColor(SpellCardTier tier) {
-    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-
-    return switch (tier) {
-      SpellCardTier.t0 => const Color(0xFFFF4444),
-      SpellCardTier.t1 => const Color(0xFFFF8800),
-      SpellCardTier.t2 => const Color(0xFFFFCC00),
-      SpellCardTier.t3 => const Color(0xFF44BB44),
-      SpellCardTier.t4 => const Color(0xFF4488FF),
-      SpellCardTier.t5 => const Color(0xFF8888AA),
-      SpellCardTier.unranked => scrollBrown,
-    };
-  }
-
   Widget _buildIconButton(IconData icon, VoidCallback onTap, {Color? color}) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -3130,156 +2663,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         onSave: (editData) {
           setState(() {
             _spellCardEdits[card.id] = editData;
-          });
-        },
-      ),
-    );
-  }
-
-  void _saveInlineSpellCardEdit(SpellCard card) {
-    if (_tempDescriptionController == null ||
-        _tempDescriptionController!.text.isEmpty) {
-      ToastUtils.showWarning(context, '请填写效果描述');
-      return;
-    }
-
-    final descText = _tempDescriptionController!.text;
-    final damageText = _tempDamageController?.text ?? '';
-    final cooldownText = _tempCooldownController?.text ?? '';
-    final costText = _tempCostController?.text ?? '';
-
-    // 检查是否有实际修改
-    final hasChanges =
-        descText != card.description ||
-        damageText != (card.damage ?? '') ||
-        (cooldownText.isNotEmpty
-            ? double.tryParse(cooldownText) != card.cooldown
-            : card.cooldown != null) ||
-        (costText.isNotEmpty
-            ? int.tryParse(costText) != card.cost
-            : card.cost != null) ||
-        _tempTier != card.tier;
-
-    setState(() {
-      if (hasChanges) {
-        _spellCardEdits[card.id] = SpellCardEditData(
-          description: descText,
-          damage: damageText.isNotEmpty ? damageText : null,
-          cooldown: double.tryParse(cooldownText),
-          cost: int.tryParse(costText),
-          tier: _tempTier,
-        );
-      } else {
-        // 如果没有修改，移除编辑记录
-        _spellCardEdits.remove(card.id);
-      }
-      _editingSpellCardId = null;
-    });
-
-    _tempDescriptionController?.dispose();
-    _tempDescriptionController = null;
-    _tempCooldownController?.dispose();
-    _tempCooldownController = null;
-    _tempDamageController?.dispose();
-    _tempDamageController = null;
-    _tempCostController?.dispose();
-    _tempCostController = null;
-  }
-
-  void _cancelInlineSpellCardEdit() {
-    setState(() {
-      _editingSpellCardId = null;
-    });
-
-    _tempDescriptionController?.dispose();
-    _tempDescriptionController = null;
-    _tempCooldownController?.dispose();
-    _tempCooldownController = null;
-    _tempDamageController?.dispose();
-    _tempDamageController = null;
-    _tempCostController?.dispose();
-    _tempCostController = null;
-  }
-
-  void _editNewSpellCard(int index, SpellCardCreateData data) {
-    showDialog(
-      context: context,
-      builder: (ctx) => NewSpellCardEditSubDialog(
-        data: data,
-        onSave: (updatedData) {
-          setState(() {
-            _spellCardCreates[index] = updatedData;
-          });
-        },
-      ),
-    );
-  }
-
-  void _deleteSpellCard(int cardId) {
-    final washiColor = CharacterGalleryTheme.getWashiColor(context);
-    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    final inkColor = CharacterGalleryTheme.getInkColor(context);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: washiColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: scrollBrown, width: 2),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.delete_outline, color: Colors.red, size: 24),
-            const SizedBox(width: 8),
-            Text(
-              '确认删除',
-              style: TextStyle(
-                color: inkColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          '确定要删除这个符卡吗？此操作需要审核通过后生效。',
-          style: TextStyle(
-            color: inkColor.withValues(alpha: 0.8),
-            fontSize: 14,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: scrollBrown)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() {
-                _spellCardDeletes.add(cardId);
-                _spellCardEdits.remove(cardId);
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddSpellCardDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => SpellCardCreateSubDialog(
-        onSave: (createData) {
-          setState(() {
-            _spellCardCreates.add(createData);
           });
         },
       ),
