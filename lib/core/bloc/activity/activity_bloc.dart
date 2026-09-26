@@ -98,10 +98,9 @@ class ActivityBloc extends Bloc<ActivityEvent, ActivityState> {
 
       final now = DateTime.now().millisecondsSinceEpoch;
       final isExpired = activity.endTime != null && now > activity.endTime!;
-      final notStartedYet = activity.startTime > now;
 
       // 如果获取到的单条数据已经失效、过期或者还未开始，则从列表中移除/忽略
-      if (!activity.isActive || isExpired || notStartedYet) {
+      if (!activity.isActive || isExpired) {
         add(ActivityRealtimeDeleted(event.id));
         return;
       }
