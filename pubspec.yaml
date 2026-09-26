@@ -177,13 +177,9 @@ flutter:
     
     # 桌面端专属资源 (Android 默认编译时会自动剔除)
     - path: assets/images/tutorials/
-      flavors:
-        - pc
     - assets/images/character_gallery/
     - assets/images/guide/
     - path: assets/images/key_binding/
-      flavors:
-        - pc
     - assets/icons/guide/
 
 
