@@ -57,6 +57,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   bool _memeCanScrollUp = false;
   bool _memeCanScrollDown = false;
 
+  String _detailTabId = '介绍';
+  int? _lastCharacterId;
+
   @override
   void initState() {
     super.initState();
@@ -1596,14 +1599,17 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
   Widget _buildCharacterDetail(CharacterGalleryState state) {
     final character = state.selectedCharacter!;
-    final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    final cardBg = CharacterGalleryTheme.getOverlayColor(context, alpha: 0.5);
     final isSubModelLoading = state.isSubModelLoading;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateDetailScrollIndicators();
     });
+
+    if (_lastCharacterId != character.id) {
+      _detailTabId = '介绍';
+      _lastCharacterId = character.id;
+    }
 
     return Stack(
       children: [
@@ -1648,10 +1654,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 skeleton: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DetailPanelSkeleton.buildSectionDividerSkeleton(
-                      scrollBrown,
-                      '角色介绍',
-                    ),
                     const SizedBox(height: 12),
                     ...List.generate(
                       3,
@@ -1666,57 +1668,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                         ),
                       ),
                     ),
-                    DetailPanelSkeleton.buildSectionDividerSkeleton(
-                      scrollBrown,
-                      '符卡系统',
-                    ),
                     const SizedBox(height: 12),
-                    DetailPanelSkeleton.buildGroupHeaderSkeleton(
-                      scrollBrown,
-                      AppColors.skillGreen,
-                    ),
-                    const SizedBox(height: 8),
-                    DetailPanelSkeleton.buildSkillCardSkeleton(
-                      context,
-                      scrollBrown,
-                      cardBg,
-                    ),
                   ],
                 ),
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 角色介绍（优先使用子模型介绍，兜底使用角色介绍）
-                    SectionDivider(title: '角色介绍'),
-                    const SizedBox(height: 12),
-                    RichTextViewer(
-                      content:
-                          (state.currentSubModel?.description?.isNotEmpty ??
-                              false)
-                          ? state.currentSubModel!.description!
-                          : character.description,
-                      compact: true,
-                      textStyle: TextStyle(
-                        color: inkColor.withValues(alpha: 0.8),
-                        fontSize: 14,
-                        height: 1.8,
-                      ),
-                    ),
-                    ModelAuthorTagsSection(
-                      model:
-                          state.currentSubModel ??
-                          _createDefaultSubModel(character),
-                    ),
-                    if (state.currentSubModel?.voices != null &&
-                        state.currentSubModel!.voices!.isNotEmpty)
-                      _buildVoicesSection(state.currentSubModel!.voices!),
-                    // 符卡/技能区域
-                    if (character.category == CharacterCategory.touhou)
-                      _buildSpellCardsSection(state),
-                    if (character.category == CharacterCategory.zombie)
-                      _buildZombieSkillsSection(character),
-                    // 刀模/枪模区域
-                    _buildWeaponModelsSection(state),
+                    _buildCharacterTabs(character, state),
+                    _buildSelectedTabContent(character, state),
                   ],
                 ),
               ),
@@ -1741,6 +1700,158 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           ),
       ],
     );
+  }
+
+  List<(String, String)> _getAvailableTabs(
+    CharacterModel character,
+    CharacterGalleryState state,
+  ) {
+    final tabs = <(String, String)>[('介绍', '介绍')];
+
+    // 语音
+    if (state.currentSubModel?.voices != null &&
+        state.currentSubModel!.voices!.isNotEmpty) {
+      final voiceCount = state.currentSubModel!.voices!.length;
+      tabs.add(('语音', '语音 ($voiceCount)'));
+    }
+
+    // 符卡/技能
+    if (character.category == CharacterCategory.touhou) {
+      final spellCardsCount = state.spellCards.length;
+      if (spellCardsCount > 0) {
+        tabs.add(('符卡', '符卡 ($spellCardsCount)'));
+      }
+    } else if (character.category == CharacterCategory.zombie) {
+      final skillsCount = character.zombieSkills?.length ?? 0;
+      if (skillsCount > 0) {
+        tabs.add(('技能', '技能 ($skillsCount)'));
+      }
+    }
+
+    // 专属
+    final knifeCount = state.knifeModels.length;
+    final gunCount = state.gunModels.length;
+    final menuSkinCount = state.menuSkins.length;
+    final totalWeaponCount = knifeCount + gunCount + menuSkinCount;
+
+    if (totalWeaponCount > 0) {
+      tabs.add(('专属', '专属 ($totalWeaponCount)'));
+    }
+
+    return tabs;
+  }
+
+  Widget _buildCharacterTabs(
+    CharacterModel character,
+    CharacterGalleryState state,
+  ) {
+    final tabs = _getAvailableTabs(character, state);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final vermillion = CharacterGalleryTheme.getVermillion(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+
+    int selectedIndex = tabs.indexWhere((t) => t.$1 == _detailTabId);
+    if (selectedIndex == -1) {
+      selectedIndex = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _detailTabId = tabs[0].$1;
+          });
+        }
+      });
+    }
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(top: 8, bottom: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
+        ),
+      ),
+      child: Row(
+        children: List.generate(tabs.length, (index) {
+          final isSelected = selectedIndex == index;
+          return InkWell(
+            onTap: () {
+              setState(() {
+                _detailTabId = tabs[index].$1;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isSelected ? vermillion : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                tabs[index].$2,
+                style: TextStyle(
+                  color: isSelected
+                      ? vermillion
+                      : inkColor.withValues(alpha: 0.6),
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSelectedTabContent(
+    CharacterModel character,
+    CharacterGalleryState state,
+  ) {
+    final tabs = _getAvailableTabs(character, state);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    int selectedIndex = tabs.indexWhere((t) => t.$1 == _detailTabId);
+    final tabId = selectedIndex != -1 ? tabs[selectedIndex].$1 : tabs[0].$1;
+
+    switch (tabId) {
+      case '介绍':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichTextViewer(
+              content: (state.currentSubModel?.description?.isNotEmpty ?? false)
+                  ? state.currentSubModel!.description!
+                  : character.description,
+              compact: true,
+              textStyle: TextStyle(
+                color: inkColor.withValues(alpha: 0.8),
+                fontSize: 14,
+                height: 1.8,
+              ),
+            ),
+            ModelAuthorTagsSection(
+              model: state.currentSubModel ?? _createDefaultSubModel(character),
+            ),
+          ],
+        );
+      case '语音':
+        return _buildVoicesSection(state.currentSubModel!.voices!);
+      case '符卡':
+      case '技能':
+        if (character.category == CharacterCategory.touhou) {
+          return _buildSpellCardsSection(state);
+        } else {
+          return _buildZombieSkillsSection(character);
+        }
+      case '专属':
+        return _buildWeaponModelsSection(state);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildCrossFadeSection({
@@ -1848,8 +1959,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionDivider(title: '角色语音'),
-        const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
             // 如果宽度大于 600，则使用双列布局；否则使用单列撑满
@@ -1895,8 +2004,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionDivider(title: '符卡系统'),
-        const SizedBox(height: 12),
         if (state.spellCardsLoadState == LoadState.loading)
           const SpellCardsLoadingSkeleton()
         else if (spellCards.isEmpty)
@@ -2430,8 +2537,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionDivider(title: '技能系统'),
-        const SizedBox(height: 12),
         if (skills.isEmpty)
           const EmptySkillHint(text: '暂无技能数据')
         else ...[
@@ -3038,8 +3143,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionDivider(title: '专属装备'),
-        const SizedBox(height: 12),
         if (isLoading)
           _buildWeaponModelsLoading()
         else ...[
