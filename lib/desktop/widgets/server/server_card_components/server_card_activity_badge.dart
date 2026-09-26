@@ -75,8 +75,12 @@ class ServerCardActivityBadge extends StatelessWidget {
     List<ActivityModel> allActivities,
     String address,
   ) {
-    return allActivities
-        .where((a) => a.serverAddresses.contains(address))
-        .toList();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return allActivities.where((a) {
+      if (!a.serverAddresses.contains(address)) return false;
+      final isStarted = now >= a.startTime;
+      final isEnded = a.endTime != null && now > a.endTime!;
+      return isStarted && !isEnded;
+    }).toList();
   }
 }
