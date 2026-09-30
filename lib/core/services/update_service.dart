@@ -15,9 +15,8 @@ import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 import '../utils/log_service.dart';
 import '../utils/version_utils.dart';
+import 'app_exit_service.dart';
 import 'app_info_service.dart';
-import 'floating_window_service.dart';
-import 'notification_window_service.dart';
 
 /// 更新异常
 class UpdateException implements AppException {
@@ -165,7 +164,7 @@ class UpdateService {
           UpdateReportRequest(
             platform: platform,
             os: os,
-            fromVersion: fromVersion ?? actualCurrentVersion,
+            fromVersion: actualCurrentVersion,
             toVersion: pendingVersion,
             status: 'install_verify_failed',
             errorMessage:
@@ -759,12 +758,13 @@ class UpdateService {
     return false;
   }
 
-  /// 安装器已在独立进程启动后的收尾：关闭所有子窗口进程 → 等文件锁释放 → exit(0)。
+  /// 安装器已在独立进程启动后的收尾：关闭所有子窗口进程 → 等文件锁释放 → TerminateProcess。
   ///
   /// 背景：desktop_multi_window 的每个子窗口都是独立的 bakabox_app.exe 进程。
-  /// 如果只 exit(0) 主进程，剩下的子窗口进程仍持有 exe/DLL 的文件锁，
-  /// NSIS 静默模式 nsis7zU::Extract 无法覆盖被锁的文件且不会报错，
-  /// 表现为「更新已完成但版本没变」——正是部分用户反馈的现象。
+  /// 统一调用 [AppExitService.instance.exitApplication()]，该服务会安全地关闭
+  /// 浮窗、通知窗，等待句柄释放，并最终调用底层 TerminateProcess 强制关闭主进程。
+  /// 这不仅防止了锁文件导致更新失败（更新已完成但版本没变），还规避了直接调用 exit(0)
+  /// 造成的 DllMain 死锁挂起问题。
   ///
   /// 每一步都用 try/catch + 超时包裹，任何一步卡住或失败都不能阻断退出流程
   /// （NSIS 侧仍有兜底的杀进程循环，只是不那么可靠）。
@@ -772,30 +772,8 @@ class UpdateService {
   /// 只应在 Process.start 成功之后调用。若安装器启动失败就调用本方法，
   /// 会误关用户的子窗口。
   Future<void> _finalizeExitForInstaller() async {
-    const closeTimeout = Duration(seconds: 2);
-
-    try {
-      // 关闭挤服/暖服/启动/连接等所有浮窗
-      await FloatingWindowService().closeAllWindows().timeout(closeTimeout);
-    } catch (e) {
-      LogService.w('[UpdateService] closeAllWindows before exit failed: $e');
-    }
-    try {
-      // 关闭热身/换图/更新日志/广播等所有通知窗口
-      await NotificationWindowService().dismissAll().timeout(closeTimeout);
-    } catch (e) {
-      LogService.w('[UpdateService] dismissAll before exit failed: $e');
-    }
-
-    // 子窗口从收到 IPC 到进程真正退出、Windows 释放 DLL 句柄需要一点时间：
-    // - windowManager.close() → 销毁 HWND → PostQuitMessage → 消息循环退出
-    // - Flutter engine teardown → 进程退出
-    // - Windows 内核延迟释放 DLL 引用计数
-    // 经验值 1500ms 足以覆盖大部分场景，且不会让用户明显感知卡顿。
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // exit(0) 是同步的且不返回。放在最后确保上面的清理都完成。
-    exit(0);
+    LogService.i('[UpdateService] 准备退出主进程以执行安装...');
+    await AppExitService.instance.exitApplication();
   }
 
   /// 安装Android APK
