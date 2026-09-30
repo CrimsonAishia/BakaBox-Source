@@ -130,14 +130,23 @@ class _RichTextViewerState extends State<RichTextViewer> {
           if (op is Map && op.containsKey('attributes')) {
             final attrs = op['attributes'];
             if (attrs is Map) {
-              if (attrs.containsKey('color')) {
+              final hasColor = attrs.containsKey('color');
+              final hasBackground = attrs.containsKey('background');
+
+              // 如果同时设置了前景色和背景色，说明这是用户特意搭配的高亮块（例如黑底白字、黄底黑字）
+              // 独立调整它们可能会破坏原本的对比度，因此在深色模式下保留原样最安全。
+              if (hasColor && hasBackground) {
+                continue;
+              }
+
+              if (hasColor) {
                 attrs['color'] = _adaptColorStr(
                   attrs['color'].toString(),
                   isDark,
                   false,
                 );
               }
-              if (attrs.containsKey('background')) {
+              if (hasBackground) {
                 attrs['background'] = _adaptColorStr(
                   attrs['background'].toString(),
                   isDark,
@@ -414,7 +423,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontStyle: FontStyle.italic,
           color: isDark ? AppColors.slate400 : AppColors.gray500,
         ),
-        HorizontalSpacing.zero,
+        const HorizontalSpacing(16, 0),
         const VerticalSpacing(8, 8),
         VerticalSpacing.zero,
         BoxDecoration(
@@ -433,7 +442,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? const Color(0xFFE879F9) : AppColors.red600,
           backgroundColor: isDark ? AppColors.slate700 : AppColors.gray100,
         ),
-        HorizontalSpacing.zero,
+        const HorizontalSpacing(16, 0),
         const VerticalSpacing(8, 8),
         VerticalSpacing.zero,
         BoxDecoration(
@@ -448,7 +457,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
       ),
       lists: DefaultListBlockStyle(
         baseTextStyle,
-        HorizontalSpacing.zero,
+        const HorizontalSpacing(24, 0),
         const VerticalSpacing(4, 4),
         VerticalSpacing.zero,
         null,
@@ -458,7 +467,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
       // 必须与 lists 的 height 保持一致才能垂直对齐
       leading: DefaultTextBlockStyle(
         baseTextStyle,
-        HorizontalSpacing.zero,
+        const HorizontalSpacing(24, 0),
         VerticalSpacing.zero,
         VerticalSpacing.zero,
         null,
