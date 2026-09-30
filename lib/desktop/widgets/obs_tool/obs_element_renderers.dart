@@ -451,6 +451,11 @@ Widget buildTextMock(
         queriedMapData != null && queriedMapData.mapLabel.isNotEmpty
         ? '${queriedMapData.mapLabel}(${queriedInfo.map})'
         : queriedInfo.map;
+    final mapTranslated =
+        queriedMapData != null && queriedMapData.mapLabel.isNotEmpty
+        ? queriedMapData.mapLabel
+        : queriedInfo.map;
+    final mapOriginal = queriedInfo.map;
     template = template
         .replaceAll('{serverName}', serverName)
         .replaceAll(
@@ -458,7 +463,9 @@ Widget buildTextMock(
           '${queriedInfo.players}/${queriedInfo.maxPlayers}',
         )
         .replaceAll('{ip}', displayIp)
-        .replaceAll('{map}', mapDisplay);
+        .replaceAll('{map}', mapDisplay)
+        .replaceAll('{mapName}', mapTranslated)
+        .replaceAll('{mapOrigin}', mapOriginal);
   } else if (mockServer != null) {
     final serverName = mockServer.serverItem.getDisplayName(
       mockServer.serverData?.hostName,
@@ -468,6 +475,11 @@ Widget buildTextMock(
         mockServer.serverItem.serverAddress ??
         '127.0.0.1';
     final displayIp = ServerAddressMappingService().getDomainAddress(rawIp);
+    final mapTranslated =
+        mockServer.mapInfo != null && mockServer.mapInfo!.mapLabel.isNotEmpty
+        ? mockServer.mapInfo!.mapLabel
+        : (mockServer.serverData?.map ?? '未知地图');
+    final mapOriginal = mockServer.serverData?.map ?? '未知地图';
     template = template
         .replaceAll('{serverName}', serverName)
         .replaceAll(
@@ -475,13 +487,17 @@ Widget buildTextMock(
           '${mockServer.serverData?.players ?? 0}/${mockServer.serverData?.maxPlayers ?? 64}',
         )
         .replaceAll('{ip}', displayIp)
-        .replaceAll('{map}', getMapDisplayName(mockServer));
+        .replaceAll('{map}', getMapDisplayName(mockServer))
+        .replaceAll('{mapName}', mapTranslated)
+        .replaceAll('{mapOrigin}', mapOriginal);
   } else {
     template = template
         .replaceAll('{serverName}', '示例服务器')
         .replaceAll('{players}', '0/64')
         .replaceAll('{ip}', '127.0.0.1')
-        .replaceAll('{map}', 'de_dust2');
+        .replaceAll('{map}', '炙热沙城2(de_dust2)')
+        .replaceAll('{mapName}', '炙热沙城2')
+        .replaceAll('{mapOrigin}', 'de_dust2');
   }
 
   // 清理未识别的变量占位符

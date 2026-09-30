@@ -233,6 +233,15 @@ class _ObsToolState extends State<ObsTool> {
             _elements = elements!;
             for (var el in _elements) {
               _applyDefaultElementValues(el);
+
+              if (el['type'] == 'text') {
+                final id = el['id'] as String;
+                if (!_textControllers.containsKey(id)) {
+                  _textControllers[id] = TextEditingController(
+                    text: el['template']?.toString() ?? '',
+                  );
+                }
+              }
             }
           });
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1017,6 +1026,8 @@ class _ObsToolState extends State<ObsTool> {
                         children: [
                           _buildVarChip(context, '{serverName}', '服务器名称'),
                           _buildVarChip(context, '{map}', '当前地图'),
+                          _buildVarChip(context, '{mapName}', '地图译名'),
+                          _buildVarChip(context, '{mapOrigin}', '地图原名'),
                           _buildVarChip(context, '{ip}', '服务器地址'),
                           _buildVarChip(context, '{players}', '玩家人数'),
                         ],

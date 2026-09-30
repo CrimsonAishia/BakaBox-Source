@@ -352,7 +352,8 @@ List<Widget> buildTextSettings(
         border: OutlineInputBorder(),
         hintText: '支持变量见下方说明',
       ),
-      maxLines: 4,
+      minLines: 4,
+      maxLines: null,
     ),
     const SizedBox(height: 12),
     Container(
@@ -370,7 +371,18 @@ List<Widget> buildTextSettings(
           ),
           SizedBox(height: 4),
           Text('{serverName} - 显示当前连接的服务器名称', style: TextStyle(fontSize: 11)),
-          Text('{map} - 显示当前地图名', style: TextStyle(fontSize: 11)),
+          Text(
+            '{map} - 显示地图完整名称 (如: 炙热沙城2(de_dust2))',
+            style: TextStyle(fontSize: 11),
+          ),
+          Text(
+            '{mapName} - 仅显示地图译名 (如: 炙热沙城2)',
+            style: TextStyle(fontSize: 11),
+          ),
+          Text(
+            '{mapOrigin} - 仅显示地图原名 (如: de_dust2)',
+            style: TextStyle(fontSize: 11),
+          ),
           Text('{ip} - 显示该服务器的IP地址或绑定的域名', style: TextStyle(fontSize: 11)),
           Text(
             '{players} - 显示当前对局玩家人数 (例如: 12/64)',
