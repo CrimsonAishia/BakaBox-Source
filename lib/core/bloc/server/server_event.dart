@@ -46,10 +46,9 @@ class ServerClearMapCache extends ServerEvent {
 
 class ServerConnect extends ServerEvent {
   final ExtendedServerItem server;
-  final String? password;
-  const ServerConnect(this.server, {this.password});
+  const ServerConnect(this.server);
   @override
-  List<Object?> get props => [server, password];
+  List<Object?> get props => [server];
 }
 
 class ServerUpdateCategoryOnlineCounts extends ServerEvent {}

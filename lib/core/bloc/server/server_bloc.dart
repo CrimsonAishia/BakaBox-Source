@@ -1614,18 +1614,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final appId = event.server.serverData?.appId;
 
     try {
-      final result = event.password?.isNotEmpty == true
-          ? await gameLauncher.connectToPasswordServer(
-              address,
-              event.password!,
-              gameType: gameType,
-              appId: appId,
-            )
-          : await gameLauncher.connectToServer(
-              address,
-              gameType: gameType,
-              appId: appId,
-            );
+      final result = await gameLauncher.connectToServer(
+        address,
+        gameType: gameType,
+        appId: appId,
+      );
 
       if (result.success) {
         LogService.i('连接命令已发送: ${result.message}');

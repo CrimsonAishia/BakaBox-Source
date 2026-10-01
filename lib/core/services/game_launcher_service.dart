@@ -811,56 +811,6 @@ class GameLauncherService {
     );
   }
 
-  /// 连接到密码服务器
-  ///
-  /// [address] 服务器地址，格式为 ip:port
-  /// [password] 服务器密码
-  /// [gameType] 游戏类型字符串（可选）
-  /// [appId] 服务器上报的 Steam AppID（可选）
-  Future<ServerConnectResult> connectToPasswordServer(
-    String address,
-    String password, {
-    String? gameType,
-    int? appId,
-  }) async {
-    if (!isDesktopPlatform) {
-      return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
-    }
-
-    final client = ServerItemUtils.resolveGameClient(
-      appId: appId,
-      gameType: gameType,
-    );
-    LogService.d(
-      '收到连接密码服务器请求，目标服务器: $address, 游戏类型: $gameType, AppID: $appId, 解析客户端: ${client.displayName}',
-    );
-
-    // 验证游戏类型是否匹配
-    final typeValidation = await _validateGameTypeMatch(client);
-    if (typeValidation != null) {
-      return typeValidation; // 验证失败，返回错误
-    }
-
-    final isRunning = await isCS2Running();
-
-    // 验证 CSGO Legacy 前置条件
-    final csgoValidation = await _validateCsgoLegacyPrerequisites(
-      client,
-      isRunning,
-    );
-    if (csgoValidation != null) {
-      return csgoValidation; // 验证失败，返回错误
-    }
-
-    return await _connectUsingSteamUrl(
-      address,
-      password,
-      client: client,
-      appId: appId,
-      gameType: gameType,
-    );
-  }
-
   /// 使用Steam URL连接服务器
   ///
   /// [client] 目标游戏客户端，决定使用哪个 Steam AppID
@@ -928,7 +878,6 @@ class GameLauncherService {
     String address, {
     String? gameType,
     int? appId,
-    String? password,
   }) async {
     if (!isDesktopPlatform) {
       return ServerConnectResult.failure('游戏启动功能仅支持桌面平台');
@@ -974,12 +923,12 @@ class GameLauncherService {
 
     // 解析地址和密码
     String serverAddress = address;
-    String? effectivePassword = password;
+    String? effectivePassword;
 
     if (address.contains(';password=')) {
       final parts = address.split(';password=');
       serverAddress = parts[0];
-      effectivePassword ??= parts.length > 1 ? parts[1] : null;
+      effectivePassword = parts.length > 1 ? parts[1] : null;
     }
 
     // 直接使用Steam URL启动并连接

@@ -483,24 +483,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (data?.password == true) ...[
-              const SizedBox(width: 6),
-              const Icon(
-                Icons.lock_rounded,
-                color: Colors.white,
-                size: 16,
-                shadows: [
-                  Shadow(
-                    color: Colors.black,
-                    blurRadius: 3,
-                    offset: Offset(0, 1),
-                  ),
-                  Shadow(color: Colors.black, blurRadius: 8),
-                  Shadow(color: Colors.black, offset: Offset(1, 1)),
-                  Shadow(color: Colors.black, offset: Offset(-1, -1)),
-                ],
-              ),
-            ],
           ],
         ),
         SizedBox(height: verticalSpacing),
@@ -1789,15 +1771,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       return;
     }
 
-    // 检查密码
-    String? password;
-    if (widget.server.serverData?.password == true) {
-      password = await _showPasswordDialog(context);
-      if (password == null) {
-        return; // 用户取消输入
-      }
-    }
-
     if (!mounted) return;
     setState(() => _isConnecting = true);
 
@@ -1819,7 +1792,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       mapBackground: mapInfo?.mapUrl,
       gameType: gameType,
       appId: appId,
-      password: password,
     );
 
     // connectToServer 返回后，连接流程已完成，此时显示 Toast
@@ -1965,40 +1937,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           onClose: () => Navigator.of(context).pop(),
         ),
       ),
-    );
-  }
-
-  Future<String?> _showPasswordDialog(BuildContext context) async {
-    String? inputPassword;
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('请输入服务器密码'),
-          content: TextField(
-            obscureText: true,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: '服务器密码',
-              border: OutlineInputBorder(),
-            ),
-            onChanged: (val) => inputPassword = val,
-            onSubmitted: (val) {
-              Navigator.of(context).pop(val);
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(inputPassword ?? ''),
-              child: const Text('连接'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

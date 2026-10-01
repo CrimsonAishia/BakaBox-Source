@@ -369,7 +369,6 @@ class StatusWindowService {
     String? mapBackground,
     String? gameType,
     int? appId,
-    String? password,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -417,7 +416,6 @@ class StatusWindowService {
         serverAddress ?? '',
         gameType: gameType,
         appId: appId,
-        password: password,
       );
       // 注意：result.success 仅代表"Steam 启动/连接命令已成功下发"，
       // 并不代表游戏进程已经起来。isGameRunning 必须以真实进程检测为准，
@@ -573,7 +571,6 @@ class StatusWindowService {
           mapBackground: mapBackground,
           gameType: gameType,
           appId: appId,
-          password: password,
         );
       }
     } else {
@@ -605,7 +602,6 @@ class StatusWindowService {
     bool playSuccessSound = true,
     String? gameType,
     int? appId,
-    String? password,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -638,7 +634,6 @@ class StatusWindowService {
         gameType: gameType,
         appId: appId,
         playSuccessSound: playSuccessSound,
-        password: password,
       );
     }
 
@@ -648,18 +643,11 @@ class StatusWindowService {
     if (!gameRunning) {
       if (client == GameClient.csgoLegacy) {
         // CSGO Legacy 无法自动启动，直接调用 connectToServer 让它返回错误
-        final result = password?.isNotEmpty == true
-            ? await _gameLauncher.connectToPasswordServer(
-                serverAddress,
-                password!,
-                gameType: gameType,
-                appId: appId,
-              )
-            : await _gameLauncher.connectToServer(
-                serverAddress,
-                gameType: gameType,
-                appId: appId,
-              );
+        final result = await _gameLauncher.connectToServer(
+          serverAddress,
+          gameType: gameType,
+          appId: appId,
+        );
 
         // 处理 CSGO 相关错误
         if (!result.success) {
@@ -688,7 +676,6 @@ class StatusWindowService {
         mapBackground: mapBackground,
         gameType: gameType,
         appId: appId,
-        password: password,
       );
     }
 
@@ -716,18 +703,11 @@ class StatusWindowService {
       }
 
       // 不可监控，直接发送连接命令
-      final result = password?.isNotEmpty == true
-          ? await _gameLauncher.connectToPasswordServer(
-              serverAddress,
-              password!,
-              gameType: gameType,
-              appId: appId,
-            )
-          : await _gameLauncher.connectToServer(
-              serverAddress,
-              gameType: gameType,
-              appId: appId,
-            );
+      final result = await _gameLauncher.connectToServer(
+        serverAddress,
+        gameType: gameType,
+        appId: appId,
+      );
 
       // 检查是否需要安装 CSGO Legacy 或手动启动
       if (!result.success) {
@@ -789,18 +769,11 @@ class StatusWindowService {
     );
 
     // 发送连接命令
-    final connectResult = password?.isNotEmpty == true
-        ? await _gameLauncher.connectToPasswordServer(
-            serverAddress,
-            password!,
-            gameType: gameType,
-            appId: appId,
-          )
-        : await _gameLauncher.connectToServer(
-            serverAddress,
-            gameType: gameType,
-            appId: appId,
-          );
+    final connectResult = await _gameLauncher.connectToServer(
+      serverAddress,
+      gameType: gameType,
+      appId: appId,
+    );
     if (!connectResult.success) {
       _updateState(
         _state.copyWith(
@@ -890,20 +863,12 @@ class StatusWindowService {
     String? gameType,
     int? appId,
     bool playSuccessSound = true,
-    String? password,
   }) async {
-    final result = password?.isNotEmpty == true
-        ? await _gameLauncher.connectToPasswordServer(
-            serverAddress,
-            password!,
-            gameType: gameType,
-            appId: appId,
-          )
-        : await _gameLauncher.connectToServer(
-            serverAddress,
-            gameType: gameType,
-            appId: appId,
-          );
+    final result = await _gameLauncher.connectToServer(
+      serverAddress,
+      gameType: gameType,
+      appId: appId,
+    );
 
     if (!result.success) {
       _updateState(

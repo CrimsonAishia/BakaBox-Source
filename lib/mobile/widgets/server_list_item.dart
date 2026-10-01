@@ -243,23 +243,6 @@ class ServerListItem extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (server.serverData?.password == true) ...[
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2, right: 6),
-                          child: Icon(
-                            Icons.lock_rounded,
-                            color: Colors.white,
-                            size: 16,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black54,
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                       Expanded(
                         child: Text(
                           _serverName,
