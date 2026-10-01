@@ -160,7 +160,7 @@ class DesktopNavigation extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: _buildActionItem(
+                child: _ActionItemWidget(
                   theme: theme,
                   isDark: isDark,
                   icon: Icons.feedback_outlined,
@@ -172,7 +172,7 @@ class DesktopNavigation extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildActionItem(
+                child: _ActionItemWidget(
                   theme: theme,
                   isDark: isDark,
                   icon: Icons.settings_outlined,
@@ -189,65 +189,175 @@ class DesktopNavigation extends StatelessWidget {
         .fadeIn(duration: 300.ms)
         .slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOutCubic);
   }
+}
 
-  Widget _buildActionItem({
-    required ThemeData theme,
-    required bool isDark,
-    required IconData icon,
-    required IconData selectedIcon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback? onTap,
-  }) {
+class _ActionItemWidget extends StatefulWidget {
+  final ThemeData theme;
+  final bool isDark;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  const _ActionItemWidget({
+    required this.theme,
+    required this.isDark,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_ActionItemWidget> createState() => _ActionItemWidgetState();
+}
+
+class _ActionItemWidgetState extends State<_ActionItemWidget>
+    with SingleTickerProviderStateMixin {
+  bool _isHovered = false;
+  late AnimationController _shakeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      lowerBound: -1.0,
+      upperBound: 1.0,
+      value: 0.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ActionItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected != oldWidget.isSelected) {
+      if (widget.isSelected) {
+        _shakeController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
+      } else if (_isHovered) {
+        _shakeController.repeat(reverse: true);
+      }
+    }
+  }
+
+  void _onHoverChanged(bool hovered) {
+    if (!mounted) return;
+    setState(() => _isHovered = hovered);
+    if (hovered && !widget.isSelected) {
+      _shakeController.repeat(reverse: true);
+    } else {
+      _shakeController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isHovered = _isHovered && !widget.isSelected;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.1)
-                : (isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : AppColors.gray100),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.3)
-                  : (isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : AppColors.gray200),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                isSelected ? selectedIcon : icon,
-                size: 16,
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark ? Colors.white60 : AppColors.gray500),
+      child: MouseRegion(
+        cursor: widget.isSelected
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.click,
+        onEnter: (_) => _onHoverChanged(true),
+        onExit: (_) => _onHoverChanged(false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            decoration: BoxDecoration(
+              color: widget.isSelected
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : (isHovered
+                        ? AppColors.primary.withValues(
+                            alpha: widget.isDark ? 0.15 : 0.08,
+                          )
+                        : (widget.isDark
+                              ? Colors.white.withValues(alpha: 0.03)
+                              : AppColors.gray100)),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: widget.isSelected
+                    ? AppColors.primary.withValues(alpha: 0.3)
+                    : (isHovered
+                          ? AppColors.primary.withValues(alpha: 0.3)
+                          : (widget.isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : AppColors.gray200)),
               ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? AppColors.primary
-                        : (isDark ? Colors.white60 : AppColors.gray500),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedScale(
+                  scale: isHovered ? 1.2 : 1.0,
+                  duration: const Duration(milliseconds: 150),
+                  curve: Curves.easeOut,
+                  child: AnimatedBuilder(
+                    animation: _shakeController,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle: _shakeController.value * 0.25,
+                        child: child,
+                      );
+                    },
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 150),
+                      child: Icon(
+                        widget.isSelected || isHovered
+                            ? widget.selectedIcon
+                            : widget.icon,
+                        key: ValueKey(widget.isSelected || isHovered),
+                        size: 16,
+                        color: widget.isSelected || isHovered
+                            ? AppColors.primary
+                            : (widget.isDark
+                                  ? Colors.white60
+                                  : AppColors.gray500),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Flexible(
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 150),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: widget.isSelected || isHovered
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: widget.isSelected || isHovered
+                          ? AppColors.primary
+                          : (widget.isDark
+                                ? Colors.white60
+                                : AppColors.gray500),
+                    ),
+                    child: Text(widget.label, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -257,8 +367,8 @@ class DesktopNavigation extends StatelessWidget {
 
 /// 单个导航项组件
 ///
-/// 实现平滑的过渡动画
-class _NavigationItemWidget extends StatelessWidget {
+/// 实现平滑的过渡动画和悬停效果
+class _NavigationItemWidget extends StatefulWidget {
   final NavigationItem item;
   final bool isSelected;
   final bool isDark;
@@ -276,94 +386,176 @@ class _NavigationItemWidget extends StatelessWidget {
   });
 
   @override
+  State<_NavigationItemWidget> createState() => _NavigationItemWidgetState();
+}
+
+class _NavigationItemWidgetState extends State<_NavigationItemWidget>
+    with SingleTickerProviderStateMixin {
+  bool _isHovered = false;
+  late AnimationController _shakeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      lowerBound: -1.0,
+      upperBound: 1.0,
+      value: 0.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _NavigationItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected != oldWidget.isSelected) {
+      if (widget.isSelected) {
+        _shakeController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
+      } else if (_isHovered) {
+        _shakeController.repeat(reverse: true);
+      }
+    }
+  }
+
+  void _onHoverChanged(bool hovered) {
+    if (!mounted) return;
+    setState(() => _isHovered = hovered);
+    if (hovered && !widget.isSelected) {
+      _shakeController.repeat(reverse: true);
+    } else {
+      _shakeController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isHovered = _isHovered && !widget.isSelected;
+
     return Container(
           margin: const EdgeInsets.symmetric(vertical: 2),
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 13,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [AppColors.primary, Color(0xFF42A5F5)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        )
-                      : null,
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF0080FF,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        isSelected ? item.selectedIcon : item.icon,
-                        key: ValueKey(isSelected),
-                        size: 22,
-                        color: isSelected
-                            ? Colors.white
-                            : isDark
-                            ? Colors.white70
-                            : AppColors.gray500,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 200),
-                        style:
-                            theme.textTheme.bodyMedium?.copyWith(
-                              color: isSelected
+            child: MouseRegion(
+              cursor: widget.isSelected
+                  ? SystemMouseCursors.basic
+                  : SystemMouseCursors.click,
+              onEnter: (_) => _onHoverChanged(true),
+              onExit: (_) => _onHoverChanged(false),
+              child: GestureDetector(
+                onTap: widget.onTap,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 13,
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.isSelected
+                        ? AppColors.primary
+                        : (isHovered
+                              ? AppColors.primary.withValues(
+                                  alpha: widget.isDark ? 0.15 : 0.08,
+                                )
+                              : Colors.transparent),
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: widget.isSelected
+                        ? const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFF42A5F5)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                        : null,
+                    boxShadow: widget.isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF0080FF,
+                              ).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      AnimatedScale(
+                        scale: isHovered ? 1.15 : 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        curve: Curves.easeOut,
+                        child: AnimatedBuilder(
+                          animation: _shakeController,
+                          builder: (context, child) {
+                            return Transform.rotate(
+                              angle: _shakeController.value * 0.25,
+                              child: child,
+                            );
+                          },
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 150),
+                            child: Icon(
+                              widget.isSelected
+                                  ? widget.item.selectedIcon
+                                  : widget.item.icon,
+                              key: ValueKey(widget.isSelected),
+                              size: 22,
+                              color: widget.isSelected
                                   ? Colors.white
-                                  : isDark
-                                  ? Colors.white70
-                                  : AppColors.gray700,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                            ) ??
-                            const TextStyle(),
-                        child: Text(item.label),
+                                  : (isHovered
+                                        ? AppColors.primary
+                                        : (widget.isDark
+                                              ? Colors.white70
+                                              : AppColors.gray500)),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    AnimatedOpacity(
-                      opacity: isSelected ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 12,
-                        color: Colors.white,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 150),
+                          style:
+                              widget.theme.textTheme.bodyMedium?.copyWith(
+                                color: widget.isSelected
+                                    ? Colors.white
+                                    : (isHovered
+                                          ? AppColors.primary
+                                          : (widget.isDark
+                                                ? Colors.white70
+                                                : AppColors.gray700)),
+                                fontWeight: widget.isSelected || isHovered
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                              ) ??
+                              const TextStyle(),
+                          child: Text(widget.item.label),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         )
-        .animate(delay: (index * 80).ms)
+        .animate(delay: (widget.index * 80).ms)
         .fadeIn(duration: 300.ms)
         .slideX(begin: -0.2, duration: 400.ms, curve: Curves.easeOutCubic);
   }
