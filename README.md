@@ -123,6 +123,10 @@ flutter build ios
 
 This project uses Git for version management. You can refer to the repository for current available versions.
 
+### Code Signing
+
+Code signing is provided for free by the [SignPath Foundation](https://signpath.org/).
+
 ### Author
 
 Aishia Studio 

@@ -123,6 +123,10 @@ flutter build ios
 
 该项目使用 Git 进行版本管理。您可以在 repository 参看当前可用版本。
 
+### 代码签名
+
+代码签名由 [SignPath 基金会](https://signpath.org/) 免费提供。
+
 ### 作者
 
 Aishia Studio 
