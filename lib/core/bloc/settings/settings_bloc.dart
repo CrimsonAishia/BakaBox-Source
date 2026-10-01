@@ -12,6 +12,7 @@ import '../../utils/cache_service.dart';
 import '../../utils/app_directory_service.dart';
 import '../../utils/platform_utils.dart';
 import '../../utils/storage_utils.dart';
+import '../../utils/app_image_cache_manager.dart';
 import '../../services/disk_image_cache_service.dart';
 
 import '../../services/network_mode_service.dart';
@@ -381,11 +382,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     emit(state.copyWith(isLoading: true));
     try {
-      // 清理 CachedNetworkImage 的默认缓存管理器缓存
+      // 清理 CachedNetworkImage 的缓存管理器缓存
       try {
         await DefaultCacheManager().emptyCache();
+        await AppImageCacheManager.instance.emptyCache();
       } catch (e) {
-        LogService.d('清理 DefaultCacheManager 失败: $e');
+        LogService.d('清理 CacheManager 失败: $e');
       }
 
       // 清理磁盘图片缓存

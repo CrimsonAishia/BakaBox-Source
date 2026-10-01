@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../utils/image_utils.dart';
+import '../utils/app_image_cache_manager.dart';
 
 /// 一个封装了 CachedNetworkImage 的组件，专门用来替代原生的 Image.network。
 /// 它会自动通过 LayoutBuilder 或提供的宽高，计算出一个适合的内存解码尺寸（memCacheWidth/memCacheHeight），
@@ -106,6 +107,7 @@ class BakaCachedImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: src,
       cacheKey: safeCacheKey,
+      cacheManager: AppImageCacheManager.instance,
       httpHeaders: finalHeaders,
       width: width,
       height: height,
@@ -143,6 +145,7 @@ CachedNetworkImageProvider bakaCachedImageProvider(
     url,
     scale: scale,
     headers: finalHeaders,
+    cacheManager: AppImageCacheManager.instance,
     cacheKey: safeCacheKey,
     maxWidth: maxWidth,
     maxHeight: maxHeight,
