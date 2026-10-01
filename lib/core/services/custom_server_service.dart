@@ -38,7 +38,8 @@ class CustomServerService {
   ) async {
     try {
       final jsonList = categories.map((c) => c.toJson()).toList();
-      await StorageUtils.setList(_customCategoriesKey, jsonList);
+      final jsonString = jsonEncode(jsonList);
+      await StorageUtils.setString(_customCategoriesKey, jsonString);
       LogService.d('保存自定义分类成功，共 ${categories.length} 个');
       _categoriesChangedController.add(null);
     } catch (e) {
@@ -49,17 +50,16 @@ class CustomServerService {
   /// 加载自定义分类列表
   static Future<List<ServerCategory>> loadCustomCategories() async {
     try {
-      List<dynamic>? jsonList = StorageUtils.getList(_customCategoriesKey);
+      List<dynamic>? jsonList;
 
-      // 向下兼容旧版 JSON String
-      // TODO: (旧版兼容) 未来版本如果确认所有老用户都已迁移到 setList 格式，可删除此兼容代码。
-      if (jsonList == null) {
+      try {
         final jsonString = StorageUtils.getString(_customCategoriesKey);
         if (jsonString != null && jsonString.isNotEmpty) {
           jsonList = jsonDecode(jsonString) as List;
-          // 异步转储为新格式
-          unawaited(StorageUtils.setList(_customCategoriesKey, jsonList));
         }
+      } catch (e) {
+        // 忽略由于存在旧版有 bug 的 List 数据导致的 getString 类型强转错误
+        LogService.d('读取自定义分类失败 (已丢弃旧版异常格式)');
       }
 
       if (jsonList == null || jsonList.isEmpty) {

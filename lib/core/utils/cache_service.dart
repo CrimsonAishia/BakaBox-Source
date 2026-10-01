@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import '../models/server_models.dart';
 import '../constants/api_constants.dart';
@@ -13,7 +14,8 @@ class CacheService {
   static Future<void> cacheServerList(List<ServerCategory> serverList) async {
     try {
       final list = serverList.map((e) => e.toJson()).toList();
-      await StorageUtils.setList(_serverListKey, list);
+      final jsonString = jsonEncode(list);
+      await StorageUtils.setString(_serverListKey, jsonString);
       await StorageUtils.setInt(
         _serverListTimestampKey,
         DateTime.now().millisecondsSinceEpoch,
@@ -40,31 +42,21 @@ class CacheService {
         return null;
       }
 
-      final rawList = StorageUtils.getList(_serverListKey);
-      if (rawList != null) {
-        final serverList = rawList.map((e) {
-          // Hive 中存储的 Map 可能是 Map<dynamic, dynamic>
-          final map = Map<String, dynamic>.from(e as Map);
-          return ServerCategory.fromJson(map);
-        }).toList();
-        LogService.i('从缓存获取服务器列表，共 ${serverList.length} 个分类');
-        return serverList;
-      }
-
-      // 兼容旧版的 String 读取
-      // TODO: (旧版兼容) 未来版本如果确认所有老用户都已迁移到 setList 格式，可删除此分支。
-      final jsonString = StorageUtils.getString(_serverListKey);
-      if (jsonString != null) {
-        final List<dynamic> jsonList = json.decode(jsonString);
-        final serverList = jsonList
-            .map(
-              (json) => ServerCategory.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-        // 顺手将其转为新格式存储
-        cacheServerList(serverList);
-        LogService.i('从旧版缓存获取服务器列表并迁移，共 ${serverList.length} 个分类');
-        return serverList;
+      try {
+        final jsonString = StorageUtils.getString(_serverListKey);
+        if (jsonString != null) {
+          final List<dynamic> jsonList = json.decode(jsonString);
+          final serverList = jsonList
+              .map(
+                (json) => ServerCategory.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
+          LogService.i('从缓存获取服务器列表，共 ${serverList.length} 个分类');
+          return serverList;
+        }
+      } catch (e) {
+        // 忽略由于存在旧版有 bug 的 List 数据导致的 getString 类型强转错误
+        LogService.d('读取服务器列表缓存失败 (已丢弃旧版异常格式)');
       }
 
       return null;
