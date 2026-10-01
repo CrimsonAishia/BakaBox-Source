@@ -733,31 +733,24 @@ class _UpdateDialogState extends State<UpdateDialog>
                 width: double.infinity,
                 height: 48,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.orange, Color(0xFFF57C00)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.orange.withValues(alpha: 0.3),
-                      offset: const Offset(0, 2),
-                      blurRadius: 8,
-                    ),
-                  ],
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
                 ),
                 child: Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -765,7 +758,7 @@ class _UpdateDialogState extends State<UpdateDialog>
                       Text(
                         '$_countdown 秒后开始安装...',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
+                          color: colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
