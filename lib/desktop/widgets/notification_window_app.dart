@@ -120,6 +120,9 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   double get _windowHeight {
     final notification = widget.stateNotifier.notification;
     final type = notification.type;
+    if (type == NotificationType.appUpdate) {
+      return 204.0; // 同步 _appUpdateHeight
+    }
     if (type == NotificationType.updateLog ||
         _isMultilineBroadcast(notification)) {
       return _updateLogCardHeight;
@@ -229,11 +232,20 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
 
   /// 根据通知位置设置计算窗口在屏幕上的位置
   Offset _calculateWindowPosition(double screenWidth, double screenHeight) {
+    // 任务栏高度估算
+    const taskbarHeight = 48.0;
+
+    // 应用更新卡片强制显示在右下角
+    if (widget.stateNotifier.notification.type == NotificationType.appUpdate) {
+      return Offset(
+        screenWidth - _windowWidth - 24.0,
+        screenHeight - taskbarHeight - _windowHeight - 24.0,
+      );
+    }
+
     final notificationPosition = widget.stateNotifier.notificationPosition;
     final yOffset = widget.stateNotifier.yOffset ?? _topPadding;
 
-    // 任务栏高度估算
-    const taskbarHeight = 48.0;
     final availableHeight = screenHeight - taskbarHeight;
     final centerY = (availableHeight - _windowHeight) / 2;
 
@@ -420,6 +432,37 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
                   _resumeCountdown();
                 }
               },
+              onTap: () async {
+                final type = widget.stateNotifier.notification.type;
+                if (type == NotificationType.updateLog) {
+                  if (widget.mainWindowController != null) {
+                    try {
+                      await widget.mainWindowController!
+                          .invokeMethod('navigateToUpdateLog', {
+                            'updateTime': widget
+                                .stateNotifier
+                                .notification
+                                .extraData?['updateTime'],
+                          });
+                    } catch (e) {
+                      debugPrint('Failed to navigate to update log: $e');
+                    }
+                  }
+                  _dismiss();
+                } else if (type == NotificationType.appUpdate) {
+                  if (widget.mainWindowController != null) {
+                    try {
+                      await widget.mainWindowController!.invokeMethod(
+                        'openUpdateDialog',
+                        {},
+                      );
+                    } catch (e) {
+                      debugPrint('Failed to open update dialog: $e');
+                    }
+                  }
+                  _dismiss();
+                }
+              },
             ),
           );
         },
@@ -435,6 +478,7 @@ class _NotificationCard extends StatefulWidget {
   final int countdownSeconds;
   final int totalCountdownSeconds;
   final ValueChanged<bool> onHover;
+  final VoidCallback? onTap;
 
   const _NotificationCard({
     required this.notification,
@@ -442,6 +486,7 @@ class _NotificationCard extends StatefulWidget {
     required this.countdownSeconds,
     required this.totalCountdownSeconds,
     required this.onHover,
+    this.onTap,
   });
 
   @override
@@ -456,6 +501,7 @@ class _NotificationCardState extends State<_NotificationCard> {
   static const double _normalHeight = 72.0;
   static const double _mapHeight = 88.0;
   static const double _updateLogHeight = 120.0;
+  static const double _appUpdateHeight = 204.0;
   static const double _borderRadius = 8.0;
   static const double _borderWidth = 2.0;
   static const double _progressBarHeight = 3.0;
@@ -468,6 +514,9 @@ class _NotificationCardState extends State<_NotificationCard> {
   }
 
   double get _height {
+    if (widget.notification.type == NotificationType.appUpdate) {
+      return _appUpdateHeight;
+    }
     if (widget.notification.type == NotificationType.updateLog ||
         _isMultilineBroadcast(widget.notification)) {
       return _updateLogHeight;
@@ -512,6 +561,20 @@ class _NotificationCardState extends State<_NotificationCard> {
         ? const Color(0xFF7C3AED)
         : AppColors.primary;
 
+    if (notification.type == NotificationType.appUpdate) {
+      return MouseRegion(
+        onEnter: (_) {
+          setState(() => _isHovered = true);
+          widget.onHover(true);
+        },
+        onExit: (_) {
+          setState(() => _isHovered = false);
+          widget.onHover(false);
+        },
+        child: _buildAppUpdateCard(notification),
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovered = true);
@@ -521,128 +584,314 @@ class _NotificationCardState extends State<_NotificationCard> {
         setState(() => _isHovered = false);
         widget.onHover(false);
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: _width,
-        height: _height,
-        decoration: BoxDecoration(
-          color: AppColors.slate800,
-          border: Border.all(
-            color: _isHovered ? borderColor.withValues(alpha: 1) : borderColor,
-            width: _borderWidth,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: _width,
+          height: _height,
+          decoration: BoxDecoration(
+            color: AppColors.slate800,
+            border: Border.all(
+              color: _isHovered
+                  ? borderColor.withValues(alpha: 1)
+                  : borderColor,
+              width: _borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(_borderRadius),
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: borderColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
           ),
-          borderRadius: BorderRadius.circular(_borderRadius),
-          boxShadow: _isHovered
-              ? [
-                  BoxShadow(
-                    color: borderColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(_borderRadius - _borderWidth),
-          child: Stack(
-            children: [
-              // 主内容
-              Column(
-                children: [
-                  Expanded(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // 地图背景
-                        if (notification.mapName != null ||
-                            notification.mapBackground != null)
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(_borderRadius - _borderWidth),
+            child: Stack(
+              children: [
+                // 主内容
+                Column(
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // 地图背景
+                          if (notification.mapName != null ||
+                              notification.mapBackground != null)
+                            Positioned.fill(
+                              child: _buildMapBackground(notification),
+                            ),
+                          // 渐变遮罩
                           Positioned.fill(
-                            child: _buildMapBackground(notification),
-                          ),
-                        // 渐变遮罩
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  const Color(
-                                    0xFF1E293B,
-                                  ).withValues(alpha: 0.75),
-                                  const Color(
-                                    0xFF1E293B,
-                                  ).withValues(alpha: 0.45),
-                                ],
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    const Color(
+                                      0xFF1E293B,
+                                    ).withValues(alpha: 0.75),
+                                    const Color(
+                                      0xFF1E293B,
+                                    ).withValues(alpha: 0.45),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        // 内容
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 标题行
-                              Row(
-                                children: [
-                                  // 换图通知和地图订阅不显示标题，直接显示分类名+服务器名
-                                  if (!isMapChange && !isMapSubscription)
-                                    Text(
-                                      // 热身通知显示动态倒计时
-                                      isWarmup && widget.countdownSeconds > 0
-                                          ? '热身 ${widget.countdownSeconds}秒'
-                                          : notification.title,
-                                      style: TextStyle(
-                                        color: borderColor,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.8,
+                          // 内容
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 标题行
+                                Row(
+                                  children: [
+                                    // 换图通知和地图订阅不显示标题，直接显示分类名+服务器名
+                                    if (!isMapChange && !isMapSubscription)
+                                      Text(
+                                        // 热身通知显示动态倒计时
+                                        isWarmup && widget.countdownSeconds > 0
+                                            ? '热身 ${widget.countdownSeconds}秒'
+                                            : notification.title,
+                                        style: TextStyle(
+                                          color: borderColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.8,
+                                              ),
+                                              offset: const Offset(0, 1),
+                                              blurRadius: 3,
                                             ),
-                                            offset: const Offset(0, 1),
-                                            blurRadius: 3,
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  if (!isMapChange &&
-                                      !isMapSubscription &&
-                                      notification.serverName != null)
-                                    const SizedBox(width: 6),
-                                  if (notification.serverName != null)
-                                    Expanded(
-                                      child: _ServerNameText(
-                                        serverName: notification.serverName!,
-                                        categoryName:
-                                            notification
-                                                    .extraData?['categoryName']
-                                                as String?,
-                                      ),
-                                    )
-                                  else
-                                    const Spacer(),
+                                    if (!isMapChange &&
+                                        !isMapSubscription &&
+                                        notification.serverName != null)
+                                      const SizedBox(width: 6),
+                                    if (notification.serverName != null)
+                                      Expanded(
+                                        child: _ServerNameText(
+                                          serverName: notification.serverName!,
+                                          categoryName:
+                                              notification
+                                                      .extraData?['categoryName']
+                                                  as String?,
+                                        ),
+                                      )
+                                    else
+                                      const Spacer(),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                // 消息
+                                Expanded(
+                                  child:
+                                      isUpdateLog ||
+                                          _isMultilineBroadcast(notification)
+                                      ? _buildUpdateLogContent(notification)
+                                      : _buildMessageWidget(
+                                          notification,
+                                          isWarmup,
+                                          isMapChange || isMapSubscription,
+                                          isBroadcast,
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 底部进度条
+                    if (_hasProgressBar) _buildProgressBar(borderColor),
+                  ],
+                ),
+                // 删除按钮（右侧淡入）
+                if (_isHovered)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: _hasProgressBar ? _progressBarHeight : 0,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      onEnter: (_) => setState(() => _isDeleteHovered = true),
+                      onExit: (_) => setState(() => _isDeleteHovered = false),
+                      child: GestureDetector(
+                        onTap: widget.onDismiss,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: _deleteAreaWidth,
+                          decoration: BoxDecoration(
+                            color: _isDeleteHovered
+                                ? AppColors.red600
+                                : AppColors.red500,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppUpdateCard(NotificationData notification) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: _width,
+      height: _appUpdateHeight,
+      decoration: BoxDecoration(
+        color: AppColors.slate800,
+        borderRadius: BorderRadius.circular(_borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+          if (_isHovered)
+            BoxShadow(
+              color: const Color(0xFF2196F3).withValues(alpha: 0.2),
+              blurRadius: 15,
+              spreadRadius: 2,
+            ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        child: Column(
+          children: [
+            // 上部：更新封面
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/images/update_bg.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 20,
+                    left: 20,
+                    right: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Text(
+                              '发现新版本',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4,
+                                    color: Colors.black26,
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              // 消息
-                              Expanded(
-                                child:
-                                    isUpdateLog ||
-                                        _isMultilineBroadcast(notification)
-                                    ? _buildUpdateLogContent(notification)
-                                    : _buildMessageWidget(
-                                        notification,
-                                        isWarmup,
-                                        isMapChange || isMapSubscription,
-                                        isBroadcast,
-                                      ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    notification.extraData?['isForced'] == true
+                                    ? Colors.red
+                                    : Colors.green,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                notification.extraData?['isForced'] == true
+                                    ? '强制更新'
+                                    : '普通更新',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            notification.title.replaceAll('发现新版本: ', ''),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                notification.message,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.orange,
+                                ),
                               ),
                             ],
                           ),
@@ -650,43 +899,75 @@ class _NotificationCardState extends State<_NotificationCard> {
                       ],
                     ),
                   ),
-                  // 底部进度条
-                  if (_hasProgressBar) _buildProgressBar(borderColor),
+                  Positioned(
+                    top: 20,
+                    right: 20,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.rocket_launch,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              // 删除按钮（右侧淡入）
-              if (_isHovered)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: _hasProgressBar ? _progressBarHeight : 0,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    onEnter: (_) => setState(() => _isDeleteHovered = true),
-                    onExit: (_) => setState(() => _isDeleteHovered = false),
-                    child: GestureDetector(
-                      onTap: widget.onDismiss,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: _deleteAreaWidth,
-                        decoration: BoxDecoration(
-                          color: _isDeleteHovered
-                              ? AppColors.red600
-                              : AppColors.red500,
+            ),
+            // 下部：按钮区
+            Container(
+              height: 44,
+              color: AppColors.slate900,
+              child: Row(
+                children: [
+                  if (notification.extraData?['isForced'] != true) ...[
+                    Expanded(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: widget.onDismiss,
+                          child: const Center(
+                            child: Text(
+                              '暂不更新',
+                              style: TextStyle(
+                                color: AppColors.gray400,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                         ),
+                      ),
+                    ),
+                    Container(width: 1, height: 24, color: AppColors.gray700),
+                  ],
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: widget.onTap,
                         child: const Center(
-                          child: Icon(
-                            Icons.delete_outline,
-                            color: Colors.white,
-                            size: 22,
+                          child: Text(
+                            '查看详情',
+                            style: TextStyle(
+                              color: Color(0xFF2196F3),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
+                ],
+              ),
+            ),
+            if (_hasProgressBar) _buildProgressBar(const Color(0xFF2196F3)),
+          ],
         ),
       ),
     );

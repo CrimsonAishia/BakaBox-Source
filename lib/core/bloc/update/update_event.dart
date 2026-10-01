@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../models/realtime_models.dart';
 
 abstract class UpdateEvent extends Equatable {
   const UpdateEvent();
@@ -25,3 +26,10 @@ class UpdateCancel extends UpdateEvent {}
 class UpdateSkip extends UpdateEvent {}
 
 class UpdateReset extends UpdateEvent {}
+
+class UpdateRealtimeEventReceived extends UpdateEvent {
+  final RealtimeChannelEvent event;
+  const UpdateRealtimeEventReceived(this.event);
+  @override
+  List<Object?> get props => [event];
+}

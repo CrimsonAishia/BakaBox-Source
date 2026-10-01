@@ -23,6 +23,7 @@ import '../core/services/map_change_monitor_service.dart';
 
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
+import '../core/services/notification_window_service.dart';
 import '../core/utils/windows_priority_utils.dart';
 import '../core/bloc/activity/activity_bloc.dart';
 import 'theme/desktop_theme.dart';
@@ -299,12 +300,29 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
   void _listenForUpdate() {
     final updateBloc = context.read<UpdateBloc>();
 
+    NotificationWindowService().setOpenUpdateDialogCallback(() {
+      final updateInfo = context.read<UpdateBloc>().state.updateInfo;
+      if (updateInfo != null) {
+        UpdateDialog.show(context, updateInfo);
+      }
+    });
+
     // 检查启动屏幕是否已经检测到更新
     if (updateBloc.state.hasUpdate &&
         updateBloc.state.updateInfo != null &&
         !_hasShownAutoUpdateDialog) {
       _hasShownAutoUpdateDialog = true;
-      UpdateDialog.show(context, updateBloc.state.updateInfo!);
+      final updateInfo = updateBloc.state.updateInfo!;
+      if (updateInfo.isForced) {
+        UpdateDialog.show(context, updateInfo);
+      } else {
+        NotificationWindowService().showAppUpdateNotification(
+          currentVersion: updateInfo.currentVersion,
+          latestVersion: updateInfo.latestVersion,
+          publishDate: updateInfo.formattedPublishDate,
+          isForced: updateInfo.isForced,
+        );
+      }
     }
 
     // 监听后续更新状态变化（如手动检查更新）
@@ -334,8 +352,29 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
       listener: (context, state) {
         if (state.status == UpdateStatus.available &&
             state.updateInfo != null) {
-          // 有更新：弹出更新对话框
-          UpdateDialog.show(context, state.updateInfo!);
+          final updateInfo = state.updateInfo!;
+          if (!_hasShownAutoUpdateDialog) {
+            // 如果是在启动阶段因为网络慢导致初始检查在这才完成
+            _hasShownAutoUpdateDialog = true;
+            if (updateInfo.isForced) {
+              UpdateDialog.show(context, updateInfo);
+            } else {
+              NotificationWindowService().showAppUpdateNotification(
+                currentVersion: updateInfo.currentVersion,
+                latestVersion: updateInfo.latestVersion,
+                publishDate: updateInfo.formattedPublishDate,
+                isForced: updateInfo.isForced,
+              );
+            }
+          } else {
+            // 后续运行时的更新（WebSocket推送或手动检查），不论是否强制都走卡片
+            NotificationWindowService().showAppUpdateNotification(
+              currentVersion: updateInfo.currentVersion,
+              latestVersion: updateInfo.latestVersion,
+              publishDate: updateInfo.formattedPublishDate,
+              isForced: updateInfo.isForced,
+            );
+          }
         } else if (state.status == UpdateStatus.idle &&
             state.updateInfo != null &&
             !state.updateInfo!.hasUpdate) {

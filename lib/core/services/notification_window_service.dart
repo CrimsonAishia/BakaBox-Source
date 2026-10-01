@@ -18,6 +18,7 @@ enum NotificationType {
   info, // 普通信息
   mapSubscription, // 地图订阅通知
   broadcast, // 广播通知
+  appUpdate, // 应用更新通知
 }
 
 /// 通知数据
@@ -212,6 +213,8 @@ class NotificationWindowService {
     for (final info in sortedWindows) {
       // 跳过 position 0（热身区域）
       if (info.position == 0) continue;
+      // 跳过应用更新卡片（它固定在右下角，不参与堆叠计算）
+      if (info.notification.type == NotificationType.appUpdate) continue;
       if (info.position >= targetPosition) break;
       offset += info.cardHeight + cardSpacing;
     }
@@ -224,10 +227,15 @@ class NotificationWindowService {
         notification.message.contains('<br>');
   }
 
+  static const double appUpdateCardHeight = 204.0;
+
   /// 计算通知的卡片高度
   double _getCardHeight(NotificationData notification) {
     if (notification.type == NotificationType.updateLog) {
       return updateLogCardHeight;
+    }
+    if (notification.type == NotificationType.appUpdate) {
+      return appUpdateCardHeight;
     }
     if (_isMultilineBroadcast(notification)) {
       return broadcastMultilineCardHeight;
@@ -294,6 +302,17 @@ class NotificationWindowService {
   void navigateToUpdateLog(String? updateTime) {
     LogService.d('[NotificationWindow] Navigate to update log: $updateTime');
     _navigateCallback?.call(updateTime);
+  }
+
+  void Function()? _openUpdateDialogCallback;
+
+  void setOpenUpdateDialogCallback(void Function()? callback) {
+    _openUpdateDialogCallback = callback;
+  }
+
+  void openUpdateDialog() {
+    LogService.d('[NotificationWindow] Open update dialog');
+    _openUpdateDialogCallback?.call();
   }
 
   /// 获取下一个可用位置
@@ -657,6 +676,25 @@ class NotificationWindowService {
         autoDismissSeconds: 30,
       ),
     );
+  }
+
+  /// 显示应用更新通知
+  Future<void> showAppUpdateNotification({
+    required String currentVersion,
+    required String latestVersion,
+    required String publishDate,
+    required bool isForced,
+  }) async {
+    final notification = NotificationData(
+      id: 'app_update',
+      type: NotificationType.appUpdate,
+      title: '发现新版本: $currentVersion → $latestVersion',
+      message: publishDate,
+      autoDismissSeconds: 0, // 强制或非强制更新的提示，建议手动关闭
+      extraData: {'isForced': isForced},
+    );
+
+    await show(notification);
   }
 
   /// 关闭通知

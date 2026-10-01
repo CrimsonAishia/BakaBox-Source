@@ -84,6 +84,10 @@ class MainWindowLauncher {
           debugPrint('[MainWindow] Received navigateToUpdateLog: $updateTime');
           NotificationWindowService().navigateToUpdateLog(updateTime);
           return true;
+        case 'openUpdateDialog':
+          debugPrint('[MainWindow] Received openUpdateDialog');
+          NotificationWindowService().openUpdateDialog();
+          return true;
         case 'notificationClosed':
           // 处理通知窗口关闭事件
           final args = call.arguments as Map<dynamic, dynamic>?;

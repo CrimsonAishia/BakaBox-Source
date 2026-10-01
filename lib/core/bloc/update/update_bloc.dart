@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../models/realtime_models.dart';
 import '../../models/update_models.dart';
+import '../../services/realtime_service.dart';
 import '../../services/update_service.dart';
 import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
@@ -9,6 +12,8 @@ import 'update_state.dart';
 
 class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
   final UpdateService _updateService = UpdateService();
+  StreamSubscription<RealtimeChannelEvent>? _realtimeSubscription;
+  StreamSubscription<void>? _reconcileSubscription;
 
   UpdateBloc() : super(const UpdateState()) {
     on<UpdateCheck>(_onCheck);
@@ -21,6 +26,43 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
     on<UpdateCancel>(_onCancel);
     on<UpdateSkip>(_onSkip);
     on<UpdateReset>(_onReset);
+    on<UpdateRealtimeEventReceived>(_onRealtimeEvent);
+
+    _initRealtime();
+  }
+
+  void _initRealtime() {
+    _reconcileSubscription = RealtimeService().reconcileStream.listen((_) {
+      // 弱网恢复或断线重连时，如果处于 idle 状态且未安装/下载，则主动检查一下更新
+      if (state.status == UpdateStatus.idle && state.updateInfo == null) {
+        add(UpdateAutoCheck());
+      }
+    });
+
+    RealtimeService().subscribe(RealtimeChannels.appUpdate);
+    _realtimeSubscription = RealtimeService()
+        .events(RealtimeChannels.appUpdate)
+        .listen((event) {
+          add(UpdateRealtimeEventReceived(event));
+        });
+  }
+
+  void _onRealtimeEvent(
+    UpdateRealtimeEventReceived event,
+    Emitter<UpdateState> emit,
+  ) {
+    if (event.event.eventType == RealtimeEventTypes.appUpdateAvailable) {
+      LogService.i('[UpdateBloc] 收到实时更新推送，开始自动检查更新');
+      add(UpdateAutoCheck());
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _realtimeSubscription?.cancel();
+    _reconcileSubscription?.cancel();
+    RealtimeService().unsubscribe(RealtimeChannels.appUpdate);
+    return super.close();
   }
 
   Future<void> _onCheck(UpdateCheck event, Emitter<UpdateState> emit) async {
